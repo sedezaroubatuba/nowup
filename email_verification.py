@@ -19,7 +19,11 @@ def db():
 
 @router.get("/cadastro/aguardando",response_class=HTMLResponse)
 def waiting(request: Request):
-    return templates.TemplateResponse("verify_pending.html",{"request":request})
+    conn=db()
+    rows=conn.execute("SELECT key,value FROM site_settings").fetchall()
+    conn.close()
+    settings={r["key"]:r["value"] for r in rows}
+    return templates.TemplateResponse("verify_pending.html",{"request":request,"settings":settings,"user":None})
 
 @router.get("/verificar-email")
 def verify(token: str=""):
