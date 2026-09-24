@@ -310,7 +310,7 @@ def signup_customer(name: str=Form(...), email: str=Form(...), phone: str=Form("
         conn.commit(); uid=cur.lastrowid
     except sqlite3.IntegrityError:
         conn.close(); return RedirectResponse("/cadastro/cliente?erro=email",303)
-    conn.close(); return create_session_response(uid,"/")
+    conn.close(); return create_session_response(uid,"/cadastro/sucesso?tipo=cliente")
 
 @app.get("/cadastro/profissional", response_class=HTMLResponse)
 def signup_pro_page(request: Request): return templates.TemplateResponse("signup_professional.html", context(request))
