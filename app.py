@@ -401,10 +401,14 @@ def signup_pro_page(request: Request):
 
 @app.post("/cadastro/profissional")
 def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Form(...), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), doc_type: str=Form(...), document: str=Form(...), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[])):
-    normalized_email=email.strip().lower()
+    normalized_email=normalize_email(email)
     admin_email=os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
+    if not normalized_email:
+        return RedirectResponse("/cadastro/profissional?erro=email_invalido",303)
     if normalized_email == admin_email:
         return RedirectResponse("/cadastro/profissional?erro=admin",303)
+    if not normalize_phone(phone):
+        return RedirectResponse("/cadastro/profissional?erro=telefone",303)
     if len(password)<8:
         return RedirectResponse("/cadastro/profissional?erro=senha",303)
     if password != password_confirm:
