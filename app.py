@@ -16,6 +16,7 @@ from email_validator import validate_email, EmailNotValidError
 from admin_customization import router as admin_customization_router
 from mailing import send_verification
 from email_verification import router as email_verification_router
+from password_reset import router as password_reset_router
 
 BASE = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("NOWUP_DB", BASE / "data" / "nowup.db"))
@@ -30,6 +31,32 @@ ADMIN_SESSION_MINUTES = 30
 app = FastAPI(title="NowUp", version="1.0.0")
 app.include_router(admin_customization_router)
 app.include_router(email_verification_router)
+app.include_router(password_reset_router)
+@app.middleware("http")
+async def security_middleware(request: Request, call_next):
+    if request.method not in ("GET", "HEAD", "OPTIONS"):
+        from urllib.parse import urlsplit
+        expected = os.getenv("NOWUP_BASE_URL", "").strip().rstrip("/")
+        expected_origin = (urlsplit(expected).scheme + "://" + urlsplit(expected).netloc) if expected else str(request.base_url).rstrip("/")
+        source = request.headers.get("origin") or request.headers.get("referer", "")
+        parsed = urlsplit(source)
+        source_origin = parsed.scheme + "://" + parsed.netloc if parsed.scheme and parsed.netloc else ""
+        if not source_origin or not hmac.compare_digest(source_origin, expected_origin):
+            return JSONResponse({"detail": "Origem da requisição não autorizada"}, status_code=403)
+    actor = current_user(request) if request.method == "POST" and request.url.path.startswith("/admin/") else None
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    if os.getenv("NOWUP_HTTPS", "0") == "1":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    if actor and actor["role"] == "admin" and response.status_code < 400:
+        conn = db()
+        conn.execute("INSERT INTO admin_audit(user_id,action,created_at) VALUES(?,?,?)",
+                     (actor["id"], request.url.path[:250], now_iso()))
+        conn.commit(); conn.close()
+    return response
+
 app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 templates = Jinja2Templates(directory=str(BASE / "templates"))
@@ -248,6 +275,14 @@ def init_db():
       active INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS password_resets(
+      user_id INTEGER PRIMARY KEY, token_hash TEXT NOT NULL,
+      expires_at TEXT NOT NULL, requested_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS admin_audit(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL, action TEXT NOT NULL, created_at TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS site_settings(
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
@@ -275,15 +310,17 @@ def init_db():
     ]
     for i,(name,icon) in enumerate(default_categories,1):
         conn.execute("INSERT OR IGNORE INTO categories(name,slug,icon,sort_order) VALUES(?,?,?,?)",(name,slugify(name),icon,i))
-    admin_email = os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
-    admin_pass = os.getenv("NOWUP_ADMIN_PASSWORD", "nowup2026")
-    admin = conn.execute("SELECT id FROM users WHERE email=?", (admin_email,)).fetchone()
-    if admin:
-        conn.execute("UPDATE users SET role='admin', is_active=1, email_verified=1, password_hash=? WHERE id=?",
-                     (hash_password(admin_pass), admin["id"]))
-    else:
-        conn.execute("INSERT INTO users(role,name,email,password_hash,email_verified,created_at) VALUES('admin','Administrador NowUp',?,?,1,?)",
-                     (admin_email, hash_password(admin_pass), now_iso()))
+    admin_email = os.getenv("NOWUP_ADMIN_EMAIL", "").strip().lower()
+    admin_pass = os.getenv("NOWUP_ADMIN_PASSWORD", "")
+    if admin_email and admin_pass and len(admin_pass) >= 12:
+        admin = conn.execute("SELECT id,role FROM users WHERE email=?", (admin_email,)).fetchone()
+        if not admin:
+            conn.execute("INSERT INTO users(role,name,email,password_hash,email_verified,created_at) VALUES('admin','Administrador NowUp',?,?,1,?)",
+                         (admin_email, hash_password(admin_pass), now_iso()))
+        elif admin["role"] != "admin":
+            raise RuntimeError("NOWUP_ADMIN_EMAIL já pertence a outra conta")
+    elif not conn.execute("SELECT 1 FROM users WHERE role='admin'").fetchone():
+        raise RuntimeError("Configure NOWUP_ADMIN_EMAIL e NOWUP_ADMIN_PASSWORD (mínimo 12 caracteres) no Render")
     if not conn.execute("SELECT 1 FROM banners").fetchone():
         conn.execute("INSERT INTO banners(title,subtitle,created_at) VALUES(?,?,?)",
                      ("Divulgue sua empresa na NowUp","Espaço para publicidade por cidade ou categoria.",now_iso()))
@@ -379,7 +416,7 @@ def signup_customer_page(request: Request): return templates.TemplateResponse("s
 @app.post("/cadastro/cliente")
 def signup_customer(name: str=Form(...), email: str=Form(...), phone: str=Form(""), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None)):
     normalized_email=normalize_email(email)
-    admin_email=os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
+    admin_email=os.getenv("NOWUP_ADMIN_EMAIL", "").strip().lower()
     if not normalized_email:
         return RedirectResponse("/cadastro/cliente?erro=email_invalido",303)
     if normalized_email == admin_email:
@@ -417,7 +454,7 @@ def signup_pro_page(request: Request):
 @app.post("/cadastro/profissional")
 def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Form(...), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), doc_type: str=Form(...), document: str=Form(...), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[])):
     normalized_email=normalize_email(email)
-    admin_email=os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
+    admin_email=os.getenv("NOWUP_ADMIN_EMAIL", "").strip().lower()
     if not normalized_email:
         return RedirectResponse("/cadastro/profissional?erro=email_invalido",303)
     if normalized_email == admin_email:
@@ -591,6 +628,15 @@ def admin(request: Request):
     reports=conn.execute("SELECT r.*,u.name customer,p.display_name professional FROM reports r JOIN users u ON u.id=r.customer_id JOIN professionals p ON p.id=r.professional_id ORDER BY r.id DESC LIMIT 50").fetchall()
     suggestions=conn.execute("SELECT * FROM suggestions ORDER BY id DESC LIMIT 30").fetchall(); banners=conn.execute("SELECT * FROM banners ORDER BY id DESC").fetchall(); conn.close()
     return templates.TemplateResponse("admin.html", context(request, stats=stats, pros=pros, clients=clients, admin_categories=admin_categories, reports=reports, suggestions=suggestions, admin_banners=banners))
+
+@app.get("/admin/auditoria", response_class=HTMLResponse)
+def admin_audit_page(request: Request):
+    require_user(request,"admin")
+    conn=db()
+    rows=conn.execute("""SELECT a.created_at,a.action,u.email FROM admin_audit a
+        JOIN users u ON u.id=a.user_id ORDER BY a.id DESC LIMIT 200""").fetchall()
+    conn.close()
+    return templates.TemplateResponse("admin_audit.html", context(request, audit_rows=rows))
 
 @app.post("/admin/categorias")
 def admin_add_category(request: Request, name:str=Form(...), icon:str=Form("🛠️")):

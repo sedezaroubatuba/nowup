@@ -11,7 +11,7 @@
 <div class="navlinks">
 {% if user %}
 <span class="muted hello">Olá, {{user.name}}</span>
-{% if user.role=='professional' %}<a class="btn soft" href="/painel">Meu painel</a>{% elif user.role=='admin' %}<a class="btn dark" href="/admin/entrar">Painel Admin</a>{% endif %}
+{% if user.role=='professional' %}<a class="btn soft" href="/painel">Meu painel</a>{% elif user.role=='admin' %}<a class="btn dark" href="/admin/entrar">Painel Admin</a><a class="btn soft" href="/admin/auditoria">Auditoria</a>{% endif %}
 <form action="/sair" method="post"><button class="btn" type="submit">Sair</button></form>
 {% else %}
 <a href="/entrar">Entrar</a>

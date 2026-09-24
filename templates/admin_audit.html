@@ -1,0 +1,6 @@
+{% extends 'base.html' %}{% block title %}Auditoria | NowUp{% endblock %}{% block content %}
+<div class="container"><h1>Atividades administrativas</h1><p>Últimas 200 ações registradas.</p>
+<div class="panel"><table style="width:100%;text-align:left"><thead><tr><th>Data (UTC)</th><th>Administrador</th><th>Ação</th></tr></thead>
+<tbody>{% for row in audit_rows %}<tr><td>{{row.created_at}}</td><td>{{row.email}}</td><td>{{row.action}}</td></tr>
+{% else %}<tr><td colspan="3">Nenhuma ação registrada.</td></tr>{% endfor %}</tbody></table></div>
+<p><a class="btn soft" href="/admin">Voltar ao painel</a></p></div>{% endblock %}
