@@ -373,10 +373,14 @@ def signup_customer_page(request: Request): return templates.TemplateResponse("s
 
 @app.post("/cadastro/cliente")
 def signup_customer(name: str=Form(...), email: str=Form(...), phone: str=Form(""), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None)):
-    normalized_email=email.strip().lower()
+    normalized_email=normalize_email(email)
     admin_email=os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
+    if not normalized_email:
+        return RedirectResponse("/cadastro/cliente?erro=email_invalido",303)
     if normalized_email == admin_email:
         return RedirectResponse("/cadastro/cliente?erro=admin",303)
+    if phone and not normalize_phone(phone):
+        return RedirectResponse("/cadastro/cliente?erro=telefone",303)
     if len(password)<8:
         return RedirectResponse("/cadastro/cliente?erro=senha",303)
     if password != password_confirm:
