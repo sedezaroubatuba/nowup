@@ -95,17 +95,34 @@ def create_secure_session(uid: int, dest: str, admin: bool=False):
     return resp
 
 @router.post("/entrar")
-def secure_login(email: str=Form(...),password: str=Form(...),tipo: str=Form("")):
+def secure_login(request: Request, email: str=Form(...),password: str=Form(...),tipo: str=Form("")):
     normalized=email.strip().lower()
-    conn=db(); u=conn.execute("SELECT * FROM users WHERE email=? AND is_active=1",(normalized,)).fetchone(); conn.close()
-    suffix=f"&tipo={tipo}" if tipo in ("cliente","profissional","admin") else ""
-    if not u or not verify_password(password,u["password_hash"]):
-        return RedirectResponse(f"/entrar?erro=1{suffix}",303)
+    # A janela de tentativas fica no banco e funciona entre reinícios e processos.
+    key=hashlib.sha256((request.client.host if request.client else "unknown").encode() + b":" + normalized.encode()).hexdigest()
+    now=datetime.now(timezone.utc)
+    conn=db()
+    conn.execute("""CREATE TABLE IF NOT EXISTS login_attempts(
+        key TEXT PRIMARY KEY, failures INTEGER NOT NULL, window_start TEXT NOT NULL,
+        blocked_until TEXT NOT NULL DEFAULT '')""")
+    attempt=conn.execute("SELECT * FROM login_attempts WHERE key=?",(key,)).fetchone()
+    if attempt and attempt["blocked_until"] and attempt["blocked_until"] > now.isoformat():
+        conn.close()
+        return RedirectResponse("/entrar?erro=bloqueado",303)
+    u=conn.execute("SELECT * FROM users WHERE email=? AND is_active=1",(normalized,)).fetchone()
+    valid=bool(u and verify_password(password,u["password_hash"]))
+    if not valid:
+        failures=(attempt["failures"]+1 if attempt and attempt["window_start"] > (now-timedelta(minutes=15)).isoformat() else 1)
+        blocked=(now+timedelta(minutes=15)).isoformat() if failures >= 5 else ""
+        conn.execute("""INSERT INTO login_attempts(key,failures,window_start,blocked_until)
+            VALUES(?,?,?,?) ON CONFLICT(key) DO UPDATE SET failures=excluded.failures,
+            window_start=excluded.window_start,blocked_until=excluded.blocked_until""",
+            (key,failures,attempt["window_start"] if attempt and failures>1 else now.isoformat(),blocked))
+        conn.commit(); conn.close()
+        return RedirectResponse("/entrar?erro=1",303)
+    conn.execute("DELETE FROM login_attempts WHERE key=?",(key,))
+    conn.commit(); conn.close()
     if u["role"]!="admin" and "email_verified" in u.keys() and not u["email_verified"]:
-        return RedirectResponse(f"/entrar?erro=verificacao{suffix}",303)
-    expected={"admin":"admin","profissional":"professional","cliente":"customer"}.get(tipo)
-    if expected and u["role"]!=expected:
-        return RedirectResponse(f"/entrar?tipo={tipo}&erro=perfil",303)
+        return RedirectResponse("/entrar?erro=verificacao",303)
     if u["role"]=="admin":
         return create_secure_session(u["id"],"/admin",admin=True)
     if u["role"]=="professional":
