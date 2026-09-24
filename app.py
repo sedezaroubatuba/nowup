@@ -30,6 +30,31 @@ ADMIN_SESSION_MINUTES = 30
 app = FastAPI(title="NowUp", version="1.0.0")
 app.include_router(admin_customization_router)
 app.include_router(email_verification_router)
+@app.middleware("http")
+async def security_middleware(request: Request, call_next):
+    if request.method not in ("GET", "HEAD", "OPTIONS"):
+        from urllib.parse import urlsplit
+        expected = os.getenv("NOWUP_BASE_URL", "").strip().rstrip("/")
+        expected_origin = (urlsplit(expected).scheme + "://" + urlsplit(expected).netloc) if expected else str(request.base_url).rstrip("/")
+        source = request.headers.get("origin") or request.headers.get("referer", "")
+        parsed = urlsplit(source)
+        source_origin = parsed.scheme + "://" + parsed.netloc if parsed.scheme and parsed.netloc else ""
+        if not source_origin or not hmac.compare_digest(source_origin, expected_origin):
+            return JSONResponse({"detail": "Origem da requisição não autorizada"}, status_code=403)
+    actor = current_user(request) if request.method == "POST" and request.url.path.startswith("/admin/") else None
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    if os.getenv("NOWUP_HTTPS", "0") == "1":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    if actor and actor["role"] == "admin" and response.status_code < 400:
+        conn = db()
+        conn.execute("INSERT INTO admin_audit(user_id,action,created_at) VALUES(?,?,?)",
+                     (actor["id"], request.url.path[:250], now_iso()))
+        conn.commit(); conn.close()
+    return response
+
 app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 templates = Jinja2Templates(directory=str(BASE / "templates"))
@@ -247,6 +272,10 @@ def init_db():
       link TEXT DEFAULT '',
       active INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS admin_audit(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL, action TEXT NOT NULL, created_at TEXT NOT NULL
     );
     CREATE TABLE IF NOT EXISTS site_settings(
       key TEXT PRIMARY KEY,
