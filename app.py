@@ -428,9 +428,15 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
         return RedirectResponse("/cadastro/profissional?erro=confirmacao",303)
     if not accept_terms:
         return RedirectResponse("/cadastro/profissional?erro=termos",303)
+    verify_required=email_service_configured()
+    token=secrets.token_urlsafe(32) if verify_required else ""
+    expires=(datetime.now(timezone.utc)+timedelta(hours=24)).isoformat() if verify_required else ""
     conn=db()
     try:
-        cur=conn.execute("INSERT INTO users(role,name,email,phone,password_hash,created_at) VALUES('professional',?,?,?,?,?)",(name.strip(),normalized_email,phone.strip(),hash_password(password),now_iso())); uid=cur.lastrowid
+        cur=conn.execute(
+            "INSERT INTO users(role,name,email,phone,password_hash,email_verified,verification_token,verification_expires_at,created_at) VALUES('professional',?,?,?,?,?,?,?,?,?)",
+            (name.strip(),normalized_email,phone.strip(),hash_password(password),0 if verify_required else 1,token,expires,now_iso())
+        ); uid=cur.lastrowid
         slug=unique_slug(conn,name)
         cur=conn.execute("INSERT INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,description,services,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
                          (uid,slug,name.strip(),doc_type,document.strip(),phone.strip(),city.strip(),neighborhood.strip(),cep.strip(),description.strip(),services.strip(),now_iso())); pid=cur.lastrowid
@@ -439,7 +445,11 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
         conn.commit()
     except sqlite3.IntegrityError:
         conn.rollback(); conn.close(); return RedirectResponse("/cadastro/profissional?erro=email",303)
-    conn.close(); return create_session_response(uid,"/cadastro/sucesso?tipo=profissional")
+    conn.close()
+    if verify_required:
+        send_verification(normalized_email,name.strip(),token)
+        return RedirectResponse("/cadastro/aguardando",303)
+    return create_session_response(uid,"/cadastro/sucesso?tipo=profissional")
 
 @app.get("/cadastro/sucesso", response_class=HTMLResponse)
 def signup_success(request: Request, tipo: str="cliente"):
