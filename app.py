@@ -15,6 +15,7 @@ from PIL import Image
 from email_validator import validate_email, EmailNotValidError
 from admin_customization import router as admin_customization_router
 from mailing import send_verification
+from email_verification import router as email_verification_router
 
 BASE = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("NOWUP_DB", BASE / "data" / "nowup.db"))
@@ -28,6 +29,7 @@ ADMIN_SESSION_MINUTES = 30
 
 app = FastAPI(title="NowUp", version="1.0.0")
 app.include_router(admin_customization_router)
+app.include_router(email_verification_router)
 app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 templates = Jinja2Templates(directory=str(BASE / "templates"))
