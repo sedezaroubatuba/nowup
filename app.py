@@ -1,15 +1,18 @@
 from __future__ import annotations
-import os, re, io, hmac, hashlib, secrets, sqlite3, unicodedata
+import os, re, io, hmac, hashlib, secrets, sqlite3, unicodedata, json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 from urllib.parse import quote
+from urllib.request import Request as URLRequest, urlopen
+from urllib.error import HTTPError, URLError
 
 from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from PIL import Image
+from email_validator import validate_email, EmailNotValidError
 
 BASE = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("NOWUP_DB", BASE / "data" / "nowup.db"))
@@ -19,6 +22,7 @@ DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 SESSION_DAYS = 30
 MAX_PHOTOS = 10
 MAX_UPLOAD = 5 * 1024 * 1024
+ADMIN_SESSION_MINUTES = 30
 
 app = FastAPI(title="NowUp", version="1.0.0")
 app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
