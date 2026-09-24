@@ -30,7 +30,7 @@ def verify(token: str=""):
     if not token:
         return RedirectResponse("/entrar?erro=verificacao",303)
     conn=db()
-    u=conn.execute("SELECT id,verification_expires_at FROM users WHERE verification_token=?",(token,)).fetchone()
+    u=conn.execute("SELECT id,role,verification_expires_at FROM users WHERE verification_token=?",(token,)).fetchone()
     if not u:
         conn.close(); return RedirectResponse("/entrar?erro=verificacao",303)
     try:
@@ -40,6 +40,8 @@ def verify(token: str=""):
     if valid_until < datetime.now(timezone.utc):
         conn.close(); return RedirectResponse("/entrar?erro=expirado",303)
     conn.execute("UPDATE users SET email_verified=1,verification_token='',verification_expires_at='' WHERE id=?",(u["id"],))
+    if u["role"]=="professional":
+        conn.execute("UPDATE professionals SET blocked=0 WHERE user_id=?",(u["id"],))
     conn.commit(); conn.close()
     return RedirectResponse("/entrar?verificado=1",303)
 
