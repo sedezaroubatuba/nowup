@@ -9,7 +9,7 @@
 </div>
 {% set tipo=request.query_params.get('tipo','') %}
 {% set erro=request.query_params.get('erro','') %}
-{% if erro=='1' %}<div class="alert danger">E-mail ou senha incorretos.</div>{% elif erro=='perfil' %}<div class="alert danger">Esta conta não corresponde ao tipo de acesso escolhido.</div>{% elif erro=='verificacao' %}<div class="alert danger">Confirme seu e-mail antes de entrar.</div>{% elif erro=='expirado' %}<div class="alert danger">O link de confirmação expirou. Solicite um novo.</div>{% endif %}
+{% if erro=='1' %}<div class="alert danger">E-mail ou senha incorretos.</div>{% elif erro=='bloqueado' %}<div class="alert danger">Muitas tentativas. Aguarde 15 minutos e tente novamente.</div>{% elif erro=='perfil' %}<div class="alert danger">Esta conta não corresponde ao tipo de acesso escolhido.</div>{% elif erro=='verificacao' %}<div class="alert danger">Confirme seu e-mail antes de entrar.</div>{% elif erro=='expirado' %}<div class="alert danger">O link de confirmação expirou. Solicite um novo.</div>{% endif %}
 {% if request.query_params.get('verificado') %}<div class="alert" style="background:#e9fbf3;color:#087b4b;border:1px solid #abefc6">E-mail confirmado com sucesso. Agora você pode entrar.</div>{% endif %}
 <div class="loginbox">
 <h2>{% if tipo=='profissional' %}Entrar como profissional{% elif tipo=='cliente' %}Entrar como cliente{% else %}Entrar na NowUp{% endif %}</h2>
