@@ -398,7 +398,7 @@ def signup_customer(name: str=Form(...), email: str=Form(...), phone: str=Form("
     conn=db()
     try:
         cur=conn.execute(
-            "INSERT INTO users(role,name,email,phone,password_hash,email_verified,verification_token,verification_expires_at,created_at) VALUES('customer',?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO users(role,name,email,phone,password_hash,email_verified,verification_token,verification_expires_at,created_at) VALUES('customer',?,?,?,?,?,?,?,?)",
             (name.strip(),normalized_email,phone.strip(),hash_password(password),0 if verify_required else 1,token,expires,now_iso())
         )
         conn.commit(); uid=cur.lastrowid
@@ -436,7 +436,7 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
     conn=db()
     try:
         cur=conn.execute(
-            "INSERT INTO users(role,name,email,phone,password_hash,email_verified,verification_token,verification_expires_at,created_at) VALUES('professional',?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO users(role,name,email,phone,password_hash,email_verified,verification_token,verification_expires_at,created_at) VALUES('professional',?,?,?,?,?,?,?,?)",
             (name.strip(),normalized_email,phone.strip(),hash_password(password),0 if verify_required else 1,token,expires,now_iso())
         ); uid=cur.lastrowid
         slug=unique_slug(conn,name)
