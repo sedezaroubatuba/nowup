@@ -629,6 +629,15 @@ def admin(request: Request):
     suggestions=conn.execute("SELECT * FROM suggestions ORDER BY id DESC LIMIT 30").fetchall(); banners=conn.execute("SELECT * FROM banners ORDER BY id DESC").fetchall(); conn.close()
     return templates.TemplateResponse("admin.html", context(request, stats=stats, pros=pros, clients=clients, admin_categories=admin_categories, reports=reports, suggestions=suggestions, admin_banners=banners))
 
+@app.get("/admin/auditoria", response_class=HTMLResponse)
+def admin_audit_page(request: Request):
+    require_user(request,"admin")
+    conn=db()
+    rows=conn.execute("""SELECT a.created_at,a.action,u.email FROM admin_audit a
+        JOIN users u ON u.id=a.user_id ORDER BY a.id DESC LIMIT 200""").fetchall()
+    conn.close()
+    return templates.TemplateResponse("admin_audit.html", context(request, audit_rows=rows))
+
 @app.post("/admin/categorias")
 def admin_add_category(request: Request, name:str=Form(...), icon:str=Form("🛠️")):
     require_user(request,"admin"); conn=db()
