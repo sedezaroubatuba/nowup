@@ -273,7 +273,26 @@ def init_db():
       active INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS site_settings(
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
     """)
+    ensure_column(conn, "users", "email_verified", "INTEGER NOT NULL DEFAULT 1")
+    ensure_column(conn, "users", "verification_token", "TEXT DEFAULT ''")
+    ensure_column(conn, "users", "verification_expires_at", "TEXT DEFAULT ''")
+    defaults = {
+      "brand_name": "NowUp",
+      "primary_color": "#2457e6",
+      "accent_color": "#ff8a32",
+      "font_family": "Inter",
+      "hero_title": "Encontre quem resolve.",
+      "hero_subtitle": "Busque profissionais por serviço e localização. Veja trabalhos recentes, avaliações e fale direto pelo WhatsApp.",
+      "public_email": "",
+      "support_whatsapp": ""
+    }
+    for key, value in defaults.items():
+        conn.execute("INSERT OR IGNORE INTO site_settings(key,value) VALUES(?,?)", (key,value))
     default_categories = [
       ("Encanador","🔧"),("Eletricista","⚡"),("Pedreiro","🧱"),("Serralheiro","⚙️"),
       ("Limpeza de estofado","🛋️"),("Pet Shop","🐾"),("Veterinário","🩺"),("Vidraceiro","🪟"),
@@ -285,10 +304,10 @@ def init_db():
     admin_pass = os.getenv("NOWUP_ADMIN_PASSWORD", "nowup2026")
     admin = conn.execute("SELECT id FROM users WHERE email=?", (admin_email,)).fetchone()
     if admin:
-        conn.execute("UPDATE users SET role='admin', is_active=1, password_hash=? WHERE id=?",
+        conn.execute("UPDATE users SET role='admin', is_active=1, email_verified=1, password_hash=? WHERE id=?",
                      (hash_password(admin_pass), admin["id"]))
     else:
-        conn.execute("INSERT INTO users(role,name,email,password_hash,created_at) VALUES('admin','Administrador NowUp',?,?,?)",
+        conn.execute("INSERT INTO users(role,name,email,password_hash,email_verified,created_at) VALUES('admin','Administrador NowUp',?,?,1,?)",
                      (admin_email, hash_password(admin_pass), now_iso()))
     if not conn.execute("SELECT 1 FROM banners").fetchone():
         conn.execute("INSERT INTO banners(title,subtitle,created_at) VALUES(?,?,?)",
