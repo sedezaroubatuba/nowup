@@ -585,8 +585,8 @@ def admin(request: Request):
       "wa":conn.execute("SELECT COALESCE(SUM(whatsapp_clicks),0) FROM professionals").fetchone()[0],
       "views":conn.execute("SELECT COALESCE(SUM(views),0) FROM professionals").fetchone()[0],
     }
-    pros=conn.execute("SELECT p.*,u.email FROM professionals p JOIN users u ON u.id=p.user_id ORDER BY p.id DESC LIMIT 50").fetchall()
-    clients=conn.execute("SELECT id,name,email,phone,is_active,created_at FROM users WHERE role='customer' ORDER BY id DESC LIMIT 100").fetchall()
+    pros=conn.execute("SELECT p.*,u.email,u.email_verified FROM professionals p JOIN users u ON u.id=p.user_id ORDER BY p.id DESC LIMIT 50").fetchall()
+    clients=conn.execute("SELECT id,name,email,phone,is_active,email_verified,created_at FROM users WHERE role='customer' ORDER BY id DESC LIMIT 100").fetchall()
     admin_categories=conn.execute("SELECT * FROM categories ORDER BY sort_order,name").fetchall()
     reports=conn.execute("SELECT r.*,u.name customer,p.display_name professional FROM reports r JOIN users u ON u.id=r.customer_id JOIN professionals p ON p.id=r.professional_id ORDER BY r.id DESC LIMIT 50").fetchall()
     suggestions=conn.execute("SELECT * FROM suggestions ORDER BY id DESC LIMIT 30").fetchall(); banners=conn.execute("SELECT * FROM banners ORDER BY id DESC").fetchall(); conn.close()
