@@ -44,3 +44,28 @@ def test_login_csrf_lockout_reset_and_audit(tmp_path, monkeypatch):
         assert client.get("/admin").status_code==401
         reused=client.post("/recuperar-senha",data={"token":token,"password":"new-password-12345","password_confirm":"new-password-12345"},headers=origin)
         assert "inválido" in reused.text
+
+
+def test_backup_can_restore_database_and_uploads(tmp_path, monkeypatch):
+    import sqlite3, tarfile
+    monkeypatch.setenv("NOWUP_DB",str(tmp_path/"live.db"))
+    monkeypatch.setenv("NOWUP_UPLOAD_DIR",str(tmp_path/"uploads"))
+    monkeypatch.setenv("NOWUP_BACKUP_DIR",str(tmp_path/"backups"))
+    (tmp_path/"uploads").mkdir()
+    (tmp_path/"uploads"/"photo.jpg").write_bytes(b"sample")
+    conn=sqlite3.connect(tmp_path/"live.db")
+    conn.execute("CREATE TABLE sample(value TEXT)")
+    conn.execute("INSERT INTO sample VALUES('restored')")
+    conn.commit();conn.close()
+    import backup
+    importlib.reload(backup)
+    backup.backup()
+    archive=next((tmp_path/"backups").glob("*.tar.gz"))
+    with tarfile.open(archive) as tar:
+        db_file=tar.extractfile("nowup.db")
+        restored=tmp_path/"restored.db"
+        restored.write_bytes(db_file.read())
+        assert tar.extractfile("uploads/photo.jpg").read()==b"sample"
+    conn=sqlite3.connect(restored)
+    assert conn.execute("SELECT value FROM sample").fetchone()[0]=="restored"
+    conn.close()
