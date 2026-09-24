@@ -204,9 +204,13 @@ def init_db():
     ]
     for i,(name,icon) in enumerate(default_categories,1):
         conn.execute("INSERT OR IGNORE INTO categories(name,slug,icon,sort_order) VALUES(?,?,?,?)",(name,slugify(name),icon,i))
-    admin_email = os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").lower()
+    admin_email = os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
     admin_pass = os.getenv("NOWUP_ADMIN_PASSWORD", "nowup2026")
-    if not conn.execute("SELECT 1 FROM users WHERE email=?", (admin_email,)).fetchone():
+    admin = conn.execute("SELECT id FROM users WHERE email=?", (admin_email,)).fetchone()
+    if admin:
+        conn.execute("UPDATE users SET role='admin', is_active=1, password_hash=? WHERE id=?",
+                     (hash_password(admin_pass), admin["id"]))
+    else:
         conn.execute("INSERT INTO users(role,name,email,password_hash,created_at) VALUES('admin','Administrador NowUp',?,?,?)",
                      (admin_email, hash_password(admin_pass), now_iso()))
     if not conn.execute("SELECT 1 FROM banners").fetchone():
