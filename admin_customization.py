@@ -1,5 +1,5 @@
-import os, re, sqlite3
-from datetime import datetime, timezone
+import os, re, sqlite3, hmac, hashlib, secrets
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from fastapi import APIRouter, Request, Form, HTTPException
 from fastapi.responses import RedirectResponse
@@ -72,3 +72,51 @@ def save_admin_profile(request: Request, name: str=Form(...)):
         return RedirectResponse("/admin#perfil",303)
     conn=db(); conn.execute("UPDATE users SET name=? WHERE id=?",(clean,admin["id"])); conn.commit(); conn.close()
     return RedirectResponse("/admin#perfil",303)
+
+
+def verify_password(password: str, stored: str):
+    try:
+        salt,digest=stored.split("$",1)
+        calc=hashlib.pbkdf2_hmac("sha256",password.encode(),bytes.fromhex(salt),240_000).hex()
+        return hmac.compare_digest(calc,digest)
+    except Exception:
+        return False
+
+def create_secure_session(uid: int, dest: str, admin: bool=False):
+    token=secrets.token_urlsafe(32)
+    ttl=timedelta(minutes=30) if admin else timedelta(days=30)
+    expires=(datetime.now(timezone.utc)+ttl).isoformat()
+    conn=db(); conn.execute("INSERT INTO sessions(token,user_id,expires_at) VALUES(?,?,?)",(token,uid,expires)); conn.commit(); conn.close()
+    resp=RedirectResponse(dest,303)
+    kwargs={"httponly":True,"samesite":"lax","secure":os.getenv("NOWUP_HTTPS","0")=="1"}
+    if not admin:
+        kwargs["max_age"]=int(ttl.total_seconds())
+    resp.set_cookie("nowup_session",token,**kwargs)
+    return resp
+
+@router.post("/entrar")
+def secure_login(email: str=Form(...),password: str=Form(...),tipo: str=Form("")):
+    normalized=email.strip().lower()
+    conn=db(); u=conn.execute("SELECT * FROM users WHERE email=? AND is_active=1",(normalized,)).fetchone(); conn.close()
+    suffix=f"&tipo={tipo}" if tipo in ("cliente","profissional","admin") else ""
+    if not u or not verify_password(password,u["password_hash"]):
+        return RedirectResponse(f"/entrar?erro=1{suffix}",303)
+    if u["role"]!="admin" and "email_verified" in u.keys() and not u["email_verified"]:
+        return RedirectResponse(f"/entrar?erro=verificacao{suffix}",303)
+    expected={"admin":"admin","profissional":"professional","cliente":"customer"}.get(tipo)
+    if expected and u["role"]!=expected:
+        return RedirectResponse(f"/entrar?tipo={tipo}&erro=perfil",303)
+    if u["role"]=="admin":
+        return create_secure_session(u["id"],"/admin",admin=True)
+    if u["role"]=="professional":
+        return create_secure_session(u["id"],"/painel")
+    return create_secure_session(u["id"],"/")
+
+@router.get("/admin/entrar")
+def force_admin_login(request: Request):
+    token=request.cookies.get("nowup_session")
+    if token:
+        conn=db(); conn.execute("DELETE FROM sessions WHERE token=?",(token,)); conn.commit(); conn.close()
+    resp=RedirectResponse("/entrar?tipo=admin",303)
+    resp.delete_cookie("nowup_session")
+    return resp
