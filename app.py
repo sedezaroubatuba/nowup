@@ -275,15 +275,17 @@ def init_db():
     ]
     for i,(name,icon) in enumerate(default_categories,1):
         conn.execute("INSERT OR IGNORE INTO categories(name,slug,icon,sort_order) VALUES(?,?,?,?)",(name,slugify(name),icon,i))
-    admin_email = os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
-    admin_pass = os.getenv("NOWUP_ADMIN_PASSWORD", "nowup2026")
-    admin = conn.execute("SELECT id FROM users WHERE email=?", (admin_email,)).fetchone()
-    if admin:
-        conn.execute("UPDATE users SET role='admin', is_active=1, email_verified=1, password_hash=? WHERE id=?",
-                     (hash_password(admin_pass), admin["id"]))
-    else:
-        conn.execute("INSERT INTO users(role,name,email,password_hash,email_verified,created_at) VALUES('admin','Administrador NowUp',?,?,1,?)",
-                     (admin_email, hash_password(admin_pass), now_iso()))
+    admin_email = os.getenv("NOWUP_ADMIN_EMAIL", "").strip().lower()
+    admin_pass = os.getenv("NOWUP_ADMIN_PASSWORD", "")
+    if admin_email and admin_pass and len(admin_pass) >= 12:
+        admin = conn.execute("SELECT id,role FROM users WHERE email=?", (admin_email,)).fetchone()
+        if not admin:
+            conn.execute("INSERT INTO users(role,name,email,password_hash,email_verified,created_at) VALUES('admin','Administrador NowUp',?,?,1,?)",
+                         (admin_email, hash_password(admin_pass), now_iso()))
+        elif admin["role"] != "admin":
+            raise RuntimeError("NOWUP_ADMIN_EMAIL já pertence a outra conta")
+    elif not conn.execute("SELECT 1 FROM users WHERE role='admin'").fetchone():
+        raise RuntimeError("Configure NOWUP_ADMIN_EMAIL e NOWUP_ADMIN_PASSWORD (mínimo 12 caracteres) no Render")
     if not conn.execute("SELECT 1 FROM banners").fetchone():
         conn.execute("INSERT INTO banners(title,subtitle,created_at) VALUES(?,?,?)",
                      ("Divulgue sua empresa na NowUp","Espaço para publicidade por cidade ou categoria.",now_iso()))
@@ -379,7 +381,7 @@ def signup_customer_page(request: Request): return templates.TemplateResponse("s
 @app.post("/cadastro/cliente")
 def signup_customer(name: str=Form(...), email: str=Form(...), phone: str=Form(""), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None)):
     normalized_email=normalize_email(email)
-    admin_email=os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
+    admin_email=os.getenv("NOWUP_ADMIN_EMAIL", "").strip().lower()
     if not normalized_email:
         return RedirectResponse("/cadastro/cliente?erro=email_invalido",303)
     if normalized_email == admin_email:
@@ -417,7 +419,7 @@ def signup_pro_page(request: Request):
 @app.post("/cadastro/profissional")
 def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Form(...), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), doc_type: str=Form(...), document: str=Form(...), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[])):
     normalized_email=normalize_email(email)
-    admin_email=os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
+    admin_email=os.getenv("NOWUP_ADMIN_EMAIL", "").strip().lower()
     if not normalized_email:
         return RedirectResponse("/cadastro/profissional?erro=email_invalido",303)
     if normalized_email == admin_email:
