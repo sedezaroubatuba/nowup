@@ -1,0 +1,9 @@
+{% extends 'base.html' %}{% block title %}Confirme seu e-mail | NowUp{% endblock %}{% block content %}
+<div class="container"><div class="formCard" style="text-align:center">
+<div style="font-size:52px">✉️</div><h1>Confira seu e-mail</h1>
+<p class="muted">Enviamos uma mensagem de confirmação para concluir seu cadastro na NowUp. Clique no botão recebido no e-mail.</p>
+{% if request.query_params.get('reenviado') %}<div class="alert" style="background:#e9fbf3;color:#087b4b;border:1px solid #abefc6">Novo e-mail de confirmação enviado.</div>{% endif %}
+<div class="security-note"><b>Não recebeu?</b><p class="muted tiny">Confira a caixa de spam ou peça um novo envio abaixo.</p></div>
+<form action="/reenviar-verificacao" method="post"><input class="input" type="email" name="email" placeholder="Digite seu e-mail" required><button class="btn primary" style="width:100%;margin-top:10px">Reenviar confirmação</button></form>
+<p class="tiny muted" style="margin-top:14px">O link de confirmação expira em 24 horas.</p>
+</div></div>{% endblock %}
