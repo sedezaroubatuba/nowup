@@ -1,1 +1,13 @@
-{% extends 'base.html' %}{% block content %}<div class="container"><div class="formCard"><h1>Conta de cliente</h1><p class="muted">Pesquisar e chamar no WhatsApp é livre. A conta é necessária para avaliar e denunciar.</p><form method="post" class="grid2"><input class="input" name="name" placeholder="Nome completo" required><input class="input" type="email" name="email" placeholder="E-mail" required><input class="input" name="phone" placeholder="Celular"><input class="input" type="password" name="password" placeholder="Senha (mín. 6 caracteres)" minlength="6" required><button class="btn primary">Criar minha conta</button></form></div></div>{% endblock %}
+{% extends 'base.html' %}{% block title %}Cadastro de cliente | NowUp{% endblock %}{% block content %}
+<div class="container"><div class="formCard"><h1>Cadastro de cliente</h1><p class="muted">Crie sua conta para avaliar profissionais e fazer denúncias quando necessário.</p>
+{% set erro=request.query_params.get('erro') %}
+{% if erro=='email' %}<div class="alert danger">Este e-mail já está cadastrado. Tente entrar na sua conta.</div>{% elif erro=='senha' %}<div class="alert danger">A senha precisa ter pelo menos 8 caracteres.</div>{% elif erro=='confirmacao' %}<div class="alert danger">As duas senhas não são iguais.</div>{% elif erro=='termos' %}<div class="alert danger">Você precisa aceitar os Termos de Uso e a Política de Privacidade.</div>{% endif %}
+<form method="post" class="grid2">
+<input class="input" name="name" placeholder="Nome completo" required>
+<input class="input" type="email" name="email" placeholder="E-mail" required>
+<input class="input" name="phone" placeholder="Celular">
+<input class="input" type="password" name="password" placeholder="Senha (mín. 8 caracteres)" minlength="8" required>
+<input class="input" type="password" name="password_confirm" placeholder="Confirme sua senha" minlength="8" required>
+<label class="check" style="grid-column:1/-1"><input type="checkbox" name="accept_terms" value="1" required> Li e aceito os <a href="/termos"><b>Termos de Uso</b></a> e a <a href="/privacidade"><b>Política de Privacidade</b></a>.</label>
+<button class="btn primary" style="grid-column:1/-1">Confirmar cadastro</button>
+</form></div></div>{% endblock %}
