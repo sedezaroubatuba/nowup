@@ -1,4 +1,4 @@
-import os, json
+import os, json, html
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
@@ -40,9 +40,22 @@ def send_verification(to_email: str, to_name: str, token: str):
     link=f"{base}/verificar-email?token={quote(token)}"
     html=f"""<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto">
     <h2>Confirme seu cadastro na NowUp</h2>
-    <p>Olá, {to_name}.</p>
+    <p>Olá, {html.escape(to_name)}.</p>
     <p>Recebemos seu cadastro. Confirme seu e-mail para concluir:</p>
     <p><a href="{link}" style="background:#2457e6;color:#fff;padding:12px 18px;border-radius:10px;text-decoration:none;font-weight:bold">Confirmar meu e-mail</a></p>
     <p style="color:#667085;font-size:13px">O link expira em 24 horas. Se você não fez este cadastro, ignore esta mensagem.</p>
     </div>"""
     return send_email(to_email,to_name,"Confirme seu cadastro na NowUp",html)
+
+def send_password_reset(to_email: str, to_name: str, token: str):
+    base=os.getenv("NOWUP_BASE_URL","").strip().rstrip("/")
+    if not configured() or not base:
+        return False
+    link=f"{base}/recuperar-senha?token={quote(token)}"
+    body=f"""<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto">
+    <h2>Redefinir senha da NowUp</h2>
+    <p>Olá, {html.escape(to_name)}.</p>
+    <p><a href="{link}">Clique aqui para criar uma nova senha</a>.</p>
+    <p>Este link expira em 30 minutos. Se não foi você, ignore esta mensagem.</p>
+    </div>"""
+    return send_email(to_email,to_name,"Redefinir sua senha na NowUp",body)
