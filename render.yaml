@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: nowup
+    runtime: docker
+    plan: starter
+    autoDeploy: true
+    envVars:
+      - key: NOWUP_DB
+        value: /app/persist/nowup.db
+      - key: NOWUP_UPLOAD_DIR
+        value: /app/persist/uploads
+      - key: NOWUP_HTTPS
+        value: "1"
+      - key: NOWUP_ADMIN_EMAIL
+        sync: false
+      - key: NOWUP_ADMIN_PASSWORD
+        sync: false
+    disk:
+      name: nowup-data
+      mountPath: /app/persist
+      sizeGB: 1
