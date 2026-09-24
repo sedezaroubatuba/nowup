@@ -444,6 +444,8 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
                          (uid,slug,name.strip(),doc_type,document.strip(),phone.strip(),city.strip(),neighborhood.strip(),cep.strip(),description.strip(),services.strip(),now_iso())); pid=cur.lastrowid
         for cid in category_ids[:5]:
             conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(pid,cid))
+        if verify_required:
+            conn.execute("UPDATE professionals SET blocked=1 WHERE id=?",(pid,))
         conn.commit()
     except sqlite3.IntegrityError:
         conn.rollback(); conn.close(); return RedirectResponse("/cadastro/profissional?erro=email",303)
