@@ -173,8 +173,17 @@ def context(request: Request, **kwargs):
     conn = db()
     cats = conn.execute("SELECT * FROM categories WHERE active=1 ORDER BY sort_order,name").fetchall()
     banners = conn.execute("SELECT * FROM banners WHERE active=1 ORDER BY id DESC LIMIT 3").fetchall()
+    settings = get_settings(conn)
     conn.close()
-    return {"request": request, "user": current_user(request), "categories": cats, "banners": banners, **kwargs}
+    return {
+        "request": request,
+        "user": current_user(request),
+        "categories": cats,
+        "banners": banners,
+        "settings": settings,
+        "email_service_ready": email_service_configured(),
+        **kwargs
+    }
 
 def init_db():
     conn = db()
