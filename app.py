@@ -16,6 +16,7 @@ from email_validator import validate_email, EmailNotValidError
 from admin_customization import router as admin_customization_router
 from mailing import send_verification
 from email_verification import router as email_verification_router
+from password_reset import router as password_reset_router
 
 BASE = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("NOWUP_DB", BASE / "data" / "nowup.db"))
@@ -30,6 +31,7 @@ ADMIN_SESSION_MINUTES = 30
 app = FastAPI(title="NowUp", version="1.0.0")
 app.include_router(admin_customization_router)
 app.include_router(email_verification_router)
+app.include_router(password_reset_router)
 @app.middleware("http")
 async def security_middleware(request: Request, call_next):
     if request.method not in ("GET", "HEAD", "OPTIONS"):
@@ -272,6 +274,10 @@ def init_db():
       link TEXT DEFAULT '',
       active INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS password_resets(
+      user_id INTEGER PRIMARY KEY, token_hash TEXT NOT NULL,
+      expires_at TEXT NOT NULL, requested_at TEXT NOT NULL
     );
     CREATE TABLE IF NOT EXISTS admin_audit(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
