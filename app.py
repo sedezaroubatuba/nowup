@@ -306,33 +306,60 @@ def whatsapp_click(slug: str):
 def signup_customer_page(request: Request): return templates.TemplateResponse("signup_customer.html", context(request))
 
 @app.post("/cadastro/cliente")
-def signup_customer(name: str=Form(...), email: str=Form(...), phone: str=Form(""), password: str=Form(...)):
-    if len(password)<6: return RedirectResponse("/cadastro/cliente?erro=senha",303)
+def signup_customer(name: str=Form(...), email: str=Form(...), phone: str=Form(""), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None)):
+    normalized_email=email.strip().lower()
+    admin_email=os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
+    if normalized_email == admin_email:
+        return RedirectResponse("/cadastro/cliente?erro=admin",303)
+    if len(password)<8:
+        return RedirectResponse("/cadastro/cliente?erro=senha",303)
+    if password != password_confirm:
+        return RedirectResponse("/cadastro/cliente?erro=confirmacao",303)
+    if not accept_terms:
+        return RedirectResponse("/cadastro/cliente?erro=termos",303)
     conn=db()
     try:
-        cur=conn.execute("INSERT INTO users(role,name,email,phone,password_hash,created_at) VALUES('customer',?,?,?,?,?)",(name.strip(),email.strip().lower(),phone.strip(),hash_password(password),now_iso()))
+        cur=conn.execute("INSERT INTO users(role,name,email,phone,password_hash,created_at) VALUES('customer',?,?,?,?,?)",(name.strip(),normalized_email,phone.strip(),hash_password(password),now_iso()))
         conn.commit(); uid=cur.lastrowid
     except sqlite3.IntegrityError:
         conn.close(); return RedirectResponse("/cadastro/cliente?erro=email",303)
     conn.close(); return create_session_response(uid,"/cadastro/sucesso?tipo=cliente")
 
 @app.get("/cadastro/profissional", response_class=HTMLResponse)
-def signup_pro_page(request: Request): return templates.TemplateResponse("signup_professional.html", context(request))
+def signup_pro_page(request: Request):
+    return templates.TemplateResponse("signup_professional.html", context(request))
 
 @app.post("/cadastro/profissional")
-def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Form(...), password: str=Form(...), doc_type: str=Form(...), document: str=Form(...), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[])):
-    if len(password)<6: return RedirectResponse("/cadastro/profissional?erro=senha",303)
+def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Form(...), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), doc_type: str=Form(...), document: str=Form(...), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[])):
+    normalized_email=email.strip().lower()
+    admin_email=os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
+    if normalized_email == admin_email:
+        return RedirectResponse("/cadastro/profissional?erro=admin",303)
+    if len(password)<8:
+        return RedirectResponse("/cadastro/profissional?erro=senha",303)
+    if password != password_confirm:
+        return RedirectResponse("/cadastro/profissional?erro=confirmacao",303)
+    if not accept_terms:
+        return RedirectResponse("/cadastro/profissional?erro=termos",303)
     conn=db()
     try:
-        cur=conn.execute("INSERT INTO users(role,name,email,phone,password_hash,created_at) VALUES('professional',?,?,?,?,?)",(name.strip(),email.strip().lower(),phone.strip(),hash_password(password),now_iso())); uid=cur.lastrowid
+        cur=conn.execute("INSERT INTO users(role,name,email,phone,password_hash,created_at) VALUES('professional',?,?,?,?,?)",(name.strip(),normalized_email,phone.strip(),hash_password(password),now_iso())); uid=cur.lastrowid
         slug=unique_slug(conn,name)
         cur=conn.execute("INSERT INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,description,services,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
                          (uid,slug,name.strip(),doc_type,document.strip(),phone.strip(),city.strip(),neighborhood.strip(),cep.strip(),description.strip(),services.strip(),now_iso())); pid=cur.lastrowid
-        for cid in category_ids[:5]: conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(pid,cid))
+        for cid in category_ids[:5]:
+            conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(pid,cid))
         conn.commit()
     except sqlite3.IntegrityError:
         conn.rollback(); conn.close(); return RedirectResponse("/cadastro/profissional?erro=email",303)
-    conn.close(); return create_session_response(uid,"/painel")
+    conn.close(); return create_session_response(uid,"/cadastro/sucesso?tipo=profissional")
+
+@app.get("/cadastro/sucesso", response_class=HTMLResponse)
+def signup_success(request: Request, tipo: str="cliente"):
+    u=current_user(request)
+    if not u:
+        return RedirectResponse("/entrar",303)
+    return templates.TemplateResponse("signup_success.html", context(request, tipo=tipo))
 
 def create_session_response(uid:int, dest:str):
     token=secrets.token_urlsafe(32); expires=(datetime.now(timezone.utc)+timedelta(days=SESSION_DAYS)).isoformat()
