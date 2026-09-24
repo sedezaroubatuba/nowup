@@ -14,6 +14,7 @@ from fastapi.templating import Jinja2Templates
 from PIL import Image
 from email_validator import validate_email, EmailNotValidError
 from admin_customization import router as admin_customization_router
+from mailing import send_verification
 
 BASE = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("NOWUP_DB", BASE / "data" / "nowup.db"))
