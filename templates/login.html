@@ -10,6 +10,7 @@
 {% set tipo=request.query_params.get('tipo','') %}
 {% set erro=request.query_params.get('erro','') %}
 {% if erro=='1' %}<div class="alert danger">E-mail ou senha incorretos.</div>{% elif erro=='bloqueado' %}<div class="alert danger">Muitas tentativas. Aguarde 15 minutos e tente novamente.</div>{% elif erro=='perfil' %}<div class="alert danger">Esta conta não corresponde ao tipo de acesso escolhido.</div>{% elif erro=='verificacao' %}<div class="alert danger">Confirme seu e-mail antes de entrar.</div>{% elif erro=='expirado' %}<div class="alert danger">O link de confirmação expirou. Solicite um novo.</div>{% endif %}
+{% if request.query_params.get('senha')=='alterada' %}<div class="alert">Senha alterada. Entre com a nova senha.</div>{% endif %}
 {% if request.query_params.get('verificado') %}<div class="alert" style="background:#e9fbf3;color:#087b4b;border:1px solid #abefc6">E-mail confirmado com sucesso. Agora você pode entrar.</div>{% endif %}
 <div class="loginbox">
 <h2>{% if tipo=='profissional' %}Entrar como profissional{% elif tipo=='cliente' %}Entrar como cliente{% else %}Entrar na NowUp{% endif %}</h2>
@@ -18,7 +19,7 @@
 
 <label>E-mail</label><input class="input" type="email" name="email" autocomplete="email" required>
 <label style="display:block;margin-top:10px">Senha</label><input class="input" type="password" name="password" autocomplete="current-password" required>
-<button class="btn primary" style="margin-top:14px;width:100%">Entrar</button>
+<button class="btn primary" style="margin-top:14px;width:100%">Entrar</button><p><a href="/esqueci-senha">Esqueci minha senha</a></p>
 </form>
 <p class="muted tiny" style="margin-top:16px">Ainda não tem conta?</p>
 <div class="row" style="flex-wrap:wrap"><a class="btn soft" href="/cadastro/cliente">Criar conta de cliente</a><a class="btn soft" href="/cadastro/profissional">Cadastrar como profissional</a></div>
