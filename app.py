@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from PIL import Image
 from email_validator import validate_email, EmailNotValidError
+from admin_customization import router as admin_customization_router
 
 BASE = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("NOWUP_DB", BASE / "data" / "nowup.db"))
@@ -25,6 +26,7 @@ MAX_UPLOAD = 5 * 1024 * 1024
 ADMIN_SESSION_MINUTES = 30
 
 app = FastAPI(title="NowUp", version="1.0.0")
+app.include_router(admin_customization_router)
 app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 templates = Jinja2Templates(directory=str(BASE / "templates"))
