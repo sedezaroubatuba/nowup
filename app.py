@@ -200,7 +200,7 @@ def init_db():
     default_categories = [
       ("Encanador","🔧"),("Eletricista","⚡"),("Pedreiro","🧱"),("Serralheiro","⚙️"),
       ("Limpeza de estofado","🛋️"),("Pet Shop","🐾"),("Veterinário","🩺"),("Vidraceiro","🪟"),
-      ("Pintor","🎨"),("Chaveiro","🔑"),("Jardineiro","🌿"),("Ar-condicionado","❄️")
+      ("Pintor","🎨"),("Chaveiro","🔑"),("Jardineiro","🌿"),("Ar-condicionado","❄️"),("Outros","📌")
     ]
     for i,(name,icon) in enumerate(default_categories,1):
         conn.execute("INSERT OR IGNORE INTO categories(name,slug,icon,sort_order) VALUES(?,?,?,?)",(name,slugify(name),icon,i))
