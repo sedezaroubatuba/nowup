@@ -1,25 +1,9 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{% block title %}{{settings.brand_name or 'NowUp'}} — Encontre quem resolve{% endblock %}</title>
-<meta name="description" content="Encontre profissionais e empresas perto de você.">
-<link rel="icon" href="/static/logo-mark.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/static/style.css">
-<style>:root{--brand:{{settings.primary_color or '#2457e6'}};--brand2:{{settings.accent_color or '#ff8a32'}};--site-font:'{{settings.font_family or 'Inter'}}',ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}</style>
-</head><body>
-<header class="top"><div class="container nav">
-<a class="brand" href="/"><img src="/static/logo-mark.svg" alt=""><span>{{settings.brand_name or 'NowUp'}}</span></a>
-<a class="desktop-link" href="/profissionais">Profissionais</a>
-<div class="navlinks">
-{% if user %}
-<span class="muted hello">Olá, {{user.name}}</span>
-{% if user.role=='professional' %}<a class="btn soft" href="/painel">Meu painel</a>{% elif user.role=='admin' %}<a class="btn dark" href="/admin/entrar">Painel Admin</a>{% endif %}
-<form action="/sair" method="post"><button class="btn" type="submit">Sair</button></form>
-{% else %}
-<a href="/entrar">Entrar</a>
-<a class="btn soft" href="/cadastro/cliente">Sou cliente</a>
-<a class="btn primary" href="/cadastro/profissional">Sou profissional</a>
-{% endif %}
-</div></div></header>
+<title>{% block title %}{{settings.brand_name or 'NowUp'}} — Encontre quem resolve{% endblock %}</title><meta name="description" content="Encontre profissionais e empresas perto de você.">
+<link rel="icon" href="/static/logo-mark.svg" type="image/svg+xml"><link rel="stylesheet" href="/static/style.css"><link rel="stylesheet" href="/static/redesign.css">
+<style>:root{--brand:{{settings.primary_color or '#075bd8'}};--brand2:{{settings.accent_color or '#ff6a00'}};--site-font:'{{settings.font_family or 'Inter'}}',ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}</style></head><body>
+<header class="top"><div class="container nav"><a class="brand" href="/" aria-label="Página inicial"><img src="/static/logo-mark.svg" alt=""><span>Now<b>Up</b></span><small>Encontre quem resolve.</small></a>
+<nav class="mainnav"><a href="/profissionais">Profissionais</a><a href="/cadastro/profissional">Anunciar</a><a href="/quem-somos">Quem somos</a><a href="/#sugestoes">Ajuda</a></nav><div class="navlinks">{% if user %}<span class="muted hello">Olá, {{user.name}}</span>{% if user.role=='professional' %}<a class="btn soft" href="/painel">Meu painel</a>{% elif user.role=='admin' %}<a class="btn dark" href="/admin/entrar">Painel</a>{% endif %}<form action="/sair" method="post"><button class="btn ghost">Sair</button></form>{% else %}<a class="btn ghost" href="/entrar">Entrar</a><a class="btn orange" href="/cadastro/cliente">Cadastrar</a>{% endif %}</div><button class="mobile-menu" type="button" aria-label="Abrir menu" onclick="document.body.classList.toggle('menu-open')">☰</button></div></header>
 {% block content %}{% endblock %}
-<footer class="footer"><div class="container footergrid"><div><div class="brand footerbrand"><img src="/static/logo-mark.svg" alt=""><span>{{settings.brand_name or 'NowUp'}}</span></div><p>Profissionais perto de você. A NowUp divulga e conecta; negociação e pagamento acontecem diretamente entre cliente e profissional.</p></div><div><b>NowUp</b><p><a href="/quem-somos">Quem somos</a></p><p><a href="/privacidade">Privacidade e cookies</a></p><p><a href="/termos">Termos de uso</a></p></div><div><b>Ajuda</b><p><a href="/#sugestoes">Sugestões</a></p><p>Denúncias são feitas no perfil do profissional por clientes cadastrados.</p></div></div></footer>
-<div id="cookie" class="cookie"><div><b>Cookies</b><div class="tiny">Usamos armazenamento essencial para login e preferências. Veja nossa Política de Privacidade.</div></div><button class="btn orange" onclick="acceptCookies()">Entendi</button></div>
-<script src="/static/app.js"></script></body></html>
+<footer class="footer"><div class="container footergrid"><div><div class="brand footerbrand"><img src="/static/logo-mark.svg" alt=""><span>Now<b>Up</b></span></div><p>Encontre profissionais e empresas na sua região e fale diretamente pelo WhatsApp.</p></div><div><b>Institucional</b><p><a href="/quem-somos">Quem somos</a></p><p><a href="/termos">Termos de uso</a></p><p><a href="/privacidade">Privacidade</a></p></div><div><b>Para profissionais</b><p><a href="/cadastro/profissional">Cadastre-se</a></p><p><a href="/profissionais">Ver profissionais</a></p><p><a href="/#sugestoes">Fale conosco</a></p></div><div><b>Atendimento</b><p>A NowUp divulga e conecta. A negociação ocorre diretamente entre cliente e profissional.</p></div></div><div class="container copyright">© 2026 NowUp. Todos os direitos reservados.</div></footer>
+<div id="cookie" class="cookie"><div><b>Cookies</b><div class="tiny">Usamos armazenamento essencial para login e preferências.</div></div><button class="btn orange" onclick="acceptCookies()">Entendi</button></div><script src="/static/app.js"></script></body></html>
