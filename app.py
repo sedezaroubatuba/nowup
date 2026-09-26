@@ -67,6 +67,9 @@ def email_service_configured():
         and os.getenv("NOWUP_BASE_URL", "").strip()
     )
 
+def verification_token():
+    return secrets.token_urlsafe(32), (datetime.now(timezone.utc)+timedelta(hours=24)).isoformat()
+
 def ensure_column(conn, table: str, name: str, definition: str):
     cols = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
     if name not in cols:
@@ -138,7 +141,7 @@ def require_user(request: Request, role: Optional[str]=None):
 def context(request: Request, **kwargs):
     conn = db()
     cats = conn.execute("SELECT * FROM categories WHERE active=1 ORDER BY sort_order,name").fetchall()
-    banners = conn.execute("SELECT * FROM banners WHERE active=1 ORDER BY id DESC LIMIT 3").fetchall()
+    banners = conn.execute("SELECT * FROM banners WHERE active=1 ORDER BY sort_order,id LIMIT 8").fetchall()
     settings = get_settings(conn)
     conn.close()
     return {
@@ -245,6 +248,9 @@ def init_db():
       title TEXT NOT NULL,
       subtitle TEXT DEFAULT '',
       link TEXT DEFAULT '',
+      image_filename TEXT DEFAULT '',
+      sort_order INTEGER NOT NULL DEFAULT 100,
+      clicks INTEGER NOT NULL DEFAULT 0,
       active INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL
     );
@@ -256,6 +262,10 @@ def init_db():
     ensure_column(conn, "users", "email_verified", "INTEGER NOT NULL DEFAULT 1")
     ensure_column(conn, "users", "verification_token", "TEXT DEFAULT ''")
     ensure_column(conn, "users", "verification_expires_at", "TEXT DEFAULT ''")
+    ensure_column(conn, "professionals", "business_type", "TEXT NOT NULL DEFAULT 'professional'")
+    ensure_column(conn, "banners", "image_filename", "TEXT DEFAULT ''")
+    ensure_column(conn, "banners", "sort_order", "INTEGER NOT NULL DEFAULT 100")
+    ensure_column(conn, "banners", "clicks", "INTEGER NOT NULL DEFAULT 0")
     defaults = {
       "brand_name": "NowUp",
       "primary_color": "#2457e6",
@@ -317,7 +327,7 @@ def home(request: Request, q: str="", city: str="", category: str=""):
       SELECT po.*,p.display_name,p.slug,p.city,
       (SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1) avatar
       FROM posts po JOIN professionals p ON p.id=po.professional_id
-      WHERE p.blocked=0 AND po.post_type='post' ORDER BY po.id DESC LIMIT 12
+      WHERE p.blocked=0 AND po.post_type!='status' ORDER BY po.id DESC LIMIT 12
     """).fetchall()
     statuses = conn.execute("""
       SELECT po.*,p.display_name,p.slug,
@@ -392,30 +402,30 @@ def signup_customer(name: str=Form(...), email: str=Form(...), phone: str=Form("
         return RedirectResponse("/cadastro/cliente?erro=confirmacao",303)
     if not accept_terms:
         return RedirectResponse("/cadastro/cliente?erro=termos",303)
-    verify_required=email_service_configured()
-    token=secrets.token_urlsafe(32) if verify_required else ""
-    expires=(datetime.now(timezone.utc)+timedelta(hours=24)).isoformat() if verify_required else ""
+    if not email_service_configured():
+        return RedirectResponse("/cadastro/cliente?erro=email_indisponivel",303)
+    token,expires=verification_token()
     conn=db()
     try:
         cur=conn.execute(
             "INSERT INTO users(role,name,email,phone,password_hash,email_verified,verification_token,verification_expires_at,created_at) VALUES('customer',?,?,?,?,?,?,?,?)",
-            (name.strip(),normalized_email,phone.strip(),hash_password(password),0 if verify_required else 1,token,expires,now_iso())
+            (name.strip(),normalized_email,phone.strip(),hash_password(password),0,token,expires,now_iso())
         )
         conn.commit(); uid=cur.lastrowid
     except sqlite3.IntegrityError:
         conn.close(); return RedirectResponse("/cadastro/cliente?erro=email",303)
     conn.close()
-    if verify_required:
-        send_verification(normalized_email,name.strip(),token)
-        return RedirectResponse("/cadastro/aguardando",303)
-    return create_session_response(uid,"/cadastro/sucesso?tipo=cliente")
+    if not send_verification(normalized_email,name.strip(),token):
+        conn=db(); conn.execute("DELETE FROM users WHERE id=?",(uid,)); conn.commit(); conn.close()
+        return RedirectResponse("/cadastro/cliente?erro=envio_email",303)
+    return RedirectResponse("/cadastro/aguardando",303)
 
 @app.get("/cadastro/profissional", response_class=HTMLResponse)
 def signup_pro_page(request: Request):
     return templates.TemplateResponse("signup_professional.html", context(request))
 
 @app.post("/cadastro/profissional")
-def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Form(...), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), doc_type: str=Form(...), document: str=Form(...), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[])):
+def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Form(...), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), doc_type: str=Form(...), document: str=Form(...), business_type: str=Form("professional"), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[])):
     normalized_email=normalize_email(email)
     admin_email=os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
     if not normalized_email:
@@ -430,30 +440,31 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
         return RedirectResponse("/cadastro/profissional?erro=confirmacao",303)
     if not accept_terms:
         return RedirectResponse("/cadastro/profissional?erro=termos",303)
-    verify_required=email_service_configured()
-    token=secrets.token_urlsafe(32) if verify_required else ""
-    expires=(datetime.now(timezone.utc)+timedelta(hours=24)).isoformat() if verify_required else ""
+    if not email_service_configured():
+        return RedirectResponse("/cadastro/profissional?erro=email_indisponivel",303)
+    if business_type not in ("professional","restaurant","store","convenience","other"):
+        business_type="other"
+    token,expires=verification_token()
     conn=db()
     try:
         cur=conn.execute(
             "INSERT INTO users(role,name,email,phone,password_hash,email_verified,verification_token,verification_expires_at,created_at) VALUES('professional',?,?,?,?,?,?,?,?)",
-            (name.strip(),normalized_email,phone.strip(),hash_password(password),0 if verify_required else 1,token,expires,now_iso())
+            (name.strip(),normalized_email,phone.strip(),hash_password(password),0,token,expires,now_iso())
         ); uid=cur.lastrowid
         slug=unique_slug(conn,name)
-        cur=conn.execute("INSERT INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,description,services,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
-                         (uid,slug,name.strip(),doc_type,document.strip(),phone.strip(),city.strip(),neighborhood.strip(),cep.strip(),description.strip(),services.strip(),now_iso())); pid=cur.lastrowid
+        cur=conn.execute("INSERT INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,description,services,business_type,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                         (uid,slug,name.strip(),doc_type,document.strip(),phone.strip(),city.strip(),neighborhood.strip(),cep.strip(),description.strip(),services.strip(),business_type,now_iso())); pid=cur.lastrowid
         for cid in category_ids[:5]:
             conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(pid,cid))
-        if verify_required:
-            conn.execute("UPDATE professionals SET blocked=1 WHERE id=?",(pid,))
+        conn.execute("UPDATE professionals SET blocked=1 WHERE id=?",(pid,))
         conn.commit()
     except sqlite3.IntegrityError:
         conn.rollback(); conn.close(); return RedirectResponse("/cadastro/profissional?erro=email",303)
     conn.close()
-    if verify_required:
-        send_verification(normalized_email,name.strip(),token)
-        return RedirectResponse("/cadastro/aguardando",303)
-    return create_session_response(uid,"/cadastro/sucesso?tipo=profissional")
+    if not send_verification(normalized_email,name.strip(),token):
+        conn=db(); conn.execute("DELETE FROM users WHERE id=?",(uid,)); conn.commit(); conn.close()
+        return RedirectResponse("/cadastro/profissional?erro=envio_email",303)
+    return RedirectResponse("/cadastro/aguardando",303)
 
 @app.get("/cadastro/sucesso", response_class=HTMLResponse)
 def signup_success(request: Request, tipo: str="cliente"):
@@ -475,6 +486,7 @@ def login_page(request: Request): return templates.TemplateResponse("login.html"
 def login(email: str=Form(...), password: str=Form(...)):
     conn=db(); u=conn.execute("SELECT * FROM users WHERE email=? AND is_active=1",(email.strip().lower(),)).fetchone(); conn.close()
     if not u or not verify_password(password,u["password_hash"]): return RedirectResponse("/entrar?erro=1",303)
+    if u["role"]!="admin" and not u["email_verified"]: return RedirectResponse("/entrar?erro=verificacao",303)
     dest="/admin" if u["role"]=="admin" else ("/painel" if u["role"]=="professional" else "/")
     return create_session_response(u["id"],dest)
 
@@ -496,9 +508,11 @@ def pro_panel(request: Request):
     return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, selected=selected, max_photos=MAX_PHOTOS))
 
 @app.post("/painel/perfil")
-def pro_update(request: Request, display_name: str=Form(...), whatsapp: str=Form(...), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[])):
+def pro_update(request: Request, display_name: str=Form(...), whatsapp: str=Form(...), business_type: str=Form(""), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[])):
     u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
-    conn.execute("UPDATE professionals SET display_name=?,whatsapp=?,city=?,neighborhood=?,cep=?,description=?,services=? WHERE id=?",(display_name,whatsapp,city,neighborhood,cep,description,services,p["id"]))
+    if business_type not in ("professional","restaurant","store","convenience","other"):
+        business_type=conn.execute("SELECT business_type FROM professionals WHERE id=?",(p["id"],)).fetchone()[0]
+    conn.execute("UPDATE professionals SET display_name=?,whatsapp=?,business_type=?,city=?,neighborhood=?,cep=?,description=?,services=? WHERE id=?",(display_name,whatsapp,business_type,city,neighborhood,cep,description,services,p["id"]))
     conn.execute("DELETE FROM professional_categories WHERE professional_id=?",(p["id"],))
     for cid in category_ids[:5]: conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(p["id"],cid))
     conn.commit(); conn.close(); return RedirectResponse("/painel?ok=perfil",303)
@@ -546,7 +560,7 @@ def delete_photo(request: Request, photo_id:int):
 @app.post("/painel/publicar")
 def publish_post(request: Request, text: str=Form(...), post_type: str=Form("post"), photo: Optional[UploadFile]=File(None)):
     u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone(); fn=""
-    if post_type not in ("post","status"): post_type="post"
+    if post_type not in ("post","status","promotion","menu"): post_type="post"
     if photo and photo.filename: fn=save_image(photo)
     conn.execute("INSERT INTO posts(professional_id,text,photo_filename,post_type,created_at) VALUES(?,?,?,?,?)",(p["id"],text[:500],fn,post_type,now_iso())); conn.commit(); conn.close(); return RedirectResponse("/painel?ok=post",303)
 
@@ -589,7 +603,7 @@ def admin(request: Request):
     clients=conn.execute("SELECT id,name,email,phone,is_active,email_verified,created_at FROM users WHERE role='customer' ORDER BY id DESC LIMIT 100").fetchall()
     admin_categories=conn.execute("SELECT * FROM categories ORDER BY sort_order,name").fetchall()
     reports=conn.execute("SELECT r.*,u.name customer,p.display_name professional FROM reports r JOIN users u ON u.id=r.customer_id JOIN professionals p ON p.id=r.professional_id ORDER BY r.id DESC LIMIT 50").fetchall()
-    suggestions=conn.execute("SELECT * FROM suggestions ORDER BY id DESC LIMIT 30").fetchall(); banners=conn.execute("SELECT * FROM banners ORDER BY id DESC").fetchall(); conn.close()
+    suggestions=conn.execute("SELECT * FROM suggestions ORDER BY id DESC LIMIT 30").fetchall(); banners=conn.execute("SELECT * FROM banners ORDER BY sort_order,id").fetchall(); conn.close()
     return templates.TemplateResponse("admin.html", context(request, stats=stats, pros=pros, clients=clients, admin_categories=admin_categories, reports=reports, suggestions=suggestions, admin_banners=banners))
 
 @app.post("/admin/categorias")
@@ -602,6 +616,33 @@ def admin_add_category(request: Request, name:str=Form(...), icon:str=Form("🛠
 @app.post("/admin/categorias/{cid}/alternar")
 def admin_toggle_category(request: Request, cid:int):
     require_user(request,"admin"); conn=db(); conn.execute("UPDATE categories SET active=CASE active WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(cid,)); conn.commit(); conn.close(); return RedirectResponse("/admin#categorias",303)
+
+@app.post("/admin/categorias/{cid}/editar")
+def admin_edit_category(request: Request, cid:int, name:str=Form(...), icon:str=Form("🛠️")):
+    require_user(request,"admin"); clean=name.strip()
+    if not clean: return RedirectResponse("/admin#categorias",303)
+    conn=db()
+    try:
+        conn.execute("UPDATE categories SET name=?,slug=?,icon=? WHERE id=?",(clean,slugify(clean),icon[:12],cid)); conn.commit()
+    except sqlite3.IntegrityError:
+        conn.rollback()
+    conn.close(); return RedirectResponse("/admin#categorias",303)
+
+@app.post("/admin/categorias/{cid}/mover/{direction}")
+def admin_move_category(request: Request, cid:int, direction:str):
+    require_user(request,"admin")
+    if direction not in ("up","down"): raise HTTPException(400)
+    conn=db(); current=conn.execute("SELECT id,sort_order FROM categories WHERE id=?",(cid,)).fetchone()
+    if current:
+        op="<" if direction=="up" else ">"; order="DESC" if direction=="up" else "ASC"
+        other=conn.execute(f"SELECT id,sort_order FROM categories WHERE sort_order {op} ? ORDER BY sort_order {order},id {order} LIMIT 1",(current["sort_order"],)).fetchone()
+        if other:
+            marker=-1000000-current["id"]
+            conn.execute("UPDATE categories SET sort_order=? WHERE id=?",(marker,current["id"]))
+            conn.execute("UPDATE categories SET sort_order=? WHERE id=?",(current["sort_order"],other["id"]))
+            conn.execute("UPDATE categories SET sort_order=? WHERE id=?",(other["sort_order"],current["id"]))
+            conn.commit()
+    conn.close(); return RedirectResponse("/admin#categorias",303)
 
 @app.post("/admin/clientes/{uid}/alternar")
 def admin_toggle_client(request: Request, uid:int):
@@ -627,12 +668,44 @@ def admin_report_action(request: Request, rid:int, status:str):
     conn=db(); conn.execute("UPDATE reports SET status=? WHERE id=?",(status,rid)); conn.commit(); conn.close(); return RedirectResponse("/admin#denuncias",303)
 
 @app.post("/admin/banners")
-def admin_banner_add(request: Request, title:str=Form(...), subtitle:str=Form(""), link:str=Form("")):
-    require_user(request,"admin"); conn=db(); conn.execute("INSERT INTO banners(title,subtitle,link,created_at) VALUES(?,?,?,?)",(title[:120],subtitle[:240],link[:300],now_iso())); conn.commit(); conn.close(); return RedirectResponse("/admin#publicidade",303)
+def admin_banner_add(request: Request, title:str=Form(...), subtitle:str=Form(""), link:str=Form(""), image:Optional[UploadFile]=File(None)):
+    require_user(request,"admin"); fn=""
+    if image and image.filename: fn=save_image(image)
+    conn=db(); next_order=conn.execute("SELECT COALESCE(MAX(sort_order),0)+1 FROM banners").fetchone()[0]
+    conn.execute("INSERT INTO banners(title,subtitle,link,image_filename,sort_order,created_at) VALUES(?,?,?,?,?,?)",(title[:120],subtitle[:240],link[:300],fn,next_order,now_iso())); conn.commit(); conn.close(); return RedirectResponse("/admin#publicidade",303)
 
 @app.post("/admin/banners/{bid}/alternar")
 def admin_banner_toggle(request: Request, bid:int):
     require_user(request,"admin"); conn=db(); conn.execute("UPDATE banners SET active=CASE active WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(bid,)); conn.commit(); conn.close(); return RedirectResponse("/admin#publicidade",303)
+
+@app.post("/admin/banners/{bid}/mover/{direction}")
+def admin_move_banner(request: Request, bid:int, direction:str):
+    require_user(request,"admin")
+    if direction not in ("up","down"): raise HTTPException(400)
+    conn=db(); cur=conn.execute("SELECT id,sort_order FROM banners WHERE id=?",(bid,)).fetchone()
+    if cur:
+        op="<" if direction=="up" else ">"; order="DESC" if direction=="up" else "ASC"
+        other=conn.execute(f"SELECT id,sort_order FROM banners WHERE sort_order {op} ? ORDER BY sort_order {order},id {order} LIMIT 1",(cur["sort_order"],)).fetchone()
+        if other:
+            conn.execute("UPDATE banners SET sort_order=? WHERE id=?",(-1000000-cur["id"],cur["id"]))
+            conn.execute("UPDATE banners SET sort_order=? WHERE id=?",(cur["sort_order"],other["id"]))
+            conn.execute("UPDATE banners SET sort_order=? WHERE id=?",(other["sort_order"],cur["id"])); conn.commit()
+    conn.close(); return RedirectResponse("/admin#publicidade",303)
+
+@app.post("/admin/banners/{bid}/excluir")
+def admin_delete_banner(request: Request, bid:int):
+    require_user(request,"admin"); conn=db(); banner=conn.execute("SELECT image_filename FROM banners WHERE id=?",(bid,)).fetchone(); conn.execute("DELETE FROM banners WHERE id=?",(bid,)); conn.commit(); conn.close()
+    if banner and banner["image_filename"]:
+        try: (UPLOAD_DIR/banner["image_filename"]).unlink(missing_ok=True)
+        except OSError: pass
+    return RedirectResponse("/admin#publicidade",303)
+
+@app.get("/anuncio/{bid}")
+def banner_click(bid:int):
+    conn=db(); banner=conn.execute("SELECT link FROM banners WHERE id=? AND active=1",(bid,)).fetchone()
+    if not banner: conn.close(); raise HTTPException(404)
+    conn.execute("UPDATE banners SET clicks=clicks+1 WHERE id=?",(bid,)); conn.commit(); conn.close()
+    return RedirectResponse(banner["link"] or "/",303)
 
 @app.get("/health")
 def health(): return JSONResponse({"ok":True,"service":"NowUp"})
