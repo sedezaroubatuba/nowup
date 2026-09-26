@@ -1,6 +1,7 @@
 {% extends 'base.html' %}{% block title %}Cadastro de cliente | NowUp{% endblock %}{% block content %}
 <div class="container"><div class="formCard"><h1>Cadastro de cliente</h1><p class="muted">Crie sua conta para avaliar profissionais e fazer denúncias quando necessário.</p>
 {% set erro=request.query_params.get('erro') %}
+{% if erro=='email_indisponivel' %}<div class="alert danger">A confirmação de e-mail está temporariamente indisponível. O administrador precisa concluir a configuração.</div>{% elif erro=='envio_email' %}<div class="alert danger">Não foi possível enviar a confirmação. Nenhuma conta foi liberada; tente novamente.</div>{% endif %}
 {% if erro=='email_invalido' %}<div class="alert danger">Digite um e-mail real e válido. O domínio do e-mail também é verificado.</div>{% elif erro=='telefone' %}<div class="alert danger">Digite um celular válido com DDD.</div>{% elif erro=='admin' %}<div class="alert danger">Este e-mail está reservado para o administrador. Use outro e-mail para cadastro comum.</div>{% elif erro=='email' %}<div class="alert danger">Este e-mail já está cadastrado. Tente entrar na sua conta.</div>{% elif erro=='senha' %}<div class="alert danger">A senha precisa ter pelo menos 8 caracteres.</div>{% elif erro=='confirmacao' %}<div class="alert danger">As duas senhas não são iguais.</div>{% elif erro=='termos' %}<div class="alert danger">Você precisa aceitar os Termos de Uso e a Política de Privacidade.</div>{% endif %}
 <form method="post" class="grid2">
 <input class="input" name="name" placeholder="Nome completo" required>
