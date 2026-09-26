@@ -1,0 +1,266 @@
+{% extends 'base.html' %}{% block title %}Admin NowUp{% endblock %}{% block content %}
+<div class="container dashboard">
+<aside class="sidebar">
+<h3>Admin NowUp</h3>
+<a href="#dashboard">Dashboard</a>
+<a href="#perfil">Meu perfil</a>
+<a href="#aparencia">Aparência</a>
+<a href="#categorias">Categorias</a>
+<a href="#publicidade">Publicidade</a>
+<a href="#profissionais">Perfis</a>
+<a href="#clientes">Clientes</a>
+<a href="#denuncias">Denúncias</a>
+<a href="#sugestoes">Sugestões</a>
+</aside>
+<main>
+<section class="panel" id="dashboard">
+<h1>Painel Administrativo</h1>
+<div class="stats">
+<div class="stat">
+<span class="muted tiny">Perfis</span>
+<b>{{stats.professionals}}</b>
+</div>
+<div class="stat">
+<span class="muted tiny">Clientes</span>
+<b>{{stats.customers}}</b>
+</div>
+<div class="stat">
+<span class="muted tiny">Denúncias</span>
+<b>{{stats.reports}}</b>
+</div>
+<div class="stat">
+<span class="muted tiny">Visualizações</span>
+<b>{{stats.views}}</b>
+</div>
+<div class="stat">
+<span class="muted tiny">Cliques WhatsApp</span>
+<b>{{stats.wa}}</b>
+</div>
+</div>
+</section>
+<section class="panel" id="perfil">
+<div class="section-title">
+<h2>Meu perfil administrativo</h2>
+<span class="status-pill">🔐 Acesso restrito</span>
+</div>
+<form action="/admin/perfil" method="post" class="grid2">
+<div>
+<label>Nome</label>
+<input class="input" name="name" value="{{user.name}}" required>
+</div>
+<div>
+<label>E-mail</label>
+<input class="input" value="{{user.email}}" disabled>
+</div>
+<button class="btn primary">Salvar perfil</button>
+</form>
+</section>
+<section class="panel" id="aparencia">
+<div class="section-title">
+<h2>Aparência e dados do site</h2>{% if email_service_ready %}<span class="status-pill ok">✓ E-mail configurado</span>{% else %}<span class="status-pill warn">E-mail pendente</span>{% endif %}</div>
+<form action="/admin/aparencia" method="post">
+<div class="settings-grid">
+<div>
+<label>Nome da marca</label>
+<input class="input" name="brand_name" value="{{settings.brand_name}}">
+</div>
+<div>
+<label>Fonte</label>
+<select name="font_family">
+<option>Inter</option>
+<option>Arial</option>
+<option>Georgia</option>
+<option>Trebuchet MS</option>
+<option>Verdana</option>
+</select>
+</div>
+<div>
+<label>Cor principal</label>
+<input class="input color-input" type="color" name="primary_color" value="{{settings.primary_color}}">
+</div>
+<div>
+<label>Cor de destaque</label>
+<input class="input color-input" type="color" name="accent_color" value="{{settings.accent_color}}">
+</div>
+<div style="grid-column:1/-1">
+<label>Título inicial</label>
+<input class="input" name="hero_title" value="{{settings.hero_title}}">
+</div>
+<div style="grid-column:1/-1">
+<label>Texto inicial</label>
+<textarea name="hero_subtitle">{{settings.hero_subtitle}}</textarea>
+</div>
+<div>
+<label>E-mail público</label>
+<input class="input" type="email" name="public_email" value="{{settings.public_email}}">
+</div>
+<div>
+<label>WhatsApp</label>
+<input class="input" name="support_whatsapp" value="{{settings.support_whatsapp}}">
+</div>
+</div>
+<button class="btn primary">Salvar aparência</button>
+</form>
+<hr>
+<h3>Trocar capa principal</h3>
+<p class="muted">Crie a montagem no GPT e envie aqui. Recomendação: imagem horizontal 1600 × 700.</p>
+<form action="/admin/capa" method="post" enctype="multipart/form-data" class="grid2">
+<input class="input" type="file" name="image" accept="image/*" required>
+<button class="btn primary">Trocar capa do início</button>
+</form>
+</section>
+<section class="panel" id="categorias">
+<h2>Categorias</h2>
+<p class="muted">Adicione, edite e mude a ordem exibida no início.</p>
+<form action="/admin/categorias" method="post" class="grid3">
+<input class="input" name="name" placeholder="Nova categoria" required>
+<input class="input" name="icon" placeholder="Ícone" value="🛠️">
+<button class="btn primary">Adicionar</button>
+</form>
+<div class="tablewrap">
+<table class="table">
+<tr>
+<th>Ordem</th>
+<th>Ícone e nome</th>
+<th>Status</th>
+<th>Ações</th>
+</tr>{% for c in admin_categories %}<tr>
+<td>
+<div class="row">
+<form action="/admin/categorias/{{c.id}}/mover/up" method="post">
+<button class="btn soft">↑</button>
+</form>
+<form action="/admin/categorias/{{c.id}}/mover/down" method="post">
+<button class="btn soft">↓</button>
+</form>
+</div>
+</td>
+<td>
+<form action="/admin/categorias/{{c.id}}/editar" method="post" class="row">
+<input class="input mini-input" name="icon" value="{{c.icon}}">
+<input class="input" name="name" value="{{c.name}}" required>
+<button class="btn soft">Salvar</button>
+</form>
+</td>
+<td>{{'Ativa' if c.active else 'Inativa'}}</td>
+<td>
+<div class="row">
+<form action="/admin/categorias/{{c.id}}/alternar" method="post">
+<button class="btn soft">Ativar/desativar</button>
+</form>
+<form action="/admin/categorias/{{c.id}}/excluir" method="post">
+<button class="btn danger">Excluir</button>
+</form>
+</div>
+</td>
+</tr>{% endfor %}</table>
+</div>
+</section>
+<section class="panel" id="publicidade">
+<div class="section-title">
+<div>
+<h2>Slides e publicidade</h2>
+<p class="muted">Até 10 slides ativos, mudando automaticamente a cada 5 segundos. No celular, também é possível arrastar para o lado.</p>
+</div>
+<span class="status-pill">10 espaços disponíveis</span>
+</div>
+<h3>Criar novo slide</h3>
+<p class="muted">Envie a arte pronta. A prévia mostra o corte real no computador e no celular antes de salvar.</p>
+<form action="/admin/banners" method="post" enctype="multipart/form-data" class="banner-control-panel" data-banner-editor>
+<div class="banner-upload-row"><label>Arte do banner (recomendado: 1080 × 600)<input class="input" type="file" name="image" accept="image/*" required></label><label>Link ao clicar (opcional)<input class="input" name="link" placeholder="Perfil, cardápio, site ou WhatsApp"></label></div>
+<div class="preview-toolbar"><b>Pré-visualização antes de salvar</b><div class="preview-switch"><button type="button" class="active" data-preview-mode="desktop">Computador</button><button type="button" data-preview-mode="mobile">Celular</button></div></div>
+<div class="banner-live-preview"><img alt="Prévia do banner"><span>Escolha uma imagem para visualizar</span></div>
+<div class="banner-sliders"><label>Brilho: <b data-value-for="brightness">100</b>%<input type="range" name="brightness" min="40" max="160" value="100"></label><label>Zoom: <b data-value-for="zoom">100</b>%<input type="range" name="zoom" min="100" max="200" value="100"></label><label>Posição horizontal: <b data-value-for="position_x">50</b>%<input type="range" name="position_x" min="0" max="100" value="50"></label><label>Posição vertical: <b data-value-for="position_y">50</b>%<input type="range" name="position_y" min="0" max="100" value="50"></label><label>Altura no computador<select name="desktop_height"><option value="300">Compacta (300 px)</option><option value="360" selected>Padrão (360 px)</option><option value="450">Grande (450 px)</option><option value="540">Extra grande (540 px)</option></select></label><label>Altura no celular<select name="mobile_height"><option value="200">Compacta (200 px)</option><option value="240" selected>Padrão (240 px)</option><option value="300">Grande (300 px)</option><option value="360">Extra grande (360 px)</option></select></label></div>
+<button class="btn primary">Salvar novo banner</button>
+</form>{% if request.query_params.get('erro')=='limite-slides' %}<div class="alert danger">O limite é de 10 slides ativos. Desative um antes de ativar outro.</div>{% endif %}<div class="banner-admin-list">{% for b in admin_banners %}<details class="banner-editor-card">
+<summary>
+<b>Banner {{loop.index}}</b>
+<span>{{'Ativo' if b.active else 'Inativo'}} · {{b.clicks}} cliques</span>
+</summary>
+<form action="/admin/banners/{{b.id}}/editar" method="post" enctype="multipart/form-data" class="banner-control-panel" data-banner-editor>
+<div class="banner-upload-row"><label>Trocar arte<input class="input" type="file" name="image" accept="image/*"></label><label>Link ao clicar<input class="input" name="link" value="{{b.link}}" placeholder="Link opcional"></label></div>
+<div class="preview-toolbar"><b>Pré-visualização</b><div class="preview-switch"><button type="button" class="active" data-preview-mode="desktop">Computador</button><button type="button" data-preview-mode="mobile">Celular</button></div></div>
+<div class="banner-live-preview has-image"><img src="/uploads/{{b.image_filename}}" alt="Prévia do banner"></div>
+<div class="banner-sliders"><label>Brilho: <b data-value-for="brightness">{{b.brightness}}</b>%<input type="range" name="brightness" min="40" max="160" value="{{b.brightness}}"></label><label>Zoom: <b data-value-for="zoom">{{b.zoom}}</b>%<input type="range" name="zoom" min="100" max="200" value="{{b.zoom}}"></label><label>Posição horizontal: <b data-value-for="position_x">{{b.position_x}}</b>%<input type="range" name="position_x" min="0" max="100" value="{{b.position_x}}"></label><label>Posição vertical: <b data-value-for="position_y">{{b.position_y}}</b>%<input type="range" name="position_y" min="0" max="100" value="{{b.position_y}}"></label><label>Altura no computador<select name="desktop_height">{% for h in [300,360,450,540] %}<option value="{{h}}" {% if b.desktop_height==h %}selected{% endif %}>{{h}} px</option>{% endfor %}</select></label><label>Altura no celular<select name="mobile_height">{% for h in [200,240,300,360] %}<option value="{{h}}" {% if b.mobile_height==h %}selected{% endif %}>{{h}} px</option>{% endfor %}</select></label></div>
+<button class="btn primary">Salvar alterações</button>
+</form>
+<div class="row banner-actions">
+<form action="/admin/banners/{{b.id}}/mover/up" method="post">
+<button class="btn soft">↑ Subir</button>
+</form>
+<form action="/admin/banners/{{b.id}}/mover/down" method="post">
+<button class="btn soft">↓ Descer</button>
+</form>
+<form action="/admin/banners/{{b.id}}/alternar" method="post">
+<button class="btn soft">Ativar/desativar</button>
+</form>
+<form action="/admin/banners/{{b.id}}/excluir" method="post">
+<button class="btn danger">Excluir</button>
+</form>
+</div>
+</details>{% endfor %}</div>
+</section>
+<section class="panel" id="profissionais">
+<h2>Profissionais e empresas</h2>
+<div class="tablewrap">
+<table class="table">
+<tr>
+<th>Perfil</th><th>Confirmado</th><th>Status</th><th>Ações</th>
+</tr>{% for p in pros %}<tr>
+<td><form action="/admin/profissionais/{{p.id}}/editar" method="post" class="admin-inline-edit"><input class="input" name="display_name" value="{{p.display_name}}" required><input class="input" name="city" value="{{p.city}}" placeholder="Cidade"><input class="input" type="email" name="email" value="{{p.email}}" required><button class="btn primary tiny">Salvar</button></form><a class="tiny" href="/p/{{p.slug}}">Ver perfil público</a></td>
+<td>{{'Sim' if p.email_verified else 'Pendente'}}</td>
+<td>Verificado: {{'Sim' if p.verified else 'Não'}}<br>Destaque: {{'Sim' if p.featured else 'Não'}}<br>Bloqueado: {{'Sim' if p.blocked else 'Não'}}</td>
+<td>
+<div class="row">
+<form action="/admin/profissionais/{{p.id}}/acao/verificar" method="post">
+<button class="btn soft tiny">Verificar</button>
+</form>
+<form action="/admin/profissionais/{{p.id}}/acao/destaque" method="post">
+<button class="btn orange tiny">Destaque</button>
+</form>
+<form action="/admin/profissionais/{{p.id}}/acao/bloquear" method="post">
+<button class="btn danger tiny">Bloquear</button>
+</form><form action="/admin/profissionais/{{p.id}}/excluir" method="post"><button class="btn danger tiny">Excluir</button></form>
+</div>
+</td>
+</tr>{% endfor %}</table>
+</div>
+</section>
+<section class="panel" id="clientes">
+<h2>Clientes</h2>
+<div class="tablewrap">
+<table class="table">
+<tr>
+<th>Nome</th>
+<th>E-mail</th>
+<th>Telefone</th>
+<th>Confirmado</th>
+<th>Status</th>
+<th>Ação</th>
+</tr>{% for c in clients %}<tr>
+<td colspan="3"><form action="/admin/clientes/{{c.id}}/editar" method="post" class="admin-inline-edit"><input class="input" name="name" value="{{c.name}}" required><input class="input" type="email" name="email" value="{{c.email}}" required><input class="input" name="phone" value="{{c.phone}}"><button class="btn primary tiny">Salvar</button></form></td>
+<td>{{'Sim' if c.email_verified else 'Pendente'}}</td>
+<td>{{'Ativo' if c.is_active else 'Bloqueado'}}</td>
+<td>
+<div class="row"><form action="/admin/clientes/{{c.id}}/alternar" method="post"><button class="btn soft">Ativar/bloquear</button></form><form action="/admin/clientes/{{c.id}}/excluir" method="post"><button class="btn danger">Excluir</button></form></div>
+</td>
+</tr>{% else %}<tr>
+<td colspan="6">Nenhum cliente.</td>
+</tr>{% endfor %}</table>
+</div>
+</section>
+<section class="panel" id="denuncias">
+<h2>Denúncias privadas</h2>{% for r in reports %}<div class="row between">
+<span>
+<b>{{r.customer}}</b> → {{r.professional}}: {{r.reason}}</span>
+<form action="/admin/denuncias/{{r.id}}/resolved" method="post">
+<button class="btn soft">Resolver</button>
+</form>
+</div>{% else %}<p class="muted">Nenhuma denúncia.</p>{% endfor %}</section>
+<section class="panel" id="sugestoes">
+<h2>Sugestões</h2>{% for s in suggestions %}<div style="border-bottom:1px solid var(--line);padding:10px 0">
+<b>{{s.name or s.email or 'Usuário'}}</b>
+<p>{{s.message}}</p>
+</div>{% else %}<p class="muted">Nenhuma sugestão.</p>{% endfor %}</section>
+</main>
+</div>{% endblock %}

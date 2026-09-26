@@ -113,6 +113,12 @@ def wa_link(phone: str, text: str):
         digits = "55" + digits
     return f"https://wa.me/{digits}?text={quote(text)}" if digits else "#"
 
+def clean_link(raw: str):
+    value=(raw or "").strip()[:500]
+    if value.startswith("/") or value.startswith("https://") or value.startswith("http://"):
+        return value
+    return ""
+
 def unique_slug(conn, name: str, table="professionals"):
     base = slugify(name); candidate = base; i = 2
     while conn.execute(f"SELECT 1 FROM {table} WHERE slug=?", (candidate,)).fetchone():
@@ -141,7 +147,7 @@ def require_user(request: Request, role: Optional[str]=None):
 def context(request: Request, **kwargs):
     conn = db()
     cats = conn.execute("SELECT * FROM categories WHERE active=1 ORDER BY sort_order,name").fetchall()
-    banners = conn.execute("SELECT * FROM banners WHERE active=1 ORDER BY sort_order,id LIMIT 8").fetchall()
+    banners = conn.execute("SELECT * FROM banners WHERE active=1 ORDER BY sort_order,id LIMIT 10").fetchall()
     settings = get_settings(conn)
     conn.close()
     return {
@@ -263,9 +269,23 @@ def init_db():
     ensure_column(conn, "users", "verification_token", "TEXT DEFAULT ''")
     ensure_column(conn, "users", "verification_expires_at", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "business_type", "TEXT NOT NULL DEFAULT 'professional'")
+    ensure_column(conn, "professionals", "external_url", "TEXT DEFAULT ''")
+    ensure_column(conn, "professionals", "menu_url", "TEXT DEFAULT ''")
+    ensure_column(conn, "professionals", "avatar_filename", "TEXT DEFAULT ''")
+    ensure_column(conn, "professionals", "cover_filename", "TEXT DEFAULT ''")
     ensure_column(conn, "banners", "image_filename", "TEXT DEFAULT ''")
     ensure_column(conn, "banners", "sort_order", "INTEGER NOT NULL DEFAULT 100")
     ensure_column(conn, "banners", "clicks", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "banners", "template", "INTEGER NOT NULL DEFAULT 1")
+    ensure_column(conn, "banners", "background_color", "TEXT DEFAULT '#075bd8'")
+    ensure_column(conn, "banners", "text_color", "TEXT DEFAULT '#ffffff'")
+    ensure_column(conn, "banners", "font_family", "TEXT DEFAULT 'Inter'")
+    ensure_column(conn, "banners", "brightness", "INTEGER NOT NULL DEFAULT 100")
+    ensure_column(conn, "banners", "zoom", "INTEGER NOT NULL DEFAULT 100")
+    ensure_column(conn, "banners", "position_x", "INTEGER NOT NULL DEFAULT 50")
+    ensure_column(conn, "banners", "position_y", "INTEGER NOT NULL DEFAULT 50")
+    ensure_column(conn, "banners", "desktop_height", "INTEGER NOT NULL DEFAULT 360")
+    ensure_column(conn, "banners", "mobile_height", "INTEGER NOT NULL DEFAULT 240")
     defaults = {
       "brand_name": "NowUp",
       "primary_color": "#2457e6",
@@ -273,6 +293,7 @@ def init_db():
       "font_family": "Inter",
       "hero_title": "Encontre quem resolve.",
       "hero_subtitle": "Busque profissionais por serviço e localização. Veja trabalhos recentes, avaliações e fale direto pelo WhatsApp.",
+      "hero_image_filename": "",
       "public_email": "",
       "support_whatsapp": ""
     }
@@ -508,14 +529,33 @@ def pro_panel(request: Request):
     return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, selected=selected, max_photos=MAX_PHOTOS))
 
 @app.post("/painel/perfil")
-def pro_update(request: Request, display_name: str=Form(...), whatsapp: str=Form(...), business_type: str=Form(""), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[])):
+def pro_update(request: Request, display_name: str=Form(...), whatsapp: str=Form(...), business_type: str=Form(""), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), external_url: str=Form(""), menu_url: str=Form(""), category_ids: list[int]=Form(default=[])):
     u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
     if business_type not in ("professional","restaurant","store","convenience","other"):
         business_type=conn.execute("SELECT business_type FROM professionals WHERE id=?",(p["id"],)).fetchone()[0]
-    conn.execute("UPDATE professionals SET display_name=?,whatsapp=?,business_type=?,city=?,neighborhood=?,cep=?,description=?,services=? WHERE id=?",(display_name,whatsapp,business_type,city,neighborhood,cep,description,services,p["id"]))
+    conn.execute("UPDATE professionals SET display_name=?,whatsapp=?,business_type=?,city=?,neighborhood=?,cep=?,description=?,services=?,external_url=?,menu_url=? WHERE id=?",(display_name,whatsapp,business_type,city,neighborhood,cep,description,services,clean_link(external_url),clean_link(menu_url),p["id"]))
     conn.execute("DELETE FROM professional_categories WHERE professional_id=?",(p["id"],))
     for cid in category_ids[:5]: conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(p["id"],cid))
     conn.commit(); conn.close(); return RedirectResponse("/painel?ok=perfil",303)
+
+@app.post("/painel/identidade")
+def pro_identity(request: Request, avatar: Optional[UploadFile]=File(None), cover: Optional[UploadFile]=File(None)):
+    u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT * FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+    avatar_fn=p["avatar_filename"] or ""; cover_fn=p["cover_filename"] or ""
+    if avatar and avatar.filename:
+        new_avatar=save_image(avatar)
+        if avatar_fn:
+            try: (UPLOAD_DIR/avatar_fn).unlink(missing_ok=True)
+            except OSError: pass
+        avatar_fn=new_avatar
+    if cover and cover.filename:
+        new_cover=save_image(cover)
+        if cover_fn:
+            try: (UPLOAD_DIR/cover_fn).unlink(missing_ok=True)
+            except OSError: pass
+        cover_fn=new_cover
+    conn.execute("UPDATE professionals SET avatar_filename=?,cover_filename=? WHERE id=?",(avatar_fn,cover_fn,p["id"])); conn.commit(); conn.close()
+    return RedirectResponse("/painel#identidade",303)
 
 def save_image(upload: UploadFile):
     data=upload.file.read(MAX_UPLOAD+1)
@@ -648,11 +688,25 @@ def admin_move_category(request: Request, cid:int, direction:str):
 def admin_toggle_client(request: Request, uid:int):
     require_user(request,"admin"); conn=db(); conn.execute("UPDATE users SET is_active=CASE is_active WHEN 1 THEN 0 ELSE 1 END WHERE id=? AND role='customer'",(uid,)); conn.execute("DELETE FROM sessions WHERE user_id=? AND (SELECT is_active FROM users WHERE id=?)=0",(uid,uid)); conn.commit(); conn.close(); return RedirectResponse("/admin#clientes",303)
 
+@app.post("/admin/clientes/{uid}/editar")
+def admin_edit_client(request: Request, uid:int, name:str=Form(...), email:str=Form(...), phone:str=Form("")):
+    require_user(request,"admin"); normalized=normalize_email(email)
+    if not name.strip() or not normalized: return RedirectResponse("/admin#clientes",303)
+    conn=db()
+    try:
+        conn.execute("UPDATE users SET name=?,email=?,phone=? WHERE id=? AND role='customer'",(name.strip()[:120],normalized,phone.strip()[:30],uid)); conn.commit()
+    except sqlite3.IntegrityError: conn.rollback()
+    conn.close(); return RedirectResponse("/admin#clientes",303)
+
+@app.post("/admin/clientes/{uid}/excluir")
+def admin_delete_client(request: Request, uid:int):
+    require_user(request,"admin"); conn=db(); conn.execute("DELETE FROM users WHERE id=? AND role='customer'",(uid,)); conn.commit(); conn.close(); return RedirectResponse("/admin#clientes",303)
+
 @app.post("/admin/categorias/{cid}/excluir")
 def admin_delete_category(request: Request, cid:int):
     require_user(request,"admin"); conn=db(); conn.execute("DELETE FROM categories WHERE id=?",(cid,)); conn.commit(); conn.close(); return RedirectResponse("/admin#categorias",303)
 
-@app.post("/admin/profissionais/{pid}/{action}")
+@app.post("/admin/profissionais/{pid}/acao/{action}")
 def admin_pro_action(request: Request, pid:int, action:str):
     require_user(request,"admin"); conn=db()
     if action=="verificar": conn.execute("UPDATE professionals SET verified=CASE verified WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(pid,))
@@ -661,6 +715,24 @@ def admin_pro_action(request: Request, pid:int, action:str):
     else: conn.close(); raise HTTPException(400)
     conn.commit(); conn.close(); return RedirectResponse("/admin#profissionais",303)
 
+@app.post("/admin/profissionais/{pid}/editar")
+def admin_edit_professional(request: Request, pid:int, display_name:str=Form(...), city:str=Form(""), email:str=Form(...)):
+    require_user(request,"admin"); normalized=normalize_email(email)
+    if not display_name.strip() or not normalized: return RedirectResponse("/admin#profissionais",303)
+    conn=db(); pro=conn.execute("SELECT user_id FROM professionals WHERE id=?",(pid,)).fetchone()
+    if pro:
+        try:
+            conn.execute("UPDATE professionals SET display_name=?,city=? WHERE id=?",(display_name.strip()[:120],city.strip()[:100],pid))
+            conn.execute("UPDATE users SET email=? WHERE id=?",(normalized,pro["user_id"])); conn.commit()
+        except sqlite3.IntegrityError: conn.rollback()
+    conn.close(); return RedirectResponse("/admin#profissionais",303)
+
+@app.post("/admin/profissionais/{pid}/excluir")
+def admin_delete_professional(request: Request, pid:int):
+    require_user(request,"admin"); conn=db(); pro=conn.execute("SELECT user_id FROM professionals WHERE id=?",(pid,)).fetchone()
+    if pro: conn.execute("DELETE FROM users WHERE id=?",(pro["user_id"],)); conn.commit()
+    conn.close(); return RedirectResponse("/admin#profissionais",303)
+
 @app.post("/admin/denuncias/{rid}/{status}")
 def admin_report_action(request: Request, rid:int, status:str):
     require_user(request,"admin")
@@ -668,15 +740,44 @@ def admin_report_action(request: Request, rid:int, status:str):
     conn=db(); conn.execute("UPDATE reports SET status=? WHERE id=?",(status,rid)); conn.commit(); conn.close(); return RedirectResponse("/admin#denuncias",303)
 
 @app.post("/admin/banners")
-def admin_banner_add(request: Request, title:str=Form(...), subtitle:str=Form(""), link:str=Form(""), image:Optional[UploadFile]=File(None)):
+def admin_banner_add(request: Request, link:str=Form(""), brightness:int=Form(100), zoom:int=Form(100), position_x:int=Form(50), position_y:int=Form(50), desktop_height:int=Form(360), mobile_height:int=Form(240), image:UploadFile=File(...)):
     require_user(request,"admin"); fn=""
     if image and image.filename: fn=save_image(image)
+    brightness=max(40,min(160,brightness)); zoom=max(100,min(200,zoom)); position_x=max(0,min(100,position_x)); position_y=max(0,min(100,position_y)); desktop_height=max(240,min(600,desktop_height)); mobile_height=max(180,min(500,mobile_height))
     conn=db(); next_order=conn.execute("SELECT COALESCE(MAX(sort_order),0)+1 FROM banners").fetchone()[0]
-    conn.execute("INSERT INTO banners(title,subtitle,link,image_filename,sort_order,created_at) VALUES(?,?,?,?,?,?)",(title[:120],subtitle[:240],link[:300],fn,next_order,now_iso())); conn.commit(); conn.close(); return RedirectResponse("/admin#publicidade",303)
+    active_count=conn.execute("SELECT COUNT(*) FROM banners WHERE active=1").fetchone()[0]
+    conn.execute("INSERT INTO banners(title,subtitle,link,image_filename,sort_order,active,template,background_color,text_color,font_family,brightness,zoom,position_x,position_y,desktop_height,mobile_height,created_at) VALUES('','',?,?,?,?,1,'#000000','#ffffff','Inter',?,?,?,?,?,?,?)",(clean_link(link),fn,next_order,1 if active_count<10 else 0,brightness,zoom,position_x,position_y,desktop_height,mobile_height,now_iso())); conn.commit(); conn.close(); return RedirectResponse("/admin#publicidade",303)
+
+@app.post("/admin/banners/{bid}/editar")
+def admin_banner_edit(request: Request, bid:int, link:str=Form(""), brightness:int=Form(100), zoom:int=Form(100), position_x:int=Form(50), position_y:int=Form(50), desktop_height:int=Form(360), mobile_height:int=Form(240), image:Optional[UploadFile]=File(None)):
+    require_user(request,"admin"); conn=db(); banner=conn.execute("SELECT * FROM banners WHERE id=?",(bid,)).fetchone()
+    if not banner: conn.close(); raise HTTPException(404)
+    fn=banner["image_filename"] or ""
+    if image and image.filename:
+        new_fn=save_image(image)
+        if fn:
+            try: (UPLOAD_DIR/fn).unlink(missing_ok=True)
+            except OSError: pass
+        fn=new_fn
+    brightness=max(40,min(160,brightness)); zoom=max(100,min(200,zoom)); position_x=max(0,min(100,position_x)); position_y=max(0,min(100,position_y)); desktop_height=max(240,min(600,desktop_height)); mobile_height=max(180,min(500,mobile_height))
+    conn.execute("UPDATE banners SET title='',subtitle='',link=?,image_filename=?,template=1,background_color='#000000',text_color='#ffffff',font_family='Inter',brightness=?,zoom=?,position_x=?,position_y=?,desktop_height=?,mobile_height=? WHERE id=?",(clean_link(link),fn,brightness,zoom,position_x,position_y,desktop_height,mobile_height,bid)); conn.commit(); conn.close()
+    return RedirectResponse("/admin#publicidade",303)
 
 @app.post("/admin/banners/{bid}/alternar")
 def admin_banner_toggle(request: Request, bid:int):
-    require_user(request,"admin"); conn=db(); conn.execute("UPDATE banners SET active=CASE active WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(bid,)); conn.commit(); conn.close(); return RedirectResponse("/admin#publicidade",303)
+    require_user(request,"admin"); conn=db(); banner=conn.execute("SELECT active FROM banners WHERE id=?",(bid,)).fetchone()
+    if banner and not banner["active"] and conn.execute("SELECT COUNT(*) FROM banners WHERE active=1").fetchone()[0]>=10:
+        conn.close(); return RedirectResponse("/admin?erro=limite-slides#publicidade",303)
+    conn.execute("UPDATE banners SET active=CASE active WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(bid,)); conn.commit(); conn.close(); return RedirectResponse("/admin#publicidade",303)
+
+@app.post("/admin/capa")
+def admin_hero_cover(request: Request, image:UploadFile=File(...)):
+    require_user(request,"admin"); fn=save_image(image); conn=db(); old=get_settings(conn).get("hero_image_filename","")
+    conn.execute("INSERT INTO site_settings(key,value) VALUES('hero_image_filename',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",(fn,)); conn.commit(); conn.close()
+    if old:
+        try: (UPLOAD_DIR/old).unlink(missing_ok=True)
+        except OSError: pass
+    return RedirectResponse("/admin#aparencia",303)
 
 @app.post("/admin/banners/{bid}/mover/{direction}")
 def admin_move_banner(request: Request, bid:int, direction:str):
