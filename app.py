@@ -60,6 +60,11 @@ def get_settings(conn=None):
         conn.close()
     return data
 
+def active_cities(settings=None):
+    settings = settings or get_settings()
+    cities = [c.strip() for c in settings.get("active_cities", "Ubatuba").split(",") if c.strip()]
+    return cities or ["Ubatuba"]
+
 def email_service_configured():
     return bool(
         os.getenv("BREVO_API_KEY", "").strip()
@@ -271,6 +276,8 @@ def init_db():
     ensure_column(conn, "professionals", "business_type", "TEXT NOT NULL DEFAULT 'professional'")
     ensure_column(conn, "professionals", "external_url", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "menu_url", "TEXT DEFAULT ''")
+    ensure_column(conn, "professionals", "menu_clicks", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "professionals", "external_clicks", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "professionals", "avatar_filename", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "cover_filename", "TEXT DEFAULT ''")
     ensure_column(conn, "banners", "image_filename", "TEXT DEFAULT ''")
@@ -302,6 +309,7 @@ def init_db():
       "hero_mobile_height": "540",
       "public_email": "",
       "support_whatsapp": ""
+      ,"active_cities": "Ubatuba"
     }
     for key, value in defaults.items():
         conn.execute("INSERT OR IGNORE INTO site_settings(key,value) VALUES(?,?)", (key,value))
@@ -330,8 +338,11 @@ def init_db():
 def startup(): init_db()
 
 @app.get("/", response_class=HTMLResponse)
-def home(request: Request, q: str="", city: str="", category: str=""):
+def home(request: Request, q: str="", city: str="", category: str="", business_type: str=""):
     conn = db()
+    settings = get_settings(conn)
+    cities = active_cities(settings)
+    city = city.strip() or cities[0]
     params=[]; where=["p.blocked=0"]
     if q:
         where.append("(p.display_name LIKE ? OR p.services LIKE ? OR p.description LIKE ?)")
@@ -341,6 +352,8 @@ def home(request: Request, q: str="", city: str="", category: str=""):
     if category:
         where.append("EXISTS(SELECT 1 FROM professional_categories pc JOIN categories c ON c.id=pc.category_id WHERE pc.professional_id=p.id AND c.slug=?)")
         params.append(category)
+    if business_type in ("professional","restaurant","store","convenience","other"):
+        where.append("p.business_type=?"); params.append(business_type)
     rows = conn.execute(f"""
       SELECT p.*, u.name as owner_name,
        COALESCE((SELECT ROUND(AVG(stars),1) FROM reviews r WHERE r.professional_id=p.id),0) rating,
@@ -363,17 +376,19 @@ def home(request: Request, q: str="", city: str="", category: str=""):
       WHERE p.blocked=0 AND po.post_type='status' AND po.created_at > ? ORDER BY po.id DESC LIMIT 20
     """, ((datetime.now(timezone.utc)-timedelta(hours=24)).isoformat(),)).fetchall()
     conn.close()
-    return templates.TemplateResponse("home.html", context(request, professionals=rows, posts=posts, statuses=statuses, q=q, city=city, category=category))
+    return templates.TemplateResponse("home.html", context(request, professionals=rows, posts=posts, statuses=statuses, q=q, city=city, category=category, business_type=business_type, active_cities=cities))
 
 @app.get("/profissionais", response_class=HTMLResponse)
-def professionals(request: Request, category: str="", city: str="", neighborhood: str="", cep: str="", q: str=""):
-    conn=db(); where=["p.blocked=0"]; params=[]
+def professionals(request: Request, category: str="", city: str="", neighborhood: str="", cep: str="", q: str="", business_type: str=""):
+    conn=db(); where=["p.blocked=0"]; params=[]; cities=active_cities(get_settings(conn)); city=city.strip() or cities[0]
     for field,val in [("p.city",city),("p.neighborhood",neighborhood),("p.cep",cep)]:
         if val: where.append(f"{field} LIKE ?"); params.append(f"%{val}%")
     if q:
         where.append("(p.display_name LIKE ? OR p.services LIKE ? OR p.description LIKE ?)"); like=f"%{q}%"; params += [like,like,like]
     if category:
         where.append("EXISTS(SELECT 1 FROM professional_categories pc JOIN categories c ON c.id=pc.category_id WHERE pc.professional_id=p.id AND c.slug=?)"); params.append(category)
+    if business_type in ("professional","restaurant","store","convenience","other"):
+        where.append("p.business_type=?"); params.append(business_type)
     rows=conn.execute(f"""
       SELECT p.*,
        COALESCE((SELECT ROUND(AVG(stars),1) FROM reviews r WHERE r.professional_id=p.id),0) rating,
@@ -382,7 +397,7 @@ def professionals(request: Request, category: str="", city: str="", neighborhood
       FROM professionals p WHERE {' AND '.join(where)}
       ORDER BY p.featured DESC,p.verified DESC,rating DESC,p.id DESC LIMIT 100
     """,params).fetchall(); conn.close()
-    return templates.TemplateResponse("professionals.html", context(request, professionals=rows, filters={"category":category,"city":city,"neighborhood":neighborhood,"cep":cep,"q":q}))
+    return templates.TemplateResponse("professionals.html", context(request, professionals=rows, active_cities=cities, filters={"category":category,"city":city,"neighborhood":neighborhood,"cep":cep,"q":q,"business_type":business_type}))
 
 @app.get("/p/{slug}", response_class=HTMLResponse)
 def profile(request: Request, slug: str):
@@ -409,6 +424,20 @@ def whatsapp_click(slug: str):
     if not p: conn.close(); raise HTTPException(404)
     conn.execute("UPDATE professionals SET whatsapp_clicks=whatsapp_clicks+1 WHERE id=?",(p["id"],)); conn.commit(); conn.close()
     return RedirectResponse(wa_link(p["whatsapp"],"Olá! Encontrei seu perfil na NowUp e gostaria de um orçamento."), status_code=303)
+
+@app.get("/p/{slug}/cardapio")
+def menu_click(slug: str):
+    conn=db(); p=conn.execute("SELECT id,menu_url FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
+    if not p or not clean_link(p["menu_url"]): conn.close(); raise HTTPException(404)
+    conn.execute("UPDATE professionals SET menu_clicks=menu_clicks+1 WHERE id=?",(p["id"],)); conn.commit(); target=p["menu_url"]; conn.close()
+    return RedirectResponse(target,303)
+
+@app.get("/p/{slug}/link")
+def external_click(slug: str):
+    conn=db(); p=conn.execute("SELECT id,external_url FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
+    if not p or not clean_link(p["external_url"]): conn.close(); raise HTTPException(404)
+    conn.execute("UPDATE professionals SET external_clicks=external_clicks+1 WHERE id=?",(p["id"],)); conn.commit(); target=p["external_url"]; conn.close()
+    return RedirectResponse(target,303)
 
 @app.get("/cadastro/cliente", response_class=HTMLResponse)
 def signup_customer_page(request: Request): return templates.TemplateResponse("signup_customer.html", context(request))
@@ -449,7 +478,7 @@ def signup_customer(name: str=Form(...), email: str=Form(...), phone: str=Form("
 
 @app.get("/cadastro/profissional", response_class=HTMLResponse)
 def signup_pro_page(request: Request):
-    return templates.TemplateResponse("signup_professional.html", context(request))
+    return templates.TemplateResponse("signup_professional.html", context(request, active_cities=active_cities()))
 
 @app.post("/cadastro/profissional")
 def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Form(...), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), doc_type: str=Form(...), document: str=Form(...), business_type: str=Form("professional"), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[])):
@@ -471,6 +500,8 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
         return RedirectResponse("/cadastro/profissional?erro=email_indisponivel",303)
     if business_type not in ("professional","restaurant","store","convenience","other"):
         business_type="other"
+    cities=active_cities()
+    if city not in cities: city=cities[0]
     token,expires=verification_token()
     conn=db()
     try:
@@ -532,17 +563,25 @@ def pro_panel(request: Request):
     posts=conn.execute("SELECT * FROM posts WHERE professional_id=? ORDER BY id DESC LIMIT 20",(p["id"],)).fetchall()
     selected={r[0] for r in conn.execute("SELECT category_id FROM professional_categories WHERE professional_id=?",(p["id"],)).fetchall()}
     conn.close()
-    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, selected=selected, max_photos=MAX_PHOTOS))
+    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities()))
 
 @app.post("/painel/perfil")
 def pro_update(request: Request, display_name: str=Form(...), whatsapp: str=Form(...), business_type: str=Form(""), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), external_url: str=Form(""), menu_url: str=Form(""), category_ids: list[int]=Form(default=[])):
     u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
     if business_type not in ("professional","restaurant","store","convenience","other"):
         business_type=conn.execute("SELECT business_type FROM professionals WHERE id=?",(p["id"],)).fetchone()[0]
+    cities=active_cities(get_settings(conn))
+    if city not in cities: city=cities[0]
     conn.execute("UPDATE professionals SET display_name=?,whatsapp=?,business_type=?,city=?,neighborhood=?,cep=?,description=?,services=?,external_url=?,menu_url=? WHERE id=?",(display_name,whatsapp,business_type,city,neighborhood,cep,description,services,clean_link(external_url),clean_link(menu_url),p["id"]))
     conn.execute("DELETE FROM professional_categories WHERE professional_id=?",(p["id"],))
     for cid in category_ids[:5]: conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(p["id"],cid))
     conn.commit(); conn.close(); return RedirectResponse("/painel?ok=perfil",303)
+
+@app.post("/painel/links")
+def pro_links(request: Request, whatsapp: str=Form(...), external_url: str=Form(""), menu_url: str=Form("")):
+    u=require_user(request,"professional"); conn=db()
+    conn.execute("UPDATE professionals SET whatsapp=?,external_url=?,menu_url=? WHERE user_id=?",(whatsapp.strip(),clean_link(external_url),clean_link(menu_url),u["id"]))
+    conn.commit(); conn.close(); return RedirectResponse("/painel?ok=links#links",303)
 
 @app.post("/painel/identidade")
 def pro_identity(request: Request, avatar: Optional[UploadFile]=File(None), cover: Optional[UploadFile]=File(None)):
@@ -644,6 +683,7 @@ def admin(request: Request):
       "reports":conn.execute("SELECT COUNT(*) FROM reports WHERE status='pending'").fetchone()[0],
       "wa":conn.execute("SELECT COALESCE(SUM(whatsapp_clicks),0) FROM professionals").fetchone()[0],
       "views":conn.execute("SELECT COALESCE(SUM(views),0) FROM professionals").fetchone()[0],
+      "menu":conn.execute("SELECT COALESCE(SUM(menu_clicks),0) FROM professionals").fetchone()[0],
     }
     pros=conn.execute("SELECT p.*,u.email,u.email_verified FROM professionals p JOIN users u ON u.id=p.user_id ORDER BY p.id DESC LIMIT 50").fetchall()
     clients=conn.execute("SELECT id,name,email,phone,is_active,email_verified,created_at FROM users WHERE role='customer' ORDER BY id DESC LIMIT 100").fetchall()
@@ -651,6 +691,16 @@ def admin(request: Request):
     reports=conn.execute("SELECT r.*,u.name customer,p.display_name professional FROM reports r JOIN users u ON u.id=r.customer_id JOIN professionals p ON p.id=r.professional_id ORDER BY r.id DESC LIMIT 50").fetchall()
     suggestions=conn.execute("SELECT * FROM suggestions ORDER BY id DESC LIMIT 30").fetchall(); banners=conn.execute("SELECT * FROM banners ORDER BY sort_order,id").fetchall(); conn.close()
     return templates.TemplateResponse("admin.html", context(request, stats=stats, pros=pros, clients=clients, admin_categories=admin_categories, reports=reports, suggestions=suggestions, admin_banners=banners))
+
+@app.post("/admin/aparencia")
+def admin_appearance(request: Request, brand_name:str=Form("NowUp"), font_family:str=Form("Inter"), primary_color:str=Form("#2457e6"), accent_color:str=Form("#ff8a32"), hero_title:str=Form(""), hero_subtitle:str=Form(""), public_email:str=Form(""), support_whatsapp:str=Form(""), active_cities:str=Form("Ubatuba")):
+    require_user(request,"admin")
+    allowed_fonts={"Inter","Arial","Georgia","Trebuchet MS","Verdana"}; font_family=font_family if font_family in allowed_fonts else "Inter"
+    cities=", ".join(dict.fromkeys(c.strip()[:80] for c in active_cities.split(",") if c.strip())) or "Ubatuba"
+    values={"brand_name":brand_name.strip()[:80] or "NowUp","font_family":font_family,"primary_color":primary_color[:20],"accent_color":accent_color[:20],"hero_title":hero_title.strip()[:180],"hero_subtitle":hero_subtitle.strip()[:500],"public_email":public_email.strip()[:160],"support_whatsapp":support_whatsapp.strip()[:40],"active_cities":cities}
+    conn=db()
+    for key,value in values.items(): conn.execute("INSERT INTO site_settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",(key,value))
+    conn.commit(); conn.close(); return RedirectResponse("/admin?ok=aparencia#aparencia",303)
 
 @app.post("/admin/categorias")
 def admin_add_category(request: Request, name:str=Form(...), icon:str=Form("🛠️")):

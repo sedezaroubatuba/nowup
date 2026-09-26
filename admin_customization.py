@@ -3,10 +3,13 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from fastapi import APIRouter, Request, Form, HTTPException
 from fastapi.responses import RedirectResponse
+from fastapi.templating import Jinja2Templates
+from mailing import send_email, configured as email_configured
 
 BASE = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("NOWUP_DB", BASE / "data" / "nowup.db"))
 router = APIRouter()
+templates = Jinja2Templates(directory=str(BASE / "templates"))
 
 def db():
     conn=sqlite3.connect(DB_PATH)
@@ -107,10 +110,40 @@ def secure_login(email: str=Form(...),password: str=Form(...),tipo: str=Form("")
     if expected and u["role"]!=expected:
         return RedirectResponse(f"/entrar?tipo={tipo}&erro=perfil",303)
     if u["role"]=="admin":
-        return create_secure_session(u["id"],"/admin",admin=True)
+        # Evita bloquear o administrador antes de a Brevo estar pronta.
+        # Assim que as três variáveis de e-mail forem configuradas, o código
+        # de segunda etapa passa a ser exigido automaticamente.
+        if not email_configured():
+            return create_secure_session(u["id"],"/admin",admin=True)
+        challenge=secrets.token_urlsafe(32); code=f"{secrets.randbelow(1_000_000):06d}"; expires=(datetime.now(timezone.utc)+timedelta(minutes=10)).isoformat()
+        conn=db(); conn.execute("CREATE TABLE IF NOT EXISTS admin_login_codes(challenge TEXT PRIMARY KEY,user_id INTEGER NOT NULL,code_hash TEXT NOT NULL,expires_at TEXT NOT NULL,attempts INTEGER NOT NULL DEFAULT 0)")
+        code_hash=hashlib.sha256(code.encode()).hexdigest(); conn.execute("DELETE FROM admin_login_codes WHERE user_id=? OR expires_at<=?",(u["id"],datetime.now(timezone.utc).isoformat())); conn.execute("INSERT INTO admin_login_codes(challenge,user_id,code_hash,expires_at) VALUES(?,?,?,?)",(challenge,u["id"],code_hash,expires)); conn.commit(); conn.close()
+        html=f"<div style='font-family:Arial,sans-serif'><h2>Código de acesso administrativo NowUp</h2><p>Seu código é:</p><p style='font-size:32px;font-weight:bold;letter-spacing:8px'>{code}</p><p>Ele expira em 10 minutos. Se não foi você, altere sua senha.</p></div>"
+        if not send_email(u["email"],u["name"],"Código de acesso administrativo NowUp",html):
+            conn=db(); conn.execute("DELETE FROM admin_login_codes WHERE challenge=?",(challenge,)); conn.commit(); conn.close(); return RedirectResponse("/entrar?tipo=admin&erro=2fa",303)
+        resp=RedirectResponse("/admin/codigo",303); resp.set_cookie("nowup_admin_challenge",challenge,max_age=600,httponly=True,samesite="lax",secure=os.getenv("NOWUP_HTTPS","0")=="1"); return resp
     if u["role"]=="professional":
         return create_secure_session(u["id"],"/painel")
     return create_secure_session(u["id"],"/")
+
+@router.get("/admin/codigo")
+def admin_code_page(request: Request):
+    if not request.cookies.get("nowup_admin_challenge"):
+        return RedirectResponse("/entrar?tipo=admin",303)
+    return templates.TemplateResponse("admin_code.html",{"request":request})
+
+@router.post("/admin/codigo")
+def admin_code_verify(request: Request, code:str=Form(...)):
+    challenge=request.cookies.get("nowup_admin_challenge")
+    if not challenge: return RedirectResponse("/entrar?tipo=admin",303)
+    conn=db(); row=conn.execute("SELECT * FROM admin_login_codes WHERE challenge=?",(challenge,)).fetchone()
+    if not row or row["expires_at"]<=datetime.now(timezone.utc).isoformat() or row["attempts"]>=5:
+        if row: conn.execute("DELETE FROM admin_login_codes WHERE challenge=?",(challenge,)); conn.commit()
+        conn.close(); resp=RedirectResponse("/entrar?tipo=admin&erro=2fa_expirado",303); resp.delete_cookie("nowup_admin_challenge"); return resp
+    valid=hmac.compare_digest(hashlib.sha256(code.strip().encode()).hexdigest(),row["code_hash"])
+    if not valid:
+        conn.execute("UPDATE admin_login_codes SET attempts=attempts+1 WHERE challenge=?",(challenge,)); conn.commit(); conn.close(); return RedirectResponse("/admin/codigo?erro=1",303)
+    uid=row["user_id"]; conn.execute("DELETE FROM admin_login_codes WHERE challenge=?",(challenge,)); conn.commit(); conn.close(); resp=create_secure_session(uid,"/admin",admin=True); resp.delete_cookie("nowup_admin_challenge"); return resp
 
 @router.get("/admin/entrar")
 def force_admin_login(request: Request):
