@@ -294,6 +294,12 @@ def init_db():
       "hero_title": "Encontre quem resolve.",
       "hero_subtitle": "Busque profissionais por serviço e localização. Veja trabalhos recentes, avaliações e fale direto pelo WhatsApp.",
       "hero_image_filename": "",
+      "hero_brightness": "100",
+      "hero_zoom": "100",
+      "hero_position_x": "50",
+      "hero_position_y": "50",
+      "hero_desktop_height": "540",
+      "hero_mobile_height": "540",
       "public_email": "",
       "support_whatsapp": ""
     }
@@ -771,10 +777,14 @@ def admin_banner_toggle(request: Request, bid:int):
     conn.execute("UPDATE banners SET active=CASE active WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(bid,)); conn.commit(); conn.close(); return RedirectResponse("/admin#publicidade",303)
 
 @app.post("/admin/capa")
-def admin_hero_cover(request: Request, image:UploadFile=File(...)):
-    require_user(request,"admin"); fn=save_image(image); conn=db(); old=get_settings(conn).get("hero_image_filename","")
-    conn.execute("INSERT INTO site_settings(key,value) VALUES('hero_image_filename',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",(fn,)); conn.commit(); conn.close()
-    if old:
+def admin_hero_cover(request: Request, image:Optional[UploadFile]=File(None), brightness:int=Form(100), zoom:int=Form(100), position_x:int=Form(50), position_y:int=Form(50), desktop_height:int=Form(540), mobile_height:int=Form(540)):
+    require_user(request,"admin"); conn=db(); old=get_settings(conn).get("hero_image_filename",""); fn=old
+    if image and image.filename: fn=save_image(image)
+    brightness=max(40,min(160,brightness)); zoom=max(100,min(200,zoom)); position_x=max(0,min(100,position_x)); position_y=max(0,min(100,position_y)); desktop_height=max(420,min(760,desktop_height)); mobile_height=max(480,min(760,mobile_height))
+    values=(("hero_image_filename",fn),("hero_brightness",brightness),("hero_zoom",zoom),("hero_position_x",position_x),("hero_position_y",position_y),("hero_desktop_height",desktop_height),("hero_mobile_height",mobile_height))
+    for key,value in values: conn.execute("INSERT INTO site_settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",(key,str(value)))
+    conn.commit(); conn.close()
+    if old and fn != old:
         try: (UPLOAD_DIR/old).unlink(missing_ok=True)
         except OSError: pass
     return RedirectResponse("/admin#aparencia",303)
