@@ -327,13 +327,56 @@ def init_db():
     }
     for key, value in defaults.items():
         conn.execute("INSERT OR IGNORE INTO site_settings(key,value) VALUES(?,?)", (key,value))
+    # Categorias amplas; profissões específicas são encontradas pelos serviços/palavras-chave.
     default_categories = [
-      ("Encanador","🔧"),("Eletricista","⚡"),("Pedreiro","🧱"),("Serralheiro","⚙️"),
-      ("Limpeza de estofado","🛋️"),("Pet Shop","🐾"),("Veterinário","🩺"),("Vidraceiro","🪟"),
-      ("Pintor","🎨"),("Chaveiro","🔑"),("Jardineiro","🌿"),("Ar-condicionado","❄️"),("Outros","📌")
+      ("Restaurantes e lanchonetes","🍽️"), ("Prestadores de serviços","🛠️"),
+      ("Lojas de vestuário","👕"), ("Pet shops e veterinários","🐾"),
+      ("Conveniências e adegas","🛒"), ("Mercados e mercearias","🧺"),
+      ("Padarias e cafeterias","☕"), ("Beleza e estética","💇"),
+      ("Saúde e bem-estar","🩺"), ("Farmácias","💊"),
+      ("Casa, móveis e decoração","🛋️"), ("Materiais de construção","🧱"),
+      ("Automóveis e motos","🚗"), ("Tecnologia e eletrônicos","📱"),
+      ("Turismo e hospedagem","🏨"), ("Imobiliárias","🏠"),
+      ("Educação e cursos","🎓"), ("Esportes e lazer","⚽"),
+      ("Calçados e acessórios","👟"), ("Comércio em geral","🏪")
     ]
+    catalog_key = "category_catalog_v2"
+    catalog_ready = conn.execute("SELECT value FROM site_settings WHERE key=?", (catalog_key,)).fetchone()
     for i,(name,icon) in enumerate(default_categories,1):
-        conn.execute("INSERT OR IGNORE INTO categories(name,slug,icon,sort_order) VALUES(?,?,?,?)",(name,slugify(name),icon,i))
+        slug=slugify(name)
+        conn.execute("INSERT OR IGNORE INTO categories(name,slug,icon,sort_order,active) VALUES(?,?,?,?,1)",(name,slug,icon,i))
+        conn.execute("UPDATE categories SET name=?,icon=?,sort_order=?,active=1 WHERE slug=?",(name,icon,i,slug))
+    if not catalog_ready:
+        desired_slugs=[slugify(name) for name,_ in default_categories]
+        placeholders=",".join("?" for _ in desired_slugs)
+        category_ids={r["slug"]:r["id"] for r in conn.execute(
+            f"SELECT id,slug FROM categories WHERE slug IN ({placeholders})", desired_slugs
+        ).fetchall()}
+        old_assignments=conn.execute("""
+          SELECT DISTINCT pc.professional_id,c.name,c.slug,p.business_type
+          FROM professional_categories pc
+          JOIN categories c ON c.id=pc.category_id
+          JOIN professionals p ON p.id=pc.professional_id
+        """).fetchall()
+        conn.execute(f"DELETE FROM professional_categories WHERE category_id NOT IN (SELECT id FROM categories WHERE slug IN ({placeholders}))", desired_slugs)
+        for row in old_assignments:
+            old=(row["name"] or "").lower()
+            if row["slug"] in category_ids:
+                target=row["slug"]
+            elif "pet" in old or "veterin" in old:
+                target="pet-shops-e-veterinarios"
+            elif row["business_type"] == "restaurant":
+                target="restaurantes-e-lanchonetes"
+            elif row["business_type"] == "convenience":
+                target="conveniencias-e-adegas"
+            elif row["business_type"] == "professional":
+                target="prestadores-de-servicos"
+            else:
+                target="comercio-em-geral"
+            if category_ids.get(target):
+                conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(row["professional_id"],category_ids[target]))
+        conn.execute(f"DELETE FROM categories WHERE slug NOT IN ({placeholders})", desired_slugs)
+        conn.execute("INSERT INTO site_settings(key,value) VALUES(?,?)",(catalog_key,"1"))
     admin_email = os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
     admin_pass = os.getenv("NOWUP_ADMIN_PASSWORD", "nowup2026")
     admin = conn.execute("SELECT id FROM users WHERE email=?", (admin_email,)).fetchone()
@@ -361,8 +404,8 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
     city = city.strip() or cities[0]
     params=[]; where=["p.blocked=0"]
     if q:
-        where.append("(p.display_name LIKE ? OR p.services LIKE ? OR p.description LIKE ?)")
-        like=f"%{q}%"; params += [like,like,like]
+        where.append("(p.display_name LIKE ? OR p.services LIKE ? OR p.description LIKE ? OR EXISTS(SELECT 1 FROM professional_categories pcq JOIN categories cq ON cq.id=pcq.category_id WHERE pcq.professional_id=p.id AND cq.name LIKE ?))")
+        like=f"%{q.strip()}%"; params += [like,like,like,like]
     if city:
         where.append("p.city LIKE ?"); params.append(f"%{city}%")
     if category:
@@ -385,14 +428,8 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
       FROM posts po JOIN professionals p ON p.id=po.professional_id
       WHERE p.blocked=0 AND po.post_type!='status' ORDER BY po.id DESC LIMIT 12
     """).fetchall()
-    statuses = conn.execute("""
-      SELECT po.*,p.display_name,p.slug,
-      COALESCE(po.photo_filename,(SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1)) status_image
-      FROM posts po JOIN professionals p ON p.id=po.professional_id
-      WHERE p.blocked=0 AND po.post_type='status' AND po.created_at > ? ORDER BY po.id DESC LIMIT 20
-    """, ((datetime.now(timezone.utc)-timedelta(hours=24)).isoformat(),)).fetchall()
     conn.close()
-    return templates.TemplateResponse("home.html", context(request, professionals=rows, posts=posts, statuses=statuses, q=q, city=city, category=category, business_type=business_type, active_cities=cities))
+    return templates.TemplateResponse("home.html", context(request, professionals=rows, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities))
 
 @app.get("/profissionais", response_class=HTMLResponse)
 def professionals(request: Request, category: str="", city: str="", neighborhood: str="", cep: str="", q: str="", business_type: str=""):
@@ -400,7 +437,7 @@ def professionals(request: Request, category: str="", city: str="", neighborhood
     for field,val in [("p.city",city),("p.neighborhood",neighborhood),("p.cep",cep)]:
         if val: where.append(f"{field} LIKE ?"); params.append(f"%{val}%")
     if q:
-        where.append("(p.display_name LIKE ? OR p.services LIKE ? OR p.description LIKE ?)"); like=f"%{q}%"; params += [like,like,like]
+        where.append("(p.display_name LIKE ? OR p.services LIKE ? OR p.description LIKE ? OR EXISTS(SELECT 1 FROM professional_categories pcq JOIN categories cq ON cq.id=pcq.category_id WHERE pcq.professional_id=p.id AND cq.name LIKE ?))"); like=f"%{q.strip()}%"; params += [like,like,like,like]
     if category:
         where.append("EXISTS(SELECT 1 FROM professional_categories pc JOIN categories c ON c.id=pc.category_id WHERE pc.professional_id=p.id AND c.slug=?)"); params.append(category)
     if business_type in ("professional","restaurant","store","convenience","other"):
@@ -532,7 +569,7 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
         slug=unique_slug(conn,name)
         cur=conn.execute("INSERT INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,description,services,business_type,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
                          (uid,slug,name.strip(),doc_type,document.strip(),phone.strip(),city.strip(),neighborhood.strip(),cep.strip(),description.strip(),services.strip(),business_type,now_iso())); pid=cur.lastrowid
-        for cid in category_ids[:5]:
+        for cid in category_ids[:1]:
             conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(pid,cid))
         conn.execute("UPDATE professionals SET blocked=1 WHERE id=?",(pid,))
         conn.commit()
@@ -625,7 +662,7 @@ def pro_update(request: Request, display_name: str=Form(...), whatsapp: str=Form
     if city not in cities: city=cities[0]
     conn.execute("UPDATE professionals SET display_name=?,whatsapp=?,business_type=?,city=?,neighborhood=?,address=?,cep=?,description=?,services=?,external_url=?,menu_url=? WHERE id=?",(display_name.strip()[:120],whatsapp.strip()[:30],business_type,city,neighborhood.strip()[:120],address.strip()[:220],cep.strip()[:20],description.strip()[:1200],services.strip()[:1200],clean_link(external_url),clean_link(menu_url),p["id"]))
     conn.execute("DELETE FROM professional_categories WHERE professional_id=?",(p["id"],))
-    for cid in category_ids[:5]: conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(p["id"],cid))
+    for cid in category_ids[:1]: conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(p["id"],cid))
     conn.commit(); conn.close(); return RedirectResponse("/painel?ok=perfil",303)
 
 @app.get("/cliente", response_class=HTMLResponse)
