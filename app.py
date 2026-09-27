@@ -282,6 +282,8 @@ def init_db():
     ensure_column(conn, "professionals", "external_clicks", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "professionals", "avatar_filename", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "cover_filename", "TEXT DEFAULT ''")
+    ensure_column(conn, "professionals", "address", "TEXT DEFAULT ''")
+    ensure_column(conn, "professionals", "is_demo", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "banners", "image_filename", "TEXT DEFAULT ''")
     ensure_column(conn, "banners", "sort_order", "INTEGER NOT NULL DEFAULT 100")
     ensure_column(conn, "banners", "clicks", "INTEGER NOT NULL DEFAULT 0")
@@ -774,6 +776,35 @@ def admin_pro_action(request: Request, pid:int, action:str):
     elif action=="bloquear": conn.execute("UPDATE professionals SET blocked=CASE blocked WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(pid,))
     else: conn.close(); raise HTTPException(400)
     conn.commit(); conn.close(); return RedirectResponse("/admin#profissionais",303)
+
+@app.post("/admin/perfis/demonstracao")
+def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsapp:str=Form(...), address:str=Form(...), photo:UploadFile=File(...)):
+    require_user(request,"admin")
+    name=display_name.strip()[:120]; phone=whatsapp.strip()[:30]; address=address.strip()[:240]
+    if not name or not normalize_phone(phone) or not address:
+        return RedirectResponse("/admin?erro=perfil-demo#cadastro-rapido",303)
+    filename=save_image(photo)
+    conn=db()
+    try:
+        slug=unique_slug(conn,name)
+        demo_email=f"demo-{secrets.token_hex(8)}@nowup.local"
+        cur=conn.execute("INSERT INTO users(role,name,email,phone,password_hash,is_active,email_verified,created_at) VALUES('professional',?,?,?,?,1,1,?)",
+                         (name,demo_email,phone,hash_password(secrets.token_urlsafe(32)),now_iso()))
+        uid=cur.lastrowid
+        cur=conn.execute("""INSERT INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,address,description,services,business_type,verified,featured,blocked,avatar_filename,cover_filename,is_demo,created_at)
+                            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                         (uid,slug,name,"CNPJ","",phone,"Ubatuba","","",address,"Perfil demonstrativo criado para apresentar o funcionamento da NowUp.","Consulte diretamente pelo WhatsApp.","other",0,0,0,filename,filename,1,now_iso()))
+        pid=cur.lastrowid
+        conn.execute("INSERT INTO photos(professional_id,filename,caption,is_cover,created_at) VALUES(?,?,?,?,?)",(pid,filename,"Foto de perfil",1,now_iso()))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        try: (UPLOAD_DIR/filename).unlink(missing_ok=True)
+        except OSError: pass
+        conn.close()
+        return RedirectResponse("/admin?erro=perfil-demo#cadastro-rapido",303)
+    conn.close()
+    return RedirectResponse("/admin?ok=perfil-demo#profissionais",303)
 
 @app.post("/admin/profissionais/{pid}/editar")
 def admin_edit_professional(request: Request, pid:int, display_name:str=Form(...), city:str=Form(""), email:str=Form(...)):
