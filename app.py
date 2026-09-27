@@ -293,6 +293,14 @@ def init_db():
     ensure_column(conn, "professionals", "avatar_filename", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "cover_filename", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "address", "TEXT DEFAULT ''")
+    ensure_column(conn, "professionals", "hide_address", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "professionals", "service_area", "TEXT DEFAULT ''")
+    ensure_column(conn, "professionals", "opening_hours", "TEXT DEFAULT ''")
+    ensure_column(conn, "professionals", "business_status", "TEXT NOT NULL DEFAULT 'open'")
+    ensure_column(conn, "professionals", "instagram_url", "TEXT DEFAULT ''")
+    ensure_column(conn, "professionals", "facebook_url", "TEXT DEFAULT ''")
+    ensure_column(conn, "professionals", "website_url", "TEXT DEFAULT ''")
+    ensure_column(conn, "professionals", "whatsapp_message", "TEXT DEFAULT 'Olá! Encontrei você pelo NowUp e gostaria de saber mais.'")
     ensure_column(conn, "professionals", "is_demo", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "banners", "image_filename", "TEXT DEFAULT ''")
     ensure_column(conn, "banners", "sort_order", "INTEGER NOT NULL DEFAULT 100")
@@ -469,7 +477,7 @@ def profile(request: Request, slug: str):
     reviews=conn.execute("SELECT r.*,u.name FROM reviews r JOIN users u ON u.id=r.customer_id WHERE r.professional_id=? ORDER BY r.id DESC",(p["id"],)).fetchall()
     cats=conn.execute("SELECT c.* FROM categories c JOIN professional_categories pc ON pc.category_id=c.id WHERE pc.professional_id=?",(p["id"],)).fetchall()
     conn.close()
-    pub=dict(p); pub["document_masked"]=mask_doc(pub["document"]); pub["wa_link"]=wa_link(pub["whatsapp"],f"Olá! Encontrei seu perfil na NowUp e gostaria de saber mais sobre seus serviços.")
+    pub=dict(p); pub["document_masked"]=mask_doc(pub["document"]); pub["wa_link"]=wa_link(pub["whatsapp"],pub.get("whatsapp_message") or "Olá! Encontrei você pelo NowUp e gostaria de saber mais.")
     return templates.TemplateResponse("profile.html", context(request, pro=pub, photos=photos, posts=posts, reviews=reviews, pro_categories=cats))
 
 @app.post("/p/{slug}/whatsapp")
@@ -478,7 +486,7 @@ def whatsapp_click(slug: str):
     if not p: conn.close(); raise HTTPException(404)
     conn.execute("UPDATE professionals SET whatsapp_clicks=whatsapp_clicks+1 WHERE id=?",(p["id"],))
     conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"whatsapp_click",now_iso())); conn.commit(); conn.close()
-    return RedirectResponse(wa_link(p["whatsapp"],"Olá! Encontrei seu perfil na NowUp e gostaria de um orçamento."), status_code=303)
+    return RedirectResponse(wa_link(p["whatsapp"],p["whatsapp_message"] or "Olá! Encontrei você pelo NowUp e gostaria de saber mais."), status_code=303)
 
 @app.get("/p/{slug}/cardapio")
 def menu_click(slug: str):
@@ -494,6 +502,17 @@ def external_click(slug: str):
     if not p or not clean_link(p["external_url"]): conn.close(); raise HTTPException(404)
     conn.execute("UPDATE professionals SET external_clicks=external_clicks+1 WHERE id=?",(p["id"],))
     conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"external_click",now_iso())); conn.commit(); target=p["external_url"]; conn.close()
+    return RedirectResponse(target,303)
+
+@app.get("/p/{slug}/social/{network}")
+def social_click(slug: str, network: str):
+    columns={"instagram":"instagram_url","facebook":"facebook_url","site":"website_url"}
+    column=columns.get(network)
+    if not column: raise HTTPException(404)
+    conn=db(); p=conn.execute(f"SELECT id,{column} target FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
+    if not p or not clean_link(p["target"]): conn.close(); raise HTTPException(404)
+    conn.execute("UPDATE professionals SET external_clicks=external_clicks+1 WHERE id=?",(p["id"],))
+    conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"external_click",now_iso())); conn.commit(); target=p["target"]; conn.close()
     return RedirectResponse(target,303)
 
 @app.get("/cadastro/cliente", response_class=HTMLResponse)
@@ -650,17 +669,21 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str=""):
       "daily_avg":round(period_views/days,1),"weekly_avg":round(period_views/max(days/7,1),1),
       "monthly_avg":round(period_views/max(days/30,1),1),"days":days}
     settings=get_settings(conn); support_link=wa_link(settings.get("support_whatsapp",""),"Olá! Sou profissional cadastrado na NowUp e preciso de ajuda com meu painel.")
+    profile_fields=[p["display_name"],p["whatsapp"],p["description"],p["services"],p["city"],p["neighborhood"],p["avatar_filename"],p["cover_filename"],p["service_area"],p["opening_hours"]]
+    profile_completion=round(sum(bool(str(v or "").strip()) for v in profile_fields)*100/len(profile_fields))
     conn.close()
-    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link))
+    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion))
 
 @app.post("/painel/perfil")
-def pro_update(request: Request, display_name: str=Form(...), whatsapp: str=Form(...), business_type: str=Form(""), city: str=Form(...), neighborhood: str=Form(""), address: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), external_url: str=Form(""), menu_url: str=Form(""), category_ids: list[int]=Form(default=[])):
+def pro_update(request: Request, display_name: str=Form(...), whatsapp: str=Form(...), business_type: str=Form(""), city: str=Form(...), neighborhood: str=Form(""), address: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), service_area: str=Form(""), opening_hours: str=Form(""), business_status: str=Form("open"), hide_address: Optional[str]=Form(None), whatsapp_message: str=Form(""), category_ids: list[int]=Form(default=[])):
     u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
     if business_type not in ("professional","restaurant","store","convenience","other"):
         business_type=conn.execute("SELECT business_type FROM professionals WHERE id=?",(p["id"],)).fetchone()[0]
     cities=active_cities(get_settings(conn))
     if city not in cities: city=cities[0]
-    conn.execute("UPDATE professionals SET display_name=?,whatsapp=?,business_type=?,city=?,neighborhood=?,address=?,cep=?,description=?,services=?,external_url=?,menu_url=? WHERE id=?",(display_name.strip()[:120],whatsapp.strip()[:30],business_type,city,neighborhood.strip()[:120],address.strip()[:220],cep.strip()[:20],description.strip()[:1200],services.strip()[:1200],clean_link(external_url),clean_link(menu_url),p["id"]))
+    if business_status not in ("open","temporarily_closed","vacation"): business_status="open"
+    default_message="Olá! Encontrei você pelo NowUp e gostaria de saber mais."
+    conn.execute("UPDATE professionals SET display_name=?,whatsapp=?,business_type=?,city=?,neighborhood=?,address=?,cep=?,description=?,services=?,service_area=?,opening_hours=?,business_status=?,hide_address=?,whatsapp_message=? WHERE id=?",(display_name.strip()[:120],whatsapp.strip()[:30],business_type,city,neighborhood.strip()[:120],address.strip()[:220],cep.strip()[:20],description.strip()[:1200],services.strip()[:1200],service_area.strip()[:500],opening_hours.strip()[:500],business_status,1 if hide_address else 0,(whatsapp_message.strip() or default_message)[:300],p["id"]))
     conn.execute("DELETE FROM professional_categories WHERE professional_id=?",(p["id"],))
     for cid in category_ids[:1]: conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(p["id"],cid))
     conn.commit(); conn.close(); return RedirectResponse("/painel?ok=perfil",303)
@@ -674,9 +697,9 @@ def customer_panel(request: Request):
     return templates.TemplateResponse("customer_panel.html", context(request, reviews=reviews))
 
 @app.post("/painel/links")
-def pro_links(request: Request, whatsapp: str=Form(...), external_url: str=Form(""), menu_url: str=Form("")):
+def pro_links(request: Request, whatsapp: str=Form(...), external_url: str=Form(""), menu_url: str=Form(""), instagram_url: str=Form(""), facebook_url: str=Form(""), website_url: str=Form("")):
     u=require_user(request,"professional"); conn=db()
-    conn.execute("UPDATE professionals SET whatsapp=?,external_url=?,menu_url=? WHERE user_id=?",(whatsapp.strip(),clean_link(external_url),clean_link(menu_url),u["id"]))
+    conn.execute("UPDATE professionals SET whatsapp=?,external_url=?,menu_url=?,instagram_url=?,facebook_url=?,website_url=? WHERE user_id=?",(whatsapp.strip(),clean_link(external_url),clean_link(menu_url),clean_link(instagram_url),clean_link(facebook_url),clean_link(website_url),u["id"]))
     conn.commit(); conn.close(); return RedirectResponse("/painel?ok=links#links",303)
 
 @app.post("/painel/identidade")
@@ -696,7 +719,19 @@ def pro_identity(request: Request, avatar: Optional[UploadFile]=File(None), cove
             except OSError: pass
         cover_fn=new_cover
     conn.execute("UPDATE professionals SET avatar_filename=?,cover_filename=? WHERE id=?",(avatar_fn,cover_fn,p["id"])); conn.commit(); conn.close()
-    return RedirectResponse("/painel#identidade",303)
+    return RedirectResponse("/painel?ok=identidade#identidade",303)
+
+@app.post("/painel/identidade/{image_type}/excluir")
+def pro_identity_delete(request: Request, image_type: str):
+    u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT * FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+    column={"perfil":"avatar_filename","capa":"cover_filename"}.get(image_type)
+    if column:
+        filename=p[column] or ""
+        if filename:
+            try: (UPLOAD_DIR/filename).unlink(missing_ok=True)
+            except OSError: pass
+        conn.execute(f"UPDATE professionals SET {column}='' WHERE id=?",(p["id"],)); conn.commit()
+    conn.close(); return RedirectResponse("/painel?ok=imagem-removida#identidade",303)
 
 def save_image(upload: UploadFile):
     data=upload.file.read(MAX_UPLOAD+1)
