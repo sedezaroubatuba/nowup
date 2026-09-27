@@ -271,6 +271,16 @@ def init_db():
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS analytics_events(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      professional_id INTEGER NOT NULL REFERENCES professionals(id) ON DELETE CASCADE,
+      event_type TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_analytics_professional_date
+      ON analytics_events(professional_id,created_at);
+    CREATE INDEX IF NOT EXISTS idx_analytics_type
+      ON analytics_events(event_type);
     """)
     ensure_column(conn, "users", "email_verified", "INTEGER NOT NULL DEFAULT 1")
     ensure_column(conn, "users", "verification_token", "TEXT DEFAULT ''")
@@ -282,6 +292,8 @@ def init_db():
     ensure_column(conn, "professionals", "external_clicks", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "professionals", "avatar_filename", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "cover_filename", "TEXT DEFAULT ''")
+    ensure_column(conn, "professionals", "address", "TEXT DEFAULT ''")
+    ensure_column(conn, "professionals", "is_demo", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "banners", "image_filename", "TEXT DEFAULT ''")
     ensure_column(conn, "banners", "sort_order", "INTEGER NOT NULL DEFAULT 100")
     ensure_column(conn, "banners", "clicks", "INTEGER NOT NULL DEFAULT 0")
@@ -413,7 +425,8 @@ def profile(request: Request, slug: str):
       FROM professionals p WHERE p.slug=? AND p.blocked=0
     """,(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404,"Profissional não encontrado")
-    conn.execute("UPDATE professionals SET views=views+1 WHERE id=?",(p["id"],)); conn.commit()
+    conn.execute("UPDATE professionals SET views=views+1 WHERE id=?",(p["id"],))
+    conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"profile_view",now_iso())); conn.commit()
     photos=conn.execute("SELECT * FROM photos WHERE professional_id=? ORDER BY is_cover DESC,id DESC",(p["id"],)).fetchall()
     posts=conn.execute("SELECT * FROM posts WHERE professional_id=? ORDER BY id DESC",(p["id"],)).fetchall()
     reviews=conn.execute("SELECT r.*,u.name FROM reviews r JOIN users u ON u.id=r.customer_id WHERE r.professional_id=? ORDER BY r.id DESC",(p["id"],)).fetchall()
@@ -426,21 +439,24 @@ def profile(request: Request, slug: str):
 def whatsapp_click(slug: str):
     conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404)
-    conn.execute("UPDATE professionals SET whatsapp_clicks=whatsapp_clicks+1 WHERE id=?",(p["id"],)); conn.commit(); conn.close()
+    conn.execute("UPDATE professionals SET whatsapp_clicks=whatsapp_clicks+1 WHERE id=?",(p["id"],))
+    conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"whatsapp_click",now_iso())); conn.commit(); conn.close()
     return RedirectResponse(wa_link(p["whatsapp"],"Olá! Encontrei seu perfil na NowUp e gostaria de um orçamento."), status_code=303)
 
 @app.get("/p/{slug}/cardapio")
 def menu_click(slug: str):
     conn=db(); p=conn.execute("SELECT id,menu_url FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
     if not p or not clean_link(p["menu_url"]): conn.close(); raise HTTPException(404)
-    conn.execute("UPDATE professionals SET menu_clicks=menu_clicks+1 WHERE id=?",(p["id"],)); conn.commit(); target=p["menu_url"]; conn.close()
+    conn.execute("UPDATE professionals SET menu_clicks=menu_clicks+1 WHERE id=?",(p["id"],))
+    conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"menu_click",now_iso())); conn.commit(); target=p["menu_url"]; conn.close()
     return RedirectResponse(target,303)
 
 @app.get("/p/{slug}/link")
 def external_click(slug: str):
     conn=db(); p=conn.execute("SELECT id,external_url FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
     if not p or not clean_link(p["external_url"]): conn.close(); raise HTTPException(404)
-    conn.execute("UPDATE professionals SET external_clicks=external_clicks+1 WHERE id=?",(p["id"],)); conn.commit(); target=p["external_url"]; conn.close()
+    conn.execute("UPDATE professionals SET external_clicks=external_clicks+1 WHERE id=?",(p["id"],))
+    conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"external_click",now_iso())); conn.commit(); target=p["external_url"]; conn.close()
     return RedirectResponse(target,303)
 
 @app.get("/cadastro/cliente", response_class=HTMLResponse)
@@ -549,7 +565,7 @@ def login(email: str=Form(...), password: str=Form(...)):
     conn=db(); u=conn.execute("SELECT * FROM users WHERE email=? AND is_active=1",(email.strip().lower(),)).fetchone(); conn.close()
     if not u or not verify_password(password,u["password_hash"]): return RedirectResponse("/entrar?erro=1",303)
     if u["role"]!="admin" and not u["email_verified"]: return RedirectResponse("/entrar?erro=verificacao",303)
-    dest="/admin" if u["role"]=="admin" else ("/painel" if u["role"]=="professional" else "/")
+    dest="/admin" if u["role"]=="admin" else ("/painel" if u["role"]=="professional" else "/cliente")
     return create_session_response(u["id"],dest)
 
 @app.post("/sair")
@@ -560,26 +576,65 @@ def logout(request: Request):
     resp=RedirectResponse("/",303); resp.delete_cookie("nowup_session"); return resp
 
 @app.get("/painel", response_class=HTMLResponse)
-def pro_panel(request: Request):
+def pro_panel(request: Request, mes: str="", inicio: str="", fim: str=""):
     u=require_user(request,"professional"); conn=db()
     p=conn.execute("SELECT * FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
     photos=conn.execute("SELECT * FROM photos WHERE professional_id=? ORDER BY is_cover DESC,id DESC",(p["id"],)).fetchall()
     posts=conn.execute("SELECT * FROM posts WHERE professional_id=? ORDER BY id DESC LIMIT 20",(p["id"],)).fetchall()
     selected={r[0] for r in conn.execute("SELECT category_id FROM professional_categories WHERE professional_id=?",(p["id"],)).fetchall()}
+    today=datetime.now(timezone.utc).date()
+    try:
+        if inicio and fim:
+            start=datetime.strptime(inicio,"%Y-%m-%d").date(); end=datetime.strptime(fim,"%Y-%m-%d").date()
+        elif mes:
+            start=datetime.strptime(mes+"-01","%Y-%m-%d").date()
+            next_month=(start.replace(day=28)+timedelta(days=4)).replace(day=1)
+            end=next_month-timedelta(days=1)
+        else:
+            end=today; start=today-timedelta(days=29)
+    except ValueError:
+        end=today; start=today-timedelta(days=29)
+    if start>end: start,end=end,start
+    if (end-start).days>366: start=end-timedelta(days=366)
+    event_rows=conn.execute("""SELECT event_type,COUNT(*) total FROM analytics_events
+      WHERE professional_id=? AND date(created_at) BETWEEN ? AND ? GROUP BY event_type""",
+      (p["id"],start.isoformat(),end.isoformat())).fetchall()
+    counts={r["event_type"]:r["total"] for r in event_rows}
+    daily_rows=conn.execute("""SELECT date(created_at) day,
+      SUM(CASE WHEN event_type='profile_view' THEN 1 ELSE 0 END) views,
+      SUM(CASE WHEN event_type!='profile_view' THEN 1 ELSE 0 END) clicks
+      FROM analytics_events WHERE professional_id=? AND date(created_at) BETWEEN ? AND ?
+      GROUP BY date(created_at) ORDER BY day DESC LIMIT 31""",
+      (p["id"],start.isoformat(),end.isoformat())).fetchall()
+    days=max(1,(end-start).days+1); period_views=counts.get("profile_view",0)
+    analytics={"views":period_views,
+      "whatsapp":counts.get("whatsapp_click",0),"menu":counts.get("menu_click",0),"external":counts.get("external_click",0),
+      "clicks":counts.get("whatsapp_click",0)+counts.get("menu_click",0)+counts.get("external_click",0),
+      "daily_avg":round(period_views/days,1),"weekly_avg":round(period_views/max(days/7,1),1),
+      "monthly_avg":round(period_views/max(days/30,1),1),"days":days}
+    settings=get_settings(conn); support_link=wa_link(settings.get("support_whatsapp",""),"Olá! Sou profissional cadastrado na NowUp e preciso de ajuda com meu painel.")
     conn.close()
-    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities()))
+    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link))
 
 @app.post("/painel/perfil")
-def pro_update(request: Request, display_name: str=Form(...), whatsapp: str=Form(...), business_type: str=Form(""), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), external_url: str=Form(""), menu_url: str=Form(""), category_ids: list[int]=Form(default=[])):
+def pro_update(request: Request, display_name: str=Form(...), whatsapp: str=Form(...), business_type: str=Form(""), city: str=Form(...), neighborhood: str=Form(""), address: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), external_url: str=Form(""), menu_url: str=Form(""), category_ids: list[int]=Form(default=[])):
     u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
     if business_type not in ("professional","restaurant","store","convenience","other"):
         business_type=conn.execute("SELECT business_type FROM professionals WHERE id=?",(p["id"],)).fetchone()[0]
     cities=active_cities(get_settings(conn))
     if city not in cities: city=cities[0]
-    conn.execute("UPDATE professionals SET display_name=?,whatsapp=?,business_type=?,city=?,neighborhood=?,cep=?,description=?,services=?,external_url=?,menu_url=? WHERE id=?",(display_name,whatsapp,business_type,city,neighborhood,cep,description,services,clean_link(external_url),clean_link(menu_url),p["id"]))
+    conn.execute("UPDATE professionals SET display_name=?,whatsapp=?,business_type=?,city=?,neighborhood=?,address=?,cep=?,description=?,services=?,external_url=?,menu_url=? WHERE id=?",(display_name.strip()[:120],whatsapp.strip()[:30],business_type,city,neighborhood.strip()[:120],address.strip()[:220],cep.strip()[:20],description.strip()[:1200],services.strip()[:1200],clean_link(external_url),clean_link(menu_url),p["id"]))
     conn.execute("DELETE FROM professional_categories WHERE professional_id=?",(p["id"],))
     for cid in category_ids[:5]: conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(p["id"],cid))
     conn.commit(); conn.close(); return RedirectResponse("/painel?ok=perfil",303)
+
+@app.get("/cliente", response_class=HTMLResponse)
+def customer_panel(request: Request):
+    u=require_user(request,"customer"); conn=db()
+    reviews=conn.execute("""SELECT r.*,p.display_name,p.slug FROM reviews r
+      JOIN professionals p ON p.id=r.professional_id WHERE r.customer_id=? ORDER BY r.id DESC""",(u["id"],)).fetchall()
+    conn.close()
+    return templates.TemplateResponse("customer_panel.html", context(request, reviews=reviews))
 
 @app.post("/painel/links")
 def pro_links(request: Request, whatsapp: str=Form(...), external_url: str=Form(""), menu_url: str=Form("")):
@@ -774,6 +829,35 @@ def admin_pro_action(request: Request, pid:int, action:str):
     elif action=="bloquear": conn.execute("UPDATE professionals SET blocked=CASE blocked WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(pid,))
     else: conn.close(); raise HTTPException(400)
     conn.commit(); conn.close(); return RedirectResponse("/admin#profissionais",303)
+
+@app.post("/admin/perfis/demonstracao")
+def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsapp:str=Form(...), address:str=Form(...), photo:UploadFile=File(...)):
+    require_user(request,"admin")
+    name=display_name.strip()[:120]; phone=whatsapp.strip()[:30]; address=address.strip()[:240]
+    if not name or not normalize_phone(phone) or not address:
+        return RedirectResponse("/admin?erro=perfil-demo#cadastro-rapido",303)
+    filename=save_image(photo)
+    conn=db()
+    try:
+        slug=unique_slug(conn,name)
+        demo_email=f"demo-{secrets.token_hex(8)}@nowup.local"
+        cur=conn.execute("INSERT INTO users(role,name,email,phone,password_hash,is_active,email_verified,created_at) VALUES('professional',?,?,?,?,1,1,?)",
+                         (name,demo_email,phone,hash_password(secrets.token_urlsafe(32)),now_iso()))
+        uid=cur.lastrowid
+        cur=conn.execute("""INSERT INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,address,description,services,business_type,verified,featured,blocked,avatar_filename,cover_filename,is_demo,created_at)
+                            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                         (uid,slug,name,"CNPJ","",phone,"Ubatuba","","",address,"Perfil demonstrativo criado para apresentar o funcionamento da NowUp.","Consulte diretamente pelo WhatsApp.","other",0,0,0,filename,filename,1,now_iso()))
+        pid=cur.lastrowid
+        conn.execute("INSERT INTO photos(professional_id,filename,caption,is_cover,created_at) VALUES(?,?,?,?,?)",(pid,filename,"Foto de perfil",1,now_iso()))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        try: (UPLOAD_DIR/filename).unlink(missing_ok=True)
+        except OSError: pass
+        conn.close()
+        return RedirectResponse("/admin?erro=perfil-demo#cadastro-rapido",303)
+    conn.close()
+    return RedirectResponse("/admin?ok=perfil-demo#profissionais",303)
 
 @app.post("/admin/profissionais/{pid}/editar")
 def admin_edit_professional(request: Request, pid:int, display_name:str=Form(...), city:str=Form(""), email:str=Form(...)):
