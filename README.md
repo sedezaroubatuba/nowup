@@ -2,10 +2,6 @@
 
 Sistema web completo para divulgação de profissionais, sem intermediação de pagamentos.
 
-## Tema de teste: Social Azul
-
-Esta versão inclui uma nova camada visual responsiva inspirada no protótipo Social Azul para a página inicial e para o painel administrativo. As rotas, formulários, banco de dados e regras de acesso foram preservados. O tema está concentrado em `static/social-blue.css`, facilitando revisão, ajustes ou remoção por um programador.
-
 ## O que funciona
 - Busca por serviço, categoria, cidade, bairro e CEP
 - Cadastro/login separado de cliente e profissional
