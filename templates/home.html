@@ -3,7 +3,7 @@
 <div class="social-mobile-head"><a class="social-wordmark" href="/">Now<span>Up</span></a><div class="social-head-actions"><a href="/profissionais" aria-label="Explorar">⌖</a><a href="/entrar" aria-label="Perfil">●</a></div></div>
 <div class="social-location">⌖ <b>{{city or 'Ubatuba'}}</b> <span>⌄</span></div>
 <form class="social-search" action="/profissionais"><span>⌕</span><input name="q" placeholder="Nome, categoria ou palavra-chave"><input type="hidden" name="city" value="{{city}}"><button aria-label="Buscar">→</button></form>
-<div class="social-stories"><a class="social-story own-story" href="/cadastro/profissional"><div class="social-story-ring"><span>＋</span></div><b>Seu story</b></a>{% if statuses %}{% for st in statuses[:7] %}<a class="social-story" href="/p/{{st.slug}}"><div class="social-story-ring">{% if st.status_image %}<img src="/uploads/{{st.status_image}}" alt="{{st.display_name}}">{% elif st.cover %}<img src="/uploads/{{st.cover}}" alt="{{st.display_name}}">{% else %}<span>🏪</span>{% endif %}</div><b>{{st.display_name}}</b></a>{% endfor %}{% else %}{% for c in categories[:7] %}<a class="social-story" href="/profissionais?category={{c.slug}}"><div class="social-story-ring"><span>{{c.icon}}</span></div><b>{{c.name}}</b></a>{% endfor %}{% endif %}<a class="social-story" href="/profissionais"><div class="social-story-ring"><span>›</span></div><b>Ver mais</b></a></div>
+<div class="social-stories" aria-label="Categorias">{% for c in categories[:20] %}<a class="social-story" href="/profissionais?category={{c.slug}}&city={{city or 'Ubatuba'}}"><div class="social-story-ring"><span>{{c.icon}}</span></div><b>{{c.name}}</b></a>{% endfor %}</div>
 </div></section>
 <section class="home-hero" style="--hero-desktop-height:{{settings.hero_desktop_height or 540}}px;--hero-mobile-height:{{settings.hero_mobile_height or 540}}px;--hero-brightness:{{settings.hero_brightness or 100}}%;--hero-zoom:{{(settings.hero_zoom or 100)|int / 100}};--hero-x:{{settings.hero_position_x or 50}}%;--hero-y:{{settings.hero_position_y or 50}}%;{% if settings.hero_image_filename %}--hero-image:url('/uploads/{{settings.hero_image_filename}}'){% endif %}">
 <div class="hero-orb orb-one">🔧</div>
@@ -39,35 +39,6 @@
 </form>
 </div>
 </section>
-<section class="business-types"><div class="container type-scroll"><a href="/profissionais?city={{city}}" class="type-chip">🔎 Todos</a><a href="/profissionais?business_type=professional&city={{city}}" class="type-chip">🛠️ Prestadores</a><a href="/profissionais?business_type=restaurant&city={{city}}" class="type-chip">🍽️ Restaurantes</a><a href="/profissionais?business_type=store&city={{city}}" class="type-chip">🛍️ Lojas</a><a href="/profissionais?business_type=convenience&city={{city}}" class="type-chip">🥤 Adegas e conveniências</a></div></section>
-<section class="category-strip">
-<div class="container">
-<div class="category-scroll">{% for c in categories %}<a class="quick-cat" href="/profissionais?category={{c.slug}}">
-<span>{{c.icon}}</span>
-<b>{{c.name}}</b>
-</a>{% endfor %}<a class="quick-cat all" href="/profissionais">
-<span>•••</span>
-<b>Ver todas</b>
-</a>
-</div>
-</div>
-</section>
-{% if statuses %}<section class="section compact original-statuses">
-<div class="container">
-<div class="section-head">
-<div>
-<span class="kicker">Agora na NowUp</span>
-<h2>Trabalhos de hoje</h2>
-</div>
-</div>
-<div class="storyline">{% for st in statuses %}<a class="story" href="/p/{{st.slug}}">
-<div class="circle">{% if st.status_image %}<img src="/uploads/{{st.status_image}}">{% else %}🛠️{% endif %}</div>
-<div class="tiny">
-<b>{{st.display_name}}</b>
-</div>
-</a>{% endfor %}</div>
-</div>
-</section>{% endif %}
 {% if banners %}<section class="section compact">
 <div class="container">
 <div class="ad-slider" data-slider data-interval="5000">{% for b in banners %}<a href="/anuncio/{{b.id}}" class="ad-slide photo-only {% if loop.first %}active{% endif %}" style="--desktop-height:{{b.desktop_height}}px;--mobile-height:{{b.mobile_height}}px;--slide-brightness:{{b.brightness}}%;--slide-zoom:{{b.zoom / 100}};--slide-x:{{b.position_x}}%;--slide-y:{{b.position_y}}%">{% if b.image_filename %}<img class="slide-art" src="/uploads/{{b.image_filename}}" alt="Anúncio {{loop.index}}">{% endif %}</a>{% endfor %}<button class="slider-arrow prev" type="button" data-prev aria-label="Anterior">‹</button>
