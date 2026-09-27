@@ -1,5 +1,11 @@
 function acceptCookies(){localStorage.setItem('nowup_cookies','1');const e=document.getElementById('cookie');if(e)e.remove()}
 document.addEventListener('DOMContentLoaded',()=>{
+  document.querySelectorAll('[data-identity-form]').forEach(form=>{
+    const avatar=form.querySelector('[name="avatar"]'),cover=form.querySelector('[name="cover"]');
+    const avatarPreview=document.querySelector('[data-avatar-preview]'),coverPreview=document.querySelector('[data-cover-preview]');
+    avatar?.addEventListener('change',()=>{const file=avatar.files?.[0];if(!file||!avatarPreview)return;const url=URL.createObjectURL(file);avatarPreview.innerHTML=`<img src="${url}" alt="Prévia da foto de perfil">`});
+    cover?.addEventListener('change',()=>{const file=cover.files?.[0];if(!file||!coverPreview)return;coverPreview.style.backgroundImage=`url("${URL.createObjectURL(file)}")`});
+  });
   document.querySelectorAll('form[action*="/excluir"], form[data-confirm-delete]').forEach(form=>form.addEventListener('submit',event=>{
     if(!window.confirm('Você realmente deseja excluir? Essa ação não poderá ser desfeita.'))event.preventDefault();
   }));
