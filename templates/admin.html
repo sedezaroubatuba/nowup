@@ -8,7 +8,6 @@
 <a href="#aparencia">Aparência</a>
 <a href="#categorias">Categorias</a>
 <a href="#publicidade">Publicidade</a>
-<a href="#cadastro-rapido">Cadastro rápido</a>
 <a href="#profissionais">Perfis</a>
 <a href="#clientes">Clientes</a>
 <a href="#denuncias">Denúncias</a>
@@ -297,16 +296,6 @@
 </div>
 </details>{% endfor %}</div>
 </section>
-<section class="panel" id="cadastro-rapido">
-<div class="section-title"><div><h2>Cadastro rápido de empresa</h2><p class="muted">Crie perfis demonstrativos para testar a vitrine. Use dados fictícios ou autorizados.</p></div><span class="status-pill">Perfil demonstrativo</span></div>
-<form action="/admin/perfis/demonstracao" method="post" enctype="multipart/form-data" class="settings-grid">
-<div><label>Nome da empresa</label><input class="input" name="display_name" placeholder="Ex.: Café da Praia — Demonstração" required></div>
-<div><label>WhatsApp</label><input class="input" name="whatsapp" inputmode="tel" placeholder="(12) 99999-9999" required></div>
-<div><label>Endereço</label><input class="input" name="address" placeholder="Rua, número e bairro — Ubatuba" required></div>
-<div><label>Foto de perfil</label><input class="input" type="file" name="photo" accept="image/*" required></div>
-<button class="btn primary">Criar perfil demonstrativo</button>
-</form>
-</section>
 <section class="panel" id="profissionais">
 <h2>Profissionais e empresas</h2>
 <div class="tablewrap">
@@ -326,7 +315,7 @@
 </form>
 <a class="tiny" href="/p/{{p.slug}}">Ver perfil público</a>
 </td>
-<td>{% if p.is_demo %}<span class="status-pill warn">Demonstração</span>{% else %}{{'Sim' if p.email_verified else 'Pendente'}}{% endif %}</td>
+<td>{{'Sim' if p.email_verified else 'Pendente'}}</td>
 <td>Verificado: {{'Sim' if p.verified else 'Não'}}<br>Destaque: {{'Sim' if p.featured else 'Não'}}<br>Bloqueado: {{'Sim' if p.blocked else 'Não'}}</td>
 <td>
 <div class="row">

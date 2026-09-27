@@ -2,7 +2,7 @@
 <section class="social-discovery"><div class="container">
 <div class="social-mobile-head"><a class="social-wordmark" href="/">Now<span>Up</span></a><div class="social-head-actions"><a href="/profissionais" aria-label="Explorar">⌖</a><a href="/entrar" aria-label="Perfil">●</a></div></div>
 <div class="social-location">⌖ <b>{{city or 'Ubatuba'}}</b> <span>⌄</span></div>
-<form class="social-search" action="/profissionais"><span>⌕</span><input name="q" placeholder="Buscar restaurantes, lojas, serviços..."><input type="hidden" name="city" value="{{city}}"><button aria-label="Buscar">→</button></form>
+<form class="social-search" action="/profissionais"><span>⌕</span><input name="q" placeholder="Nome, categoria ou palavra-chave"><input type="hidden" name="city" value="{{city}}"><button aria-label="Buscar">→</button></form>
 <div class="social-stories"><a class="social-story own-story" href="/cadastro/profissional"><div class="social-story-ring"><span>＋</span></div><b>Seu story</b></a>{% if statuses %}{% for st in statuses[:7] %}<a class="social-story" href="/p/{{st.slug}}"><div class="social-story-ring">{% if st.status_image %}<img src="/uploads/{{st.status_image}}" alt="{{st.display_name}}">{% elif st.cover %}<img src="/uploads/{{st.cover}}" alt="{{st.display_name}}">{% else %}<span>🏪</span>{% endif %}</div><b>{{st.display_name}}</b></a>{% endfor %}{% else %}{% for c in categories[:7] %}<a class="social-story" href="/profissionais?category={{c.slug}}"><div class="social-story-ring"><span>{{c.icon}}</span></div><b>{{c.name}}</b></a>{% endfor %}{% endif %}<a class="social-story" href="/profissionais"><div class="social-story-ring"><span>›</span></div><b>Ver mais</b></a></div>
 </div></section>
 <section class="home-hero" style="--hero-desktop-height:{{settings.hero_desktop_height or 540}}px;--hero-mobile-height:{{settings.hero_mobile_height or 540}}px;--hero-brightness:{{settings.hero_brightness or 100}}%;--hero-zoom:{{(settings.hero_zoom or 100)|int / 100}};--hero-x:{{settings.hero_position_x or 50}}%;--hero-y:{{settings.hero_position_y or 50}}%;{% if settings.hero_image_filename %}--hero-image:url('/uploads/{{settings.hero_image_filename}}'){% endif %}">
@@ -29,7 +29,7 @@
 <form class="home-search" action="/profissionais">
 <label>
 <span>⌕</span>
-<input name="q" placeholder="O que você precisa?">
+<input name="q" placeholder="Nome, categoria ou palavra-chave">
 </label>
 <label>
 <span>⌖</span>
