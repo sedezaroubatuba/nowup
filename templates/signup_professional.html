@@ -12,7 +12,7 @@
 <select name="business_type" required><option value="professional">Prestador de serviço</option><option value="restaurant">Restaurante ou lanchonete</option><option value="store">Loja ou comércio</option><option value="convenience">Conveniência ou adega</option><option value="other">Outro negócio</option></select>
 <select name="doc_type"><option>CNPJ</option><option>CPF</option></select>
 <input class="input" name="document" placeholder="CNPJ ou CPF" required>
-<input class="input" name="city" placeholder="Cidade" required>
+<select name="city" required>{% for c in active_cities %}<option value="{{c}}">{{c}}</option>{% endfor %}</select>
 <input class="input" name="neighborhood" placeholder="Bairro">
 <input class="input" name="cep" placeholder="CEP"></div>
 <h3>Categorias (até 5)</h3><div class="checkgrid">{% for c in categories %}<label class="check"><input type="checkbox" name="category_ids" value="{{c.id}}"> {{c.icon}} {{c.name}}</label>{% endfor %}</div>
