@@ -3,6 +3,7 @@
 <aside class="sidebar">
 <h3>Admin NowUp</h3>
 <a href="#dashboard">Dashboard</a>
+<a href="/admin/cms">Gestão completa do portal</a>
 <a href="#perfil">Meu perfil</a>
 <a href="#aparencia">Aparência</a>
 <a href="#categorias">Categorias</a>
@@ -15,6 +16,7 @@
 <main>
 <section class="panel" id="dashboard">
 <h1>Painel Administrativo</h1>
+<p><a class="btn primary" href="/admin/cms">⚙️ Configurações, páginas, SEO, blog e contatos</a></p>
 <div class="stats">
 <div class="stat">
 <span class="muted tiny">Perfis</span>
@@ -97,6 +99,11 @@
 <div>
 <label>WhatsApp</label>
 <input class="input" name="support_whatsapp" value="{{settings.support_whatsapp}}">
+</div>
+<div style="grid-column:1/-1">
+<label>Cidades disponíveis</label>
+<input class="input" name="active_cities" value="{{settings.active_cities or 'Ubatuba'}}" placeholder="Ubatuba">
+<small class="muted">No início deixe somente Ubatuba. Para liberar outras cidades depois, separe por vírgulas.</small>
 </div>
 </div>
 <button class="btn primary">Salvar aparência</button>
