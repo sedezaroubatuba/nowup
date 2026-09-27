@@ -110,11 +110,9 @@ def secure_login(email: str=Form(...),password: str=Form(...),tipo: str=Form("")
     if expected and u["role"]!=expected:
         return RedirectResponse(f"/entrar?tipo={tipo}&erro=perfil",303)
     if u["role"]=="admin":
-        # Evita bloquear o administrador antes de a Brevo estar pronta.
-        # Assim que as três variáveis de e-mail forem configuradas, o código
-        # de segunda etapa passa a ser exigido automaticamente.
+        # O código enviado por e-mail é obrigatório em todo acesso ADM.
         if not email_configured():
-            return create_secure_session(u["id"],"/admin",admin=True)
+            return RedirectResponse("/entrar?tipo=admin&erro=2fa",303)
         challenge=secrets.token_urlsafe(32); code=f"{secrets.randbelow(1_000_000):06d}"; expires=(datetime.now(timezone.utc)+timedelta(minutes=10)).isoformat()
         conn=db(); conn.execute("CREATE TABLE IF NOT EXISTS admin_login_codes(challenge TEXT PRIMARY KEY,user_id INTEGER NOT NULL,code_hash TEXT NOT NULL,expires_at TEXT NOT NULL,attempts INTEGER NOT NULL DEFAULT 0)")
         code_hash=hashlib.sha256(code.encode()).hexdigest(); conn.execute("DELETE FROM admin_login_codes WHERE user_id=? OR expires_at<=?",(u["id"],datetime.now(timezone.utc).isoformat())); conn.execute("INSERT INTO admin_login_codes(challenge,user_id,code_hash,expires_at) VALUES(?,?,?,?)",(challenge,u["id"],code_hash,expires)); conn.commit(); conn.close()

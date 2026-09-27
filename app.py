@@ -185,6 +185,13 @@ def init_db():
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       expires_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS admin_login_codes(
+      challenge TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      code_hash TEXT NOT NULL,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      expires_at TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS categories(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
@@ -391,9 +398,13 @@ def init_db():
     if admin:
         conn.execute("UPDATE users SET role='admin', is_active=1, email_verified=1, password_hash=? WHERE id=?",
                      (hash_password(admin_pass), admin["id"]))
+        admin_id=admin["id"]
     else:
-        conn.execute("INSERT INTO users(role,name,email,password_hash,email_verified,created_at) VALUES('admin','Administrador NowUp',?,?,1,?)",
-                     (admin_email, hash_password(admin_pass), now_iso()))
+        cur=conn.execute("INSERT INTO users(role,name,email,password_hash,email_verified,created_at) VALUES('admin','Administrador NowUp',?,?,1,?)",
+                         (admin_email, hash_password(admin_pass), now_iso()))
+        admin_id=cur.lastrowid
+    # Reinícios e novos deploys encerram qualquer painel administrativo aberto.
+    conn.execute("DELETE FROM sessions WHERE user_id=?",(admin_id,))
     if not conn.execute("SELECT 1 FROM banners").fetchone():
         conn.execute("INSERT INTO banners(title,subtitle,created_at) VALUES(?,?,?)",
                      ("Divulgue sua empresa na NowUp","Espaço para publicidade por cidade ou categoria.",now_iso()))
@@ -548,8 +559,7 @@ def signup_customer(name: str=Form(...), email: str=Form(...), phone: str=Form("
         conn.close(); return RedirectResponse("/cadastro/cliente?erro=email",303)
     conn.close()
     if not send_verification(normalized_email,name.strip(),token):
-        conn=db(); conn.execute("DELETE FROM users WHERE id=?",(uid,)); conn.commit(); conn.close()
-        return RedirectResponse("/cadastro/cliente?erro=envio_email",303)
+        return RedirectResponse("/cadastro/aguardando?erro=envio_email",303)
     return RedirectResponse("/cadastro/aguardando",303)
 
 @app.get("/cadastro/profissional", response_class=HTMLResponse)
@@ -596,8 +606,7 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
         conn.rollback(); conn.close(); return RedirectResponse("/cadastro/profissional?erro=email",303)
     conn.close()
     if not send_verification(normalized_email,name.strip(),token):
-        conn=db(); conn.execute("DELETE FROM users WHERE id=?",(uid,)); conn.commit(); conn.close()
-        return RedirectResponse("/cadastro/profissional?erro=envio_email",303)
+        return RedirectResponse("/cadastro/aguardando?erro=envio_email",303)
     return RedirectResponse("/cadastro/aguardando",303)
 
 @app.get("/cadastro/sucesso", response_class=HTMLResponse)
@@ -607,10 +616,15 @@ def signup_success(request: Request, tipo: str="cliente"):
         return RedirectResponse("/entrar",303)
     return templates.TemplateResponse("signup_success.html", context(request, tipo=tipo))
 
-def create_session_response(uid:int, dest:str):
-    token=secrets.token_urlsafe(32); expires=(datetime.now(timezone.utc)+timedelta(days=SESSION_DAYS)).isoformat()
+def create_session_response(uid:int, dest:str, is_admin:bool=False):
+    lifetime=timedelta(minutes=ADMIN_SESSION_MINUTES) if is_admin else timedelta(days=SESSION_DAYS)
+    token=secrets.token_urlsafe(32); expires=(datetime.now(timezone.utc)+lifetime).isoformat()
     conn=db(); conn.execute("INSERT INTO sessions(token,user_id,expires_at) VALUES(?,?,?)",(token,uid,expires)); conn.commit(); conn.close()
-    resp=RedirectResponse(dest,303); resp.set_cookie("nowup_session",token,max_age=SESSION_DAYS*86400,httponly=True,samesite="lax",secure=os.getenv("NOWUP_HTTPS","0")=="1")
+    resp=RedirectResponse(dest,303)
+    cookie_options={"httponly":True,"samesite":"lax","secure":os.getenv("NOWUP_HTTPS","0")=="1"}
+    if not is_admin:
+        cookie_options["max_age"]=SESSION_DAYS*86400
+    resp.set_cookie("nowup_session",token,**cookie_options)
     return resp
 
 @app.get("/entrar", response_class=HTMLResponse)
