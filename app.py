@@ -329,8 +329,9 @@ def init_db():
     ensure_column(conn, "banners", "mobile_height", "INTEGER NOT NULL DEFAULT 240")
     defaults = {
       "brand_name": "NowUp",
-      "primary_color": "#2457e6",
-      "accent_color": "#ff8a32",
+      "primary_color": "#08131F",
+      "accent_color": "#08BCEB",
+      "theme_name": "noturno",
       "font_family": "Inter",
       "hero_title": "Encontre quem resolve.",
       "hero_subtitle": "Busque profissionais por serviço e localização. Veja trabalhos recentes, avaliações e fale direto pelo WhatsApp.",
@@ -873,7 +874,7 @@ NOWUP_THEMES = {
     "vinho": ("#7F1D3F", "#D946EF"),
     "uva": ("#6D28D9", "#EC4899"),
     "lavanda": ("#7C3AED", "#A78BFA"),
-    "noturno": ("#172554", "#38BDF8"),
+    "noturno": ("#08131F", "#08BCEB"),
     "grafite": ("#263238", "#00B8A9"),
     "preto-dourado": ("#171717", "#D4A017"),
     "cafe": ("#6F4E37", "#D97706"),
@@ -885,7 +886,7 @@ NOWUP_THEMES = {
 }
 
 @app.post("/admin/aparencia")
-def admin_appearance(request: Request, brand_name:str=Form("NowUp"), font_family:str=Form("Inter"), primary_color:str=Form("#2457e6"), accent_color:str=Form("#ff8a32"), theme_name:str=Form("personalizado"), hero_title:str=Form(""), hero_subtitle:str=Form(""), public_email:str=Form(""), support_whatsapp:str=Form(""), active_cities:str=Form("Ubatuba")):
+def admin_appearance(request: Request, brand_name:str=Form("NowUp"), font_family:str=Form("Inter"), primary_color:str=Form("#08131F"), accent_color:str=Form("#08BCEB"), theme_name:str=Form("noturno"), hero_title:str=Form(""), hero_subtitle:str=Form(""), public_email:str=Form(""), support_whatsapp:str=Form(""), active_cities:str=Form("Ubatuba")):
     require_user(request,"admin")
     allowed_fonts={"Inter","Arial","Georgia","Trebuchet MS","Verdana"}; font_family=font_family if font_family in allowed_fonts else "Inter"
     cities=", ".join(dict.fromkeys(c.strip()[:80] for c in active_cities.split(",") if c.strip())) or "Ubatuba"

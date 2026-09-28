@@ -48,7 +48,7 @@ def save_appearance(
     themes={
       "oceanico":("#075BD8","#FF6A00"),"royal":("#243BFF","#8B5CF6"),"turquesa":("#007F8B","#20C997"),"esmeralda":("#087F5B","#F59F00"),"floresta":("#245C3A","#A3E635"),
       "por-do-sol":("#C2410C","#FBBF24"),"coral":("#E84855","#FF8A5B"),"rubi":("#B42318","#F04438"),"vinho":("#7F1D3F","#D946EF"),"uva":("#6D28D9","#EC4899"),
-      "lavanda":("#7C3AED","#A78BFA"),"noturno":("#172554","#38BDF8"),"grafite":("#263238","#00B8A9"),"preto-dourado":("#171717","#D4A017"),"cafe":("#6F4E37","#D97706"),
+      "lavanda":("#7C3AED","#A78BFA"),"noturno":("#08131F","#08BCEB"),"grafite":("#263238","#00B8A9"),"preto-dourado":("#171717","#D4A017"),"cafe":("#6F4E37","#D97706"),
       "areia":("#9A6700","#F2C14E"),"azul-petroleo":("#164E63","#06B6D4"),"ceu":("#0284C7","#22D3EE"),"brasil":("#08783E","#F7C600"),"neon":("#312E81","#22C55E")}
     if theme_name in themes:
         primary_color,accent_color=themes[theme_name]
