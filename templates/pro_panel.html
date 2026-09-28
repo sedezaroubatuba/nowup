@@ -22,6 +22,14 @@
 <a href="/p/{{pro.slug}}">↗ Ver perfil público</a>{% if support_link!='#' %}<a class="support-side" href="{{support_link}}" target="_blank" rel="noopener">🛟 Falar com a NowUp</a>{% endif %}</aside>
 <main>
 {% if request.query_params.get('ok') %}<div class="alert success">Alterações salvas com sucesso.</div>{% endif %}
+<div class="order-alert-control" data-order-alerts data-latest-order-id="{{latest_order_id}}">
+<button class="btn order-alert-enable" type="button" data-enable-order-alerts>🔔 Ativar alertas de pedidos</button>
+<small data-alert-status>Ative para ouvir um toque forte quando chegar um pedido novo.</small>
+</div>
+<div class="new-order-alert" data-new-order-alert hidden role="alert">
+<div><b>🔔 Novo pedido recebido!</b><span data-new-order-message>Abra a central de pedidos para conferir.</span></div>
+<button class="btn" type="button" data-open-new-order>Ver pedido</button>
+</div>
 <section class="panel pro-welcome" id="resumo">
 <div>
 <span class="kicker">Central do profissional</span>
@@ -82,6 +90,7 @@
 <a class="btn soft" href="/p/{{pro.slug}}/menu" target="_blank">Ver cardápio público</a>
 </div>
 <p class="muted">Cadastre categorias e produtos. O cliente verá este cardápio no perfil público, montará o carrinho e enviará o pedido ao seu WhatsApp.</p>
+<details class="menu-settings" open><summary><b>⚙️ Entrega, retirada e pagamento</b></summary><form action="/painel/cardapio/configuracoes" method="post" class="product-form"><label>Taxa de entrega<input class="input" name="delivery_fee" value="{{'%.2f'|format(pro.delivery_fee_cents/100)|replace('.',',')}}" inputmode="decimal"></label><label>Pedido mínimo<input class="input" name="minimum_order" value="{{'%.2f'|format(pro.minimum_order_cents/100)|replace('.',',')}}" inputmode="decimal"></label><label>Tempo médio de preparo (minutos)<input class="input" type="number" min="5" max="240" name="prep_minutes" value="{{pro.prep_minutes}}"></label><label>Chave Pix<input class="input" name="pix_key" value="{{pro.pix_key}}" placeholder="Telefone, e-mail, CPF/CNPJ ou aleatória"></label><label class="check"><input type="checkbox" name="allows_delivery" value="1" {% if pro.allows_delivery %}checked{% endif %}> Aceitar entrega</label><label class="check"><input type="checkbox" name="allows_pickup" value="1" {% if pro.allows_pickup %}checked{% endif %}> Aceitar retirada</label><button class="btn primary">Salvar configurações</button></form></details>
 <div class="menu-category-manager">
 <h3>Categorias do cardápio</h3>
 <form action="/painel/cardapio/categorias" method="post" class="category-add-form">
@@ -106,6 +115,8 @@
 </label>
 <label>Preço<input class="input" name="price" inputmode="decimal" placeholder="Ex.: 29,90" required>
 </label>
+<label>Preço promocional<input class="input" name="promo_price" inputmode="decimal" placeholder="Opcional"></label>
+<label>Máximo por pedido<input class="input" type="number" name="max_quantity" min="1" max="99" value="99"></label>
 <label>Foto<input class="input" type="file" name="photo" accept="image/*">
 </label>
 <label class="full">Descrição<textarea name="description" maxlength="600" placeholder="Ingredientes, tamanho ou informações importantes">
@@ -113,6 +124,7 @@
 </label>
 <label class="check">
 <input type="checkbox" name="available" value="1" checked> Produto disponível</label>
+<label class="check"><input type="checkbox" name="featured" value="1"> Destacar produto</label>
 <button class="btn primary">Salvar produto</button>
 </form>
 </details>
@@ -130,14 +142,18 @@
 </label>
 <label>Preço<input class="input" name="price" value="{{'%.2f'|format(product.price_cents/100)|replace('.',',')}}" required>
 </label>
+<label>Preço promocional<input class="input" name="promo_price" value="{% if product.promo_price_cents %}{{'%.2f'|format(product.promo_price_cents/100)|replace('.',',')}}{% endif %}" placeholder="Opcional"></label>
+<label>Máximo por pedido<input class="input" type="number" name="max_quantity" min="1" max="99" value="{{product.max_quantity}}"></label>
 <label>Trocar foto<input class="input" type="file" name="photo" accept="image/*">
 </label>
 <label class="full">Descrição<textarea name="description">{{product.description}}</textarea>
 </label>
 <label class="check">
 <input type="checkbox" name="available" value="1" {% if product.available %}checked{% endif %}> Disponível para pedidos (desmarque quando esgotar)</label>
+<label class="check"><input type="checkbox" name="featured" value="1" {% if product.featured %}checked{% endif %}> Produto em destaque</label>
 <button class="btn primary">Salvar alterações</button>
 </form>
+<div class="option-manager"><b>Adicionais deste produto</b><div class="option-list">{% for option in product_options.get(product.id,[]) %}<form action="/painel/cardapio/adicionais/{{option.id}}/excluir" method="post"><span>{{option.name}}{% if option.price_cents %} (+ R$ {{'%.2f'|format(option.price_cents/100)|replace('.',',')}}){% endif %}</span><button class="btn danger tiny">Excluir</button></form>{% else %}<small class="muted">Nenhum adicional cadastrado.</small>{% endfor %}</div><form action="/painel/cardapio/produtos/{{product.id}}/adicionais" method="post" class="option-add"><input class="input" name="option_name" placeholder="Ex.: Bacon extra" required><input class="input" name="option_price" placeholder="Preço: 4,00" inputmode="decimal"><button class="btn soft">Adicionar</button></form></div>
 <form action="/painel/cardapio/produtos/{{product.id}}/excluir" method="post" data-confirm-delete>
 <button class="btn danger tiny">Excluir produto</button>
 </form>
@@ -217,7 +233,7 @@
 <span class="kicker">Central de pedidos</span>
 <h2>Histórico de pedidos</h2>
 </div>
-<span class="status-pill ok">Atualização manual</span>
+<span class="status-pill ok">Atualização automática</span>
 </div>
 <form method="get" action="/painel#pedidos" class="analytics-filter">
 <label>Mês<input class="input" type="month" name="mes" value="{{filter_month}}">
@@ -232,8 +248,10 @@
 <option value="confirmed" {% if order_status=='confirmed' %}selected{% endif %}>Confirmado</option>
 <option value="preparing" {% if order_status=='preparing' %}selected{% endif %}>Em preparo</option>
 <option value="ready" {% if order_status=='ready' %}selected{% endif %}>Pronto</option>
+<option value="out_for_delivery" {% if order_status=='out_for_delivery' %}selected{% endif %}>Saiu para entrega</option>
 <option value="completed" {% if order_status=='completed' %}selected{% endif %}>Finalizado</option>
 <option value="cancelled" {% if order_status=='cancelled' %}selected{% endif %}>Cancelado</option>
+<option value="rejected" {% if order_status=='rejected' %}selected{% endif %}>Recusado</option>
 </select>
 </label>
 <button class="btn primary">Filtrar pedidos</button>
@@ -259,7 +277,7 @@
 <div class="orders-list">{% for order in orders %}<article class="order-card">
 <div class="order-head">
 <div>
-<b>Pedido #{{order.id}}</b>
+<b>Pedido {{order.order_code or ('#' ~ order.id)}}</b>
 <small>{{order.created_at[:16]|replace('T',' ')}} · {{order.customer_name or 'Cliente não informado'}}</small>
 </div>
 <strong>R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</strong>
@@ -271,7 +289,7 @@
 <span>💳 {% if order.payment_method=='cash' %}Dinheiro{% elif order.payment_method=='credit' %}Cartão de crédito{% elif order.payment_method=='debit' %}Cartão de débito{% elif order.payment_method=='on_delivery' %}Combinar no atendimento{% else %}Pix{% endif %}</span>
 </div>{% if order.address %}<p class="tiny">
 <b>Endereço:</b> {{order.address}}</p>{% endif %}{% if order.notes %}<p class="tiny">
-<b>Observações:</b> {{order.notes}}</p>{% endif %}<div class="order-products">{% for item in order_items_by_order.get(order.id,[]) %}<form action="/painel/pedidos/{{order.id}}/itens/{{item.id}}" method="post" class="order-item-edit"><b>{{item.product_name}}</b><label>Qtd.<input class="input" type="number" min="1" max="99" name="quantity" value="{{item.quantity}}"></label><label>Observação<input class="input" name="notes" value="{{item.notes}}"></label><label class="check"><input type="checkbox" name="remove" value="1"> Remover</label><button class="btn soft tiny">Salvar item</button></form>{% endfor %}</div>
+<b>Observações:</b> {{order.notes}}</p>{% endif %}<div class="order-products">{% for item in order_items_by_order.get(order.id,[]) %}<form action="/painel/pedidos/{{order.id}}/itens/{{item.id}}" method="post" class="order-item-edit"><div><b>{{item.product_name}}</b>{% if order_item_options.get(item.id) %}<small>{{order_item_options.get(item.id)|map(attribute='option_name')|join(', ')}}</small>{% endif %}</div><label>Qtd.<input class="input" type="number" min="1" max="99" name="quantity" value="{{item.quantity}}"></label><label>Observação<input class="input" name="notes" value="{{item.notes}}"></label><label class="check"><input type="checkbox" name="remove" value="1"> Remover</label><button class="btn soft tiny">Salvar item</button></form>{% endfor %}</div>
 <details class="order-edit"><summary class="btn soft tiny">✏️ Editar pedido</summary><form action="/painel/pedidos/{{order.id}}/editar" method="post" class="product-form"><label>Cliente<input class="input" name="customer_name" value="{{order.customer_name}}" required></label><label>WhatsApp<input class="input" name="customer_phone" value="{{order.customer_phone}}" required></label><label>Recebimento<select name="fulfillment_type"><option value="pickup" {% if order.fulfillment_type=='pickup' %}selected{% endif %}>Retirada</option><option value="delivery" {% if order.fulfillment_type=='delivery' %}selected{% endif %}>Entrega</option></select></label><label>Pagamento<select name="payment_method"><option value="pix" {% if order.payment_method=='pix' %}selected{% endif %}>Pix</option><option value="cash" {% if order.payment_method=='cash' %}selected{% endif %}>Dinheiro</option><option value="credit" {% if order.payment_method=='credit' %}selected{% endif %}>Crédito</option><option value="debit" {% if order.payment_method=='debit' %}selected{% endif %}>Débito</option><option value="on_delivery" {% if order.payment_method=='on_delivery' %}selected{% endif %}>Combinar</option></select></label><label class="full">Endereço<input class="input" name="address" value="{{order.address}}"></label><label class="full">Observações<textarea name="notes">{{order.notes}}</textarea></label><button class="btn primary">Salvar edição</button></form></details>
 <form action="/painel/pedidos/{{order.id}}/status" method="post" class="order-status-form">
 <label>Status<select name="status">
@@ -279,8 +297,10 @@
 <option value="confirmed" {% if order.status=='confirmed' %}selected{% endif %}>Confirmado</option>
 <option value="preparing" {% if order.status=='preparing' %}selected{% endif %}>Em preparo</option>
 <option value="ready" {% if order.status=='ready' %}selected{% endif %}>Pronto</option>
+<option value="out_for_delivery" {% if order.status=='out_for_delivery' %}selected{% endif %}>Saiu para entrega</option>
 <option value="completed" {% if order.status=='completed' %}selected{% endif %}>Finalizado</option>
 <option value="cancelled" {% if order.status=='cancelled' %}selected{% endif %}>Cancelado</option>
+<option value="rejected" {% if order.status=='rejected' %}selected{% endif %}>Recusado</option>
 </select>
 </label>
 <button class="btn soft tiny">Salvar status</button>
@@ -513,4 +533,6 @@
 <a class="btn whatsapp" href="{{support_link}}" target="_blank" rel="noopener">Falar com a NowUp</a>
 </section>{% endif %}
 </main>
-</div>{% endblock %}
+</div>
+<script src="/static/order-alerts.js?v=17"></script>
+{% endblock %}
