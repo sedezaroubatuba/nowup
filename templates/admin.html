@@ -8,6 +8,7 @@
 <a href="#aparencia">Aparência</a>
 <a href="#categorias">Categorias</a>
 <a href="#publicidade">Publicidade</a>
+<a href="#cadastro-rapido">Criar perfil fictício</a>
 <a href="#profissionais">Perfis</a>
 <a href="#clientes">Clientes</a>
 <a href="#denuncias">Denúncias</a>
@@ -331,6 +332,25 @@
 </div>
 </details>{% endfor %}</div>
 </section>
+<section class="panel" id="cadastro-rapido">
+<h2>Cadastrar profissional fictício</h2>
+<p class="muted">Crie perfis de demonstração para preencher e testar o NowUp. Não precisa informar e-mail nem confirmar cadastro.</p>
+<form action="/admin/perfis/demonstracao" method="post" enctype="multipart/form-data" class="grid-form">
+<label>Nome do profissional ou empresa
+<input class="input" name="display_name" placeholder="Ex.: João Eletricista" required>
+</label>
+<label>WhatsApp
+<input class="input" name="whatsapp" placeholder="Ex.: (12) 99999-9999" required>
+</label>
+<label>Endereço
+<input class="input" name="address" placeholder="Ex.: Estufa II, Ubatuba - SP" required>
+</label>
+<label>Foto do perfil
+<input class="input" type="file" name="photo" accept="image/*" required>
+</label>
+<button class="btn primary" type="submit">Criar perfil fictício</button>
+</form>
+</section>
 <section class="panel" id="profissionais">
 <h2>Profissionais e empresas</h2>
 <div class="tablewrap">
@@ -345,7 +365,12 @@
 <form action="/admin/profissionais/{{p.id}}/editar" method="post" class="admin-inline-edit">
 <input class="input" name="display_name" value="{{p.display_name}}" required>
 <input class="input" name="city" value="{{p.city}}" placeholder="Cidade">
+{% if p.is_demo %}
+<input type="hidden" name="email" value="{{p.email}}">
+<span class="tiny">Perfil fictício — sem e-mail</span>
+{% else %}
 <input class="input" type="email" name="email" value="{{p.email}}" required>
+{% endif %}
 <button class="btn primary tiny">Salvar</button>
 </form>
 <a class="tiny" href="/p/{{p.slug}}">Ver perfil público</a>
