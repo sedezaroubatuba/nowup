@@ -332,8 +332,19 @@ def init_db():
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS product_categories(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      professional_id INTEGER NOT NULL REFERENCES professionals(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 100,
+      active INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL,
+      UNIQUE(professional_id,name)
+    );
     CREATE INDEX IF NOT EXISTS idx_products_professional
       ON products(professional_id,available,sort_order,id);
+    CREATE INDEX IF NOT EXISTS idx_product_categories_professional
+      ON product_categories(professional_id,active,sort_order,id);
     """)
     ensure_column(conn, "users", "email_verified", "INTEGER NOT NULL DEFAULT 1")
     ensure_column(conn, "users", "verification_token", "TEXT DEFAULT ''")
@@ -550,10 +561,18 @@ def profile(request: Request, slug: str):
 def native_menu(request: Request, slug: str):
     conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404,"Empresa não encontrada")
-    products=conn.execute("SELECT * FROM products WHERE professional_id=? AND available=1 ORDER BY category,sort_order,id DESC",(p["id"],)).fetchall()
+    products=conn.execute("""SELECT pr.* FROM products pr
+      WHERE pr.professional_id=? AND pr.available=1
+      AND (NOT EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category))
+        OR EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) AND pc.active=1))
+      ORDER BY pr.category,pr.sort_order,pr.id DESC""",(p["id"],)).fetchall()
+    menu_categories=[]
+    for product in products:
+        category=(product["category"] or "Geral").strip() or "Geral"
+        if category not in menu_categories: menu_categories.append(category)
     conn.execute("UPDATE professionals SET menu_clicks=menu_clicks+1 WHERE id=?",(p["id"],))
     conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"menu_click",now_iso())); conn.commit(); conn.close()
-    return templates.TemplateResponse("menu.html", context(request, pro=p, products=products))
+    return templates.TemplateResponse("menu.html", context(request, pro=p, products=products, menu_categories=menu_categories))
 
 @app.post("/p/{slug}/menu/pedido")
 def native_menu_order(slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), address: str=Form(""), notes: str=Form(""), cart_json: str=Form(...)):
@@ -564,21 +583,23 @@ def native_menu_order(slug: str, customer_name: str=Form(...), customer_phone: s
     if not isinstance(raw_items,list) or not raw_items: conn.close(); raise HTTPException(400,"Carrinho vazio")
     clean_items=[]; total=0
     for raw in raw_items[:50]:
-        try: pid=int(raw.get("id")); qty=max(1,min(99,int(raw.get("quantity",1))))
+        try: pid=int(raw.get("id")); qty=max(1,min(99,int(raw.get("quantity",1)))); item_notes=str(raw.get("notes","")).strip()[:300]
         except (TypeError,ValueError,AttributeError): continue
         product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=? AND available=1",(pid,p["id"])).fetchone()
         if product:
-            clean_items.append((product,qty)); total += product["price_cents"]*qty
+            clean_items.append((product,qty,item_notes)); total += product["price_cents"]*qty
     if not clean_items: conn.close(); raise HTTPException(400,"Nenhum produto disponível no carrinho")
     fulfillment_type="delivery" if fulfillment_type=="delivery" else "pickup"
     created=now_iso(); cur=conn.execute("""INSERT INTO orders(professional_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at)
       VALUES(?,?,?,?,?,?,?,?,1,?,?)""",(p["id"],customer_name.strip()[:120],customer_phone.strip()[:30],fulfillment_type,address.strip()[:300],notes.strip()[:500],"new",total,created,created))
     order_id=cur.lastrowid
-    for product,qty in clean_items:
-        conn.execute("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents) VALUES(?,?,?,?,?)",(order_id,product["id"],product["name"],qty,product["price_cents"]))
+    for product,qty,item_notes in clean_items:
+        conn.execute("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes) VALUES(?,?,?,?,?,?)",(order_id,product["id"],product["name"],qty,product["price_cents"],item_notes))
     conn.commit(); conn.close()
     lines=[f"Olá! Fiz o pedido #{order_id} pelo NowUp:",""]
-    lines += [f"{qty}x {product['name']} — R$ {(product['price_cents']*qty)/100:.2f}" for product,qty in clean_items]
+    for product,qty,item_notes in clean_items:
+        lines.append(f"{qty}x {product['name']} — R$ {(product['price_cents']*qty)/100:.2f}")
+        if item_notes: lines.append(f"   Obs.: {item_notes}")
     lines += ["",f"Total: R$ {total/100:.2f}",f"Cliente: {customer_name.strip()}",f"Telefone: {customer_phone.strip()}","Entrega" if fulfillment_type=="delivery" else "Retirada no local"]
     if address.strip(): lines.append(f"Endereço: {address.strip()}")
     if notes.strip(): lines.append(f"Observações: {notes.strip()}")
@@ -745,6 +766,16 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     photos=conn.execute("SELECT * FROM photos WHERE professional_id=? ORDER BY is_cover DESC,id DESC",(p["id"],)).fetchall()
     posts=conn.execute("SELECT * FROM posts WHERE professional_id=? ORDER BY id DESC LIMIT 20",(p["id"],)).fetchall()
     products=conn.execute("SELECT * FROM products WHERE professional_id=? ORDER BY category,sort_order,id DESC",(p["id"],)).fetchall()
+    product_categories=conn.execute("SELECT * FROM product_categories WHERE professional_id=? ORDER BY sort_order,id",(p["id"],)).fetchall()
+    if not product_categories:
+        existing=[]
+        for row in products:
+            name=(row["category"] or "Geral").strip() or "Geral"
+            if name.lower() not in [x.lower() for x in existing]: existing.append(name)
+        if not existing: existing=["Geral"]
+        for index,name in enumerate(existing,1):
+            conn.execute("INSERT OR IGNORE INTO product_categories(professional_id,name,sort_order,active,created_at) VALUES(?,?,?,?,?)",(p["id"],name,index,1,now_iso()))
+        conn.commit(); product_categories=conn.execute("SELECT * FROM product_categories WHERE professional_id=? ORDER BY sort_order,id",(p["id"],)).fetchall()
     selected={r[0] for r in conn.execute("SELECT category_id FROM professional_categories WHERE professional_id=?",(p["id"],)).fetchall()}
     today=datetime.now(timezone.utc).date()
     try:
@@ -789,6 +820,11 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     orders=conn.execute(f"""SELECT o.*,
       COALESCE((SELECT SUM(oi.quantity) FROM order_items oi WHERE oi.order_id=o.id),0) item_count
       FROM orders o WHERE {' AND '.join(order_where)} ORDER BY o.id DESC LIMIT 100""",order_params).fetchall()
+    order_items_by_order={}
+    if orders:
+        order_ids=[order["id"] for order in orders]; placeholders=",".join("?" for _ in order_ids)
+        for item in conn.execute(f"SELECT * FROM order_items WHERE order_id IN ({placeholders}) ORDER BY id",order_ids).fetchall():
+            order_items_by_order.setdefault(item["order_id"],[]).append(item)
     order_summary=conn.execute("""SELECT COUNT(*) total,
       COALESCE(SUM(CASE WHEN status!='cancelled' THEN total_cents ELSE 0 END),0) revenue_cents,
       COALESCE(ROUND(AVG(CASE WHEN status!='cancelled' THEN total_cents END)),0) avg_ticket_cents,
@@ -804,13 +840,40 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
       GROUP BY lower(oi.product_name) ORDER BY quantity DESC,revenue_cents DESC LIMIT 15""",
       (p["id"],start.isoformat(),end.isoformat())).fetchall()
     conn.close()
-    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, products=products, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, order_summary=order_summary, top_products=top_products, order_status=pedido_status))
+    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, products=products, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, order_items_by_order=order_items_by_order, order_summary=order_summary, top_products=top_products, order_status=pedido_status))
 
 def price_to_cents(raw: str):
     value=(raw or "0").strip().replace("R$","").replace(" ","")
     if "," in value: value=value.replace(".","").replace(",",".")
     try: return max(0,int(round(float(value)*100)))
     except ValueError: raise HTTPException(400,"Preço inválido")
+
+@app.post("/painel/cardapio/categorias")
+def pro_menu_category_add(request: Request, name: str=Form(...)):
+    u=require_user(request,"professional"); clean=name.strip()[:80]
+    if not clean: return RedirectResponse("/painel?erro=categoria#cardapio",303)
+    conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+    next_order=conn.execute("SELECT COALESCE(MAX(sort_order),0)+1 FROM product_categories WHERE professional_id=?",(p["id"],)).fetchone()[0]
+    try: conn.execute("INSERT INTO product_categories(professional_id,name,sort_order,active,created_at) VALUES(?,?,?,?,?)",(p["id"],clean,next_order,1,now_iso())); conn.commit()
+    except sqlite3.IntegrityError: pass
+    conn.close(); return RedirectResponse("/painel?ok=categoria#cardapio",303)
+
+@app.post("/painel/cardapio/categorias/{category_id}")
+def pro_menu_category_edit(request: Request, category_id: int, name: str=Form(...), active: Optional[str]=Form(None)):
+    u=require_user(request,"professional"); clean=name.strip()[:80]
+    conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone(); old=conn.execute("SELECT * FROM product_categories WHERE id=? AND professional_id=?",(category_id,p["id"])).fetchone()
+    if old and clean:
+        conn.execute("UPDATE product_categories SET name=?,active=? WHERE id=?",(clean,1 if active else 0,category_id))
+        conn.execute("UPDATE products SET category=?,updated_at=? WHERE professional_id=? AND lower(category)=lower(?)",(clean,now_iso(),p["id"],old["name"])); conn.commit()
+    conn.close(); return RedirectResponse("/painel?ok=categoria#cardapio",303)
+
+@app.post("/painel/cardapio/categorias/{category_id}/excluir")
+def pro_menu_category_delete(request: Request, category_id: int):
+    u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone(); row=conn.execute("SELECT * FROM product_categories WHERE id=? AND professional_id=?",(category_id,p["id"])).fetchone()
+    if row:
+        conn.execute("UPDATE products SET category='Geral',updated_at=? WHERE professional_id=? AND lower(category)=lower(?)",(now_iso(),p["id"],row["name"]))
+        conn.execute("DELETE FROM product_categories WHERE id=?",(category_id,)); conn.execute("INSERT OR IGNORE INTO product_categories(professional_id,name,sort_order,active,created_at) VALUES(?,?,?,?,?)",(p["id"],"Geral",999,1,now_iso())); conn.commit()
+    conn.close(); return RedirectResponse("/painel?ok=categoria-excluida#cardapio",303)
 
 @app.post("/painel/cardapio/produtos")
 def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None)):
