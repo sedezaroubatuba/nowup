@@ -861,12 +861,41 @@ def admin(request: Request):
     suggestions=conn.execute("SELECT * FROM suggestions ORDER BY id DESC LIMIT 30").fetchall(); banners=conn.execute("SELECT * FROM banners ORDER BY sort_order,id").fetchall(); conn.close()
     return templates.TemplateResponse("admin.html", context(request, stats=stats, pros=pros, clients=clients, admin_categories=admin_categories, reports=reports, suggestions=suggestions, admin_banners=banners))
 
+NOWUP_THEMES = {
+    "oceanico": ("#075BD8", "#FF6A00"),
+    "royal": ("#243BFF", "#8B5CF6"),
+    "turquesa": ("#007F8B", "#20C997"),
+    "esmeralda": ("#087F5B", "#F59F00"),
+    "floresta": ("#245C3A", "#A3E635"),
+    "por-do-sol": ("#C2410C", "#FBBF24"),
+    "coral": ("#E84855", "#FF8A5B"),
+    "rubi": ("#B42318", "#F04438"),
+    "vinho": ("#7F1D3F", "#D946EF"),
+    "uva": ("#6D28D9", "#EC4899"),
+    "lavanda": ("#7C3AED", "#A78BFA"),
+    "noturno": ("#172554", "#38BDF8"),
+    "grafite": ("#263238", "#00B8A9"),
+    "preto-dourado": ("#171717", "#D4A017"),
+    "cafe": ("#6F4E37", "#D97706"),
+    "areia": ("#9A6700", "#F2C14E"),
+    "azul-petroleo": ("#164E63", "#06B6D4"),
+    "ceu": ("#0284C7", "#22D3EE"),
+    "brasil": ("#08783E", "#F7C600"),
+    "neon": ("#312E81", "#22C55E"),
+}
+
 @app.post("/admin/aparencia")
-def admin_appearance(request: Request, brand_name:str=Form("NowUp"), font_family:str=Form("Inter"), primary_color:str=Form("#2457e6"), accent_color:str=Form("#ff8a32"), hero_title:str=Form(""), hero_subtitle:str=Form(""), public_email:str=Form(""), support_whatsapp:str=Form(""), active_cities:str=Form("Ubatuba")):
+def admin_appearance(request: Request, brand_name:str=Form("NowUp"), font_family:str=Form("Inter"), primary_color:str=Form("#2457e6"), accent_color:str=Form("#ff8a32"), theme_name:str=Form("personalizado"), hero_title:str=Form(""), hero_subtitle:str=Form(""), public_email:str=Form(""), support_whatsapp:str=Form(""), active_cities:str=Form("Ubatuba")):
     require_user(request,"admin")
     allowed_fonts={"Inter","Arial","Georgia","Trebuchet MS","Verdana"}; font_family=font_family if font_family in allowed_fonts else "Inter"
     cities=", ".join(dict.fromkeys(c.strip()[:80] for c in active_cities.split(",") if c.strip())) or "Ubatuba"
-    values={"brand_name":brand_name.strip()[:80] or "NowUp","font_family":font_family,"primary_color":primary_color[:20],"accent_color":accent_color[:20],"hero_title":hero_title.strip()[:180],"hero_subtitle":hero_subtitle.strip()[:500],"public_email":public_email.strip()[:160],"support_whatsapp":support_whatsapp.strip()[:40],"active_cities":cities}
+    if theme_name in NOWUP_THEMES:
+        primary_color, accent_color = NOWUP_THEMES[theme_name]
+    else:
+        theme_name = "personalizado"
+        if not re.fullmatch(r"#[0-9a-fA-F]{6}", primary_color): primary_color="#2457e6"
+        if not re.fullmatch(r"#[0-9a-fA-F]{6}", accent_color): accent_color="#ff8a32"
+    values={"brand_name":brand_name.strip()[:80] or "NowUp","font_family":font_family,"primary_color":primary_color,"accent_color":accent_color,"theme_name":theme_name,"hero_title":hero_title.strip()[:180],"hero_subtitle":hero_subtitle.strip()[:500],"public_email":public_email.strip()[:160],"support_whatsapp":support_whatsapp.strip()[:40],"active_cities":cities}
     conn=db()
     for key,value in values.items(): conn.execute("INSERT INTO site_settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",(key,value))
     conn.commit(); conn.close(); return RedirectResponse("/admin?ok=aparencia#aparencia",303)

@@ -37,6 +37,7 @@ def save_appearance(
     brand_name: str=Form("NowUp"),
     primary_color: str=Form("#2457e6"),
     accent_color: str=Form("#ff8a32"),
+    theme_name: str=Form("personalizado"),
     font_family: str=Form("Inter"),
     hero_title: str=Form("Encontre quem resolve."),
     hero_subtitle: str=Form(""),
@@ -44,6 +45,15 @@ def save_appearance(
     support_whatsapp: str=Form("")
 ):
     require_admin(request)
+    themes={
+      "oceanico":("#075BD8","#FF6A00"),"royal":("#243BFF","#8B5CF6"),"turquesa":("#007F8B","#20C997"),"esmeralda":("#087F5B","#F59F00"),"floresta":("#245C3A","#A3E635"),
+      "por-do-sol":("#C2410C","#FBBF24"),"coral":("#E84855","#FF8A5B"),"rubi":("#B42318","#F04438"),"vinho":("#7F1D3F","#D946EF"),"uva":("#6D28D9","#EC4899"),
+      "lavanda":("#7C3AED","#A78BFA"),"noturno":("#172554","#38BDF8"),"grafite":("#263238","#00B8A9"),"preto-dourado":("#171717","#D4A017"),"cafe":("#6F4E37","#D97706"),
+      "areia":("#9A6700","#F2C14E"),"azul-petroleo":("#164E63","#06B6D4"),"ceu":("#0284C7","#22D3EE"),"brasil":("#08783E","#F7C600"),"neon":("#312E81","#22C55E")}
+    if theme_name in themes:
+        primary_color,accent_color=themes[theme_name]
+    else:
+        theme_name="personalizado"
     if not re.fullmatch(r"#[0-9A-Fa-f]{6}",primary_color):
         primary_color="#2457e6"
     if not re.fullmatch(r"#[0-9A-Fa-f]{6}",accent_color):
@@ -55,6 +65,7 @@ def save_appearance(
       "brand_name":brand_name.strip()[:40] or "NowUp",
       "primary_color":primary_color,
       "accent_color":accent_color,
+      "theme_name":theme_name,
       "font_family":font_family,
       "hero_title":hero_title.strip()[:120] or "Encontre quem resolve.",
       "hero_subtitle":hero_subtitle.strip()[:320],
