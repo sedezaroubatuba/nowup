@@ -316,7 +316,7 @@
 <a class="tiny" href="/p/{{p.slug}}">Ver perfil público</a>
 </td>
 <td>{{'Sim' if p.email_verified else 'Pendente'}}</td>
-<td>Verificado: {{'Sim' if p.verified else 'Não'}}<br>Destaque: {{'Sim' if p.featured else 'Não'}}<br>Bloqueado: {{'Sim' if p.blocked else 'Não'}}</td>
+<td>Verificado: {{'Sim' if p.verified else 'Não'}}<br>Destaque: {{'Sim' if p.featured else 'Não'}}<br>No slide: {{'Sim' if p.in_slider else 'Não'}}<br>Bloqueado: {{'Sim' if p.blocked else 'Não'}}</td>
 <td>
 <div class="row">
 <form action="/admin/profissionais/{{p.id}}/acao/verificar" method="post">
@@ -324,6 +324,9 @@
 </form>
 <form action="/admin/profissionais/{{p.id}}/acao/destaque" method="post">
 <button class="btn orange tiny">Destaque</button>
+</form>
+<form action="/admin/profissionais/{{p.id}}/acao/slide" method="post">
+<button class="btn soft tiny">Slide</button>
 </form>
 <form action="/admin/profissionais/{{p.id}}/acao/bloquear" method="post">
 <button class="btn danger tiny">Bloquear</button>

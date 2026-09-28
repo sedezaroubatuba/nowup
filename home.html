@@ -1,14 +1,16 @@
 {% extends 'base.html' %}{% block body_class %}social-home{% endblock %}{% block content %}
 <section class="social-discovery"><div class="container">
-<form class="social-search" action="/profissionais"><span>⌕</span><input name="q" placeholder="Buscar restaurantes, lojas, serviços..."><input type="hidden" name="city" value="{{city}}"><button aria-label="Buscar">⌁</button></form>
-{% if statuses %}<div class="social-stories">{% for st in statuses %}<a class="social-story" href="/p/{{st.slug}}"><div class="social-story-ring">{% if st.status_image %}<img src="/uploads/{{st.status_image}}" alt="{{st.display_name}}">{% else %}<span>🏪</span>{% endif %}</div><b>{{st.display_name}}</b></a>{% endfor %}</div>{% endif %}
+<div class="social-mobile-head"><a class="social-wordmark" href="/">Now<span>Up</span></a><div class="social-head-actions"><a href="/profissionais" aria-label="Explorar">⌖</a><a href="/entrar" aria-label="Perfil">●</a></div></div>
+<div class="social-location">⌖ <b>{{city or 'Ubatuba'}}</b> <span>⌄</span></div>
+<form class="social-search" action="/profissionais"><span>⌕</span><input name="q" placeholder="Nome, categoria ou palavra-chave"><input type="hidden" name="city" value="{{city}}"><button aria-label="Buscar">→</button></form>
+<div class="social-stories" aria-label="Categorias">{% for c in categories[:20] %}<a class="social-story" href="/profissionais?category={{c.slug}}&city={{city or 'Ubatuba'}}"><div class="social-story-ring"><span>{{c.icon}}</span></div><b>{{c.name}}</b></a>{% endfor %}</div>
 </div></section>
 <section class="home-hero" style="--hero-desktop-height:{{settings.hero_desktop_height or 540}}px;--hero-mobile-height:{{settings.hero_mobile_height or 540}}px;--hero-brightness:{{settings.hero_brightness or 100}}%;--hero-zoom:{{(settings.hero_zoom or 100)|int / 100}};--hero-x:{{settings.hero_position_x or 50}}%;--hero-y:{{settings.hero_position_y or 50}}%;{% if settings.hero_image_filename %}--hero-image:url('/uploads/{{settings.hero_image_filename}}'){% endif %}">
 <div class="hero-orb orb-one">🔧</div>
 <div class="hero-orb orb-two">⚡</div>
 <div class="container hero-grid">
 <div class="hero-copy">
-<span class="eyebrow">Profissionais da sua região</span>
+<span class="eyebrow">Destaque em Ubatuba</span>
 <h1>{{settings.hero_title or 'Serviços perto de você, com confiança.'}}</h1>
 <p>{{settings.hero_subtitle or 'Encontre profissionais e empresas avaliadas na sua cidade e fale direto pelo WhatsApp.'}}</p>
 <div class="trust-row">
@@ -18,7 +20,7 @@
 </div>
 </div>
 <div class="hero-visual">
-<div class="worker-icon">👨‍🔧</div>
+<div class="worker-icon">🌊</div>
 <div class="floating-card">
 <b>Precisa de ajuda?</b>
 <span>Busque, compare e chame.</span>
@@ -27,7 +29,7 @@
 <form class="home-search" action="/profissionais">
 <label>
 <span>⌕</span>
-<input name="q" placeholder="O que você precisa?">
+<input name="q" placeholder="Nome, categoria ou palavra-chave">
 </label>
 <label>
 <span>⌖</span>
@@ -37,41 +39,11 @@
 </form>
 </div>
 </section>
-<section class="business-types"><div class="container type-scroll"><a href="/profissionais?city={{city}}" class="type-chip">🔎 Todos</a><a href="/profissionais?business_type=professional&city={{city}}" class="type-chip">🛠️ Prestadores</a><a href="/profissionais?business_type=restaurant&city={{city}}" class="type-chip">🍽️ Restaurantes</a><a href="/profissionais?business_type=store&city={{city}}" class="type-chip">🛍️ Lojas</a><a href="/profissionais?business_type=convenience&city={{city}}" class="type-chip">🥤 Adegas e conveniências</a></div></section>
-<section class="category-strip">
+{% if banners or business_slides %}<section class="section compact">
 <div class="container">
-<div class="category-scroll">{% for c in categories %}<a class="quick-cat" href="/profissionais?category={{c.slug}}">
-<span>{{c.icon}}</span>
-<b>{{c.name}}</b>
-</a>{% endfor %}<a class="quick-cat all" href="/profissionais">
-<span>•••</span>
-<b>Ver todas</b>
-</a>
-</div>
-</div>
-</section>
-{% if statuses %}<section class="section compact original-statuses">
-<div class="container">
-<div class="section-head">
-<div>
-<span class="kicker">Agora na NowUp</span>
-<h2>Trabalhos de hoje</h2>
-</div>
-</div>
-<div class="storyline">{% for st in statuses %}<a class="story" href="/p/{{st.slug}}">
-<div class="circle">{% if st.status_image %}<img src="/uploads/{{st.status_image}}">{% else %}🛠️{% endif %}</div>
-<div class="tiny">
-<b>{{st.display_name}}</b>
-</div>
-</a>{% endfor %}</div>
-</div>
-</section>{% endif %}
-{% if banners %}<section class="section compact">
-<div class="container">
-<div class="ad-slider" data-slider data-interval="5000">{% for b in banners %}<a href="/anuncio/{{b.id}}" class="ad-slide photo-only {% if loop.first %}active{% endif %}" style="--desktop-height:{{b.desktop_height}}px;--mobile-height:{{b.mobile_height}}px;--slide-brightness:{{b.brightness}}%;--slide-zoom:{{b.zoom / 100}};--slide-x:{{b.position_x}}%;--slide-y:{{b.position_y}}%">{% if b.image_filename %}<img class="slide-art" src="/uploads/{{b.image_filename}}" alt="Anúncio {{loop.index}}">{% endif %}</a>{% endfor %}<button class="slider-arrow prev" type="button" data-prev aria-label="Anterior">‹</button>
+<div class="ad-slider" data-slider data-interval="5000">{% for b in banners %}<a href="/anuncio/{{b.id}}" class="ad-slide photo-only {% if loop.first %}active{% endif %}" style="--slide-brightness:{{b.brightness}}%;--slide-zoom:{{b.zoom / 100}};--slide-x:{{b.position_x}}%;--slide-y:{{b.position_y}}%">{% if b.image_filename %}<img class="slide-art" src="/uploads/{{b.image_filename}}" alt="Anúncio {{loop.index}}">{% endif %}</a>{% endfor %}{% for p in business_slides %}<a href="/p/{{p.slug}}" class="ad-slide photo-only {% if not banners and loop.first %}active{% endif %}"><img class="slide-art" src="/uploads/{{p.slide_image_filename}}" alt="{{p.display_name}}"></a>{% endfor %}<button class="slider-arrow prev" type="button" data-prev aria-label="Anterior">‹</button>
 <button class="slider-arrow next" type="button" data-next aria-label="Próximo">›</button>
-<div class="slider-dots">{% for b in banners %}<button type="button" data-slide="{{loop.index0}}" aria-label="Anúncio {{loop.index}}" class="{% if loop.first %}active{% endif %}">
-</button>{% endfor %}</div>
+<div class="slider-dots">{% for b in banners %}<button type="button" data-slide="{{loop.index0}}" aria-label="Anúncio {{loop.index}}" class="{% if loop.first %}active{% endif %}"></button>{% endfor %}{% for p in business_slides %}<button type="button" data-slide="{{banners|length + loop.index0}}" aria-label="{{p.display_name}}" class="{% if not banners and loop.first %}active{% endif %}"></button>{% endfor %}</div>
 </div>
 </div>
 </section>{% endif %}

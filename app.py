@@ -154,7 +154,8 @@ def require_user(request: Request, role: Optional[str]=None):
 def context(request: Request, **kwargs):
     conn = db()
     cats = conn.execute("SELECT * FROM categories WHERE active=1 ORDER BY sort_order,name").fetchall()
-    banners = conn.execute("SELECT * FROM banners WHERE active=1 ORDER BY sort_order,id LIMIT 10").fetchall()
+    banners = conn.execute("SELECT * FROM banners WHERE active=1 AND image_filename!='' ORDER BY sort_order,id LIMIT 10").fetchall()
+    business_slides = conn.execute("SELECT id,slug,display_name,slide_image_filename FROM professionals WHERE blocked=0 AND in_slider=1 AND slide_image_filename!='' ORDER BY id DESC LIMIT 10").fetchall()
     settings = get_settings(conn)
     conn.close()
     return {
@@ -162,6 +163,7 @@ def context(request: Request, **kwargs):
         "user": current_user(request),
         "categories": cats,
         "banners": banners,
+        "business_slides": business_slides,
         "settings": settings,
         "email_service_ready": email_service_configured(),
         **kwargs
@@ -309,6 +311,9 @@ def init_db():
     ensure_column(conn, "professionals", "website_url", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "whatsapp_message", "TEXT DEFAULT 'Olá! Encontrei você pelo NowUp e gostaria de saber mais.'")
     ensure_column(conn, "professionals", "is_demo", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "professionals", "in_slider", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "professionals", "featured_image_filename", "TEXT DEFAULT ''")
+    ensure_column(conn, "professionals", "slide_image_filename", "TEXT DEFAULT ''")
     ensure_column(conn, "banners", "image_filename", "TEXT DEFAULT ''")
     ensure_column(conn, "banners", "sort_order", "INTEGER NOT NULL DEFAULT 100")
     ensure_column(conn, "banners", "clicks", "INTEGER NOT NULL DEFAULT 0")
@@ -436,7 +441,7 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
       SELECT p.*, u.name as owner_name,
        COALESCE((SELECT ROUND(AVG(stars),1) FROM reviews r WHERE r.professional_id=p.id),0) rating,
        (SELECT COUNT(*) FROM reviews r WHERE r.professional_id=p.id) review_count,
-       (SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1) cover
+       CASE WHEN p.featured=1 AND p.featured_image_filename!='' THEN p.featured_image_filename ELSE (SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1) END cover
       FROM professionals p JOIN users u ON u.id=p.user_id
       WHERE {' AND '.join(where)}
       ORDER BY p.featured DESC,p.verified DESC,rating DESC,p.id DESC LIMIT 12
@@ -747,6 +752,21 @@ def pro_identity_delete(request: Request, image_type: str):
         conn.execute(f"UPDATE professionals SET {column}='' WHERE id=?",(p["id"],)); conn.commit()
     conn.close(); return RedirectResponse("/painel?ok=imagem-removida#identidade",303)
 
+@app.post("/painel/publicidade")
+def pro_ad_images(request: Request, featured_image: Optional[UploadFile]=File(None), slide_image: Optional[UploadFile]=File(None)):
+    u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT * FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+    updates=[]; values=[]
+    for upload,column,enabled in ((featured_image,"featured_image_filename",p["featured"]),(slide_image,"slide_image_filename",p["in_slider"])):
+        if upload and upload.filename and enabled:
+            filename=save_image(upload); old=p[column] or ""
+            if old:
+                try: (UPLOAD_DIR/old).unlink(missing_ok=True)
+                except OSError: pass
+            updates.append(f"{column}=?"); values.append(filename)
+    if updates:
+        values.append(p["id"]); conn.execute(f"UPDATE professionals SET {','.join(updates)} WHERE id=?",values); conn.commit()
+    conn.close(); return RedirectResponse("/painel?ok=publicidade#publicidade",303)
+
 def save_image(upload: UploadFile):
     data=upload.file.read(MAX_UPLOAD+1)
     if len(data)>MAX_UPLOAD: raise HTTPException(400,"Imagem maior que 5MB")
@@ -912,6 +932,7 @@ def admin_pro_action(request: Request, pid:int, action:str):
     require_user(request,"admin"); conn=db()
     if action=="verificar": conn.execute("UPDATE professionals SET verified=CASE verified WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(pid,))
     elif action=="destaque": conn.execute("UPDATE professionals SET featured=CASE featured WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(pid,))
+    elif action=="slide": conn.execute("UPDATE professionals SET in_slider=CASE in_slider WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(pid,))
     elif action=="bloquear": conn.execute("UPDATE professionals SET blocked=CASE blocked WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(pid,))
     else: conn.close(); raise HTTPException(400)
     conn.commit(); conn.close(); return RedirectResponse("/admin#profissionais",303)
