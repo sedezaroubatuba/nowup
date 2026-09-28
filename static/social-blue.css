@@ -1,5 +1,5 @@
 /* NowUp Social Azul: camada visual. Mantém rotas, formulários e dados existentes. */
-:root{--social-blue:var(--brand);--social-cyan:var(--brand2);--social-navy:#061c43;--social-bg:#f5f8fd;--social-card:#fff;--social-line:#dfe8f5}
+:root{--social-blue:var(--brand);--social-cyan:var(--brand2);--social-navy:#08131F;--social-bg:#08131F;--social-card:#112E47;--social-line:#1B405D}
 .notice-ticker{position:relative;z-index:90;overflow:hidden;background:var(--ticker-color);color:#fff;height:36px;display:flex;align-items:center;font-weight:800;box-shadow:0 2px 8px rgba(0,0,0,.14)}
 .notice-ticker-track{display:flex;align-items:center;gap:34px;width:max-content;white-space:nowrap;padding-left:100%;animation:noticeTicker 22s linear infinite}.notice-ticker-track i{font-style:normal;opacity:.75}
 @keyframes noticeTicker{to{transform:translateX(-100%)}}
@@ -9,7 +9,7 @@ body{background:var(--social-bg)}
 .brand span{font-weight:900;letter-spacing:-1.5px}.brand b{color:var(--social-cyan)}
 .btn.primary,.preview-switch button.active{background:linear-gradient(135deg,var(--social-blue),#078fdc)}
 .btn.orange{background:linear-gradient(135deg,var(--social-blue),var(--social-cyan))}
-.social-discovery{display:none;background:#fff;padding:14px 0 4px}.social-mobile-head{display:none}.social-location{display:none}
+.social-discovery{display:none;background:#08131F;padding:14px 0 4px}.social-mobile-head{display:none}.social-location{display:none}
 .social-search{height:52px;display:grid;grid-template-columns:36px 1fr 42px;align-items:center;background:#f0f4fa;border:1px solid #e2e9f3;border-radius:18px;padding:0 8px 0 12px}
 .social-search>span{font-size:27px;color:#54657e}.social-search input{border:0;background:transparent;outline:0;font-size:15px;min-width:0}.social-search button{height:36px;border:0;border-radius:12px;background:#fff;color:var(--social-blue);font-size:20px}
 .social-stories{display:flex;gap:15px;overflow:auto;padding:17px 1px 12px;scrollbar-width:none}.social-story{width:76px;flex:0 0 76px;text-align:center}.social-story-ring{width:72px;height:72px;padding:3px;border-radius:50%;background:linear-gradient(145deg,var(--social-blue),var(--social-cyan),#843cff);box-shadow:0 5px 15px rgba(8,102,229,.16)}.social-story-ring img,.social-story-ring>span{width:100%;height:100%;border-radius:50%;border:3px solid #fff;object-fit:cover;background:#eef5ff;display:grid;place-items:center;font-size:25px}.social-story b{display:block;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:6px;color:#102344}
