@@ -61,6 +61,26 @@
 <div class="section-title">
 <h2>Aparência e dados do site</h2>{% if email_service_ready %}<span class="status-pill ok">✓ E-mail configurado</span>{% else %}<span class="status-pill warn">E-mail pendente</span>{% endif %}</div>
 <form action="/admin/aparencia" method="post">
+<h3>Escolha um dos 20 temas</h3>
+<p class="muted">Toque em uma combinação para visualizar. Depois toque em <b>Salvar aparência</b>. Você pode mudar quantas vezes quiser.</p>
+<div class="theme-picker" data-theme-picker>
+{% set themes = [
+('oceanico','Oceânico','#075BD8','#FF6A00'),('royal','Azul Royal','#243BFF','#8B5CF6'),('turquesa','Turquesa','#007F8B','#20C997'),('esmeralda','Esmeralda','#087F5B','#F59F00'),('floresta','Floresta','#245C3A','#A3E635'),
+('por-do-sol','Pôr do sol','#C2410C','#FBBF24'),('coral','Coral','#E84855','#FF8A5B'),('rubi','Rubi','#B42318','#F04438'),('vinho','Vinho','#7F1D3F','#D946EF'),('uva','Uva','#6D28D9','#EC4899'),
+('lavanda','Lavanda','#7C3AED','#A78BFA'),('noturno','Azul noturno','#172554','#38BDF8'),('grafite','Grafite','#263238','#00B8A9'),('preto-dourado','Preto e dourado','#171717','#D4A017'),('cafe','Café','#6F4E37','#D97706'),
+('areia','Areia dourada','#9A6700','#F2C14E'),('azul-petroleo','Azul petróleo','#164E63','#06B6D4'),('ceu','Azul céu','#0284C7','#22D3EE'),('brasil','Brasil','#08783E','#F7C600'),('neon','Neon','#312E81','#22C55E')
+] %}
+{% for id,nome,cor1,cor2 in themes %}
+<label class="theme-option" style="--theme-a:{{cor1}};--theme-b:{{cor2}}">
+<input type="radio" name="theme_name" value="{{id}}" data-primary="{{cor1}}" data-accent="{{cor2}}" {% if settings.theme_name==id %}checked{% endif %}>
+<span class="theme-swatch"></span><b>{{nome}}</b><small>{{cor1}} · {{cor2}}</small>
+</label>
+{% endfor %}
+<label class="theme-option custom-theme">
+<input type="radio" name="theme_name" value="personalizado" {% if not settings.theme_name or settings.theme_name=='personalizado' %}checked{% endif %}>
+<span class="theme-swatch"></span><b>Personalizado</b><small>Escolha abaixo</small>
+</label>
+</div>
 <div class="settings-grid">
 <div>
 <label>Nome da marca</label>
@@ -78,11 +98,11 @@
 </div>
 <div>
 <label>Cor principal do NowUp</label>
-<input class="input color-input" type="color" name="primary_color" value="{{settings.primary_color}}">
+<input class="input color-input" id="primary-color" type="color" name="primary_color" value="{{settings.primary_color}}">
 </div>
 <div>
 <label>Segunda cor (botões e detalhes)</label>
-<input class="input color-input" type="color" name="accent_color" value="{{settings.accent_color}}">
+<input class="input color-input" id="accent-color" type="color" name="accent_color" value="{{settings.accent_color}}">
 </div>
 <div style="grid-column:1/-1">
 <label>Título inicial</label>
