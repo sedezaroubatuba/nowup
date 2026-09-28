@@ -46,7 +46,7 @@
 <div class="slider-dots">{% for b in banners %}<button type="button" data-slide="{{loop.index0}}" aria-label="Anúncio {{loop.index}}" class="{% if loop.first %}active{% endif %}"></button>{% endfor %}{% for p in business_slides %}<button type="button" data-slide="{{banners|length + loop.index0}}" aria-label="{{p.display_name}}" class="{% if not banners and loop.first %}active{% endif %}"></button>{% endfor %}</div>
 </div>
 </div>
-</section>{% endif %}
+</section><script>document.querySelector('[data-slider]').dataset.interval='{{(settings.slide_interval_seconds or 3)|int * 1000}}';</script>{% endif %}
 <section class="section">
 <div class="container">
 <div class="section-head">
