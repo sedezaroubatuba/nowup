@@ -862,15 +862,27 @@ def admin(request: Request):
     return templates.TemplateResponse("admin.html", context(request, stats=stats, pros=pros, clients=clients, admin_categories=admin_categories, reports=reports, suggestions=suggestions, admin_banners=banners))
 
 @app.post("/admin/aparencia")
-def admin_appearance(request: Request, brand_name:str=Form("NowUp"), font_family:str=Form("Inter"), primary_color:str=Form("#2457e6"), accent_color:str=Form("#ff8a32"), ticker_color:str=Form("#e30613"), ticker_text:str=Form(""), ticker_enabled:str=Form(""), slide_interval_seconds:int=Form(3), hero_title:str=Form(""), hero_subtitle:str=Form(""), public_email:str=Form(""), support_whatsapp:str=Form(""), active_cities:str=Form("Ubatuba")):
+def admin_appearance(request: Request, brand_name:str=Form("NowUp"), font_family:str=Form("Inter"), primary_color:str=Form("#2457e6"), accent_color:str=Form("#ff8a32"), hero_title:str=Form(""), hero_subtitle:str=Form(""), public_email:str=Form(""), support_whatsapp:str=Form(""), active_cities:str=Form("Ubatuba")):
     require_user(request,"admin")
     allowed_fonts={"Inter","Arial","Georgia","Trebuchet MS","Verdana"}; font_family=font_family if font_family in allowed_fonts else "Inter"
     cities=", ".join(dict.fromkeys(c.strip()[:80] for c in active_cities.split(",") if c.strip())) or "Ubatuba"
-    slide_interval_seconds=max(1,min(15,slide_interval_seconds))
-    values={"brand_name":brand_name.strip()[:80] or "NowUp","font_family":font_family,"primary_color":primary_color[:20],"accent_color":accent_color[:20],"ticker_color":ticker_color[:20],"ticker_text":ticker_text.strip()[:300],"ticker_enabled":"1" if ticker_enabled=="1" else "0","slide_interval_seconds":str(slide_interval_seconds),"hero_title":hero_title.strip()[:180],"hero_subtitle":hero_subtitle.strip()[:500],"public_email":public_email.strip()[:160],"support_whatsapp":support_whatsapp.strip()[:40],"active_cities":cities}
+    values={"brand_name":brand_name.strip()[:80] or "NowUp","font_family":font_family,"primary_color":primary_color[:20],"accent_color":accent_color[:20],"hero_title":hero_title.strip()[:180],"hero_subtitle":hero_subtitle.strip()[:500],"public_email":public_email.strip()[:160],"support_whatsapp":support_whatsapp.strip()[:40],"active_cities":cities}
     conn=db()
     for key,value in values.items(): conn.execute("INSERT INTO site_settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",(key,value))
     conn.commit(); conn.close(); return RedirectResponse("/admin?ok=aparencia#aparencia",303)
+
+@app.post("/admin/faixa-e-slides")
+def admin_ticker_and_slides(request: Request, ticker_color:str=Form("#e30613"), ticker_text:str=Form(""), ticker_enabled:str=Form("0"), slide_interval_seconds:str=Form("3")):
+    require_user(request,"admin")
+    try: seconds=max(1,min(15,int(slide_interval_seconds)))
+    except (TypeError,ValueError): seconds=3
+    color=ticker_color.strip()[:20]
+    if not re.fullmatch(r"#[0-9a-fA-F]{6}",color): color="#e30613"
+    values={"ticker_color":color,"ticker_text":ticker_text.strip()[:300],"ticker_enabled":"1" if ticker_enabled=="1" else "0","slide_interval_seconds":str(seconds)}
+    conn=db()
+    for key,value in values.items(): conn.execute("INSERT INTO site_settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",(key,value))
+    conn.commit(); conn.close()
+    return RedirectResponse("/admin?ok=faixa#faixa-slides",303)
 
 @app.post("/admin/categorias")
 def admin_add_category(request: Request, name:str=Form(...), icon:str=Form("🛠️")):
@@ -926,7 +938,8 @@ def admin_edit_client(request: Request, uid:int, name:str=Form(...), email:str=F
 
 @app.post("/admin/clientes/{uid}/excluir")
 def admin_delete_client(request: Request, uid:int):
-    require_user(request,"admin"); conn=db(); conn.execute("DELETE FROM users WHERE id=? AND role='customer'",(uid,)); conn.commit(); conn.close(); return RedirectResponse("/admin#clientes",303)
+    require_user(request,"admin")
+    return RedirectResponse("/admin?erro=exclusao-desativada#clientes",303)
 
 @app.post("/admin/categorias/{cid}/excluir")
 def admin_delete_category(request: Request, cid:int):
@@ -938,7 +951,13 @@ def admin_pro_action(request: Request, pid:int, action:str):
     if action=="verificar": conn.execute("UPDATE professionals SET verified=CASE verified WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(pid,))
     elif action=="destaque": conn.execute("UPDATE professionals SET featured=CASE featured WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(pid,))
     elif action=="slide": conn.execute("UPDATE professionals SET in_slider=CASE in_slider WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(pid,))
-    elif action=="bloquear": conn.execute("UPDATE professionals SET blocked=CASE blocked WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(pid,))
+    elif action=="bloquear":
+        pro=conn.execute("SELECT user_id,blocked FROM professionals WHERE id=?",(pid,)).fetchone()
+        if pro:
+            new_blocked=0 if pro["blocked"] else 1
+            conn.execute("UPDATE professionals SET blocked=? WHERE id=?",(new_blocked,pid))
+            conn.execute("UPDATE users SET is_active=? WHERE id=?",(0 if new_blocked else 1,pro["user_id"]))
+            if new_blocked: conn.execute("DELETE FROM sessions WHERE user_id=?",(pro["user_id"],))
     else: conn.close(); raise HTTPException(400)
     conn.commit(); conn.close(); return RedirectResponse("/admin#profissionais",303)
 
@@ -985,9 +1004,8 @@ def admin_edit_professional(request: Request, pid:int, display_name:str=Form(...
 
 @app.post("/admin/profissionais/{pid}/excluir")
 def admin_delete_professional(request: Request, pid:int):
-    require_user(request,"admin"); conn=db(); pro=conn.execute("SELECT user_id FROM professionals WHERE id=?",(pid,)).fetchone()
-    if pro: conn.execute("DELETE FROM users WHERE id=?",(pro["user_id"],)); conn.commit()
-    conn.close(); return RedirectResponse("/admin#profissionais",303)
+    require_user(request,"admin")
+    return RedirectResponse("/admin?erro=exclusao-desativada#profissionais",303)
 
 @app.post("/admin/denuncias/{rid}/{status}")
 def admin_report_action(request: Request, rid:int, status:str):
