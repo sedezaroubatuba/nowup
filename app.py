@@ -359,6 +359,27 @@ def init_db():
       unit_price_cents INTEGER NOT NULL DEFAULT 0,
       notes TEXT NOT NULL DEFAULT ''
     );
+    CREATE TABLE IF NOT EXISTS product_options(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      price_cents INTEGER NOT NULL DEFAULT 0,
+      available INTEGER NOT NULL DEFAULT 1,
+      sort_order INTEGER NOT NULL DEFAULT 100
+    );
+    CREATE TABLE IF NOT EXISTS order_item_options(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_item_id INTEGER NOT NULL REFERENCES order_items(id) ON DELETE CASCADE,
+      option_id INTEGER,
+      option_name TEXT NOT NULL,
+      price_cents INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS order_status_history(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+      status TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
     CREATE INDEX IF NOT EXISTS idx_orders_professional_date
       ON orders(professional_id,created_at);
     CREATE INDEX IF NOT EXISTS idx_orders_professional_status
@@ -430,6 +451,21 @@ def init_db():
     ensure_column(conn, "banners", "desktop_height", "INTEGER NOT NULL DEFAULT 360")
     ensure_column(conn, "banners", "mobile_height", "INTEGER NOT NULL DEFAULT 240")
     ensure_column(conn, "orders", "payment_method", "TEXT NOT NULL DEFAULT 'pix'")
+    ensure_column(conn, "orders", "order_code", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "orders", "subtotal_cents", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "orders", "delivery_fee_cents", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "orders", "neighborhood", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "orders", "address_reference", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "orders", "change_for_cents", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "professionals", "delivery_fee_cents", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "professionals", "minimum_order_cents", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "professionals", "prep_minutes", "INTEGER NOT NULL DEFAULT 40")
+    ensure_column(conn, "professionals", "allows_delivery", "INTEGER NOT NULL DEFAULT 1")
+    ensure_column(conn, "professionals", "allows_pickup", "INTEGER NOT NULL DEFAULT 1")
+    ensure_column(conn, "professionals", "pix_key", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "products", "promo_price_cents", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "products", "featured", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "products", "max_quantity", "INTEGER NOT NULL DEFAULT 99")
     defaults = {
       "brand_name": "NowUp",
       "primary_color": "#08131F",
@@ -619,43 +655,68 @@ def native_menu(request: Request, slug: str):
     for product in products:
         category=(product["category"] or "Geral").strip() or "Geral"
         if category not in menu_categories: menu_categories.append(category)
+    product_options={}
+    for row in conn.execute("""SELECT po.* FROM product_options po JOIN products pr ON pr.id=po.product_id
+      WHERE pr.professional_id=? AND po.available=1 ORDER BY po.sort_order,po.id""",(p["id"],)).fetchall():
+        product_options.setdefault(row["product_id"],[]).append(row)
     conn.execute("UPDATE professionals SET menu_clicks=menu_clicks+1 WHERE id=?",(p["id"],))
     conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"menu_click",now_iso())); conn.commit(); conn.close()
     status=shop_status(p)
-    return templates.TemplateResponse("menu.html", context(request, pro=p, products=products, menu_categories=menu_categories, shop_status=status))
+    return templates.TemplateResponse("menu.html", context(request, pro=p, products=products, product_options=product_options, menu_categories=menu_categories, shop_status=status))
 
 @app.post("/p/{slug}/menu/pedido")
-def native_menu_order(slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), notes: str=Form(""), cart_json: str=Form(...)):
+def native_menu_order(slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...)):
     conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404)
     if not shop_status(p)["open"]: conn.close(); return RedirectResponse(f"/p/{slug}/menu?fechado=1",303)
     try: raw_items=json.loads(cart_json)
     except Exception: conn.close(); raise HTTPException(400,"Carrinho inválido")
     if not isinstance(raw_items,list) or not raw_items: conn.close(); raise HTTPException(400,"Carrinho vazio")
-    clean_items=[]; total=0
+    clean_items=[]; subtotal=0
     for raw in raw_items[:50]:
         try: pid=int(raw.get("id")); qty=max(1,min(99,int(raw.get("quantity",1)))); item_notes=str(raw.get("notes","")).strip()[:300]
         except (TypeError,ValueError,AttributeError): continue
         product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=? AND available=1",(pid,p["id"])).fetchone()
         if product:
-            clean_items.append((product,qty,item_notes)); total += product["price_cents"]*qty
+            qty=min(qty,max(1,product["max_quantity"] or 99)); chosen=[]; extras=0
+            option_ids=raw.get("options",[]) if isinstance(raw,dict) else []
+            if isinstance(option_ids,list):
+                for oid in option_ids[:20]:
+                    try: option=conn.execute("SELECT * FROM product_options WHERE id=? AND product_id=? AND available=1",(int(oid),pid)).fetchone()
+                    except (TypeError,ValueError): option=None
+                    if option: chosen.append(option); extras += option["price_cents"]
+            unit=(product["promo_price_cents"] if product["promo_price_cents"]>0 else product["price_cents"])+extras
+            clean_items.append((product,qty,item_notes,chosen,unit)); subtotal += unit*qty
     if not clean_items: conn.close(); raise HTTPException(400,"Nenhum produto disponível no carrinho")
     fulfillment_type="delivery" if fulfillment_type=="delivery" else "pickup"
+    if fulfillment_type=="delivery" and not p["allows_delivery"]: conn.close(); raise HTTPException(400,"Esta loja não realiza entregas")
+    if fulfillment_type=="pickup" and not p["allows_pickup"]: conn.close(); raise HTTPException(400,"Esta loja não permite retirada")
+    if subtotal < (p["minimum_order_cents"] or 0): conn.close(); raise HTTPException(400,"O pedido não atingiu o valor mínimo")
+    delivery_fee=(p["delivery_fee_cents"] or 0) if fulfillment_type=="delivery" else 0; total=subtotal+delivery_fee
     payment_labels={"pix":"Pix","cash":"Dinheiro","credit":"Cartão de crédito","debit":"Cartão de débito","on_delivery":"Combinar no atendimento"}
     payment_method=payment_method if payment_method in payment_labels else "pix"
-    created=now_iso(); cur=conn.execute("""INSERT INTO orders(professional_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at)
-      VALUES(?,?,?,?,?,?,?,?,1,?,?)""",(p["id"],customer_name.strip()[:120],customer_phone.strip()[:30],fulfillment_type,address.strip()[:300],notes.strip()[:500],"new",total,created,created))
+    change_for_cents=price_to_cents(change_for) if payment_method=="cash" and change_for.strip() else 0
+    created=now_iso(); cur=conn.execute("""INSERT INTO orders(professional_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at,subtotal_cents,delivery_fee_cents,neighborhood,address_reference,change_for_cents)
+      VALUES(?,?,?,?,?,?,?,?,1,?,?,?,?,?,?,?)""",(p["id"],customer_name.strip()[:120],customer_phone.strip()[:30],fulfillment_type,address.strip()[:300],notes.strip()[:500],"new",total,created,created,subtotal,delivery_fee,neighborhood.strip()[:120],address_reference.strip()[:220],change_for_cents))
     order_id=cur.lastrowid
-    conn.execute("UPDATE orders SET payment_method=? WHERE id=?",(payment_method,order_id))
-    for product,qty,item_notes in clean_items:
-        conn.execute("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes) VALUES(?,?,?,?,?,?)",(order_id,product["id"],product["name"],qty,product["price_cents"],item_notes))
+    order_code=f"NU-{order_id:06d}"; conn.execute("UPDATE orders SET payment_method=?,order_code=? WHERE id=?",(payment_method,order_code,order_id))
+    conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)",(order_id,"new",created))
+    for product,qty,item_notes,chosen,unit in clean_items:
+        item_cur=conn.execute("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes) VALUES(?,?,?,?,?,?)",(order_id,product["id"],product["name"],qty,unit,item_notes))
+        for option in chosen: conn.execute("INSERT INTO order_item_options(order_item_id,option_id,option_name,price_cents) VALUES(?,?,?,?)",(item_cur.lastrowid,option["id"],option["name"],option["price_cents"]))
     conn.commit(); conn.close()
-    lines=[f"Olá! Fiz o pedido #{order_id} pelo NowUp:",""]
-    for product,qty,item_notes in clean_items:
-        lines.append(f"{qty}x {product['name']} — R$ {(product['price_cents']*qty)/100:.2f}")
+    lines=[f"Olá! Fiz o pedido {order_code} pelo NowUp:",""]
+    for product,qty,item_notes,chosen,unit in clean_items:
+        lines.append(f"{qty}x {product['name']} — R$ {(unit*qty)/100:.2f}")
+        if chosen: lines.append("   Adicionais: "+", ".join(o["name"] for o in chosen))
         if item_notes: lines.append(f"   Obs.: {item_notes}")
-    lines += ["",f"Total: R$ {total/100:.2f}",f"Pagamento: {payment_labels[payment_method]}",f"Cliente: {customer_name.strip()}",f"Telefone: {customer_phone.strip()}","Entrega" if fulfillment_type=="delivery" else "Retirada no local"]
+    lines += ["",f"Subtotal: R$ {subtotal/100:.2f}"]
+    if delivery_fee: lines.append(f"Taxa de entrega: R$ {delivery_fee/100:.2f}")
+    lines += [f"Total: R$ {total/100:.2f}",f"Pagamento: {payment_labels[payment_method]}",f"Cliente: {customer_name.strip()}",f"Telefone: {customer_phone.strip()}","Entrega" if fulfillment_type=="delivery" else "Retirada no local"]
     if address.strip(): lines.append(f"Endereço: {address.strip()}")
+    if neighborhood.strip(): lines.append(f"Bairro: {neighborhood.strip()}")
+    if address_reference.strip(): lines.append(f"Referência: {address_reference.strip()}")
+    if change_for_cents: lines.append(f"Troco para: R$ {change_for_cents/100:.2f}")
     if notes.strip(): lines.append(f"Observações: {notes.strip()}")
     return RedirectResponse(wa_link(p["whatsapp"],"\n".join(lines)),303)
 
@@ -820,6 +881,10 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     photos=conn.execute("SELECT * FROM photos WHERE professional_id=? ORDER BY is_cover DESC,id DESC",(p["id"],)).fetchall()
     posts=conn.execute("SELECT * FROM posts WHERE professional_id=? ORDER BY id DESC LIMIT 20",(p["id"],)).fetchall()
     products=conn.execute("SELECT * FROM products WHERE professional_id=? ORDER BY category,sort_order,id DESC",(p["id"],)).fetchall()
+    product_options={}
+    for row in conn.execute("""SELECT po.* FROM product_options po JOIN products pr ON pr.id=po.product_id
+      WHERE pr.professional_id=? ORDER BY po.sort_order,po.id""",(p["id"],)).fetchall():
+        product_options.setdefault(row["product_id"],[]).append(row)
     product_categories=conn.execute("SELECT * FROM product_categories WHERE professional_id=? ORDER BY sort_order,id",(p["id"],)).fetchall()
     if not product_categories:
         existing=[]
@@ -866,7 +931,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     profile_completion=round(sum(bool(str(v or "").strip()) for v in profile_fields)*100/len(profile_fields))
     order_where=["o.professional_id=?", "date(o.created_at) BETWEEN ? AND ?"]
     order_params=[p["id"],start.isoformat(),end.isoformat()]
-    allowed_order_status={"new","confirmed","preparing","ready","completed","cancelled"}
+    allowed_order_status={"new","confirmed","preparing","ready","out_for_delivery","completed","cancelled","rejected"}
     if pedido_status in allowed_order_status:
         order_where.append("o.status=?"); order_params.append(pedido_status)
     else:
@@ -875,10 +940,14 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
       COALESCE((SELECT SUM(oi.quantity) FROM order_items oi WHERE oi.order_id=o.id),0) item_count
       FROM orders o WHERE {' AND '.join(order_where)} ORDER BY o.id DESC LIMIT 100""",order_params).fetchall()
     order_items_by_order={}
+    order_item_options={}
     if orders:
         order_ids=[order["id"] for order in orders]; placeholders=",".join("?" for _ in order_ids)
         for item in conn.execute(f"SELECT * FROM order_items WHERE order_id IN ({placeholders}) ORDER BY id",order_ids).fetchall():
             order_items_by_order.setdefault(item["order_id"],[]).append(item)
+        for option in conn.execute(f"""SELECT oio.* FROM order_item_options oio JOIN order_items oi ON oi.id=oio.order_item_id
+          WHERE oi.order_id IN ({placeholders}) ORDER BY oio.id""",order_ids).fetchall():
+            order_item_options.setdefault(option["order_item_id"],[]).append(option)
     order_summary=conn.execute("""SELECT COUNT(*) total,
       COALESCE(SUM(CASE WHEN status!='cancelled' THEN total_cents ELSE 0 END),0) revenue_cents,
       COALESCE(ROUND(AVG(CASE WHEN status!='cancelled' THEN total_cents END)),0) avg_ticket_cents,
@@ -893,9 +962,20 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
       WHERE o.professional_id=? AND o.status!='cancelled' AND date(o.created_at) BETWEEN ? AND ?
       GROUP BY lower(oi.product_name) ORDER BY quantity DESC,revenue_cents DESC LIMIT 15""",
       (p["id"],start.isoformat(),end.isoformat())).fetchall()
+    latest_order_id=conn.execute("SELECT COALESCE(MAX(id),0) FROM orders WHERE professional_id=?",(p["id"],)).fetchone()[0]
     conn.close()
     status=shop_status(p); business_hours=parse_business_hours(p["business_hours"])
-    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, products=products, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, order_items_by_order=order_items_by_order, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS))
+    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, products=products, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id))
+
+@app.get("/painel/pedidos/novos")
+def pro_new_orders(request: Request, after: int=0):
+    u=require_user(request,"professional"); conn=db()
+    p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+    rows=conn.execute("""SELECT id,customer_name,total_cents,created_at FROM orders
+      WHERE professional_id=? AND id>? ORDER BY id ASC LIMIT 10""",(p["id"],max(0,after))).fetchall()
+    latest=conn.execute("SELECT COALESCE(MAX(id),0) FROM orders WHERE professional_id=?",(p["id"],)).fetchone()[0]
+    conn.close()
+    return JSONResponse({"latest_id":latest,"orders":[{"id":r["id"],"customer_name":r["customer_name"] or "Cliente","total_cents":r["total_cents"],"created_at":r["created_at"]} for r in rows]})
 
 def price_to_cents(raw: str):
     value=(raw or "0").strip().replace("R$","").replace(" ","")
@@ -931,14 +1011,14 @@ def pro_menu_category_delete(request: Request, category_id: int):
     conn.close(); return RedirectResponse("/painel?ok=categoria-excluida#cardapio",303)
 
 @app.post("/painel/cardapio/produtos")
-def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None)):
+def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None)):
     u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone(); fn=""
     if photo and photo.filename: fn=save_image(photo)
-    created=now_iso(); conn.execute("INSERT INTO products(professional_id,name,description,category,price_cents,image_filename,available,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)",(p["id"],name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,created,created))
+    created=now_iso(); conn.execute("INSERT INTO products(professional_id,name,description,category,price_cents,image_filename,available,created_at,updated_at,promo_price_cents,featured,max_quantity) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",(p["id"],name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,created,created,price_to_cents(promo_price) if promo_price.strip() else 0,1 if featured else 0,max(1,min(99,max_quantity))))
     conn.commit(); conn.close(); return RedirectResponse("/painel?ok=produto#cardapio",303)
 
 @app.post("/painel/cardapio/produtos/{product_id}")
-def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None)):
+def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None)):
     u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone(); product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=?",(product_id,p["id"])).fetchone()
     if not product: conn.close(); raise HTTPException(404)
     fn=product["image_filename"]
@@ -948,8 +1028,32 @@ def pro_product_edit(request: Request, product_id: int, name: str=Form(...), des
             try: (UPLOAD_DIR/fn).unlink(missing_ok=True)
             except OSError: pass
         fn=new_fn
-    conn.execute("UPDATE products SET name=?,description=?,category=?,price_cents=?,image_filename=?,available=?,updated_at=? WHERE id=?",(name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,now_iso(),product_id)); conn.commit(); conn.close()
+    conn.execute("UPDATE products SET name=?,description=?,category=?,price_cents=?,image_filename=?,available=?,updated_at=?,promo_price_cents=?,featured=?,max_quantity=? WHERE id=?",(name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,now_iso(),price_to_cents(promo_price) if promo_price.strip() else 0,1 if featured else 0,max(1,min(99,max_quantity)),product_id)); conn.commit(); conn.close()
     return RedirectResponse("/painel?ok=produto#cardapio",303)
+
+@app.post("/painel/cardapio/configuracoes")
+def pro_menu_settings(request: Request, delivery_fee: str=Form("0"), minimum_order: str=Form("0"), prep_minutes: int=Form(40), pix_key: str=Form(""), allows_delivery: Optional[str]=Form(None), allows_pickup: Optional[str]=Form(None)):
+    u=require_user(request,"professional"); conn=db()
+    conn.execute("""UPDATE professionals SET delivery_fee_cents=?,minimum_order_cents=?,prep_minutes=?,pix_key=?,allows_delivery=?,allows_pickup=? WHERE user_id=?""",
+      (price_to_cents(delivery_fee),price_to_cents(minimum_order),max(5,min(240,prep_minutes)),pix_key.strip()[:180],1 if allows_delivery else 0,1 if allows_pickup else 0,u["id"]))
+    conn.commit(); conn.close(); return RedirectResponse("/painel?ok=config-cardapio#cardapio",303)
+
+@app.post("/painel/cardapio/produtos/{product_id}/adicionais")
+def pro_product_option_add(request: Request, product_id: int, option_name: str=Form(...), option_price: str=Form("0")):
+    u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+    product=conn.execute("SELECT id FROM products WHERE id=? AND professional_id=?",(product_id,p["id"])).fetchone()
+    if not product: conn.close(); raise HTTPException(404)
+    name=option_name.strip()[:100]
+    if name:
+        next_order=conn.execute("SELECT COALESCE(MAX(sort_order),0)+1 FROM product_options WHERE product_id=?",(product_id,)).fetchone()[0]
+        conn.execute("INSERT INTO product_options(product_id,name,price_cents,available,sort_order) VALUES(?,?,?,?,?)",(product_id,name,price_to_cents(option_price),1,next_order)); conn.commit()
+    conn.close(); return RedirectResponse("/painel?ok=adicional#cardapio",303)
+
+@app.post("/painel/cardapio/adicionais/{option_id}/excluir")
+def pro_product_option_delete(request: Request, option_id: int):
+    u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+    conn.execute("DELETE FROM product_options WHERE id=? AND product_id IN (SELECT id FROM products WHERE professional_id=?)",(option_id,p["id"])); conn.commit(); conn.close()
+    return RedirectResponse("/painel?ok=adicional-excluido#cardapio",303)
 
 @app.post("/painel/cardapio/produtos/{product_id}/excluir")
 def pro_product_delete(request: Request, product_id: int):
@@ -964,12 +1068,13 @@ def pro_product_delete(request: Request, product_id: int):
 @app.post("/painel/pedidos/{order_id}/status")
 def pro_order_status(request: Request, order_id: int, status: str=Form(...)):
     u=require_user(request,"professional")
-    allowed={"new","confirmed","preparing","ready","completed","cancelled"}
+    allowed={"new","confirmed","preparing","ready","out_for_delivery","completed","cancelled","rejected"}
     if status not in allowed: raise HTTPException(400,"Status inválido")
     conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
     order=conn.execute("SELECT id FROM orders WHERE id=? AND professional_id=?",(order_id,p["id"])).fetchone()
     if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
     conn.execute("UPDATE orders SET status=?,updated_at=? WHERE id=?",(status,now_iso(),order_id))
+    conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)",(order_id,status,now_iso()))
     conn.commit(); conn.close()
     return RedirectResponse("/painel?ok=pedido#pedidos",303)
 
@@ -990,8 +1095,9 @@ def pro_order_item_edit(request: Request, order_id: int, item_id: int, quantity:
     if not item: conn.close(); raise HTTPException(404,"Item não encontrado")
     if remove: conn.execute("DELETE FROM order_items WHERE id=?",(item_id,))
     else: conn.execute("UPDATE order_items SET quantity=?,notes=? WHERE id=?",(max(1,min(99,quantity)),notes.strip()[:300],item_id))
-    total=conn.execute("SELECT COALESCE(SUM(quantity*unit_price_cents),0) FROM order_items WHERE order_id=?",(order_id,)).fetchone()[0]
-    conn.execute("UPDATE orders SET total_cents=?,updated_at=? WHERE id=?",(total,now_iso(),order_id)); conn.commit(); conn.close()
+    subtotal=conn.execute("SELECT COALESCE(SUM(quantity*unit_price_cents),0) FROM order_items WHERE order_id=?",(order_id,)).fetchone()[0]
+    delivery_fee=conn.execute("SELECT delivery_fee_cents FROM orders WHERE id=?",(order_id,)).fetchone()[0]
+    conn.execute("UPDATE orders SET subtotal_cents=?,total_cents=?,updated_at=? WHERE id=?",(subtotal,subtotal+delivery_fee,now_iso(),order_id)); conn.commit(); conn.close()
     return RedirectResponse("/painel?ok=item-editado#pedidos",303)
 
 @app.post("/painel/horarios")
