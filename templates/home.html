@@ -39,12 +39,11 @@
 </form>
 </div>
 </section>
-{% if banners %}<section class="section compact">
+{% if banners or business_slides %}<section class="section compact">
 <div class="container">
-<div class="ad-slider" data-slider data-interval="5000">{% for b in banners %}<a href="/anuncio/{{b.id}}" class="ad-slide photo-only {% if loop.first %}active{% endif %}" style="--desktop-height:{{b.desktop_height}}px;--mobile-height:{{b.mobile_height}}px;--slide-brightness:{{b.brightness}}%;--slide-zoom:{{b.zoom / 100}};--slide-x:{{b.position_x}}%;--slide-y:{{b.position_y}}%">{% if b.image_filename %}<img class="slide-art" src="/uploads/{{b.image_filename}}" alt="Anúncio {{loop.index}}">{% endif %}</a>{% endfor %}<button class="slider-arrow prev" type="button" data-prev aria-label="Anterior">‹</button>
+<div class="ad-slider" data-slider data-interval="5000">{% for b in banners %}<a href="/anuncio/{{b.id}}" class="ad-slide photo-only {% if loop.first %}active{% endif %}" style="--slide-brightness:{{b.brightness}}%;--slide-zoom:{{b.zoom / 100}};--slide-x:{{b.position_x}}%;--slide-y:{{b.position_y}}%">{% if b.image_filename %}<img class="slide-art" src="/uploads/{{b.image_filename}}" alt="Anúncio {{loop.index}}">{% endif %}</a>{% endfor %}{% for p in business_slides %}<a href="/p/{{p.slug}}" class="ad-slide photo-only {% if not banners and loop.first %}active{% endif %}"><img class="slide-art" src="/uploads/{{p.slide_image_filename}}" alt="{{p.display_name}}"></a>{% endfor %}<button class="slider-arrow prev" type="button" data-prev aria-label="Anterior">‹</button>
 <button class="slider-arrow next" type="button" data-next aria-label="Próximo">›</button>
-<div class="slider-dots">{% for b in banners %}<button type="button" data-slide="{{loop.index0}}" aria-label="Anúncio {{loop.index}}" class="{% if loop.first %}active{% endif %}">
-</button>{% endfor %}</div>
+<div class="slider-dots">{% for b in banners %}<button type="button" data-slide="{{loop.index0}}" aria-label="Anúncio {{loop.index}}" class="{% if loop.first %}active{% endif %}"></button>{% endfor %}{% for p in business_slides %}<button type="button" data-slide="{{banners|length + loop.index0}}" aria-label="{{p.display_name}}" class="{% if not banners and loop.first %}active{% endif %}"></button>{% endfor %}</div>
 </div>
 </div>
 </section>{% endif %}
