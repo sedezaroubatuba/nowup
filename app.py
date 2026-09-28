@@ -290,6 +290,35 @@ def init_db():
       ON analytics_events(professional_id,created_at);
     CREATE INDEX IF NOT EXISTS idx_analytics_type
       ON analytics_events(event_type);
+    CREATE TABLE IF NOT EXISTS orders(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      professional_id INTEGER NOT NULL REFERENCES professionals(id) ON DELETE CASCADE,
+      customer_name TEXT NOT NULL DEFAULT '',
+      customer_phone TEXT NOT NULL DEFAULT '',
+      fulfillment_type TEXT NOT NULL DEFAULT 'pickup',
+      address TEXT NOT NULL DEFAULT '',
+      notes TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'new',
+      total_cents INTEGER NOT NULL DEFAULT 0,
+      whatsapp_opened INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS order_items(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+      product_id INTEGER,
+      product_name TEXT NOT NULL,
+      quantity INTEGER NOT NULL DEFAULT 1,
+      unit_price_cents INTEGER NOT NULL DEFAULT 0,
+      notes TEXT NOT NULL DEFAULT ''
+    );
+    CREATE INDEX IF NOT EXISTS idx_orders_professional_date
+      ON orders(professional_id,created_at);
+    CREATE INDEX IF NOT EXISTS idx_orders_professional_status
+      ON orders(professional_id,status);
+    CREATE INDEX IF NOT EXISTS idx_order_items_order
+      ON order_items(order_id);
     """)
     ensure_column(conn, "users", "email_verified", "INTEGER NOT NULL DEFAULT 1")
     ensure_column(conn, "users", "verification_token", "TEXT DEFAULT ''")
@@ -656,7 +685,7 @@ def logout(request: Request):
     resp=RedirectResponse("/",303); resp.delete_cookie("nowup_session"); return resp
 
 @app.get("/painel", response_class=HTMLResponse)
-def pro_panel(request: Request, mes: str="", inicio: str="", fim: str=""):
+def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido_status: str="todos"):
     u=require_user(request,"professional"); conn=db()
     p=conn.execute("SELECT * FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
     photos=conn.execute("SELECT * FROM photos WHERE professional_id=? ORDER BY is_cover DESC,id DESC",(p["id"],)).fetchall()
@@ -695,8 +724,44 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str=""):
     settings=get_settings(conn); support_link=wa_link(settings.get("support_whatsapp",""),"Olá! Sou profissional cadastrado na NowUp e preciso de ajuda com meu painel.")
     profile_fields=[p["display_name"],p["whatsapp"],p["description"],p["services"],p["city"],p["neighborhood"],p["avatar_filename"],p["cover_filename"],p["service_area"],p["opening_hours"]]
     profile_completion=round(sum(bool(str(v or "").strip()) for v in profile_fields)*100/len(profile_fields))
+    order_where=["o.professional_id=?", "date(o.created_at) BETWEEN ? AND ?"]
+    order_params=[p["id"],start.isoformat(),end.isoformat()]
+    allowed_order_status={"new","confirmed","preparing","ready","completed","cancelled"}
+    if pedido_status in allowed_order_status:
+        order_where.append("o.status=?"); order_params.append(pedido_status)
+    else:
+        pedido_status="todos"
+    orders=conn.execute(f"""SELECT o.*,
+      COALESCE((SELECT SUM(oi.quantity) FROM order_items oi WHERE oi.order_id=o.id),0) item_count
+      FROM orders o WHERE {' AND '.join(order_where)} ORDER BY o.id DESC LIMIT 100""",order_params).fetchall()
+    order_summary=conn.execute("""SELECT COUNT(*) total,
+      COALESCE(SUM(CASE WHEN status!='cancelled' THEN total_cents ELSE 0 END),0) revenue_cents,
+      COALESCE(ROUND(AVG(CASE WHEN status!='cancelled' THEN total_cents END)),0) avg_ticket_cents,
+      SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) completed,
+      SUM(CASE WHEN status='cancelled' THEN 1 ELSE 0 END) cancelled
+      FROM orders WHERE professional_id=? AND date(created_at) BETWEEN ? AND ?""",
+      (p["id"],start.isoformat(),end.isoformat())).fetchone()
+    top_products=conn.execute("""SELECT oi.product_name,
+      SUM(oi.quantity) quantity, SUM(oi.quantity*oi.unit_price_cents) revenue_cents,
+      COUNT(DISTINCT oi.order_id) order_count
+      FROM order_items oi JOIN orders o ON o.id=oi.order_id
+      WHERE o.professional_id=? AND o.status!='cancelled' AND date(o.created_at) BETWEEN ? AND ?
+      GROUP BY lower(oi.product_name) ORDER BY quantity DESC,revenue_cents DESC LIMIT 15""",
+      (p["id"],start.isoformat(),end.isoformat())).fetchall()
     conn.close()
-    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion))
+    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, order_summary=order_summary, top_products=top_products, order_status=pedido_status))
+
+@app.post("/painel/pedidos/{order_id}/status")
+def pro_order_status(request: Request, order_id: int, status: str=Form(...)):
+    u=require_user(request,"professional")
+    allowed={"new","confirmed","preparing","ready","completed","cancelled"}
+    if status not in allowed: raise HTTPException(400,"Status inválido")
+    conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+    order=conn.execute("SELECT id FROM orders WHERE id=? AND professional_id=?",(order_id,p["id"])).fetchone()
+    if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
+    conn.execute("UPDATE orders SET status=?,updated_at=? WHERE id=?",(status,now_iso(),order_id))
+    conn.commit(); conn.close()
+    return RedirectResponse("/painel?ok=pedido#pedidos",303)
 
 @app.post("/painel/perfil")
 def pro_update(request: Request, display_name: str=Form(...), whatsapp: str=Form(...), business_type: str=Form(""), city: str=Form(...), neighborhood: str=Form(""), address: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), service_area: str=Form(""), opening_hours: str=Form(""), business_status: str=Form("open"), hide_address: Optional[str]=Form(None), whatsapp_message: str=Form(""), category_ids: list[int]=Form(default=[])):
