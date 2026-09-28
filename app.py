@@ -296,6 +296,7 @@ def init_db():
       customer_name TEXT NOT NULL DEFAULT '',
       customer_phone TEXT NOT NULL DEFAULT '',
       fulfillment_type TEXT NOT NULL DEFAULT 'pickup',
+      payment_method TEXT NOT NULL DEFAULT 'pix',
       address TEXT NOT NULL DEFAULT '',
       notes TEXT NOT NULL DEFAULT '',
       status TEXT NOT NULL DEFAULT 'new',
@@ -382,6 +383,7 @@ def init_db():
     ensure_column(conn, "banners", "position_y", "INTEGER NOT NULL DEFAULT 50")
     ensure_column(conn, "banners", "desktop_height", "INTEGER NOT NULL DEFAULT 360")
     ensure_column(conn, "banners", "mobile_height", "INTEGER NOT NULL DEFAULT 240")
+    ensure_column(conn, "orders", "payment_method", "TEXT NOT NULL DEFAULT 'pix'")
     defaults = {
       "brand_name": "NowUp",
       "primary_color": "#08131F",
@@ -575,7 +577,7 @@ def native_menu(request: Request, slug: str):
     return templates.TemplateResponse("menu.html", context(request, pro=p, products=products, menu_categories=menu_categories))
 
 @app.post("/p/{slug}/menu/pedido")
-def native_menu_order(slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), address: str=Form(""), notes: str=Form(""), cart_json: str=Form(...)):
+def native_menu_order(slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), notes: str=Form(""), cart_json: str=Form(...)):
     conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404)
     try: raw_items=json.loads(cart_json)
@@ -590,9 +592,12 @@ def native_menu_order(slug: str, customer_name: str=Form(...), customer_phone: s
             clean_items.append((product,qty,item_notes)); total += product["price_cents"]*qty
     if not clean_items: conn.close(); raise HTTPException(400,"Nenhum produto disponível no carrinho")
     fulfillment_type="delivery" if fulfillment_type=="delivery" else "pickup"
+    payment_labels={"pix":"Pix","cash":"Dinheiro","credit":"Cartão de crédito","debit":"Cartão de débito","on_delivery":"Combinar no atendimento"}
+    payment_method=payment_method if payment_method in payment_labels else "pix"
     created=now_iso(); cur=conn.execute("""INSERT INTO orders(professional_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at)
       VALUES(?,?,?,?,?,?,?,?,1,?,?)""",(p["id"],customer_name.strip()[:120],customer_phone.strip()[:30],fulfillment_type,address.strip()[:300],notes.strip()[:500],"new",total,created,created))
     order_id=cur.lastrowid
+    conn.execute("UPDATE orders SET payment_method=? WHERE id=?",(payment_method,order_id))
     for product,qty,item_notes in clean_items:
         conn.execute("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes) VALUES(?,?,?,?,?,?)",(order_id,product["id"],product["name"],qty,product["price_cents"],item_notes))
     conn.commit(); conn.close()
@@ -600,7 +605,7 @@ def native_menu_order(slug: str, customer_name: str=Form(...), customer_phone: s
     for product,qty,item_notes in clean_items:
         lines.append(f"{qty}x {product['name']} — R$ {(product['price_cents']*qty)/100:.2f}")
         if item_notes: lines.append(f"   Obs.: {item_notes}")
-    lines += ["",f"Total: R$ {total/100:.2f}",f"Cliente: {customer_name.strip()}",f"Telefone: {customer_phone.strip()}","Entrega" if fulfillment_type=="delivery" else "Retirada no local"]
+    lines += ["",f"Total: R$ {total/100:.2f}",f"Pagamento: {payment_labels[payment_method]}",f"Cliente: {customer_name.strip()}",f"Telefone: {customer_phone.strip()}","Entrega" if fulfillment_type=="delivery" else "Retirada no local"]
     if address.strip(): lines.append(f"Endereço: {address.strip()}")
     if notes.strip(): lines.append(f"Observações: {notes.strip()}")
     return RedirectResponse(wa_link(p["whatsapp"],"\n".join(lines)),303)
