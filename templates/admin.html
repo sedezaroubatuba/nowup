@@ -84,22 +84,6 @@
 <label>Segunda cor (botões e detalhes)</label>
 <input class="input color-input" type="color" name="accent_color" value="{{settings.accent_color}}">
 </div>
-<div style="grid-column:1/-1"><h3>Faixa de avisos no topo</h3></div>
-<div style="grid-column:1/-1">
-<label>Texto que ficará passando</label>
-<input class="input" name="ticker_text" maxlength="300" value="{{settings.ticker_text}}" placeholder="Ex.: Cadastre sua empresa grátis no NowUp • Confira os destaques de Ubatuba">
-</div>
-<div>
-<label>Cor da faixa</label>
-<input class="input color-input" type="color" name="ticker_color" value="{{settings.ticker_color or '#e30613'}}">
-</div>
-<div>
-<label class="row"><input type="checkbox" name="ticker_enabled" value="1" {% if settings.ticker_enabled=='1' %}checked{% endif %}> Exibir a faixa no site</label>
-</div>
-<div>
-<label>Tempo de cada slide</label>
-<select name="slide_interval_seconds">{% for s in range(1,16) %}<option value="{{s}}" {% if (settings.slide_interval_seconds or 3)|int==s %}selected{% endif %}>{{s}} segundo{% if s>1 %}s{% endif %}</option>{% endfor %}</select>
-</div>
 <div style="grid-column:1/-1">
 <label>Título inicial</label>
 <input class="input" name="hero_title" value="{{settings.hero_title}}">
@@ -124,6 +108,21 @@
 </div>
 <button class="btn primary">Salvar aparência</button>
 </form>
+<hr>
+<div id="faixa-slides">
+<h3>Faixa de avisos e velocidade dos slides</h3>
+<p class="muted">Este bloco tem salvamento próprio para garantir que a faixa seja ativada corretamente.</p>
+{% if request.query_params.get('ok')=='faixa' %}<div class="alert success">Faixa e tempo dos slides salvos com sucesso.</div>{% endif %}
+<form action="/admin/faixa-e-slides" method="post" class="banner-control-panel">
+<label>Texto que ficará passando<input class="input" name="ticker_text" maxlength="300" value="{{settings.ticker_text}}" placeholder="Ex.: Cadastre sua empresa grátis no NowUp • Confira os destaques de Ubatuba"></label>
+<div class="settings-grid">
+<div><label>Cor da faixa<input class="input color-input" type="color" name="ticker_color" value="{{settings.ticker_color or '#e30613'}}"></label></div>
+<div><label>Tempo de cada slide<select name="slide_interval_seconds">{% for s in range(1,16) %}<option value="{{s}}" {% if (settings.slide_interval_seconds or 3)|int==s %}selected{% endif %}>{{s}} segundo{% if s>1 %}s{% endif %}</option>{% endfor %}</select></label></div>
+</div>
+<label class="row"><input type="checkbox" name="ticker_enabled" value="1" {% if settings.ticker_enabled=='1' %}checked{% endif %}> Exibir a faixa no topo do site</label>
+<button class="btn primary">Salvar faixa e tempo dos slides</button>
+</form>
+</div>
 <hr>
 <h3>Trocar capa principal</h3>
 <p class="muted">Crie a montagem no GPT e envie aqui. Recomendação: imagem horizontal 1600 × 700.</p>
@@ -345,10 +344,7 @@
 <button class="btn soft tiny">Slide</button>
 </form>
 <form action="/admin/profissionais/{{p.id}}/acao/bloquear" method="post">
-<button class="btn danger tiny">Bloquear</button>
-</form>
-<form action="/admin/profissionais/{{p.id}}/excluir" method="post">
-<button class="btn danger tiny">Excluir</button>
+<button class="btn {% if p.blocked %}soft{% else %}danger{% endif %} tiny">{{'Reativar' if p.blocked else 'Pausar/bloquear'}}</button>
 </form>
 </div>
 </td>
@@ -380,10 +376,7 @@
 <td>
 <div class="row">
 <form action="/admin/clientes/{{c.id}}/alternar" method="post">
-<button class="btn soft">Ativar/bloquear</button>
-</form>
-<form action="/admin/clientes/{{c.id}}/excluir" method="post">
-<button class="btn danger">Excluir</button>
+<button class="btn {% if c.is_active %}danger{% else %}soft{% endif %}">{{'Pausar/bloquear' if c.is_active else 'Reativar'}}</button>
 </form>
 </div>
 </td>
