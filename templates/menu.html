@@ -20,7 +20,7 @@
 <p>{{product.description}}</p>
 <div>
 <strong>R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</strong>
-<button class="btn primary" type="button" data-add>Adicionar</button>
+<div class="product-buy"><label>Qtd.<select data-product-quantity aria-label="Quantidade"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select></label><button class="btn primary" type="button" data-add>Adicionar</button></div>
 </div>
 </div>
 </article>{% else %}<div class="panel empty-state">
@@ -60,6 +60,7 @@
 </label>
 <label data-address hidden>Endereço para entrega<input class="input" name="address">
 </label>
+<label>Forma de pagamento<select name="payment_method" required><option value="pix">Pix</option><option value="cash">Dinheiro</option><option value="credit">Cartão de crédito</option><option value="debit">Cartão de débito</option><option value="on_delivery">Combinar no atendimento</option></select></label>
 <label>Observação geral do pedido<textarea name="notes" placeholder="Ex.: preciso de troco para R$ 100">
 </textarea>
 </label>

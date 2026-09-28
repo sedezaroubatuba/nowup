@@ -86,12 +86,12 @@
 <form action="/painel/cardapio/categorias/{{category.id}}/excluir" method="post" data-confirm-delete><button class="btn danger tiny">Excluir</button></form>
 </div>{% endfor %}</div>
 </div>
-<details class="product-create" {% if not products %}open{% endif %}>
-<summary class="btn primary">＋ Adicionar produto</summary>
+<details class="product-create" id="novo-produto" {% if not products %}open{% endif %}>
+<summary class="btn primary" role="button">＋ Adicionar produto</summary>
 <form action="/painel/cardapio/produtos" method="post" enctype="multipart/form-data" class="product-form">
 <label>Nome do produto<input class="input" name="name" maxlength="140" required>
 </label>
-<label>Categoria<select name="category" required>{% for category in product_categories if category.active %}<option value="{{category.name}}">{{category.name}}</option>{% endfor %}</select>
+<label>Categoria<select name="category" required>{% for category in product_categories if category.active %}<option value="{{category.name}}">{{category.name}}</option>{% else %}<option value="Geral">Geral</option>{% endfor %}</select>
 </label>
 <label>Preço<input class="input" name="price" inputmode="decimal" placeholder="Ex.: 29,90" required>
 </label>
@@ -257,6 +257,7 @@
 <span>📦 {{order.item_count}} item(ns)</span>
 <span>📱 {{order.customer_phone or 'Sem telefone'}}</span>
 <span>{% if order.fulfillment_type=='delivery' %}🛵 Entrega{% else %}🏪 Retirada{% endif %}</span>
+<span>💳 {% if order.payment_method=='cash' %}Dinheiro{% elif order.payment_method=='credit' %}Cartão de crédito{% elif order.payment_method=='debit' %}Cartão de débito{% elif order.payment_method=='on_delivery' %}Combinar no atendimento{% else %}Pix{% endif %}</span>
 </div>{% if order.address %}<p class="tiny">
 <b>Endereço:</b> {{order.address}}</p>{% endif %}{% if order.notes %}<p class="tiny">
 <b>Observações:</b> {{order.notes}}</p>{% endif %}<div class="order-products">{% for item in order_items_by_order.get(order.id,[]) %}<p><b>{{item.quantity}}x {{item.product_name}}</b>{% if item.notes %}<small>Obs.: {{item.notes}}</small>{% endif %}</p>{% endfor %}</div><form action="/painel/pedidos/{{order.id}}/status" method="post" class="order-status-form">
