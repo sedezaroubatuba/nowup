@@ -1,6 +1,7 @@
 from __future__ import annotations
 import os, re, io, hmac, hashlib, secrets, sqlite3, unicodedata, json
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Optional
 from urllib.parse import quote
@@ -39,6 +40,50 @@ templates = Jinja2Templates(directory=str(BASE / "templates"))
 
 def now_iso():
     return datetime.now(timezone.utc).isoformat()
+
+SAO_PAULO_TZ = ZoneInfo("America/Sao_Paulo")
+DAYS = ["segunda","terca","quarta","quinta","sexta","sabado","domingo"]
+DAY_LABELS = {"segunda":"Segunda", "terca":"Terça", "quarta":"Quarta", "quinta":"Quinta", "sexta":"Sexta", "sabado":"Sábado", "domingo":"Domingo"}
+
+def parse_business_hours(raw: str):
+    try:
+        data=json.loads(raw or "{}")
+        return data if isinstance(data,dict) else {}
+    except (ValueError,TypeError):
+        return {}
+
+def business_hours_lines(pro):
+    schedule=parse_business_hours(pro["business_hours"]); lines=[]
+    for day in DAYS:
+        row=schedule.get(day,{})
+        if row.get("enabled"):
+            lines.append(f"{DAY_LABELS[day]}: {row.get('start','09:00')}–{row.get('end','18:00')}")
+    return lines
+
+def shop_status(pro):
+    manual=pro["business_status"] or "open"
+    labels={"paused":"Loja pausada", "temporarily_closed":"Fechada temporariamente", "vacation":"Fechada para férias", "ad_paused":"Anúncio pausado"}
+    if manual in labels:
+        return {"open":False,"code":manual,"label":labels[manual],"detail":"Fechada manualmente pelo estabelecimento"}
+    now=datetime.now(SAO_PAULO_TZ); schedule=parse_business_hours(pro["business_hours"])
+    if not schedule:
+        return {"open":True,"code":"open","label":"Loja aberta","detail":"Horário ainda não configurado"}
+    minute=now.hour*60+now.minute; today=now.weekday(); opened=False
+    def interval(day_index):
+        row=schedule.get(DAYS[day_index],{})
+        if not row.get("enabled"): return None
+        try:
+            sh,sm=map(int,row.get("start","09:00").split(":")); eh,em=map(int,row.get("end","18:00").split(":"))
+            return sh*60+sm,eh*60+em
+        except (ValueError,AttributeError): return None
+    current=interval(today)
+    if current:
+        start,end=current; opened=(start<=minute<end) if end>start else minute>=start
+    previous=interval((today-1)%7)
+    if previous:
+        start,end=previous
+        if end<=start and minute<end: opened=True
+    return {"open":opened,"code":"open" if opened else "closed","label":"Loja aberta" if opened else "Loja fechada","detail":now.strftime("Horário de agora: %H:%M")}
 
 def normalize_email(raw: str):
     try:
@@ -361,6 +406,7 @@ def init_db():
     ensure_column(conn, "professionals", "hide_address", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "professionals", "service_area", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "opening_hours", "TEXT DEFAULT ''")
+    ensure_column(conn, "professionals", "business_hours", "TEXT NOT NULL DEFAULT '{}'")
     ensure_column(conn, "professionals", "business_status", "TEXT NOT NULL DEFAULT 'open'")
     ensure_column(conn, "professionals", "instagram_url", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "facebook_url", "TEXT DEFAULT ''")
@@ -557,7 +603,8 @@ def profile(request: Request, slug: str):
     product_count=conn.execute("SELECT COUNT(*) FROM products WHERE professional_id=? AND available=1",(p["id"],)).fetchone()[0]
     conn.close()
     pub=dict(p); pub["document_masked"]=mask_doc(pub["document"]); pub["wa_link"]=wa_link(pub["whatsapp"],pub.get("whatsapp_message") or "Olá! Encontrei você pelo NowUp e gostaria de saber mais.")
-    return templates.TemplateResponse("profile.html", context(request, pro=pub, photos=photos, posts=posts, reviews=reviews, pro_categories=cats, product_count=product_count))
+    status=shop_status(p)
+    return templates.TemplateResponse("profile.html", context(request, pro=pub, photos=photos, posts=posts, reviews=reviews, pro_categories=cats, product_count=product_count, shop_status=status, hours_lines=business_hours_lines(p)))
 
 @app.get("/p/{slug}/menu", response_class=HTMLResponse)
 def native_menu(request: Request, slug: str):
@@ -574,12 +621,14 @@ def native_menu(request: Request, slug: str):
         if category not in menu_categories: menu_categories.append(category)
     conn.execute("UPDATE professionals SET menu_clicks=menu_clicks+1 WHERE id=?",(p["id"],))
     conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"menu_click",now_iso())); conn.commit(); conn.close()
-    return templates.TemplateResponse("menu.html", context(request, pro=p, products=products, menu_categories=menu_categories))
+    status=shop_status(p)
+    return templates.TemplateResponse("menu.html", context(request, pro=p, products=products, menu_categories=menu_categories, shop_status=status))
 
 @app.post("/p/{slug}/menu/pedido")
 def native_menu_order(slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), notes: str=Form(""), cart_json: str=Form(...)):
     conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404)
+    if not shop_status(p)["open"]: conn.close(); return RedirectResponse(f"/p/{slug}/menu?fechado=1",303)
     try: raw_items=json.loads(cart_json)
     except Exception: conn.close(); raise HTTPException(400,"Carrinho inválido")
     if not isinstance(raw_items,list) or not raw_items: conn.close(); raise HTTPException(400,"Carrinho vazio")
@@ -845,7 +894,8 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
       GROUP BY lower(oi.product_name) ORDER BY quantity DESC,revenue_cents DESC LIMIT 15""",
       (p["id"],start.isoformat(),end.isoformat())).fetchall()
     conn.close()
-    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, products=products, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, order_items_by_order=order_items_by_order, order_summary=order_summary, top_products=top_products, order_status=pedido_status))
+    status=shop_status(p); business_hours=parse_business_hours(p["business_hours"])
+    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, products=products, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, order_items_by_order=order_items_by_order, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS))
 
 def price_to_cents(raw: str):
     value=(raw or "0").strip().replace("R$","").replace(" ","")
@@ -923,6 +973,40 @@ def pro_order_status(request: Request, order_id: int, status: str=Form(...)):
     conn.commit(); conn.close()
     return RedirectResponse("/painel?ok=pedido#pedidos",303)
 
+@app.post("/painel/pedidos/{order_id}/editar")
+def pro_order_edit(request: Request, order_id: int, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), notes: str=Form("")):
+    u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+    order=conn.execute("SELECT id FROM orders WHERE id=? AND professional_id=?",(order_id,p["id"])).fetchone()
+    if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
+    fulfillment_type="delivery" if fulfillment_type=="delivery" else "pickup"
+    if payment_method not in {"pix","cash","credit","debit","on_delivery"}: payment_method="pix"
+    conn.execute("UPDATE orders SET customer_name=?,customer_phone=?,fulfillment_type=?,payment_method=?,address=?,notes=?,updated_at=? WHERE id=?",(customer_name.strip()[:120],customer_phone.strip()[:30],fulfillment_type,payment_method,address.strip()[:300],notes.strip()[:500],now_iso(),order_id))
+    conn.commit(); conn.close(); return RedirectResponse("/painel?ok=pedido-editado#pedidos",303)
+
+@app.post("/painel/pedidos/{order_id}/itens/{item_id}")
+def pro_order_item_edit(request: Request, order_id: int, item_id: int, quantity: int=Form(1), notes: str=Form(""), remove: Optional[str]=Form(None)):
+    u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+    item=conn.execute("SELECT oi.id FROM order_items oi JOIN orders o ON o.id=oi.order_id WHERE oi.id=? AND oi.order_id=? AND o.professional_id=?",(item_id,order_id,p["id"])).fetchone()
+    if not item: conn.close(); raise HTTPException(404,"Item não encontrado")
+    if remove: conn.execute("DELETE FROM order_items WHERE id=?",(item_id,))
+    else: conn.execute("UPDATE order_items SET quantity=?,notes=? WHERE id=?",(max(1,min(99,quantity)),notes.strip()[:300],item_id))
+    total=conn.execute("SELECT COALESCE(SUM(quantity*unit_price_cents),0) FROM order_items WHERE order_id=?",(order_id,)).fetchone()[0]
+    conn.execute("UPDATE orders SET total_cents=?,updated_at=? WHERE id=?",(total,now_iso(),order_id)); conn.commit(); conn.close()
+    return RedirectResponse("/painel?ok=item-editado#pedidos",303)
+
+@app.post("/painel/horarios")
+async def pro_business_hours(request: Request):
+    u=require_user(request,"professional"); form=await request.form(); schedule={}
+    for day in DAYS:
+        start=str(form.get(f"{day}_start","09:00")); end=str(form.get(f"{day}_end","18:00"))
+        if not re.fullmatch(r"\d{2}:\d{2}",start): start="09:00"
+        if not re.fullmatch(r"\d{2}:\d{2}",end): end="18:00"
+        schedule[day]={"enabled":form.get(f"{day}_enabled")=="1","start":start,"end":end}
+    manual=str(form.get("business_status","open"))
+    if manual not in {"open","paused","temporarily_closed","vacation","ad_paused"}: manual="open"
+    conn=db(); conn.execute("UPDATE professionals SET business_hours=?,business_status=?,opening_hours=? WHERE user_id=?",(json.dumps(schedule,ensure_ascii=False),manual,"Horários automáticos configurados",u["id"])); conn.commit(); conn.close()
+    return RedirectResponse("/painel?ok=horarios#horarios",303)
+
 @app.post("/painel/perfil")
 def pro_update(request: Request, display_name: str=Form(...), whatsapp: str=Form(...), business_type: str=Form(""), city: str=Form(...), neighborhood: str=Form(""), address: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), service_area: str=Form(""), opening_hours: str=Form(""), business_status: str=Form("open"), hide_address: Optional[str]=Form(None), whatsapp_message: str=Form(""), category_ids: list[int]=Form(default=[])):
     u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
@@ -930,7 +1014,7 @@ def pro_update(request: Request, display_name: str=Form(...), whatsapp: str=Form
         business_type=conn.execute("SELECT business_type FROM professionals WHERE id=?",(p["id"],)).fetchone()[0]
     cities=active_cities(get_settings(conn))
     if city not in cities: city=cities[0]
-    if business_status not in ("open","temporarily_closed","vacation"): business_status="open"
+    if business_status not in ("open","paused","temporarily_closed","vacation","ad_paused"): business_status="open"
     default_message="Olá! Encontrei você pelo NowUp e gostaria de saber mais."
     conn.execute("UPDATE professionals SET display_name=?,whatsapp=?,business_type=?,city=?,neighborhood=?,address=?,cep=?,description=?,services=?,service_area=?,opening_hours=?,business_status=?,hide_address=?,whatsapp_message=? WHERE id=?",(display_name.strip()[:120],whatsapp.strip()[:30],business_type,city,neighborhood.strip()[:120],address.strip()[:220],cep.strip()[:20],description.strip()[:1200],services.strip()[:1200],service_area.strip()[:500],opening_hours.strip()[:500],business_status,1 if hide_address else 0,(whatsapp_message.strip() or default_message)[:300],p["id"]))
     conn.execute("DELETE FROM professional_categories WHERE professional_id=?",(p["id"],))
