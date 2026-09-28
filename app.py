@@ -343,7 +343,11 @@ def init_db():
       "hero_mobile_height": "540",
       "public_email": "",
       "support_whatsapp": ""
-      ,"active_cities": "Ubatuba"
+      ,"active_cities": "Ubatuba",
+      "ticker_text": "",
+      "ticker_enabled": "0",
+      "ticker_color": "#e30613",
+      "slide_interval_seconds": "3"
     }
     for key, value in defaults.items():
         conn.execute("INSERT OR IGNORE INTO site_settings(key,value) VALUES(?,?)", (key,value))
@@ -858,11 +862,12 @@ def admin(request: Request):
     return templates.TemplateResponse("admin.html", context(request, stats=stats, pros=pros, clients=clients, admin_categories=admin_categories, reports=reports, suggestions=suggestions, admin_banners=banners))
 
 @app.post("/admin/aparencia")
-def admin_appearance(request: Request, brand_name:str=Form("NowUp"), font_family:str=Form("Inter"), primary_color:str=Form("#2457e6"), accent_color:str=Form("#ff8a32"), hero_title:str=Form(""), hero_subtitle:str=Form(""), public_email:str=Form(""), support_whatsapp:str=Form(""), active_cities:str=Form("Ubatuba")):
+def admin_appearance(request: Request, brand_name:str=Form("NowUp"), font_family:str=Form("Inter"), primary_color:str=Form("#2457e6"), accent_color:str=Form("#ff8a32"), ticker_color:str=Form("#e30613"), ticker_text:str=Form(""), ticker_enabled:str=Form(""), slide_interval_seconds:int=Form(3), hero_title:str=Form(""), hero_subtitle:str=Form(""), public_email:str=Form(""), support_whatsapp:str=Form(""), active_cities:str=Form("Ubatuba")):
     require_user(request,"admin")
     allowed_fonts={"Inter","Arial","Georgia","Trebuchet MS","Verdana"}; font_family=font_family if font_family in allowed_fonts else "Inter"
     cities=", ".join(dict.fromkeys(c.strip()[:80] for c in active_cities.split(",") if c.strip())) or "Ubatuba"
-    values={"brand_name":brand_name.strip()[:80] or "NowUp","font_family":font_family,"primary_color":primary_color[:20],"accent_color":accent_color[:20],"hero_title":hero_title.strip()[:180],"hero_subtitle":hero_subtitle.strip()[:500],"public_email":public_email.strip()[:160],"support_whatsapp":support_whatsapp.strip()[:40],"active_cities":cities}
+    slide_interval_seconds=max(1,min(15,slide_interval_seconds))
+    values={"brand_name":brand_name.strip()[:80] or "NowUp","font_family":font_family,"primary_color":primary_color[:20],"accent_color":accent_color[:20],"ticker_color":ticker_color[:20],"ticker_text":ticker_text.strip()[:300],"ticker_enabled":"1" if ticker_enabled=="1" else "0","slide_interval_seconds":str(slide_interval_seconds),"hero_title":hero_title.strip()[:180],"hero_subtitle":hero_subtitle.strip()[:500],"public_email":public_email.strip()[:160],"support_whatsapp":support_whatsapp.strip()[:40],"active_cities":cities}
     conn=db()
     for key,value in values.items(): conn.execute("INSERT INTO site_settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",(key,value))
     conn.commit(); conn.close(); return RedirectResponse("/admin?ok=aparencia#aparencia",303)
