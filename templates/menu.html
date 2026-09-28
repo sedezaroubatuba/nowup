@@ -21,7 +21,7 @@
 <p>{{product.description}}</p>
 <div>
 <strong>R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</strong>
-<div class="product-buy"><label>Qtd.<select data-product-quantity aria-label="Quantidade" {% if not shop_status.open %}disabled{% endif %}><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select></label><button class="btn primary" type="button" data-add {% if not shop_status.open %}disabled{% endif %}>{% if shop_status.open %}Adicionar{% else %}Fechado{% endif %}</button></div>
+<div class="product-buy"><label>Qtd.<input class="product-quantity-input" type="number" min="1" max="99" step="1" value="1" inputmode="numeric" data-product-quantity aria-label="Digite a quantidade" {% if not shop_status.open %}disabled{% endif %}></label><button class="btn primary" type="button" data-add {% if not shop_status.open %}disabled{% endif %}>{% if shop_status.open %}Adicionar{% else %}Fechado{% endif %}</button></div>
 </div>
 </div>
 </article>{% else %}<div class="panel empty-state">
@@ -73,6 +73,6 @@
 </form>
 </dialog>
 </section>
-<script src="/static/menu.js">
+<script src="/static/menu.js?v=16">
 </script>
 {% endblock %}
