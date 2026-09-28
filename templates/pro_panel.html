@@ -1,17 +1,500 @@
 {% extends 'base.html' %}{% block title %}Painel do profissional | NowUp{% endblock %}{% block body_class %}professional-area{% endblock %}{% block content %}
-<div class="container dashboard pro-dashboard"><aside class="sidebar pro-sidebar"><div class="pro-side-title"><span>NU</span><div><b>Painel profissional</b><small>{{pro.display_name}}</small></div></div><a href="#resumo">📊 Visão geral</a><a href="#cardapio">🍽 Meu cardápio</a><a href="#relatorios">📈 Relatórios</a><a href="#pedidos">🧾 Pedidos</a><a href="#mais-pedidos">🏆 Mais pedidos</a><a href="#identidade">🖼 Foto e capa</a><a href="#perfil">✏️ Editar perfil</a><a href="#links">💬 Contatos</a><a href="#publicar">➕ Publicar</a><a href="#fotos">▦ Galeria</a><a href="/p/{{pro.slug}}">↗ Ver perfil público</a>{% if support_link!='#' %}<a class="support-side" href="{{support_link}}" target="_blank" rel="noopener">🛟 Falar com a NowUp</a>{% endif %}</aside><main>
+<div class="container dashboard pro-dashboard">
+<aside class="sidebar pro-sidebar">
+<div class="pro-side-title">
+<span>NU</span>
+<div>
+<b>Painel profissional</b>
+<small>{{pro.display_name}}</small>
+</div>
+</div>
+<a href="#resumo">📊 Visão geral</a>
+<a href="#cardapio">🍽 Meu cardápio</a>
+<a href="#relatorios">📈 Relatórios</a>
+<a href="#pedidos">🧾 Pedidos</a>
+<a href="#mais-pedidos">🏆 Mais pedidos</a>
+<a href="#identidade">🖼 Foto e capa</a>
+<a href="#perfil">✏️ Editar perfil</a>
+<a href="#links">💬 Contatos</a>
+<a href="#publicar">➕ Publicar</a>
+<a href="#fotos">▦ Galeria</a>
+<a href="/p/{{pro.slug}}">↗ Ver perfil público</a>{% if support_link!='#' %}<a class="support-side" href="{{support_link}}" target="_blank" rel="noopener">🛟 Falar com a NowUp</a>{% endif %}</aside>
+<main>
 {% if request.query_params.get('ok') %}<div class="alert success">Alterações salvas com sucesso.</div>{% endif %}
-<section class="panel pro-welcome" id="resumo"><div><span class="kicker">Central do profissional</span><h1>Olá, {{pro.display_name}}</h1><p>Gerencie sua vitrine e acompanhe o interesse dos clientes.</p><div class="completion"><span><b>{{profile_completion}}%</b> do perfil completo</span><i><em style="width:{{profile_completion}}%"></em></i></div></div><div class="row"><a class="btn soft" href="#perfil">✏️ Editar perfil</a><a class="btn primary" href="/p/{{pro.slug}}" target="_blank">Visualizar perfil público</a></div></section>
-<section class="stats pro-stats"><div class="stat"><span>👁 Vistas no total</span><b>{{pro.views}}</b><small>Desde a criação do perfil</small></div><div class="stat"><span>💬 WhatsApp total</span><b>{{pro.whatsapp_clicks}}</b><small>Cliques de contato</small></div><div class="stat"><span>🔗 Outros links</span><b>{{pro.menu_clicks + pro.external_clicks}}</b><small>Cardápio, site ou rede</small></div><div class="stat"><span>🖼 Galeria</span><b>{{photos|length}}/{{max_photos}}</b><small>Fotos publicadas</small></div></section>
-<section class="panel menu-manager" id="cardapio"><div class="section-title"><div><span class="kicker">Venda pelo NowUp</span><h2>Meu cardápio</h2></div><a class="btn soft" href="/p/{{pro.slug}}/menu" target="_blank">Ver cardápio público</a></div><p class="muted">Cadastre os produtos que o cliente poderá adicionar ao carrinho. O pedido será salvo no histórico e enviado ao seu WhatsApp.</p><details class="product-create" {% if not products %}open{% endif %}><summary class="btn primary">＋ Adicionar produto</summary><form action="/painel/cardapio/produtos" method="post" enctype="multipart/form-data" class="product-form"><label>Nome do produto<input class="input" name="name" maxlength="140" required></label><label>Categoria<input class="input" name="category" placeholder="Ex.: Lanches, Bebidas, Combos" value="Geral" required></label><label>Preço<input class="input" name="price" inputmode="decimal" placeholder="Ex.: 29,90" required></label><label>Foto<input class="input" type="file" name="photo" accept="image/*"></label><label class="full">Descrição<textarea name="description" maxlength="600" placeholder="Ingredientes, tamanho ou informações importantes"></textarea></label><label class="check"><input type="checkbox" name="available" value="1" checked> Produto disponível</label><button class="btn primary">Salvar produto</button></form></details><div class="product-admin-grid">{% for product in products %}<details class="product-admin-card"><summary>{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" alt="">{% else %}<span class="product-placeholder">🍽</span>{% endif %}<div><b>{{product.name}}</b><small>{{product.category}} · R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</small></div><span class="status-pill {% if product.available %}ok{% endif %}">{% if product.available %}Disponível{% else %}Pausado{% endif %}</span></summary><form action="/painel/cardapio/produtos/{{product.id}}" method="post" enctype="multipart/form-data" class="product-form"><label>Nome<input class="input" name="name" value="{{product.name}}" required></label><label>Categoria<input class="input" name="category" value="{{product.category}}" required></label><label>Preço<input class="input" name="price" value="{{'%.2f'|format(product.price_cents/100)|replace('.',',')}}" required></label><label>Trocar foto<input class="input" type="file" name="photo" accept="image/*"></label><label class="full">Descrição<textarea name="description">{{product.description}}</textarea></label><label class="check"><input type="checkbox" name="available" value="1" {% if product.available %}checked{% endif %}> Disponível para pedidos</label><button class="btn primary">Salvar alterações</button></form><form action="/painel/cardapio/produtos/{{product.id}}/excluir" method="post" data-confirm-delete><button class="btn danger tiny">Excluir produto</button></form></details>{% else %}<div class="empty-state full"><span>🍽</span><h3>Seu cardápio está vazio</h3><p class="muted">Use o botão “Adicionar produto” para começar.</p></div>{% endfor %}</div></section>
-<section class="panel analytics-panel" id="relatorios"><div class="section-title"><div><span class="kicker">Desempenho</span><h2>Relatório de visualizações e cliques</h2></div><span class="status-pill ok">Dados reais da NowUp</span></div><form method="get" action="/painel#relatorios" class="analytics-filter"><label>Mês<input class="input" type="month" name="mes" value="{{filter_month}}"></label><span>ou</span><label>De<input class="input" type="date" name="inicio" value="{{filter_start}}"></label><label>Até<input class="input" type="date" name="fim" value="{{filter_end}}"></label><button class="btn primary">Filtrar</button><a class="btn soft" href="/painel#relatorios">Últimos 30 dias</a></form><p class="period-label">Período: <b>{{filter_start}}</b> até <b>{{filter_end}}</b> ({{analytics.days}} dias)</p><div class="metric-grid"><article><span>Visualizações</span><b>{{analytics.views}}</b></article><article><span>Cliques</span><b>{{analytics.clicks}}</b></article><article><span>Média diária</span><b>{{analytics.daily_avg}}</b></article><article><span>Média semanal</span><b>{{analytics.weekly_avg}}</b></article><article><span>Média mensal</span><b>{{analytics.monthly_avg}}</b></article></div><div class="report-split"><div><h3>Origem dos cliques</h3><div class="click-breakdown"><span>WhatsApp <b>{{analytics.whatsapp}}</b></span><span>Cardápio <b>{{analytics.menu}}</b></span><span>Site/rede social <b>{{analytics.external}}</b></span></div></div><div><h3>Movimento por dia</h3><div class="daily-list">{% for row in daily_rows %}<div><time>{{row.day}}</time><span>👁 {{row.views}}</span><span>↗ {{row.clicks}}</span></div>{% else %}<p class="muted">Ainda não houve atividade neste período.</p>{% endfor %}</div></div></div></section>
-<section class="panel orders-panel" id="pedidos"><div class="section-title"><div><span class="kicker">Central de pedidos</span><h2>Histórico de pedidos</h2></div><span class="status-pill ok">Atualização manual</span></div><form method="get" action="/painel#pedidos" class="analytics-filter"><label>Mês<input class="input" type="month" name="mes" value="{{filter_month}}"></label><label>De<input class="input" type="date" name="inicio" value="{{filter_start}}"></label><label>Até<input class="input" type="date" name="fim" value="{{filter_end}}"></label><label>Status<select name="pedido_status"><option value="todos" {% if order_status=='todos' %}selected{% endif %}>Todos</option><option value="new" {% if order_status=='new' %}selected{% endif %}>Novo</option><option value="confirmed" {% if order_status=='confirmed' %}selected{% endif %}>Confirmado</option><option value="preparing" {% if order_status=='preparing' %}selected{% endif %}>Em preparo</option><option value="ready" {% if order_status=='ready' %}selected{% endif %}>Pronto</option><option value="completed" {% if order_status=='completed' %}selected{% endif %}>Finalizado</option><option value="cancelled" {% if order_status=='cancelled' %}selected{% endif %}>Cancelado</option></select></label><button class="btn primary">Filtrar pedidos</button></form><div class="order-metrics"><article><span>Pedidos</span><b>{{order_summary.total or 0}}</b></article><article><span>Valor estimado</span><b>R$ {{'%.2f'|format((order_summary.revenue_cents or 0)/100)|replace('.',',')}}</b></article><article><span>Ticket médio</span><b>R$ {{'%.2f'|format((order_summary.avg_ticket_cents or 0)/100)|replace('.',',')}}</b></article><article><span>Finalizados</span><b>{{order_summary.completed or 0}}</b></article></div><div class="orders-list">{% for order in orders %}<article class="order-card"><div class="order-head"><div><b>Pedido #{{order.id}}</b><small>{{order.created_at[:16]|replace('T',' ')}} · {{order.customer_name or 'Cliente não informado'}}</small></div><strong>R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</strong></div><div class="order-info"><span>📦 {{order.item_count}} item(ns)</span><span>📱 {{order.customer_phone or 'Sem telefone'}}</span><span>{% if order.fulfillment_type=='delivery' %}🛵 Entrega{% else %}🏪 Retirada{% endif %}</span></div>{% if order.address %}<p class="tiny"><b>Endereço:</b> {{order.address}}</p>{% endif %}{% if order.notes %}<p class="tiny"><b>Observações:</b> {{order.notes}}</p>{% endif %}<form action="/painel/pedidos/{{order.id}}/status" method="post" class="order-status-form"><label>Status<select name="status"><option value="new" {% if order.status=='new' %}selected{% endif %}>Novo</option><option value="confirmed" {% if order.status=='confirmed' %}selected{% endif %}>Confirmado</option><option value="preparing" {% if order.status=='preparing' %}selected{% endif %}>Em preparo</option><option value="ready" {% if order.status=='ready' %}selected{% endif %}>Pronto</option><option value="completed" {% if order.status=='completed' %}selected{% endif %}>Finalizado</option><option value="cancelled" {% if order.status=='cancelled' %}selected{% endif %}>Cancelado</option></select></label><button class="btn soft tiny">Salvar status</button></form></article>{% else %}<div class="empty-state"><span>🧾</span><h3>Nenhum pedido neste período</h3><p class="muted">Quando o cardápio NowUp começar a receber pedidos, o histórico aparecerá aqui.</p></div>{% endfor %}</div></section>
-<section class="panel" id="mais-pedidos"><div class="section-title"><div><span class="kicker">Ranking de produtos</span><h2>Produtos mais pedidos</h2></div><span class="edit-chip">Período selecionado</span></div><div class="top-products">{% for item in top_products %}<div class="top-product"><span class="rank">{{loop.index}}</span><div><b>{{item.product_name}}</b><small>{{item.order_count}} pedido(s)</small></div><strong>{{item.quantity}} un.</strong><span>R$ {{'%.2f'|format(item.revenue_cents/100)|replace('.',',')}}</span></div>{% else %}<div class="empty-state"><span>🏆</span><p class="muted">O ranking será preenchido automaticamente conforme os pedidos chegarem.</p></div>{% endfor %}</div></section>
-<section class="panel" id="identidade"><div class="section-title"><div><span class="kicker">Identidade visual</span><h2>Foto do perfil e capa</h2></div><span class="edit-chip">✏️ Editável</span></div><p class="muted">A foto fica redonda e a capa aparece no alto do seu perfil. Imagens são otimizadas automaticamente.</p><div class="identity-preview" data-identity-preview><div class="mini-cover" data-cover-preview {% if pro.cover_filename %}style="background-image:url('/uploads/{{pro.cover_filename}}')"{% endif %}></div><div class="mini-avatar" data-avatar-preview>{% if pro.avatar_filename %}<img src="/uploads/{{pro.avatar_filename}}">{% else %}<span>🏪</span>{% endif %}</div></div><form action="/painel/identidade" method="post" enctype="multipart/form-data" class="grid2" data-identity-form><label>Foto de perfil<input class="input" type="file" name="avatar" accept="image/*"></label><label>Imagem da capa<input class="input" type="file" name="cover" accept="image/*"></label><button class="btn primary">Salvar foto e capa</button><a class="btn soft" href="/p/{{pro.slug}}" target="_blank">Visualizar perfil público</a></form><div class="row image-remove-actions">{% if pro.avatar_filename %}<form action="/painel/identidade/perfil/excluir" method="post" data-confirm-delete><button class="btn danger tiny">Excluir foto de perfil</button></form>{% endif %}{% if pro.cover_filename %}<form action="/painel/identidade/capa/excluir" method="post" data-confirm-delete><button class="btn danger tiny">Excluir capa</button></form>{% endif %}</div></section>
-{% if pro.featured or pro.in_slider %}<section class="panel" id="publicidade"><div class="section-title"><div><span class="kicker">Publicidade ativa</span><h2>Imagens de divulgação</h2></div><span class="status-pill ok">Liberado pelo NowUp</span></div><p class="muted">Estas opções aparecem somente enquanto sua empresa estiver liberada para destaque ou slide.</p><form action="/painel/publicidade" method="post" enctype="multipart/form-data" class="grid2">{% if pro.featured %}<label>Capa do destaque<input class="input" type="file" name="featured_image" accept="image/*"><small>Usada no cartão de destaque da página inicial.</small></label>{% endif %}{% if pro.in_slider %}<label>Foto do slide<input class="input" type="file" name="slide_image" accept="image/*"><small>Recomendado: imagem horizontal 1200 × 500.</small></label>{% endif %}<button class="btn primary">Salvar imagens de divulgação</button></form></section>{% endif %}
-<section class="panel" id="perfil"><div class="section-title"><div><span class="kicker">Dados públicos</span><h2>Perfil da empresa</h2></div><span class="edit-chip">✏️ Editar tudo</span></div><form action="/painel/perfil" method="post"><div class="grid2"><label>Nome da empresa<input class="input" name="display_name" value="{{pro.display_name}}" required></label><label>Telefone / WhatsApp<input class="input" name="whatsapp" value="{{pro.whatsapp}}" required></label><label>Endereço completo<input class="input" name="address" value="{{pro.address}}" placeholder="Rua, número e complemento"></label><label>Bairro<input class="input" name="neighborhood" value="{{pro.neighborhood}}"></label><label>Cidade<select name="city" required>{% for c in active_cities %}<option value="{{c}}" {% if pro.city==c %}selected{% endif %}>{{c}}</option>{% endfor %}</select></label><label>CEP<input class="input" name="cep" value="{{pro.cep}}"></label><label>Área de atendimento<input class="input" name="service_area" value="{{pro.service_area}}" placeholder="Ex.: toda Ubatuba ou bairros atendidos"></label><label>Status do negócio<select name="business_status"><option value="open" {% if pro.business_status=='open' %}selected{% endif %}>Aberto / atendendo</option><option value="temporarily_closed" {% if pro.business_status=='temporarily_closed' %}selected{% endif %}>Fechado temporariamente</option><option value="vacation" {% if pro.business_status=='vacation' %}selected{% endif %}>Em férias</option></select></label><label>Tipo de perfil<select name="business_type"><option value="professional" {% if pro.business_type=='professional' %}selected{% endif %}>Prestador de serviço</option><option value="restaurant" {% if pro.business_type=='restaurant' %}selected{% endif %}>Restaurante/lanchonete</option><option value="store" {% if pro.business_type=='store' %}selected{% endif %}>Loja/comércio</option><option value="convenience" {% if pro.business_type=='convenience' %}selected{% endif %}>Conveniência/adega</option><option value="other" {% if pro.business_type=='other' %}selected{% endif %}>Outro</option></select></label><label class="check privacy-check"><input type="checkbox" name="hide_address" value="1" {% if pro.hide_address %}checked{% endif %}> Ocultar meu endereço exato no perfil público</label></div><label>Horários de funcionamento<textarea name="opening_hours" placeholder="Ex.: Segunda a sábado, 9h às 18h">{{pro.opening_hours}}</textarea></label><label>Mensagem automática do WhatsApp<textarea name="whatsapp_message" placeholder="Olá! Encontrei você pelo NowUp...">{{pro.whatsapp_message}}</textarea></label><h3>Categoria principal</h3><p class="muted">Escolha uma categoria ampla. Escreva sua profissão e especialidades em “Serviços prestados”.</p><div class="checkgrid">{% for c in categories %}<label class="check"><input type="radio" name="category_ids" value="{{c.id}}" {% if c.id in selected %}checked{% endif %} required> {{c.icon}} {{c.name}}</label>{% endfor %}</div><label>Breve descrição<textarea name="description">{{pro.description}}</textarea></label><label>Serviços prestados<textarea name="services">{{pro.services}}</textarea></label><div class="row"><button class="btn primary">Salvar dados do perfil</button><a class="btn soft" href="/p/{{pro.slug}}" target="_blank">Visualizar perfil público</a></div></form></section>
-<section class="panel contact-hub" id="links"><div class="section-title"><div><span class="kicker">Seus canais</span><h2>Links e contatos</h2></div><span class="status-pill ok">Cliques contabilizados</span></div><form action="/painel/links" method="post"><div class="link-options"><label><span class="link-icon">💬</span><b>WhatsApp</b><small>Receba pedidos e orçamentos.</small><input class="input" name="whatsapp" value="{{pro.whatsapp}}" required></label><label><span class="link-icon">🍽</span><b>Cardápio digital</b><small>Link do cardápio ou catálogo.</small><input class="input" type="url" name="menu_url" value="{{pro.menu_url}}" placeholder="https://..."></label><label><span class="link-icon">📸</span><b>Instagram</b><small>Link completo do perfil.</small><input class="input" type="url" name="instagram_url" value="{{pro.instagram_url}}" placeholder="https://instagram.com/..."></label><label><span class="link-icon">🔵</span><b>Facebook</b><small>Link completo da página.</small><input class="input" type="url" name="facebook_url" value="{{pro.facebook_url}}" placeholder="https://facebook.com/..."></label><label><span class="link-icon">🌐</span><b>Site</b><small>Site oficial da empresa.</small><input class="input" type="url" name="website_url" value="{{pro.website_url}}" placeholder="https://..."></label><label><span class="link-icon">🔗</span><b>Outro link</b><small>Catálogo ou outra rede.</small><input class="input" type="url" name="external_url" value="{{pro.external_url}}" placeholder="https://..."></label></div><button class="btn primary">Salvar contatos</button></form></section>
-<section class="panel" id="publicar"><h2>Publicar trabalho</h2><form action="/painel/publicar" method="post" enctype="multipart/form-data"><select name="post_type"><option value="post">Publicação no feed</option><option value="promotion">Promoção</option><option value="menu">Cardápio</option></select><textarea name="text" placeholder="Conte uma novidade, serviço ou promoção..." required></textarea><input class="input" type="file" name="photo" accept="image/*"><button class="btn orange">Publicar</button></form></section>
-<section class="panel" id="fotos"><div class="row between"><div><h2>Galeria de trabalhos</h2><p class="muted">Você pode publicar até 10 fotos.</p></div><span class="badge">{{photos|length}}/{{max_photos}}</span></div>{% if photos|length < max_photos %}<form action="/painel/fotos" method="post" enctype="multipart/form-data" class="grid3"><input class="input" type="file" name="photo" accept="image/*" required><input class="input" name="caption" placeholder="Legenda opcional"><button class="btn primary">Adicionar foto</button></form>{% endif %}<div class="photoManager" style="margin-top:16px">{% for ph in photos %}<div class="pm"><img src="/uploads/{{ph.filename}}"><div class="tiny">{% if ph.is_cover %}<b>Capa das buscas</b>{% endif %} {{ph.caption}}</div><div class="row"><form action="/painel/fotos/{{ph.id}}/capa" method="post"><button class="btn soft tiny">Usar nas buscas</button></form><form action="/painel/fotos/{{ph.id}}/excluir" method="post"><button class="btn danger tiny">Excluir</button></form></div></div>{% endfor %}</div></section>
-{% if support_link!='#' %}<section class="support-card"><div><b>Precisa de ajuda?</b><p>Fale diretamente com o responsável da NowUp.</p></div><a class="btn whatsapp" href="{{support_link}}" target="_blank" rel="noopener">Falar com a NowUp</a></section>{% endif %}
-</main></div>{% endblock %}
+<section class="panel pro-welcome" id="resumo">
+<div>
+<span class="kicker">Central do profissional</span>
+<h1>Olá, {{pro.display_name}}</h1>
+<p>Gerencie sua vitrine e acompanhe o interesse dos clientes.</p>
+<div class="completion">
+<span>
+<b>{{profile_completion}}%</b> do perfil completo</span>
+<i>
+<em style="width:{{profile_completion}}%">
+</em>
+</i>
+</div>
+</div>
+<div class="row">
+<a class="btn soft" href="#perfil">✏️ Editar perfil</a>
+<a class="btn primary" href="/p/{{pro.slug}}" target="_blank">Visualizar perfil público</a>
+</div>
+</section>
+<section class="stats pro-stats">
+<div class="stat">
+<span>👁 Vistas no total</span>
+<b>{{pro.views}}</b>
+<small>Desde a criação do perfil</small>
+</div>
+<div class="stat">
+<span>💬 WhatsApp total</span>
+<b>{{pro.whatsapp_clicks}}</b>
+<small>Cliques de contato</small>
+</div>
+<div class="stat">
+<span>🔗 Outros links</span>
+<b>{{pro.menu_clicks + pro.external_clicks}}</b>
+<small>Cardápio, site ou rede</small>
+</div>
+<div class="stat">
+<span>🖼 Galeria</span>
+<b>{{photos|length}}/{{max_photos}}</b>
+<small>Fotos publicadas</small>
+</div>
+</section>
+<section class="panel menu-manager" id="cardapio">
+<div class="section-title">
+<div>
+<span class="kicker">Venda pelo NowUp</span>
+<h2>Meu cardápio</h2>
+</div>
+<a class="btn soft" href="/p/{{pro.slug}}/menu" target="_blank">Ver cardápio público</a>
+</div>
+<p class="muted">Cadastre categorias e produtos. O cliente verá este cardápio no perfil público, montará o carrinho e enviará o pedido ao seu WhatsApp.</p>
+<div class="menu-category-manager">
+<h3>Categorias do cardápio</h3>
+<form action="/painel/cardapio/categorias" method="post" class="category-add-form">
+<label>Nova categoria<input class="input" name="name" maxlength="80" placeholder="Ex.: Lanches, Bebidas, Porções" required></label>
+<button class="btn primary">Adicionar categoria</button>
+</form>
+<div class="category-admin-list">{% for category in product_categories %}<div class="category-admin-row">
+<form action="/painel/cardapio/categorias/{{category.id}}" method="post">
+<input class="input" name="name" value="{{category.name}}" required>
+<label class="check"><input type="checkbox" name="active" value="1" {% if category.active %}checked{% endif %}> Pública</label>
+<button class="btn soft tiny">Salvar</button>
+</form>
+<form action="/painel/cardapio/categorias/{{category.id}}/excluir" method="post" data-confirm-delete><button class="btn danger tiny">Excluir</button></form>
+</div>{% endfor %}</div>
+</div>
+<details class="product-create" {% if not products %}open{% endif %}>
+<summary class="btn primary">＋ Adicionar produto</summary>
+<form action="/painel/cardapio/produtos" method="post" enctype="multipart/form-data" class="product-form">
+<label>Nome do produto<input class="input" name="name" maxlength="140" required>
+</label>
+<label>Categoria<select name="category" required>{% for category in product_categories if category.active %}<option value="{{category.name}}">{{category.name}}</option>{% endfor %}</select>
+</label>
+<label>Preço<input class="input" name="price" inputmode="decimal" placeholder="Ex.: 29,90" required>
+</label>
+<label>Foto<input class="input" type="file" name="photo" accept="image/*">
+</label>
+<label class="full">Descrição<textarea name="description" maxlength="600" placeholder="Ingredientes, tamanho ou informações importantes">
+</textarea>
+</label>
+<label class="check">
+<input type="checkbox" name="available" value="1" checked> Produto disponível</label>
+<button class="btn primary">Salvar produto</button>
+</form>
+</details>
+<div class="product-admin-grid">{% for product in products %}<details class="product-admin-card">
+<summary>{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" alt="">{% else %}<span class="product-placeholder">🍽</span>{% endif %}<div>
+<b>{{product.name}}</b>
+<small>{{product.category}} · R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</small>
+</div>
+<span class="status-pill {% if product.available %}ok{% endif %}">{% if product.available %}Disponível{% else %}Pausado{% endif %}</span>
+</summary>
+<form action="/painel/cardapio/produtos/{{product.id}}" method="post" enctype="multipart/form-data" class="product-form">
+<label>Nome<input class="input" name="name" value="{{product.name}}" required>
+</label>
+<label>Categoria<select name="category" required>{% for category in product_categories if category.active %}<option value="{{category.name}}" {% if category.name==product.category %}selected{% endif %}>{{category.name}}</option>{% endfor %}</select>
+</label>
+<label>Preço<input class="input" name="price" value="{{'%.2f'|format(product.price_cents/100)|replace('.',',')}}" required>
+</label>
+<label>Trocar foto<input class="input" type="file" name="photo" accept="image/*">
+</label>
+<label class="full">Descrição<textarea name="description">{{product.description}}</textarea>
+</label>
+<label class="check">
+<input type="checkbox" name="available" value="1" {% if product.available %}checked{% endif %}> Disponível para pedidos</label>
+<button class="btn primary">Salvar alterações</button>
+</form>
+<form action="/painel/cardapio/produtos/{{product.id}}/excluir" method="post" data-confirm-delete>
+<button class="btn danger tiny">Excluir produto</button>
+</form>
+</details>{% else %}<div class="empty-state full">
+<span>🍽</span>
+<h3>Seu cardápio está vazio</h3>
+<p class="muted">Use o botão “Adicionar produto” para começar.</p>
+</div>{% endfor %}</div>
+</section>
+<section class="panel analytics-panel" id="relatorios">
+<div class="section-title">
+<div>
+<span class="kicker">Desempenho</span>
+<h2>Relatório de visualizações e cliques</h2>
+</div>
+<span class="status-pill ok">Dados reais da NowUp</span>
+</div>
+<form method="get" action="/painel#relatorios" class="analytics-filter">
+<label>Mês<input class="input" type="month" name="mes" value="{{filter_month}}">
+</label>
+<span>ou</span>
+<label>De<input class="input" type="date" name="inicio" value="{{filter_start}}">
+</label>
+<label>Até<input class="input" type="date" name="fim" value="{{filter_end}}">
+</label>
+<button class="btn primary">Filtrar</button>
+<a class="btn soft" href="/painel#relatorios">Últimos 30 dias</a>
+</form>
+<p class="period-label">Período: <b>{{filter_start}}</b> até <b>{{filter_end}}</b> ({{analytics.days}} dias)</p>
+<div class="metric-grid">
+<article>
+<span>Visualizações</span>
+<b>{{analytics.views}}</b>
+</article>
+<article>
+<span>Cliques</span>
+<b>{{analytics.clicks}}</b>
+</article>
+<article>
+<span>Média diária</span>
+<b>{{analytics.daily_avg}}</b>
+</article>
+<article>
+<span>Média semanal</span>
+<b>{{analytics.weekly_avg}}</b>
+</article>
+<article>
+<span>Média mensal</span>
+<b>{{analytics.monthly_avg}}</b>
+</article>
+</div>
+<div class="report-split">
+<div>
+<h3>Origem dos cliques</h3>
+<div class="click-breakdown">
+<span>WhatsApp <b>{{analytics.whatsapp}}</b>
+</span>
+<span>Cardápio <b>{{analytics.menu}}</b>
+</span>
+<span>Site/rede social <b>{{analytics.external}}</b>
+</span>
+</div>
+</div>
+<div>
+<h3>Movimento por dia</h3>
+<div class="daily-list">{% for row in daily_rows %}<div>
+<time>{{row.day}}</time>
+<span>👁 {{row.views}}</span>
+<span>↗ {{row.clicks}}</span>
+</div>{% else %}<p class="muted">Ainda não houve atividade neste período.</p>{% endfor %}</div>
+</div>
+</div>
+</section>
+<section class="panel orders-panel" id="pedidos">
+<div class="section-title">
+<div>
+<span class="kicker">Central de pedidos</span>
+<h2>Histórico de pedidos</h2>
+</div>
+<span class="status-pill ok">Atualização manual</span>
+</div>
+<form method="get" action="/painel#pedidos" class="analytics-filter">
+<label>Mês<input class="input" type="month" name="mes" value="{{filter_month}}">
+</label>
+<label>De<input class="input" type="date" name="inicio" value="{{filter_start}}">
+</label>
+<label>Até<input class="input" type="date" name="fim" value="{{filter_end}}">
+</label>
+<label>Status<select name="pedido_status">
+<option value="todos" {% if order_status=='todos' %}selected{% endif %}>Todos</option>
+<option value="new" {% if order_status=='new' %}selected{% endif %}>Novo</option>
+<option value="confirmed" {% if order_status=='confirmed' %}selected{% endif %}>Confirmado</option>
+<option value="preparing" {% if order_status=='preparing' %}selected{% endif %}>Em preparo</option>
+<option value="ready" {% if order_status=='ready' %}selected{% endif %}>Pronto</option>
+<option value="completed" {% if order_status=='completed' %}selected{% endif %}>Finalizado</option>
+<option value="cancelled" {% if order_status=='cancelled' %}selected{% endif %}>Cancelado</option>
+</select>
+</label>
+<button class="btn primary">Filtrar pedidos</button>
+</form>
+<div class="order-metrics">
+<article>
+<span>Pedidos</span>
+<b>{{order_summary.total or 0}}</b>
+</article>
+<article>
+<span>Valor estimado</span>
+<b>R$ {{'%.2f'|format((order_summary.revenue_cents or 0)/100)|replace('.',',')}}</b>
+</article>
+<article>
+<span>Ticket médio</span>
+<b>R$ {{'%.2f'|format((order_summary.avg_ticket_cents or 0)/100)|replace('.',',')}}</b>
+</article>
+<article>
+<span>Finalizados</span>
+<b>{{order_summary.completed or 0}}</b>
+</article>
+</div>
+<div class="orders-list">{% for order in orders %}<article class="order-card">
+<div class="order-head">
+<div>
+<b>Pedido #{{order.id}}</b>
+<small>{{order.created_at[:16]|replace('T',' ')}} · {{order.customer_name or 'Cliente não informado'}}</small>
+</div>
+<strong>R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</strong>
+</div>
+<div class="order-info">
+<span>📦 {{order.item_count}} item(ns)</span>
+<span>📱 {{order.customer_phone or 'Sem telefone'}}</span>
+<span>{% if order.fulfillment_type=='delivery' %}🛵 Entrega{% else %}🏪 Retirada{% endif %}</span>
+</div>{% if order.address %}<p class="tiny">
+<b>Endereço:</b> {{order.address}}</p>{% endif %}{% if order.notes %}<p class="tiny">
+<b>Observações:</b> {{order.notes}}</p>{% endif %}<div class="order-products">{% for item in order_items_by_order.get(order.id,[]) %}<p><b>{{item.quantity}}x {{item.product_name}}</b>{% if item.notes %}<small>Obs.: {{item.notes}}</small>{% endif %}</p>{% endfor %}</div><form action="/painel/pedidos/{{order.id}}/status" method="post" class="order-status-form">
+<label>Status<select name="status">
+<option value="new" {% if order.status=='new' %}selected{% endif %}>Novo</option>
+<option value="confirmed" {% if order.status=='confirmed' %}selected{% endif %}>Confirmado</option>
+<option value="preparing" {% if order.status=='preparing' %}selected{% endif %}>Em preparo</option>
+<option value="ready" {% if order.status=='ready' %}selected{% endif %}>Pronto</option>
+<option value="completed" {% if order.status=='completed' %}selected{% endif %}>Finalizado</option>
+<option value="cancelled" {% if order.status=='cancelled' %}selected{% endif %}>Cancelado</option>
+</select>
+</label>
+<button class="btn soft tiny">Salvar status</button>
+</form>
+</article>{% else %}<div class="empty-state">
+<span>🧾</span>
+<h3>Nenhum pedido neste período</h3>
+<p class="muted">Quando o cardápio NowUp começar a receber pedidos, o histórico aparecerá aqui.</p>
+</div>{% endfor %}</div>
+</section>
+<section class="panel" id="mais-pedidos">
+<div class="section-title">
+<div>
+<span class="kicker">Ranking de produtos</span>
+<h2>Produtos mais pedidos</h2>
+</div>
+<span class="edit-chip">Período selecionado</span>
+</div>
+<div class="top-products">{% for item in top_products %}<div class="top-product">
+<span class="rank">{{loop.index}}</span>
+<div>
+<b>{{item.product_name}}</b>
+<small>{{item.order_count}} pedido(s)</small>
+</div>
+<strong>{{item.quantity}} un.</strong>
+<span>R$ {{'%.2f'|format(item.revenue_cents/100)|replace('.',',')}}</span>
+</div>{% else %}<div class="empty-state">
+<span>🏆</span>
+<p class="muted">O ranking será preenchido automaticamente conforme os pedidos chegarem.</p>
+</div>{% endfor %}</div>
+</section>
+<section class="panel" id="identidade">
+<div class="section-title">
+<div>
+<span class="kicker">Identidade visual</span>
+<h2>Foto do perfil e capa</h2>
+</div>
+<span class="edit-chip">✏️ Editável</span>
+</div>
+<p class="muted">A foto fica redonda e a capa aparece no alto do seu perfil. Imagens são otimizadas automaticamente.</p>
+<div class="identity-preview" data-identity-preview>
+<div class="mini-cover" data-cover-preview {% if pro.cover_filename %}style="background-image:url('/uploads/{{pro.cover_filename}}')"{% endif %}>
+</div>
+<div class="mini-avatar" data-avatar-preview>{% if pro.avatar_filename %}<img src="/uploads/{{pro.avatar_filename}}">{% else %}<span>🏪</span>{% endif %}</div>
+</div>
+<form action="/painel/identidade" method="post" enctype="multipart/form-data" class="grid2" data-identity-form>
+<label>Foto de perfil<input class="input" type="file" name="avatar" accept="image/*">
+</label>
+<label>Imagem da capa<input class="input" type="file" name="cover" accept="image/*">
+</label>
+<button class="btn primary">Salvar foto e capa</button>
+<a class="btn soft" href="/p/{{pro.slug}}" target="_blank">Visualizar perfil público</a>
+</form>
+<div class="row image-remove-actions">{% if pro.avatar_filename %}<form action="/painel/identidade/perfil/excluir" method="post" data-confirm-delete>
+<button class="btn danger tiny">Excluir foto de perfil</button>
+</form>{% endif %}{% if pro.cover_filename %}<form action="/painel/identidade/capa/excluir" method="post" data-confirm-delete>
+<button class="btn danger tiny">Excluir capa</button>
+</form>{% endif %}</div>
+</section>
+{% if pro.featured or pro.in_slider %}<section class="panel" id="publicidade">
+<div class="section-title">
+<div>
+<span class="kicker">Publicidade ativa</span>
+<h2>Imagens de divulgação</h2>
+</div>
+<span class="status-pill ok">Liberado pelo NowUp</span>
+</div>
+<p class="muted">Estas opções aparecem somente enquanto sua empresa estiver liberada para destaque ou slide.</p>
+<form action="/painel/publicidade" method="post" enctype="multipart/form-data" class="grid2">{% if pro.featured %}<label>Capa do destaque<input class="input" type="file" name="featured_image" accept="image/*">
+<small>Usada no cartão de destaque da página inicial.</small>
+</label>{% endif %}{% if pro.in_slider %}<label>Foto do slide<input class="input" type="file" name="slide_image" accept="image/*">
+<small>Recomendado: imagem horizontal 1200 × 500.</small>
+</label>{% endif %}<button class="btn primary">Salvar imagens de divulgação</button>
+</form>
+</section>{% endif %}
+<section class="panel" id="perfil">
+<div class="section-title">
+<div>
+<span class="kicker">Dados públicos</span>
+<h2>Perfil da empresa</h2>
+</div>
+<span class="edit-chip">✏️ Editar tudo</span>
+</div>
+<form action="/painel/perfil" method="post">
+<div class="grid2">
+<label>Nome da empresa<input class="input" name="display_name" value="{{pro.display_name}}" required>
+</label>
+<label>Telefone / WhatsApp<input class="input" name="whatsapp" value="{{pro.whatsapp}}" required>
+</label>
+<label>Endereço completo<input class="input" name="address" value="{{pro.address}}" placeholder="Rua, número e complemento">
+</label>
+<label>Bairro<input class="input" name="neighborhood" value="{{pro.neighborhood}}">
+</label>
+<label>Cidade<select name="city" required>{% for c in active_cities %}<option value="{{c}}" {% if pro.city==c %}selected{% endif %}>{{c}}</option>{% endfor %}</select>
+</label>
+<label>CEP<input class="input" name="cep" value="{{pro.cep}}">
+</label>
+<label>Área de atendimento<input class="input" name="service_area" value="{{pro.service_area}}" placeholder="Ex.: toda Ubatuba ou bairros atendidos">
+</label>
+<label>Status do negócio<select name="business_status">
+<option value="open" {% if pro.business_status=='open' %}selected{% endif %}>Aberto / atendendo</option>
+<option value="temporarily_closed" {% if pro.business_status=='temporarily_closed' %}selected{% endif %}>Fechado temporariamente</option>
+<option value="vacation" {% if pro.business_status=='vacation' %}selected{% endif %}>Em férias</option>
+</select>
+</label>
+<label>Tipo de perfil<select name="business_type">
+<option value="professional" {% if pro.business_type=='professional' %}selected{% endif %}>Prestador de serviço</option>
+<option value="restaurant" {% if pro.business_type=='restaurant' %}selected{% endif %}>Restaurante/lanchonete</option>
+<option value="store" {% if pro.business_type=='store' %}selected{% endif %}>Loja/comércio</option>
+<option value="convenience" {% if pro.business_type=='convenience' %}selected{% endif %}>Conveniência/adega</option>
+<option value="other" {% if pro.business_type=='other' %}selected{% endif %}>Outro</option>
+</select>
+</label>
+<label class="check privacy-check">
+<input type="checkbox" name="hide_address" value="1" {% if pro.hide_address %}checked{% endif %}> Ocultar meu endereço exato no perfil público</label>
+</div>
+<label>Horários de funcionamento<textarea name="opening_hours" placeholder="Ex.: Segunda a sábado, 9h às 18h">{{pro.opening_hours}}</textarea>
+</label>
+<label>Mensagem automática do WhatsApp<textarea name="whatsapp_message" placeholder="Olá! Encontrei você pelo NowUp...">{{pro.whatsapp_message}}</textarea>
+</label>
+<h3>Categoria principal</h3>
+<p class="muted">Escolha uma categoria ampla. Escreva sua profissão e especialidades em “Serviços prestados”.</p>
+<div class="checkgrid">{% for c in categories %}<label class="check">
+<input type="radio" name="category_ids" value="{{c.id}}" {% if c.id in selected %}checked{% endif %} required> {{c.icon}} {{c.name}}</label>{% endfor %}</div>
+<label>Breve descrição<textarea name="description">{{pro.description}}</textarea>
+</label>
+<label>Serviços prestados<textarea name="services">{{pro.services}}</textarea>
+</label>
+<div class="row">
+<button class="btn primary">Salvar dados do perfil</button>
+<a class="btn soft" href="/p/{{pro.slug}}" target="_blank">Visualizar perfil público</a>
+</div>
+</form>
+</section>
+<section class="panel contact-hub" id="links">
+<div class="section-title">
+<div>
+<span class="kicker">Seus canais</span>
+<h2>Links e contatos</h2>
+</div>
+<span class="status-pill ok">Cliques contabilizados</span>
+</div>
+<form action="/painel/links" method="post">
+<div class="link-options">
+<label>
+<span class="link-icon">💬</span>
+<b>WhatsApp</b>
+<small>Receba pedidos e orçamentos.</small>
+<input class="input" name="whatsapp" value="{{pro.whatsapp}}" required>
+</label>
+<label>
+<span class="link-icon">🍽</span>
+<b>Cardápio digital</b>
+<small>Link do cardápio ou catálogo.</small>
+<input class="input" type="url" name="menu_url" value="{{pro.menu_url}}" placeholder="https://...">
+</label>
+<label>
+<span class="link-icon">📸</span>
+<b>Instagram</b>
+<small>Link completo do perfil.</small>
+<input class="input" type="url" name="instagram_url" value="{{pro.instagram_url}}" placeholder="https://instagram.com/...">
+</label>
+<label>
+<span class="link-icon">🔵</span>
+<b>Facebook</b>
+<small>Link completo da página.</small>
+<input class="input" type="url" name="facebook_url" value="{{pro.facebook_url}}" placeholder="https://facebook.com/...">
+</label>
+<label>
+<span class="link-icon">🌐</span>
+<b>Site</b>
+<small>Site oficial da empresa.</small>
+<input class="input" type="url" name="website_url" value="{{pro.website_url}}" placeholder="https://...">
+</label>
+<label>
+<span class="link-icon">🔗</span>
+<b>Outro link</b>
+<small>Catálogo ou outra rede.</small>
+<input class="input" type="url" name="external_url" value="{{pro.external_url}}" placeholder="https://...">
+</label>
+</div>
+<button class="btn primary">Salvar contatos</button>
+</form>
+</section>
+<section class="panel" id="publicar">
+<h2>Publicar trabalho</h2>
+<form action="/painel/publicar" method="post" enctype="multipart/form-data">
+<select name="post_type">
+<option value="post">Publicação no feed</option>
+<option value="promotion">Promoção</option>
+<option value="menu">Cardápio</option>
+</select>
+<textarea name="text" placeholder="Conte uma novidade, serviço ou promoção..." required>
+</textarea>
+<input class="input" type="file" name="photo" accept="image/*">
+<button class="btn orange">Publicar</button>
+</form>
+</section>
+<section class="panel" id="fotos">
+<div class="row between">
+<div>
+<h2>Galeria de trabalhos</h2>
+<p class="muted">Você pode publicar até 10 fotos.</p>
+</div>
+<span class="badge">{{photos|length}}/{{max_photos}}</span>
+</div>{% if photos|length < max_photos %}<form action="/painel/fotos" method="post" enctype="multipart/form-data" class="grid3">
+<input class="input" type="file" name="photo" accept="image/*" required>
+<input class="input" name="caption" placeholder="Legenda opcional">
+<button class="btn primary">Adicionar foto</button>
+</form>{% endif %}<div class="photoManager" style="margin-top:16px">{% for ph in photos %}<div class="pm">
+<img src="/uploads/{{ph.filename}}">
+<div class="tiny">{% if ph.is_cover %}<b>Capa das buscas</b>{% endif %} {{ph.caption}}</div>
+<div class="row">
+<form action="/painel/fotos/{{ph.id}}/capa" method="post">
+<button class="btn soft tiny">Usar nas buscas</button>
+</form>
+<form action="/painel/fotos/{{ph.id}}/excluir" method="post">
+<button class="btn danger tiny">Excluir</button>
+</form>
+</div>
+</div>{% endfor %}</div>
+</section>
+{% if support_link!='#' %}<section class="support-card">
+<div>
+<b>Precisa de ajuda?</b>
+<p>Fale diretamente com o responsável da NowUp.</p>
+</div>
+<a class="btn whatsapp" href="{{support_link}}" target="_blank" rel="noopener">Falar com a NowUp</a>
+</section>{% endif %}
+</main>
+</div>{% endblock %}
