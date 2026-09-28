@@ -10,6 +10,7 @@
 </div>
 <a href="#resumo">📊 Visão geral</a>
 <a href="#cardapio">🍽 Meu cardápio</a>
+<a href="#horarios">🕒 Horários e situação</a>
 <a href="#relatorios">📈 Relatórios</a>
 <a href="#pedidos">🧾 Pedidos</a>
 <a href="#mais-pedidos">🏆 Mais pedidos</a>
@@ -26,6 +27,7 @@
 <span class="kicker">Central do profissional</span>
 <h1>Olá, {{pro.display_name}}</h1>
 <p>Gerencie sua vitrine e acompanhe o interesse dos clientes.</p>
+<p><span class="status-pill {% if shop_status.open %}ok{% endif %}">{{shop_status.label}}</span> <small>{{shop_status.detail}}</small></p>
 <div class="completion">
 <span>
 <b>{{profile_completion}}%</b> do perfil completo</span>
@@ -61,6 +63,15 @@
 <b>{{photos|length}}/{{max_photos}}</b>
 <small>Fotos publicadas</small>
 </div>
+</section>
+<section class="panel hours-panel" id="horarios">
+<div class="section-title"><div><span class="kicker">Relógio real de São Paulo</span><h2>Horários e situação da loja</h2></div><span class="status-pill {% if shop_status.open %}ok{% endif %}">{{shop_status.label}}</span></div>
+<p class="muted">O NowUp abre e fecha a loja automaticamente. Horários que passam da meia-noite, como 09:00–00:00, também são reconhecidos.</p>
+<form action="/painel/horarios" method="post">
+<label>Situação manual<select name="business_status"><option value="open" {% if pro.business_status=='open' %}selected{% endif %}>Automático pelos horários</option><option value="paused" {% if pro.business_status=='paused' %}selected{% endif %}>Loja pausada</option><option value="temporarily_closed" {% if pro.business_status=='temporarily_closed' %}selected{% endif %}>Fechada temporariamente</option><option value="vacation" {% if pro.business_status=='vacation' %}selected{% endif %}>Férias/feriado</option><option value="ad_paused" {% if pro.business_status=='ad_paused' %}selected{% endif %}>Anúncio pausado</option></select></label>
+<div class="hours-grid">{% for day in days %}{% set row=business_hours.get(day,{}) %}<div class="hours-row"><label class="check"><input type="checkbox" name="{{day}}_enabled" value="1" {% if row.get('enabled') %}checked{% endif %}> {{day_labels[day]}}</label><label>Abre<input class="input" type="time" name="{{day}}_start" value="{{row.get('start','09:00')}}"></label><label>Fecha<input class="input" type="time" name="{{day}}_end" value="{{row.get('end','18:00')}}"></label></div>{% endfor %}</div>
+<button class="btn primary">Salvar horários e situação</button>
+</form>
 </section>
 <section class="panel menu-manager" id="cardapio">
 <div class="section-title">
@@ -110,7 +121,7 @@
 <b>{{product.name}}</b>
 <small>{{product.category}} · R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</small>
 </div>
-<span class="status-pill {% if product.available %}ok{% endif %}">{% if product.available %}Disponível{% else %}Pausado{% endif %}</span>
+<span class="status-pill {% if product.available %}ok{% endif %}">{% if product.available %}Disponível{% else %}Esgotado/pausado{% endif %}</span>
 </summary>
 <form action="/painel/cardapio/produtos/{{product.id}}" method="post" enctype="multipart/form-data" class="product-form">
 <label>Nome<input class="input" name="name" value="{{product.name}}" required>
@@ -124,7 +135,7 @@
 <label class="full">Descrição<textarea name="description">{{product.description}}</textarea>
 </label>
 <label class="check">
-<input type="checkbox" name="available" value="1" {% if product.available %}checked{% endif %}> Disponível para pedidos</label>
+<input type="checkbox" name="available" value="1" {% if product.available %}checked{% endif %}> Disponível para pedidos (desmarque quando esgotar)</label>
 <button class="btn primary">Salvar alterações</button>
 </form>
 <form action="/painel/cardapio/produtos/{{product.id}}/excluir" method="post" data-confirm-delete>
@@ -260,7 +271,9 @@
 <span>💳 {% if order.payment_method=='cash' %}Dinheiro{% elif order.payment_method=='credit' %}Cartão de crédito{% elif order.payment_method=='debit' %}Cartão de débito{% elif order.payment_method=='on_delivery' %}Combinar no atendimento{% else %}Pix{% endif %}</span>
 </div>{% if order.address %}<p class="tiny">
 <b>Endereço:</b> {{order.address}}</p>{% endif %}{% if order.notes %}<p class="tiny">
-<b>Observações:</b> {{order.notes}}</p>{% endif %}<div class="order-products">{% for item in order_items_by_order.get(order.id,[]) %}<p><b>{{item.quantity}}x {{item.product_name}}</b>{% if item.notes %}<small>Obs.: {{item.notes}}</small>{% endif %}</p>{% endfor %}</div><form action="/painel/pedidos/{{order.id}}/status" method="post" class="order-status-form">
+<b>Observações:</b> {{order.notes}}</p>{% endif %}<div class="order-products">{% for item in order_items_by_order.get(order.id,[]) %}<form action="/painel/pedidos/{{order.id}}/itens/{{item.id}}" method="post" class="order-item-edit"><b>{{item.product_name}}</b><label>Qtd.<input class="input" type="number" min="1" max="99" name="quantity" value="{{item.quantity}}"></label><label>Observação<input class="input" name="notes" value="{{item.notes}}"></label><label class="check"><input type="checkbox" name="remove" value="1"> Remover</label><button class="btn soft tiny">Salvar item</button></form>{% endfor %}</div>
+<details class="order-edit"><summary class="btn soft tiny">✏️ Editar pedido</summary><form action="/painel/pedidos/{{order.id}}/editar" method="post" class="product-form"><label>Cliente<input class="input" name="customer_name" value="{{order.customer_name}}" required></label><label>WhatsApp<input class="input" name="customer_phone" value="{{order.customer_phone}}" required></label><label>Recebimento<select name="fulfillment_type"><option value="pickup" {% if order.fulfillment_type=='pickup' %}selected{% endif %}>Retirada</option><option value="delivery" {% if order.fulfillment_type=='delivery' %}selected{% endif %}>Entrega</option></select></label><label>Pagamento<select name="payment_method"><option value="pix" {% if order.payment_method=='pix' %}selected{% endif %}>Pix</option><option value="cash" {% if order.payment_method=='cash' %}selected{% endif %}>Dinheiro</option><option value="credit" {% if order.payment_method=='credit' %}selected{% endif %}>Crédito</option><option value="debit" {% if order.payment_method=='debit' %}selected{% endif %}>Débito</option><option value="on_delivery" {% if order.payment_method=='on_delivery' %}selected{% endif %}>Combinar</option></select></label><label class="full">Endereço<input class="input" name="address" value="{{order.address}}"></label><label class="full">Observações<textarea name="notes">{{order.notes}}</textarea></label><button class="btn primary">Salvar edição</button></form></details>
+<form action="/painel/pedidos/{{order.id}}/status" method="post" class="order-status-form">
 <label>Status<select name="status">
 <option value="new" {% if order.status=='new' %}selected{% endif %}>Novo</option>
 <option value="confirmed" {% if order.status=='confirmed' %}selected{% endif %}>Confirmado</option>
@@ -368,9 +381,11 @@
 <label>Área de atendimento<input class="input" name="service_area" value="{{pro.service_area}}" placeholder="Ex.: toda Ubatuba ou bairros atendidos">
 </label>
 <label>Status do negócio<select name="business_status">
-<option value="open" {% if pro.business_status=='open' %}selected{% endif %}>Aberto / atendendo</option>
+<option value="open" {% if pro.business_status=='open' %}selected{% endif %}>Automático pelos horários</option>
+<option value="paused" {% if pro.business_status=='paused' %}selected{% endif %}>Loja pausada</option>
 <option value="temporarily_closed" {% if pro.business_status=='temporarily_closed' %}selected{% endif %}>Fechado temporariamente</option>
 <option value="vacation" {% if pro.business_status=='vacation' %}selected{% endif %}>Em férias</option>
+<option value="ad_paused" {% if pro.business_status=='ad_paused' %}selected{% endif %}>Anúncio pausado</option>
 </select>
 </label>
 <label>Tipo de perfil<select name="business_type">
@@ -384,7 +399,7 @@
 <label class="check privacy-check">
 <input type="checkbox" name="hide_address" value="1" {% if pro.hide_address %}checked{% endif %}> Ocultar meu endereço exato no perfil público</label>
 </div>
-<label>Horários de funcionamento<textarea name="opening_hours" placeholder="Ex.: Segunda a sábado, 9h às 18h">{{pro.opening_hours}}</textarea>
+<label>Observação sobre os horários<textarea name="opening_hours" placeholder="Ex.: Não abrimos em feriados">{{pro.opening_hours}}</textarea>
 </label>
 <label>Mensagem automática do WhatsApp<textarea name="whatsapp_message" placeholder="Olá! Encontrei você pelo NowUp...">{{pro.whatsapp_message}}</textarea>
 </label>

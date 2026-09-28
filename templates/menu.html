@@ -10,6 +10,7 @@
 </div>
 </div>
 </header>
+<div class="store-status {% if shop_status.open %}open{% else %}closed{% endif %}"><b>{{shop_status.label}}</b><span>{{shop_status.detail}}</span>{% if not shop_status.open %}<small>Você pode consultar o cardápio, mas os pedidos estão pausados neste momento.</small>{% endif %}</div>
 {% if menu_categories %}<nav class="menu-category-nav" aria-label="Categorias">
 <button type="button" class="active" data-category-filter="all">Todos</button>{% for category in menu_categories %}<button type="button" data-category-filter="{{category|lower}}">{{category}}</button>{% endfor %}</nav>{% endif %}
 <div class="menu-layout">
@@ -20,7 +21,7 @@
 <p>{{product.description}}</p>
 <div>
 <strong>R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</strong>
-<div class="product-buy"><label>Qtd.<select data-product-quantity aria-label="Quantidade"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select></label><button class="btn primary" type="button" data-add>Adicionar</button></div>
+<div class="product-buy"><label>Qtd.<select data-product-quantity aria-label="Quantidade" {% if not shop_status.open %}disabled{% endif %}><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select></label><button class="btn primary" type="button" data-add {% if not shop_status.open %}disabled{% endif %}>{% if shop_status.open %}Adicionar{% else %}Fechado{% endif %}</button></div>
 </div>
 </div>
 </article>{% else %}<div class="panel empty-state">
@@ -39,7 +40,7 @@
 <span>Total</span>
 <b data-cart-total>R$ 0,00</b>
 </div>
-<button class="btn primary full-btn" type="button" data-checkout disabled>Continuar pedido</button>
+<button class="btn primary full-btn" type="button" data-checkout disabled>{% if shop_status.open %}Continuar pedido{% else %}Pedidos pausados{% endif %}</button>
 </div>
 </aside>
 </div>
