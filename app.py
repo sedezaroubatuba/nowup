@@ -319,6 +319,21 @@ def init_db():
       ON orders(professional_id,status);
     CREATE INDEX IF NOT EXISTS idx_order_items_order
       ON order_items(order_id);
+    CREATE TABLE IF NOT EXISTS products(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      professional_id INTEGER NOT NULL REFERENCES professionals(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      category TEXT NOT NULL DEFAULT 'Geral',
+      price_cents INTEGER NOT NULL DEFAULT 0,
+      image_filename TEXT NOT NULL DEFAULT '',
+      available INTEGER NOT NULL DEFAULT 1,
+      sort_order INTEGER NOT NULL DEFAULT 100,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_products_professional
+      ON products(professional_id,available,sort_order,id);
     """)
     ensure_column(conn, "users", "email_verified", "INTEGER NOT NULL DEFAULT 1")
     ensure_column(conn, "users", "verification_token", "TEXT DEFAULT ''")
@@ -526,9 +541,48 @@ def profile(request: Request, slug: str):
     posts=conn.execute("SELECT * FROM posts WHERE professional_id=? ORDER BY id DESC",(p["id"],)).fetchall()
     reviews=conn.execute("SELECT r.*,u.name FROM reviews r JOIN users u ON u.id=r.customer_id WHERE r.professional_id=? ORDER BY r.id DESC",(p["id"],)).fetchall()
     cats=conn.execute("SELECT c.* FROM categories c JOIN professional_categories pc ON pc.category_id=c.id WHERE pc.professional_id=?",(p["id"],)).fetchall()
+    product_count=conn.execute("SELECT COUNT(*) FROM products WHERE professional_id=? AND available=1",(p["id"],)).fetchone()[0]
     conn.close()
     pub=dict(p); pub["document_masked"]=mask_doc(pub["document"]); pub["wa_link"]=wa_link(pub["whatsapp"],pub.get("whatsapp_message") or "Olá! Encontrei você pelo NowUp e gostaria de saber mais.")
-    return templates.TemplateResponse("profile.html", context(request, pro=pub, photos=photos, posts=posts, reviews=reviews, pro_categories=cats))
+    return templates.TemplateResponse("profile.html", context(request, pro=pub, photos=photos, posts=posts, reviews=reviews, pro_categories=cats, product_count=product_count))
+
+@app.get("/p/{slug}/menu", response_class=HTMLResponse)
+def native_menu(request: Request, slug: str):
+    conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
+    if not p: conn.close(); raise HTTPException(404,"Empresa não encontrada")
+    products=conn.execute("SELECT * FROM products WHERE professional_id=? AND available=1 ORDER BY category,sort_order,id DESC",(p["id"],)).fetchall()
+    conn.execute("UPDATE professionals SET menu_clicks=menu_clicks+1 WHERE id=?",(p["id"],))
+    conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"menu_click",now_iso())); conn.commit(); conn.close()
+    return templates.TemplateResponse("menu.html", context(request, pro=p, products=products))
+
+@app.post("/p/{slug}/menu/pedido")
+def native_menu_order(slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), address: str=Form(""), notes: str=Form(""), cart_json: str=Form(...)):
+    conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
+    if not p: conn.close(); raise HTTPException(404)
+    try: raw_items=json.loads(cart_json)
+    except Exception: conn.close(); raise HTTPException(400,"Carrinho inválido")
+    if not isinstance(raw_items,list) or not raw_items: conn.close(); raise HTTPException(400,"Carrinho vazio")
+    clean_items=[]; total=0
+    for raw in raw_items[:50]:
+        try: pid=int(raw.get("id")); qty=max(1,min(99,int(raw.get("quantity",1))))
+        except (TypeError,ValueError,AttributeError): continue
+        product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=? AND available=1",(pid,p["id"])).fetchone()
+        if product:
+            clean_items.append((product,qty)); total += product["price_cents"]*qty
+    if not clean_items: conn.close(); raise HTTPException(400,"Nenhum produto disponível no carrinho")
+    fulfillment_type="delivery" if fulfillment_type=="delivery" else "pickup"
+    created=now_iso(); cur=conn.execute("""INSERT INTO orders(professional_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at)
+      VALUES(?,?,?,?,?,?,?,?,1,?,?)""",(p["id"],customer_name.strip()[:120],customer_phone.strip()[:30],fulfillment_type,address.strip()[:300],notes.strip()[:500],"new",total,created,created))
+    order_id=cur.lastrowid
+    for product,qty in clean_items:
+        conn.execute("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents) VALUES(?,?,?,?,?)",(order_id,product["id"],product["name"],qty,product["price_cents"]))
+    conn.commit(); conn.close()
+    lines=[f"Olá! Fiz o pedido #{order_id} pelo NowUp:",""]
+    lines += [f"{qty}x {product['name']} — R$ {(product['price_cents']*qty)/100:.2f}" for product,qty in clean_items]
+    lines += ["",f"Total: R$ {total/100:.2f}",f"Cliente: {customer_name.strip()}",f"Telefone: {customer_phone.strip()}","Entrega" if fulfillment_type=="delivery" else "Retirada no local"]
+    if address.strip(): lines.append(f"Endereço: {address.strip()}")
+    if notes.strip(): lines.append(f"Observações: {notes.strip()}")
+    return RedirectResponse(wa_link(p["whatsapp"],"\n".join(lines)),303)
 
 @app.post("/p/{slug}/whatsapp")
 def whatsapp_click(slug: str):
@@ -690,6 +744,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     p=conn.execute("SELECT * FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
     photos=conn.execute("SELECT * FROM photos WHERE professional_id=? ORDER BY is_cover DESC,id DESC",(p["id"],)).fetchall()
     posts=conn.execute("SELECT * FROM posts WHERE professional_id=? ORDER BY id DESC LIMIT 20",(p["id"],)).fetchall()
+    products=conn.execute("SELECT * FROM products WHERE professional_id=? ORDER BY category,sort_order,id DESC",(p["id"],)).fetchall()
     selected={r[0] for r in conn.execute("SELECT category_id FROM professional_categories WHERE professional_id=?",(p["id"],)).fetchall()}
     today=datetime.now(timezone.utc).date()
     try:
@@ -749,7 +804,44 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
       GROUP BY lower(oi.product_name) ORDER BY quantity DESC,revenue_cents DESC LIMIT 15""",
       (p["id"],start.isoformat(),end.isoformat())).fetchall()
     conn.close()
-    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, order_summary=order_summary, top_products=top_products, order_status=pedido_status))
+    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, products=products, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, order_summary=order_summary, top_products=top_products, order_status=pedido_status))
+
+def price_to_cents(raw: str):
+    value=(raw or "0").strip().replace("R$","").replace(" ","")
+    if "," in value: value=value.replace(".","").replace(",",".")
+    try: return max(0,int(round(float(value)*100)))
+    except ValueError: raise HTTPException(400,"Preço inválido")
+
+@app.post("/painel/cardapio/produtos")
+def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None)):
+    u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone(); fn=""
+    if photo and photo.filename: fn=save_image(photo)
+    created=now_iso(); conn.execute("INSERT INTO products(professional_id,name,description,category,price_cents,image_filename,available,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)",(p["id"],name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,created,created))
+    conn.commit(); conn.close(); return RedirectResponse("/painel?ok=produto#cardapio",303)
+
+@app.post("/painel/cardapio/produtos/{product_id}")
+def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None)):
+    u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone(); product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=?",(product_id,p["id"])).fetchone()
+    if not product: conn.close(); raise HTTPException(404)
+    fn=product["image_filename"]
+    if photo and photo.filename:
+        new_fn=save_image(photo)
+        if fn:
+            try: (UPLOAD_DIR/fn).unlink(missing_ok=True)
+            except OSError: pass
+        fn=new_fn
+    conn.execute("UPDATE products SET name=?,description=?,category=?,price_cents=?,image_filename=?,available=?,updated_at=? WHERE id=?",(name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,now_iso(),product_id)); conn.commit(); conn.close()
+    return RedirectResponse("/painel?ok=produto#cardapio",303)
+
+@app.post("/painel/cardapio/produtos/{product_id}/excluir")
+def pro_product_delete(request: Request, product_id: int):
+    u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone(); product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=?",(product_id,p["id"])).fetchone()
+    if product:
+        if product["image_filename"]:
+            try: (UPLOAD_DIR/product["image_filename"]).unlink(missing_ok=True)
+            except OSError: pass
+        conn.execute("DELETE FROM products WHERE id=?",(product_id,)); conn.commit()
+    conn.close(); return RedirectResponse("/painel?ok=produto-excluido#cardapio",303)
 
 @app.post("/painel/pedidos/{order_id}/status")
 def pro_order_status(request: Request, order_id: int, status: str=Form(...)):
