@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(!slider)return;
   const slides=[...slider.querySelectorAll('.ad-slide')],dots=[...slider.querySelectorAll('[data-slide]')],prev=slider.querySelector('[data-prev]'),next=slider.querySelector('[data-next]');
   let current=0,timer;
-  const show=i=>{current=(i+slides.length)%slides.length;slides.forEach((s,n)=>s.classList.toggle('active',n===current));dots.forEach((d,n)=>d.classList.toggle('active',n===current));const active=slides[current];if(active){slider.style.setProperty('--desktop-height',active.style.getPropertyValue('--desktop-height')||'360px');slider.style.setProperty('--mobile-height',active.style.getPropertyValue('--mobile-height')||'240px')}};
+  const show=i=>{current=(i+slides.length)%slides.length;slides.forEach((s,n)=>s.classList.toggle('active',n===current));dots.forEach((d,n)=>d.classList.toggle('active',n===current));};
   const start=()=>{clearInterval(timer);if(slides.length>1)timer=setInterval(()=>show(current+1),Number(slider.dataset.interval)||5000)};
   dots.forEach((d,i)=>d.addEventListener('click',()=>{show(i);start()}));
   if(prev)prev.addEventListener('click',()=>{show(current-1);start()});
@@ -57,3 +57,20 @@ document.addEventListener('DOMContentLoaded',()=>{
   slider.addEventListener('touchend',e=>{const distance=e.changedTouches[0].screenX-touchX;if(Math.abs(distance)>45)show(current+(distance<0?1:-1));start()},{passive:true});
   slider.addEventListener('mouseenter',()=>clearInterval(timer));slider.addEventListener('mouseleave',start);show(0);start();
 })
+document.addEventListener('change',function(event){
+  const radio=event.target.closest('[data-theme-picker] input[type="radio"]');
+  if(radio){
+    const primary=document.getElementById('primary-color');
+    const accent=document.getElementById('accent-color');
+    if(radio.dataset.primary&&radio.dataset.accent){
+      primary.value=radio.dataset.primary; accent.value=radio.dataset.accent;
+      document.documentElement.style.setProperty('--brand',radio.dataset.primary);
+      document.documentElement.style.setProperty('--brand2',radio.dataset.accent);
+    }
+  }
+  if(event.target.matches('#primary-color,#accent-color')){
+    const custom=document.querySelector('[data-theme-picker] input[value="personalizado"]');
+    if(custom) custom.checked=true;
+    document.documentElement.style.setProperty(event.target.id==='primary-color'?'--brand':'--brand2',event.target.value);
+  }
+});
