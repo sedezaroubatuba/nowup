@@ -1,7 +1,76 @@
 {% extends 'base.html' %}{% block title %}Cardápio de {{pro.display_name}} | NowUp{% endblock %}{% block content %}
-<section class="native-menu" data-native-menu><div class="container"><header class="menu-hero"><a href="/p/{{pro.slug}}">← Voltar ao perfil</a><div>{% if pro.avatar_filename %}<img src="/uploads/{{pro.avatar_filename}}" alt="">{% else %}<span>🍽</span>{% endif %}<div><small>Cardápio NowUp</small><h1>{{pro.display_name}}</h1><p>{{pro.opening_hours or 'Consulte os horários com o estabelecimento.'}}</p></div></div></header>
-<div class="menu-layout"><main><div class="menu-products">{% for product in products %}<article class="menu-product" data-product data-id="{{product.id}}" data-name="{{product.name}}" data-price="{{product.price_cents}}">{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" alt="{{product.name}}">{% else %}<div class="menu-product-placeholder">🍽</div>{% endif %}<div class="menu-product-info"><small>{{product.category}}</small><h3>{{product.name}}</h3><p>{{product.description}}</p><div><strong>R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</strong><button class="btn primary" type="button" data-add>Adicionar</button></div></div></article>{% else %}<div class="panel empty-state"><span>🍽</span><h2>Cardápio em preparação</h2><p class="muted">Esta empresa ainda não publicou produtos.</p></div>{% endfor %}</div></main>
-<aside class="menu-cart"><div class="panel"><h2>Seu pedido</h2><div data-cart-items><p class="muted">Adicione produtos para começar.</p></div><div class="cart-total"><span>Total</span><b data-cart-total>R$ 0,00</b></div><button class="btn primary full-btn" type="button" data-checkout disabled>Continuar pedido</button></div></aside></div></div>
-<dialog class="checkout-dialog" data-checkout-dialog><form action="/p/{{pro.slug}}/menu/pedido" method="post" data-order-form><button class="dialog-close" type="button" data-dialog-close>×</button><h2>Finalizar pedido</h2><input type="hidden" name="cart_json" data-cart-json><label>Seu nome<input class="input" name="customer_name" required></label><label>Seu WhatsApp<input class="input" name="customer_phone" inputmode="tel" required></label><label>Como deseja receber?<select name="fulfillment_type" data-fulfillment><option value="pickup">Retirar no local</option><option value="delivery">Entrega</option></select></label><label data-address hidden>Endereço para entrega<input class="input" name="address"></label><label>Observações<textarea name="notes" placeholder="Troco, ponto da carne, retirar ingrediente..."></textarea></label><div class="cart-total"><span>Total</span><b data-dialog-total>R$ 0,00</b></div><button class="btn primary full-btn">Enviar pedido pelo WhatsApp</button></form></dialog>
-</section><script src="/static/menu.js"></script>
+<section class="native-menu" data-native-menu>
+<div class="container">
+<header class="menu-hero">
+<a href="/p/{{pro.slug}}">← Voltar ao perfil</a>
+<div>{% if pro.avatar_filename %}<img src="/uploads/{{pro.avatar_filename}}" alt="">{% else %}<span>🍽</span>{% endif %}<div>
+<small>Cardápio NowUp</small>
+<h1>{{pro.display_name}}</h1>
+<p>{{pro.opening_hours or 'Consulte os horários com o estabelecimento.'}}</p>
+</div>
+</div>
+</header>
+{% if menu_categories %}<nav class="menu-category-nav" aria-label="Categorias">
+<button type="button" class="active" data-category-filter="all">Todos</button>{% for category in menu_categories %}<button type="button" data-category-filter="{{category|lower}}">{{category}}</button>{% endfor %}</nav>{% endif %}
+<div class="menu-layout">
+<main>
+<div class="menu-products">{% for product in products %}<article class="menu-product" data-product data-category="{{product.category|lower}}" data-id="{{product.id}}" data-name="{{product.name}}" data-price="{{product.price_cents}}">{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" alt="{{product.name}}">{% else %}<div class="menu-product-placeholder">🍽</div>{% endif %}<div class="menu-product-info">
+<small>{{product.category}}</small>
+<h3>{{product.name}}</h3>
+<p>{{product.description}}</p>
+<div>
+<strong>R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</strong>
+<button class="btn primary" type="button" data-add>Adicionar</button>
+</div>
+</div>
+</article>{% else %}<div class="panel empty-state">
+<span>🍽</span>
+<h2>Cardápio em preparação</h2>
+<p class="muted">Esta empresa ainda não publicou produtos.</p>
+</div>{% endfor %}</div>
+</main>
+<aside class="menu-cart">
+<div class="panel">
+<h2>Seu pedido</h2>
+<div data-cart-items>
+<p class="muted">Adicione produtos para começar.</p>
+</div>
+<div class="cart-total">
+<span>Total</span>
+<b data-cart-total>R$ 0,00</b>
+</div>
+<button class="btn primary full-btn" type="button" data-checkout disabled>Continuar pedido</button>
+</div>
+</aside>
+</div>
+</div>
+<dialog class="checkout-dialog" data-checkout-dialog>
+<form action="/p/{{pro.slug}}/menu/pedido" method="post" data-order-form>
+<button class="dialog-close" type="button" data-dialog-close>×</button>
+<h2>Finalizar pedido</h2>
+<input type="hidden" name="cart_json" data-cart-json>
+<label>Seu nome<input class="input" name="customer_name" required>
+</label>
+<label>Seu WhatsApp<input class="input" name="customer_phone" inputmode="tel" required>
+</label>
+<label>Como deseja receber?<select name="fulfillment_type" data-fulfillment>
+<option value="pickup">Retirar no local</option>
+<option value="delivery">Entrega</option>
+</select>
+</label>
+<label data-address hidden>Endereço para entrega<input class="input" name="address">
+</label>
+<label>Observação geral do pedido<textarea name="notes" placeholder="Ex.: preciso de troco para R$ 100">
+</textarea>
+</label>
+<div class="cart-total">
+<span>Total</span>
+<b data-dialog-total>R$ 0,00</b>
+</div>
+<button class="btn primary full-btn">Enviar pedido pelo WhatsApp</button>
+</form>
+</dialog>
+</section>
+<script src="/static/menu.js">
+</script>
 {% endblock %}
