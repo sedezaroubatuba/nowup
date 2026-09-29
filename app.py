@@ -694,7 +694,7 @@ def native_menu(request: Request, slug: str):
       WHERE pr.professional_id=? AND pr.available=1
       AND (NOT EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category))
         OR EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) AND pc.active=1))
-      ORDER BY pr.category,pr.sort_order,pr.id DESC""",(p["id"],)).fetchall()
+      ORDER BY pr.featured DESC,pr.category,pr.sort_order,pr.id DESC""",(p["id"],)).fetchall()
     menu_categories=[]
     for product in products:
         category=(product["category"] or "Geral").strip() or "Geral"
@@ -1125,6 +1125,8 @@ def pro_menu_category_delete(request: Request, category_id: int):
 @app.post("/painel/cardapio/produtos")
 def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None)):
     u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone(); fn=""
+    if featured and conn.execute("SELECT COUNT(*) FROM products WHERE professional_id=? AND featured=1",(p["id"],)).fetchone()[0] >= 3:
+        conn.close(); return RedirectResponse("/painel?erro=limite-promocoes#cardapio",303)
     if photo and photo.filename: fn=save_image(photo)
     created=now_iso(); conn.execute("INSERT INTO products(professional_id,name,description,category,price_cents,image_filename,available,created_at,updated_at,promo_price_cents,featured,max_quantity) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",(p["id"],name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,created,created,price_to_cents(promo_price) if promo_price.strip() else 0,1 if featured else 0,max(1,min(99,max_quantity))))
     conn.commit(); conn.close(); return RedirectResponse("/painel?ok=produto#cardapio",303)
@@ -1133,6 +1135,8 @@ def pro_product_add(request: Request, name: str=Form(...), description: str=Form
 def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None)):
     u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone(); product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=?",(product_id,p["id"])).fetchone()
     if not product: conn.close(); raise HTTPException(404)
+    if featured and not product["featured"] and conn.execute("SELECT COUNT(*) FROM products WHERE professional_id=? AND featured=1 AND id!=?",(p["id"],product_id)).fetchone()[0] >= 3:
+        conn.close(); return RedirectResponse("/painel?erro=limite-promocoes#cardapio",303)
     fn=product["image_filename"]
     if photo and photo.filename:
         new_fn=save_image(photo)
