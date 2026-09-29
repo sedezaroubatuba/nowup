@@ -295,6 +295,12 @@ def init_db():
       created_at TEXT NOT NULL,
       UNIQUE(customer_id,professional_id)
     );
+    CREATE TABLE IF NOT EXISTS favorites(
+      customer_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      professional_id INTEGER NOT NULL REFERENCES professionals(id) ON DELETE CASCADE,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY(customer_id,professional_id)
+    );
     CREATE TABLE IF NOT EXISTS reports(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       customer_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -457,6 +463,7 @@ def init_db():
     ensure_column(conn, "orders", "neighborhood", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "orders", "address_reference", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "orders", "change_for_cents", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "orders", "customer_id", "INTEGER REFERENCES users(id) ON DELETE SET NULL")
     ensure_column(conn, "professionals", "delivery_fee_cents", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "professionals", "minimum_order_cents", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "professionals", "prep_minutes", "INTEGER NOT NULL DEFAULT 40")
@@ -596,8 +603,14 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
       FROM posts po JOIN professionals p ON p.id=po.professional_id
       WHERE p.blocked=0 AND po.post_type!='status' ORDER BY po.id DESC LIMIT 12
     """).fetchall()
+    user=current_user(request); favorite_ids=set()
+    if user and user["role"]=="customer":
+        favorite_ids={r[0] for r in conn.execute("SELECT professional_id FROM favorites WHERE customer_id=?",(user["id"],)).fetchall()}
+    restaurants=[r for r in rows if r["business_type"]=="restaurant"]
+    offers=[r for r in rows if r["featured"]]
+    recommended=[r for r in rows if r["business_type"]!="restaurant"]
     conn.close()
-    return templates.TemplateResponse("home.html", context(request, professionals=rows, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities))
+    return templates.TemplateResponse("home.html", context(request, professionals=rows, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities))
 
 @app.get("/profissionais", response_class=HTMLResponse)
 def professionals(request: Request, category: str="", city: str="", neighborhood: str="", cep: str="", q: str="", business_type: str=""):
@@ -665,7 +678,7 @@ def native_menu(request: Request, slug: str):
     return templates.TemplateResponse("menu.html", context(request, pro=p, products=products, product_options=product_options, menu_categories=menu_categories, shop_status=status))
 
 @app.post("/p/{slug}/menu/pedido")
-def native_menu_order(slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...)):
+def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...)):
     conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404)
     if not shop_status(p)["open"]: conn.close(); return RedirectResponse(f"/p/{slug}/menu?fechado=1",303)
@@ -696,8 +709,9 @@ def native_menu_order(slug: str, customer_name: str=Form(...), customer_phone: s
     payment_labels={"pix":"Pix","cash":"Dinheiro","credit":"Cartão de crédito","debit":"Cartão de débito","on_delivery":"Combinar no atendimento"}
     payment_method=payment_method if payment_method in payment_labels else "pix"
     change_for_cents=price_to_cents(change_for) if payment_method=="cash" and change_for.strip() else 0
-    created=now_iso(); cur=conn.execute("""INSERT INTO orders(professional_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at,subtotal_cents,delivery_fee_cents,neighborhood,address_reference,change_for_cents)
-      VALUES(?,?,?,?,?,?,?,?,1,?,?,?,?,?,?,?)""",(p["id"],customer_name.strip()[:120],customer_phone.strip()[:30],fulfillment_type,address.strip()[:300],notes.strip()[:500],"new",total,created,created,subtotal,delivery_fee,neighborhood.strip()[:120],address_reference.strip()[:220],change_for_cents))
+    logged=current_user(request); customer_id=logged["id"] if logged and logged["role"]=="customer" else None
+    created=now_iso(); cur=conn.execute("""INSERT INTO orders(professional_id,customer_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at,subtotal_cents,delivery_fee_cents,neighborhood,address_reference,change_for_cents)
+      VALUES(?,?,?,?,?,?,?,?,?,1,?,?,?,?,?,?,?)""",(p["id"],customer_id,customer_name.strip()[:120],customer_phone.strip()[:30],fulfillment_type,address.strip()[:300],notes.strip()[:500],"new",total,created,created,subtotal,delivery_fee,neighborhood.strip()[:120],address_reference.strip()[:220],change_for_cents))
     order_id=cur.lastrowid
     order_code=f"NU-{order_id:06d}"; conn.execute("UPDATE orders SET payment_method=?,order_code=? WHERE id=?",(payment_method,order_code,order_id))
     conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)",(order_id,"new",created))
@@ -1132,8 +1146,28 @@ def customer_panel(request: Request):
     u=require_user(request,"customer"); conn=db()
     reviews=conn.execute("""SELECT r.*,p.display_name,p.slug FROM reviews r
       JOIN professionals p ON p.id=r.professional_id WHERE r.customer_id=? ORDER BY r.id DESC""",(u["id"],)).fetchall()
+    favorites=conn.execute("""SELECT p.*,
+      (SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1) cover
+      FROM favorites f JOIN professionals p ON p.id=f.professional_id
+      WHERE f.customer_id=? AND p.blocked=0 ORDER BY f.created_at DESC""",(u["id"],)).fetchall()
+    orders=conn.execute("""SELECT o.*,p.display_name,p.slug FROM orders o
+      JOIN professionals p ON p.id=o.professional_id
+      WHERE o.customer_id=? OR (o.customer_id IS NULL AND replace(replace(replace(replace(o.customer_phone,' ',''),'-',''),'(',''),')','')=?)
+      ORDER BY o.id DESC LIMIT 12""",(u["id"],normalize_phone(u["phone"] or "") or "__none__")).fetchall()
     conn.close()
-    return templates.TemplateResponse("customer_panel.html", context(request, reviews=reviews))
+    return templates.TemplateResponse("customer_panel.html", context(request, reviews=reviews, favorites=favorites, orders=orders))
+
+@app.post("/favoritos/{professional_id}")
+def toggle_favorite(request: Request, professional_id: int, next: str=Form("/cliente")):
+    u=require_user(request,"customer"); conn=db()
+    exists=conn.execute("SELECT 1 FROM favorites WHERE customer_id=? AND professional_id=?",(u["id"],professional_id)).fetchone()
+    if exists: conn.execute("DELETE FROM favorites WHERE customer_id=? AND professional_id=?",(u["id"],professional_id))
+    else:
+        valid=conn.execute("SELECT 1 FROM professionals WHERE id=? AND blocked=0",(professional_id,)).fetchone()
+        if valid: conn.execute("INSERT INTO favorites(customer_id,professional_id,created_at) VALUES(?,?,?)",(u["id"],professional_id,now_iso()))
+    conn.commit(); conn.close()
+    safe_next=next if next.startswith("/") and not next.startswith("//") else "/cliente"
+    return RedirectResponse(safe_next,303)
 
 @app.post("/painel/links")
 def pro_links(request: Request, whatsapp: str=Form(...), external_url: str=Form(""), menu_url: str=Form(""), instagram_url: str=Form(""), facebook_url: str=Form(""), website_url: str=Form("")):
