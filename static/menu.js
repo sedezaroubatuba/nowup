@@ -1,9 +1,17 @@
 (()=>{
   const root=document.querySelector('[data-native-menu]'); if(!root)return;
+  const normalize=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLocaleLowerCase('pt-BR').replace(/\s+/g,' ');
+  const categoryButtons=[...root.querySelectorAll('[data-category-filter]')];
+  const products=[...root.querySelectorAll('[data-product]')];
+  categoryButtons.forEach(button=>button.addEventListener('click',()=>{
+    const selected=normalize(button.dataset.categoryFilter);
+    categoryButtons.forEach(item=>item.classList.toggle('active',item===button));
+    products.forEach(product=>{product.hidden=selected!=='all'&&normalize(product.dataset.category)!==selected;});
+  }));
   const cfg=window.NOWUP_MENU||{},cart=new Map(),items=root.querySelector('[data-cart-items]'),total=root.querySelector('[data-cart-total]'),checkout=root.querySelector('[data-checkout]'),dialog=document.querySelector('[data-checkout-dialog]');
   if(!items||!total||!checkout||!dialog)return;
   const key=`nowup-cart:${location.pathname}`,money=c=>(c/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),esc=v=>String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-  const cartField=dialog.querySelector('[data-cart-json]'),dialogTotal=dialog.querySelector('[data-dialog-total]'),fulfillment=dialog.querySelector('[data-fulfillment]'),payment=dialog.querySelector('[data-payment]');
+  const cartField=dialog.querySelector('[data-cart-json]'),dialogTotal=dialog.querySelector('[data-dialog-total]'),fulfillment=dialog.querySelector('[data-fulfillment]'),payment=dialog.querySelector('[data-payment]'),form=dialog.querySelector('[data-order-form]');
   const qty=v=>Math.max(1,Math.min(99,parseInt(v,10)||1));
   function baseSubtotal(){let sum=0;cart.forEach(v=>sum+=v.unitPrice*v.quantity);return sum}
   function fee(){return fulfillment?.value==='delivery'?Number(cfg.deliveryFee||0):0}
@@ -15,8 +23,9 @@
   root.addEventListener('click',e=>{const b=e.target.closest('[data-add]');if(!b||b.disabled)return;const card=b.closest('[data-product]');if(!card)return;const options=[...card.querySelectorAll('[data-product-option]:checked')].map(o=>({id:o.value,name:o.dataset.optionName,price:Number(o.dataset.optionPrice||0)}));const id=`${card.dataset.id}:${options.map(o=>o.id).sort().join('-')}`,amount=qty(card.querySelector('[data-product-quantity]')?.value),unitPrice=Number(card.dataset.price)+options.reduce((s,o)=>s+o.price,0),current=cart.get(id)||{productId:Number(card.dataset.id),name:card.dataset.name,unitPrice,quantity:0,notes:'',options,max:Number(card.dataset.max||99)};current.quantity=Math.min(current.max||99,current.quantity+amount);cart.set(id,current);b.textContent='Adicionado ✓';setTimeout(()=>b.textContent='Adicionar',800);render()});
   items.addEventListener('click',e=>{const id=e.target.dataset.plus||e.target.dataset.minus||e.target.dataset.remove;if(!id)return;if(e.target.dataset.remove){cart.delete(id);render();return}const v=cart.get(id);v.quantity=Math.min(v.max||99,v.quantity+(e.target.dataset.plus?1:-1));if(v.quantity<1)cart.delete(id);render()});
   items.addEventListener('input',e=>{const id=e.target.dataset.note||e.target.dataset.cartQuantity;if(!id||!cart.has(id))return;if(e.target.dataset.note!==undefined)cart.get(id).notes=e.target.value;else cart.get(id).quantity=Math.min(cart.get(id).max||99,qty(e.target.value));sync()});items.addEventListener('change',render);
-  document.querySelectorAll('[data-category-filter]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-category-filter]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('[data-product]').forEach(p=>p.hidden=b.dataset.categoryFilter!=='all'&&p.dataset.category!==b.dataset.categoryFilter)}));
-  checkout.addEventListener('click',()=>dialog.showModal());dialog.querySelector('[data-dialog-close]')?.addEventListener('click',()=>dialog.close());
+  checkout.addEventListener('click',()=>{sync();dialog.showModal()});dialog.querySelector('[data-dialog-close]')?.addEventListener('click',()=>dialog.close());
   function checkoutFields(){const delivery=fulfillment?.value==='delivery',address=dialog.querySelector('[data-address]');if(address){address.hidden=!delivery;address.querySelectorAll('input').forEach(i=>i.required=delivery)}const change=dialog.querySelector('[data-change]');if(change)change.hidden=payment?.value!=='cash';render()}
-  fulfillment?.addEventListener('change',checkoutFields);payment?.addEventListener('change',checkoutFields);dialog.querySelector('[data-order-form]')?.addEventListener('submit',()=>{localStorage.removeItem(key)});checkoutFields();render();
+  fulfillment?.addEventListener('change',checkoutFields);payment?.addEventListener('change',checkoutFields);
+  form?.addEventListener('submit',e=>{if(!cart.size){e.preventDefault();return}sync();const submit=form.querySelector('[data-submit-order]');if(submit){submit.disabled=true;submit.textContent='Enviando pedido...'}localStorage.removeItem(key)});
+  checkoutFields();render();
 })();
