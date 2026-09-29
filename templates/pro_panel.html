@@ -22,6 +22,7 @@
 <a href="/p/{{pro.slug}}">↗ Ver perfil público</a>{% if support_link!='#' %}<a class="support-side" href="{{support_link}}" target="_blank" rel="noopener">🛟 Falar com a NowUp</a>{% endif %}</aside>
 <main>
 {% if request.query_params.get('ok') %}<div class="alert success">Alterações salvas com sucesso.</div>{% endif %}
+{% if request.query_params.get('erro')=='limite-promocoes' %}<div class="alert">Você já atingiu o limite de 3 produtos em promoção. Retire um destaque antes de adicionar outro.</div>{% endif %}
 <div class="order-alert-control" data-order-alerts data-latest-order-id="{{latest_order_id}}">
 <button class="btn order-alert-enable" type="button" data-enable-order-alerts>🔔 Ativar alertas de pedidos</button>
 <small data-alert-status>Ative para ouvir um toque forte quando chegar um pedido novo.</small>
@@ -89,7 +90,7 @@
 </div>
 <a class="btn soft" href="/p/{{pro.slug}}/menu" target="_blank">Ver cardápio público</a>
 </div>
-<p class="muted">Cadastre categorias e produtos. O cliente verá este cardápio no perfil público, montará o carrinho e enviará o pedido ao seu WhatsApp.</p>
+<p class="muted">Cadastre categorias e produtos. O cliente monta o carrinho e envia o pedido diretamente para sua sala de pedidos no NowUp.</p>
 <details class="menu-settings" open><summary><b>⚙️ Entrega, retirada e pagamento</b></summary><form action="/painel/cardapio/configuracoes" method="post" class="product-form"><label>Taxa de entrega<input class="input" name="delivery_fee" value="{{'%.2f'|format(pro.delivery_fee_cents/100)|replace('.',',')}}" inputmode="decimal"></label><label>Pedido mínimo<input class="input" name="minimum_order" value="{{'%.2f'|format(pro.minimum_order_cents/100)|replace('.',',')}}" inputmode="decimal"></label><label>Tempo médio de preparo (minutos)<input class="input" type="number" min="5" max="240" name="prep_minutes" value="{{pro.prep_minutes}}"></label><label>Chave Pix<input class="input" name="pix_key" value="{{pro.pix_key}}" placeholder="Telefone, e-mail, CPF/CNPJ ou aleatória"></label><label class="check"><input type="checkbox" name="allows_delivery" value="1" {% if pro.allows_delivery %}checked{% endif %}> Aceitar entrega</label><label class="check"><input type="checkbox" name="allows_pickup" value="1" {% if pro.allows_pickup %}checked{% endif %}> Aceitar retirada</label><button class="btn primary">Salvar configurações</button></form></details>
 <div class="menu-category-manager">
 <h3>Categorias do cardápio</h3>
@@ -124,11 +125,12 @@
 </label>
 <label class="check">
 <input type="checkbox" name="available" value="1" checked> Produto disponível</label>
-<label class="check"><input type="checkbox" name="featured" value="1"> Destacar produto</label>
+<label class="check"><input type="checkbox" name="featured" value="1"> Colocar em promoção/destaque (máximo 3)</label>
 <button class="btn primary">Salvar produto</button>
 </form>
 </details>
-<div class="product-admin-grid">{% for product in products %}<details class="product-admin-card">
+<nav class="menu-category-nav pro-product-filters" aria-label="Filtrar produtos do painel"><button type="button" class="active" data-pro-category="all">Todos</button><button type="button" data-pro-category="promocoes">Promoções</button>{% for category in product_categories %}<button type="button" data-pro-category="{{category.name}}">{{category.name}}</button>{% endfor %}</nav>
+<div class="product-admin-grid" data-pro-products>{% for product in products %}<details class="product-admin-card" data-pro-product data-category="{{product.category}}" data-featured="{{1 if product.featured else 0}}">
 <summary>{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" alt="">{% else %}<span class="product-placeholder">🍽</span>{% endif %}<div>
 <b>{{product.name}}</b>
 <small>{{product.category}} · R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</small>
@@ -150,7 +152,7 @@
 </label>
 <label class="check">
 <input type="checkbox" name="available" value="1" {% if product.available %}checked{% endif %}> Disponível para pedidos (desmarque quando esgotar)</label>
-<label class="check"><input type="checkbox" name="featured" value="1" {% if product.featured %}checked{% endif %}> Produto em destaque</label>
+<label class="check"><input type="checkbox" name="featured" value="1" {% if product.featured %}checked{% endif %}> Produto em promoção/destaque (máximo 3)</label>
 <button class="btn primary">Salvar alterações</button>
 </form>
 <div class="option-manager"><b>Adicionais deste produto</b><div class="option-list">{% for option in product_options.get(product.id,[]) %}<form action="/painel/cardapio/adicionais/{{option.id}}/excluir" method="post"><span>{{option.name}}{% if option.price_cents %} (+ R$ {{'%.2f'|format(option.price_cents/100)|replace('.',',')}}){% endif %}</span><button class="btn danger tiny">Excluir</button></form>{% else %}<small class="muted">Nenhum adicional cadastrado.</small>{% endfor %}</div><form action="/painel/cardapio/produtos/{{product.id}}/adicionais" method="post" class="option-add"><input class="input" name="option_name" placeholder="Ex.: Bacon extra" required><input class="input" name="option_price" placeholder="Preço: 4,00" inputmode="decimal"><button class="btn soft">Adicionar</button></form></div>
@@ -534,5 +536,5 @@
 </section>{% endif %}
 </main>
 </div>
-<script src="/static/order-alerts.js?v=17"></script>
+<script src="/static/pro-panel-menu.js?v=24"></script><script src="/static/order-alerts.js?v=24"></script>
 {% endblock %}
