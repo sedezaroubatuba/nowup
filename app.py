@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Optional
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 from urllib.request import Request as URLRequest, urlopen
 from urllib.error import HTTPError, URLError
 
@@ -15,7 +15,7 @@ from fastapi.templating import Jinja2Templates
 from PIL import Image
 from email_validator import validate_email, EmailNotValidError
 from admin_customization import router as admin_customization_router
-from mailing import send_verification
+from mailing import send_verification, send_email
 from email_verification import router as email_verification_router
 from cms import router as cms_router, init_cms_db
 
@@ -36,6 +36,21 @@ app.include_router(cms_router)
 app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 templates = Jinja2Templates(directory=str(BASE / "templates"))
+
+@app.middleware("http")
+async def security_headers_and_csrf(request: Request, call_next):
+    # Proteção CSRF por origem sem consumir formulários multipart.
+    if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+        origin=request.headers.get("origin"); referer=request.headers.get("referer"); host=request.headers.get("host","")
+        origin_host=urlparse(origin).netloc if origin else ""; referer_host=urlparse(referer).netloc if referer else ""
+        if (origin_host and host and origin_host!=host) or (not origin_host and referer_host and host and referer_host!=host):
+            return JSONResponse({"detail":"Requisição bloqueada por segurança"},status_code=403)
+    response=await call_next(request)
+    response.headers["X-Content-Type-Options"]="nosniff"
+    response.headers["X-Frame-Options"]="DENY"
+    response.headers["Referrer-Policy"]="strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"]="camera=(), microphone=(), geolocation=(self)"
+    return response
 
 
 def now_iso():
@@ -238,6 +253,12 @@ def init_db():
       code_hash TEXT NOT NULL,
       attempts INTEGER NOT NULL DEFAULT 0,
       expires_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS password_reset_tokens(
+      token_hash TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      expires_at TEXT NOT NULL,
+      used INTEGER NOT NULL DEFAULT 0
     );
     CREATE TABLE IF NOT EXISTS categories(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -494,6 +515,7 @@ def init_db():
       "ticker_text": "",
       "ticker_enabled": "0",
       "ticker_color": "#e30613",
+      "ticker_animation": "continuous",
       "slide_interval_seconds": "3"
     }
     for key, value in defaults.items():
@@ -570,6 +592,13 @@ def init_db():
 def startup():
     init_db()
     init_cms_db()
+    # Cópia SQLite consistente; o disco persistente deve incluir a pasta data.
+    backup_dir=DB_PATH.parent/"backups"; backup_dir.mkdir(parents=True,exist_ok=True)
+    destination=backup_dir/f"nowup-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}.db"
+    source=sqlite3.connect(DB_PATH); target=sqlite3.connect(destination)
+    try: source.backup(target)
+    finally: target.close(); source.close()
+    for old in sorted(backup_dir.glob("nowup-*.db"),reverse=True)[7:]: old.unlink(missing_ok=True)
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request, q: str="", city: str="", category: str="", business_type: str=""):
@@ -872,6 +901,41 @@ def create_session_response(uid:int, dest:str, is_admin:bool=False):
 
 @app.get("/entrar", response_class=HTMLResponse)
 def login_page(request: Request): return templates.TemplateResponse("login.html", context(request))
+
+@app.get("/recuperar-senha", response_class=HTMLResponse)
+def forgot_password_page(request: Request):
+    return templates.TemplateResponse("forgot_password.html", context(request))
+
+@app.post("/recuperar-senha")
+def forgot_password(email: str=Form(...)):
+    normalized=normalize_email(email)
+    if normalized:
+        conn=db(); user=conn.execute("SELECT id,name,email FROM users WHERE email=? AND is_active=1",(normalized,)).fetchone()
+        if user:
+            raw=secrets.token_urlsafe(40); token_hash=hashlib.sha256(raw.encode()).hexdigest(); expires=(datetime.now(timezone.utc)+timedelta(minutes=30)).isoformat()
+            conn.execute("DELETE FROM password_reset_tokens WHERE user_id=?",(user["id"],)); conn.execute("INSERT INTO password_reset_tokens(token_hash,user_id,expires_at) VALUES(?,?,?)",(token_hash,user["id"],expires)); conn.commit()
+            base=os.getenv("NOWUP_BASE_URL","").strip().rstrip("/")
+            if base:
+                link=f"{base}/redefinir-senha?token={quote(raw)}"
+                send_email(user["email"],user["name"],"Redefina sua senha da NowUp",f'<div style="font-family:Arial,sans-serif"><h2>Redefinir senha</h2><p>Olá, {user["name"]}.</p><p><a href="{link}" style="background:#075bd8;color:#fff;padding:12px 18px;border-radius:10px;text-decoration:none">Criar nova senha</a></p><p>O link expira em 30 minutos.</p></div>')
+        conn.close()
+    return RedirectResponse("/recuperar-senha?enviado=1",303)
+
+def valid_reset_token(raw: str):
+    if not raw: return None
+    conn=db(); row=conn.execute("SELECT * FROM password_reset_tokens WHERE token_hash=? AND used=0 AND expires_at>?",(hashlib.sha256(raw.encode()).hexdigest(),now_iso())).fetchone(); conn.close(); return row
+
+@app.get("/redefinir-senha", response_class=HTMLResponse)
+def reset_password_page(request: Request, token: str=""):
+    return templates.TemplateResponse("reset_password.html", context(request,token=token,invalid=not bool(valid_reset_token(token))))
+
+@app.post("/redefinir-senha")
+def reset_password(token: str=Form(...), password: str=Form(...), password_confirm: str=Form(...)):
+    row=valid_reset_token(token)
+    if not row: return RedirectResponse("/redefinir-senha?token="+quote(token),303)
+    if len(password)<8 or password!=password_confirm: return RedirectResponse("/redefinir-senha?erro=1&token="+quote(token),303)
+    conn=db(); conn.execute("UPDATE users SET password_hash=? WHERE id=?",(hash_password(password),row["user_id"])); conn.execute("UPDATE password_reset_tokens SET used=1 WHERE token_hash=?",(row["token_hash"],)); conn.execute("DELETE FROM sessions WHERE user_id=?",(row["user_id"],)); conn.commit(); conn.close()
+    return RedirectResponse("/entrar?senha_redefinida=1",303)
 
 @app.post("/entrar")
 def login(email: str=Form(...), password: str=Form(...)):
@@ -1222,11 +1286,15 @@ def pro_ad_images(request: Request, featured_image: Optional[UploadFile]=File(No
     conn.close(); return RedirectResponse("/painel?ok=publicidade#publicidade",303)
 
 def save_image(upload: UploadFile):
+    if upload.content_type not in {"image/jpeg","image/png","image/webp"}:
+        raise HTTPException(400,"Formato inválido. Use JPG, PNG ou WebP")
     data=upload.file.read(MAX_UPLOAD+1)
     if len(data)>MAX_UPLOAD: raise HTTPException(400,"Imagem maior que 5MB")
     try:
         im=Image.open(io.BytesIO(data)); im.verify()
-        im=Image.open(io.BytesIO(data)).convert("RGB")
+        im=Image.open(io.BytesIO(data))
+        if im.width*im.height>24_000_000: raise HTTPException(400,"Imagem com resolução muito alta")
+        im=im.convert("RGB")
         im.thumbnail((1600,1600))
     except Exception: raise HTTPException(400,"Arquivo não é uma imagem válida")
     filename=secrets.token_hex(16)+".jpg"; im.save(UPLOAD_DIR/filename,"JPEG",quality=88,optimize=True)
@@ -1351,13 +1419,14 @@ def admin_appearance(request: Request, brand_name:str=Form("NowUp"), font_family
     conn.commit(); conn.close(); return RedirectResponse("/admin?ok=aparencia#aparencia",303)
 
 @app.post("/admin/faixa-e-slides")
-def admin_ticker_and_slides(request: Request, ticker_color:str=Form("#e30613"), ticker_text:str=Form(""), ticker_enabled:str=Form("0"), slide_interval_seconds:str=Form("3")):
+def admin_ticker_and_slides(request: Request, ticker_color:str=Form("#e30613"), ticker_text:str=Form(""), ticker_enabled:str=Form("0"), ticker_animation:str=Form("continuous"), slide_interval_seconds:str=Form("3")):
     require_user(request,"admin")
     try: seconds=max(1,min(15,int(slide_interval_seconds)))
     except (TypeError,ValueError): seconds=3
     color=ticker_color.strip()[:20]
     if not re.fullmatch(r"#[0-9a-fA-F]{6}",color): color="#e30613"
-    values={"ticker_color":color,"ticker_text":ticker_text.strip()[:300],"ticker_enabled":"1" if ticker_enabled=="1" else "0","slide_interval_seconds":str(seconds)}
+    if ticker_animation not in {"continuous","blink","inside-out","outside-in"}: ticker_animation="continuous"
+    values={"ticker_color":color,"ticker_text":ticker_text.strip()[:300],"ticker_enabled":"1" if ticker_enabled=="1" else "0","ticker_animation":ticker_animation,"slide_interval_seconds":str(seconds)}
     conn=db()
     for key,value in values.items(): conn.execute("INSERT INTO site_settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",(key,value))
     conn.commit(); conn.close()
