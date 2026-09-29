@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Pedido {{order.order_code}} | NowUp{% endblock %}
+{% block content %}
+<main class="container order-track" data-status-url="/pedido/{{order.tracking_token}}/status" data-current-status="{{order.status}}">
+  <section class="order-hero"><div class="order-check">✓</div><p class="eyebrow">PEDIDO ENVIADO PELO NOWUP</p><h1>{{order.order_code}}</h1><p>Seu pedido chegou à sala de pedidos de <strong>{{order.display_name}}</strong>.</p><div class="order-live-status status-{{order.status}}" id="orderLiveStatus">{{status_labels.get(order.status,order.status)}}</div><p class="muted">Esta página atualiza automaticamente quando a loja movimentar o pedido.</p></section>
+  <div class="order-layout">
+    <section class="panel order-card"><h2>Resumo do pedido</h2>
+      {% for item in items %}<div class="order-item"><span><b>{{item.quantity}}×</b> {{item.product_name}}{% if options.get(item.id) %}<small>{{options.get(item.id)|map(attribute='option_name')|join(', ')}}</small>{% endif %}{% if item.notes %}<small>Obs.: {{item.notes}}</small>{% endif %}</span><b>R$ {{'%.2f'|format((item.unit_price_cents*item.quantity)/100)|replace('.',',')}}</b></div>{% endfor %}
+      {% if order.delivery_fee_cents %}<div class="order-item"><span>Taxa de entrega</span><b>R$ {{'%.2f'|format(order.delivery_fee_cents/100)|replace('.',',')}}</b></div>{% endif %}<div class="order-total"><span>Total</span><strong>R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</strong></div>
+    </section>
+    <section class="panel order-card"><h2>Acompanhamento</h2><ol class="order-timeline">{% for event in history %}<li><b>{{status_labels.get(event.status,event.status)}}</b><small>{{event.created_at[:16]|replace('T',' ')}}</small></li>{% endfor %}</ol><p><b>{{'Entrega' if order.fulfillment_type=='delivery' else 'Retirada no local'}}</b></p>{% if order.address %}<p class="muted">{{order.address}}{% if order.neighborhood %} — {{order.neighborhood}}{% endif %}</p>{% endif %}<form action="/pedido/{{order.tracking_token}}/whatsapp" method="post"><button class="btn soft order-whatsapp" type="submit">Falar com a loja pelo WhatsApp</button></form><p class="tiny muted">Use o WhatsApp apenas se precisar combinar algum detalhe. O pedido já foi enviado pelo NowUp.</p></section>
+  </div>
+</main>
+<script>(()=>{const root=document.querySelector('.order-track');if(!root)return;const box=document.getElementById('orderLiveStatus');let current=root.dataset.currentStatus;setInterval(async()=>{try{const r=await fetch(root.dataset.statusUrl,{cache:'no-store'});if(!r.ok)return;const data=await r.json();if(data.status!==current){current=data.status;box.textContent=data.label;box.className='order-live-status status-'+data.status;location.reload();}}catch(e){}},8000);})();</script>
+{% endblock %}
