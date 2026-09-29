@@ -6,7 +6,7 @@
   categoryButtons.forEach(button=>button.addEventListener('click',()=>{
     const selected=normalize(button.dataset.categoryFilter);
     categoryButtons.forEach(item=>item.classList.toggle('active',item===button));
-    products.forEach(product=>{product.hidden=selected!=='all'&&normalize(product.dataset.category)!==selected;});
+    products.forEach(product=>{const promotion=product.dataset.featured==='1';product.hidden=selected!=='all'&&(selected==='promocoes'?!promotion:normalize(product.dataset.category)!==selected);});
   }));
   const cfg=window.NOWUP_MENU||{},cart=new Map(),items=root.querySelector('[data-cart-items]'),total=root.querySelector('[data-cart-total]'),checkout=root.querySelector('[data-checkout]'),dialog=document.querySelector('[data-checkout-dialog]');
   if(!items||!total||!checkout||!dialog)return;
