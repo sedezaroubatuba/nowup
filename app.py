@@ -485,6 +485,8 @@ def init_db():
     ensure_column(conn, "orders", "address_reference", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "orders", "change_for_cents", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "orders", "customer_id", "INTEGER REFERENCES users(id) ON DELETE SET NULL")
+    ensure_column(conn, "orders", "tracking_token", "TEXT NOT NULL DEFAULT ''")
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_tracking_token ON orders(tracking_token) WHERE tracking_token!=''")
     ensure_column(conn, "professionals", "delivery_fee_cents", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "professionals", "minimum_order_cents", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "professionals", "prep_minutes", "INTEGER NOT NULL DEFAULT 40")
@@ -739,8 +741,9 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
     payment_method=payment_method if payment_method in payment_labels else "pix"
     change_for_cents=price_to_cents(change_for) if payment_method=="cash" and change_for.strip() else 0
     logged=current_user(request); customer_id=logged["id"] if logged and logged["role"]=="customer" else None
-    created=now_iso(); cur=conn.execute("""INSERT INTO orders(professional_id,customer_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at,subtotal_cents,delivery_fee_cents,neighborhood,address_reference,change_for_cents)
-      VALUES(?,?,?,?,?,?,?,?,?,1,?,?,?,?,?,?,?)""",(p["id"],customer_id,customer_name.strip()[:120],customer_phone.strip()[:30],fulfillment_type,address.strip()[:300],notes.strip()[:500],"new",total,created,created,subtotal,delivery_fee,neighborhood.strip()[:120],address_reference.strip()[:220],change_for_cents))
+    created=now_iso(); tracking_token=secrets.token_urlsafe(24)
+    cur=conn.execute("""INSERT INTO orders(professional_id,customer_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at,subtotal_cents,delivery_fee_cents,neighborhood,address_reference,change_for_cents,tracking_token)
+      VALUES(?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?)""",(p["id"],customer_id,customer_name.strip()[:120],customer_phone.strip()[:30],fulfillment_type,address.strip()[:300],notes.strip()[:500],"new",total,created,created,subtotal,delivery_fee,neighborhood.strip()[:120],address_reference.strip()[:220],change_for_cents,tracking_token))
     order_id=cur.lastrowid
     order_code=f"NU-{order_id:06d}"; conn.execute("UPDATE orders SET payment_method=?,order_code=? WHERE id=?",(payment_method,order_code,order_id))
     conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)",(order_id,"new",created))
@@ -748,20 +751,51 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
         item_cur=conn.execute("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes) VALUES(?,?,?,?,?,?)",(order_id,product["id"],product["name"],qty,unit,item_notes))
         for option in chosen: conn.execute("INSERT INTO order_item_options(order_item_id,option_id,option_name,price_cents) VALUES(?,?,?,?)",(item_cur.lastrowid,option["id"],option["name"],option["price_cents"]))
     conn.commit(); conn.close()
-    lines=[f"Olá! Fiz o pedido {order_code} pelo NowUp:",""]
-    for product,qty,item_notes,chosen,unit in clean_items:
-        lines.append(f"{qty}x {product['name']} — R$ {(unit*qty)/100:.2f}")
-        if chosen: lines.append("   Adicionais: "+", ".join(o["name"] for o in chosen))
-        if item_notes: lines.append(f"   Obs.: {item_notes}")
-    lines += ["",f"Subtotal: R$ {subtotal/100:.2f}"]
-    if delivery_fee: lines.append(f"Taxa de entrega: R$ {delivery_fee/100:.2f}")
-    lines += [f"Total: R$ {total/100:.2f}",f"Pagamento: {payment_labels[payment_method]}",f"Cliente: {customer_name.strip()}",f"Telefone: {customer_phone.strip()}","Entrega" if fulfillment_type=="delivery" else "Retirada no local"]
-    if address.strip(): lines.append(f"Endereço: {address.strip()}")
-    if neighborhood.strip(): lines.append(f"Bairro: {neighborhood.strip()}")
-    if address_reference.strip(): lines.append(f"Referência: {address_reference.strip()}")
-    if change_for_cents: lines.append(f"Troco para: R$ {change_for_cents/100:.2f}")
-    if notes.strip(): lines.append(f"Observações: {notes.strip()}")
-    return RedirectResponse(wa_link(p["whatsapp"],"\n".join(lines)),303)
+    return RedirectResponse(f"/pedido/{tracking_token}",303)
+
+ORDER_STATUS_LABELS={
+  "new":"Pedido recebido", "confirmed":"Pedido aceito", "preparing":"Em preparo",
+  "ready":"Pronto", "out_for_delivery":"Saiu para entrega", "completed":"Concluído",
+  "cancelled":"Cancelado", "rejected":"Recusado"
+}
+
+def tracked_order(conn, token: str):
+    return conn.execute("""SELECT o.*,p.display_name,p.slug,p.whatsapp,p.prep_minutes
+      FROM orders o JOIN professionals p ON p.id=o.professional_id
+      WHERE o.tracking_token=?""",(token,)).fetchone()
+
+def order_whatsapp_message(conn, order):
+    payment_labels={"pix":"Pix","cash":"Dinheiro","credit":"Cartão de crédito","debit":"Cartão de débito","on_delivery":"Combinar no atendimento"}
+    items=conn.execute("SELECT * FROM order_items WHERE order_id=? ORDER BY id",(order["id"],)).fetchall()
+    lines=[f"Olá! Quero falar sobre o pedido {order['order_code']} feito pelo NowUp:",""]
+    for item in items:
+        lines.append(f"{item['quantity']}x {item['product_name']} — R$ {(item['unit_price_cents']*item['quantity'])/100:.2f}")
+        if item["notes"]: lines.append(f"   Obs.: {item['notes']}")
+    lines += ["",f"Total: R$ {order['total_cents']/100:.2f}",f"Pagamento: {payment_labels.get(order['payment_method'],'A combinar')}",f"Cliente: {order['customer_name']}"]
+    return "\n".join(lines)
+
+@app.get("/pedido/{token}", response_class=HTMLResponse)
+def order_tracking(request: Request, token: str):
+    conn=db(); order=tracked_order(conn,token)
+    if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
+    items=conn.execute("SELECT * FROM order_items WHERE order_id=? ORDER BY id",(order["id"],)).fetchall(); options={}
+    for option in conn.execute("""SELECT oio.* FROM order_item_options oio JOIN order_items oi ON oi.id=oio.order_item_id
+      WHERE oi.order_id=? ORDER BY oio.id""",(order["id"],)).fetchall(): options.setdefault(option["order_item_id"],[]).append(option)
+    history=conn.execute("SELECT * FROM order_status_history WHERE order_id=? ORDER BY id",(order["id"],)).fetchall(); conn.close()
+    return templates.TemplateResponse("order_tracking.html",context(request,order=order,items=items,options=options,history=history,status_labels=ORDER_STATUS_LABELS))
+
+@app.get("/pedido/{token}/status")
+def order_tracking_status(token: str):
+    conn=db(); order=tracked_order(conn,token); conn.close()
+    if not order: raise HTTPException(404,"Pedido não encontrado")
+    return JSONResponse({"status":order["status"],"label":ORDER_STATUS_LABELS.get(order["status"],order["status"]),"updated_at":order["updated_at"]})
+
+@app.post("/pedido/{token}/whatsapp")
+def order_tracking_whatsapp(token: str):
+    conn=db(); order=tracked_order(conn,token)
+    if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
+    message=order_whatsapp_message(conn,order); conn.execute("UPDATE orders SET whatsapp_opened=1 WHERE id=?",(order["id"],)); conn.commit(); conn.close()
+    return RedirectResponse(wa_link(order["whatsapp"],message),303)
 
 @app.post("/p/{slug}/whatsapp")
 def whatsapp_click(slug: str):
