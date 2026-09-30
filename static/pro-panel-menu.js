@@ -1,5 +1,39 @@
-(()=>{
-  const buttons=[...document.querySelectorAll('[data-pro-category]')],products=[...document.querySelectorAll('[data-pro-product]')];if(!buttons.length)return;
-  const normalize=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLocaleLowerCase('pt-BR').replace(/\s+/g,' ');
-  buttons.forEach(button=>button.addEventListener('click',()=>{const selected=normalize(button.dataset.proCategory);buttons.forEach(item=>item.classList.toggle('active',item===button));products.forEach(product=>{const category=normalize(product.dataset.category),promotion=product.dataset.featured==='1';product.hidden=selected!=='all'&&(selected==='promocoes'?!promotion:category!==selected)})}));
+(function () {
+  function initPanelMenu() {
+    const dashboard = document.querySelector('.pro-dashboard');
+    if (!dashboard) return;
+
+    const links = [...dashboard.querySelectorAll('.pro-sidebar a[href^="#"]')];
+    if (!links.length) return;
+
+    const openFullDashboard = () => {
+      dashboard.classList.add('show-full-dashboard');
+      const toggle = dashboard.querySelector('[data-toggle-pro-dashboard]');
+      if (toggle) {
+        toggle.setAttribute('aria-expanded', 'true');
+        toggle.textContent = '🧾 Voltar para pedidos';
+      }
+    };
+
+    const activate = (hash) => {
+      links.forEach((link) => link.classList.toggle('active', link.hash === hash));
+    };
+
+    links.forEach((link) => {
+      link.addEventListener('click', () => {
+        openFullDashboard();
+        activate(link.hash);
+        document.body.classList.remove('menu-open');
+      });
+    });
+
+    if (window.location.hash) activate(window.location.hash);
+    window.addEventListener('hashchange', () => activate(window.location.hash));
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPanelMenu);
+  } else {
+    initPanelMenu();
+  }
 })();
