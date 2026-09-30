@@ -13,6 +13,7 @@
 <a href="#horarios">🕒 Horários e situação</a>
 <a href="#relatorios">📈 Relatórios</a>
 <a href="#pedidos">🧾 Pedidos</a>
+<a href="#promocoes">🔥 Promoções do dia</a>
 <a href="#mais-pedidos">🏆 Mais pedidos</a>
 <a href="#identidade">🖼 Foto e capa</a>
 <a href="#perfil">✏️ Editar perfil</a>
@@ -23,6 +24,8 @@
 <main>
 {% if request.query_params.get('ok') %}<div class="alert success">Alterações salvas com sucesso.</div>{% endif %}
 {% if request.query_params.get('erro')=='limite-promocoes' %}<div class="alert">Você já atingiu o limite de 3 produtos em promoção. Retire um destaque antes de adicionar outro.</div>{% endif %}
+{% if request.query_params.get('erro')=='limite-ofertas' %}<div class="alert">Você já publicou as 2 promoções permitidas hoje. Amanhã o limite será liberado novamente.</div>{% endif %}
+{% if request.query_params.get('erro')=='assinatura' %}<div class="alert">As Promoções do dia são exclusivas para empresas com mensalidade ativa.</div>{% endif %}
 <div class="pro-panel-switcher">
 <div><span class="kicker">Central de atendimento</span><h1>Pedidos</h1><p>Receba, aceite e acompanhe os pedidos em uma tela mais limpa.</p></div>
 <div class="row"><a class="btn soft" href="/p/{{pro.slug}}" target="_blank">Ver minha loja</a><button class="btn primary" type="button" data-toggle-pro-dashboard aria-expanded="false">📊 Ver todos os relatórios</button></div>
@@ -83,6 +86,13 @@
 <b>{{photos|length}}/{{max_photos}}</b>
 <small>Fotos publicadas</small>
 </div>
+</section>
+<section class="panel pro-promotions" id="promocoes">
+<div class="section-title"><div><span class="kicker">Vitrine pública da cidade</span><h2>🔥 Promoções do dia</h2><p>As ofertas aparecem na página inicial para todos e ficam ativas por 24 horas.</p></div><span class="status-pill {% if pro.is_subscriber %}ok{% endif %}">{{'Plano ativo' if pro.is_subscriber else 'Exclusivo para assinantes'}}</span></div>
+{% if pro.is_subscriber %}<div class="promotion-quota"><b>{{2-promotions_today if promotions_today<2 else 0}}</b><span>publicação(ões) disponível(is) hoje</span></div>
+{% if promotions_today<2 %}<form action="/painel/promocoes" method="post" enctype="multipart/form-data" class="promotion-create-form"><label>Foto da promoção<input class="input" type="file" name="image" accept="image/jpeg,image/png,image/webp" required><small>Use uma arte quadrada de 1080 × 1080 feita no Canva.</small></label><label>Título da oferta<input class="input" name="title" maxlength="90" placeholder="Ex.: Combo especial por R$ 29,90" required></label><label class="full">Descrição curta<textarea name="description" maxlength="220" placeholder="Condições, validade ou informações importantes"></textarea></label><button class="btn primary">Publicar promoção por 24 horas</button></form>{% endif %}
+{% else %}<div class="subscriber-lock"><span>🔒</span><div><b>Ative a mensalidade para anunciar na página inicial</b><p>Empresas assinantes podem publicar duas fotos de promoções por dia.</p></div>{% if support_link!='#' %}<a class="btn primary" href="{{support_link}}" target="_blank" rel="noopener">Falar com a NowUp</a>{% endif %}</div>{% endif %}
+<div class="promotion-admin-grid">{% for offer in daily_promotions %}<article class="promotion-admin-card {{'expired' if offer.expires_at<=now_utc or not offer.active else ''}}"><img src="/uploads/{{offer.image_filename}}" alt=""><div><b>{{offer.title}}</b><small>{% if not offer.active %}Removida pelo administrador{% elif offer.expires_at<=now_utc %}Finalizada após 24 horas{% else %}Ativa por 24 horas{% endif %}</small><form action="/painel/promocoes/{{offer.id}}/excluir" method="post"><button class="btn danger tiny">Excluir</button></form></div></article>{% else %}<p class="muted">Você ainda não publicou nenhuma promoção diária.</p>{% endfor %}</div>
 </section>
 <section class="panel hours-panel" id="horarios">
 <div class="section-title"><div><span class="kicker">Relógio real de São Paulo</span><h2>Horários e situação da loja</h2></div><span class="status-pill {% if shop_status.open %}ok{% endif %}">{{shop_status.label}}</span></div>

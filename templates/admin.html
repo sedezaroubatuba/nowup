@@ -8,6 +8,7 @@
 <a href="#aparencia">Aparência</a>
 <a href="#categorias">Categorias</a>
 <a href="#publicidade">Publicidade</a>
+<a href="#promocoes">Promoções do dia</a>
 <a href="#cadastro-rapido">Criar perfil fictício</a>
 <a href="#profissionais">Perfis</a>
 <a href="#clientes">Clientes</a>
@@ -39,7 +40,12 @@
 <span class="muted tiny">Cliques WhatsApp</span>
 <b>{{stats.wa}}</b>
 </div>
+<div class="stat"><span class="muted tiny">Promoções ativas</span><b>{{stats.promotions}}</b></div>
 </div>
+</section>
+<section class="panel" id="promocoes">
+<div class="section-title"><div><h2>Promoções publicadas pelas empresas</h2><p class="muted">Controle as ofertas públicas de 24 horas. Você pode ocultar uma publicação e reativá-la enquanto ainda estiver dentro do prazo.</p></div><span class="status-pill ok">{{stats.promotions}} ativa(s)</span></div>
+<div class="admin-promotion-grid">{% for offer in daily_promotions %}<article class="admin-promotion-card {{'expired' if offer.expires_at<=now_utc or not offer.active else ''}}"><img src="/uploads/{{offer.image_filename}}" alt="{{offer.title}}"><div><small>{{offer.display_name}}</small><h3>{{offer.title}}</h3>{% if offer.description %}<p>{{offer.description}}</p>{% endif %}<span class="status-pill {% if offer.active and offer.expires_at>now_utc %}ok{% endif %}">{% if not offer.active %}Oculta{% elif offer.expires_at<=now_utc %}Expirada{% else %}Pública{% endif %}</span><div class="row"><a class="btn soft tiny" href="/p/{{offer.slug}}" target="_blank">Ver empresa</a><form action="/admin/promocoes/{{offer.id}}/alternar" method="post"><button class="btn {% if offer.active %}danger{% else %}soft{% endif %} tiny">{{'Ocultar' if offer.active else 'Reativar'}}</button></form></div></div></article>{% else %}<p class="muted">Nenhuma promoção foi publicada.</p>{% endfor %}</div>
 </section>
 <section class="panel" id="perfil">
 <div class="section-title">
@@ -377,7 +383,7 @@
 <a class="tiny" href="/p/{{p.slug}}">Ver perfil público</a>
 </td>
 <td>{{'Sim' if p.email_verified else 'Pendente'}}</td>
-<td>Verificado: {{'Sim' if p.verified else 'Não'}}<br>Destaque: {{'Sim' if p.featured else 'Não'}}<br>No slide: {{'Sim' if p.in_slider else 'Não'}}<br>Bloqueado: {{'Sim' if p.blocked else 'Não'}}</td>
+<td>Mensalidade: {{'Ativa' if p.is_subscriber else 'Inativa'}}<br>Verificado: {{'Sim' if p.verified else 'Não'}}<br>Destaque: {{'Sim' if p.featured else 'Não'}}<br>No slide: {{'Sim' if p.in_slider else 'Não'}}<br>Bloqueado: {{'Sim' if p.blocked else 'Não'}}</td>
 <td>
 <div class="row">
 <form action="/admin/profissionais/{{p.id}}/acao/verificar" method="post">
@@ -389,6 +395,7 @@
 <form action="/admin/profissionais/{{p.id}}/acao/slide" method="post">
 <button class="btn soft tiny">Slide</button>
 </form>
+<form action="/admin/profissionais/{{p.id}}/acao/assinante" method="post"><button class="btn {% if p.is_subscriber %}orange{% else %}soft{% endif %} tiny">{{'Desativar mensalidade' if p.is_subscriber else 'Ativar mensalidade'}}</button></form>
 <form action="/admin/profissionais/{{p.id}}/acao/bloquear" method="post">
 <button class="btn {% if p.blocked %}soft{% else %}danger{% endif %} tiny">{{'Reativar' if p.blocked else 'Pausar/bloquear'}}</button>
 </form>
