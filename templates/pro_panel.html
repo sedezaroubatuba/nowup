@@ -23,6 +23,10 @@
 <main>
 {% if request.query_params.get('ok') %}<div class="alert success">Alterações salvas com sucesso.</div>{% endif %}
 {% if request.query_params.get('erro')=='limite-promocoes' %}<div class="alert">Você já atingiu o limite de 3 produtos em promoção. Retire um destaque antes de adicionar outro.</div>{% endif %}
+<div class="pro-panel-switcher">
+<div><span class="kicker">Central de atendimento</span><h1>Pedidos</h1><p>Receba, aceite e acompanhe os pedidos em uma tela mais limpa.</p></div>
+<div class="row"><a class="btn soft" href="/p/{{pro.slug}}" target="_blank">Ver minha loja</a><button class="btn primary" type="button" data-toggle-pro-dashboard aria-expanded="false">📊 Ver todos os relatórios</button></div>
+</div>
 <div class="order-alert-control" data-order-alerts data-latest-order-id="{{latest_order_id}}">
 <button class="btn order-alert-enable" type="button" data-enable-order-alerts>🔔 Ativar alertas de pedidos</button>
 <small data-alert-status>Ative para ouvir um toque forte quando chegar um pedido novo.</small>
@@ -31,6 +35,13 @@
 <div><b>🔔 Novo pedido recebido!</b><span data-new-order-message>Abra a central de pedidos para conferir.</span></div>
 <button class="btn" type="button" data-open-new-order>Ver pedido</button>
 </div>
+{% set active_statuses=['new','confirmed','preparing','ready','out_for_delivery'] %}{% set ns=namespace(count=0) %}{% for order in orders %}{% if order.status in active_statuses %}{% set ns.count=ns.count+1 %}{% endif %}{% endfor %}
+{% if ns.count %}<section class="panel active-orders-inbox" id="pedidos-ativos">
+<div class="active-orders-title"><div><span class="kicker">Pedidos em andamento</span><h2>Caixa de pedidos</h2><p>Os pedidos permanecem aqui até serem finalizados, cancelados ou recusados.</p></div><span class="active-orders-count">{{ns.count}}</span></div>
+<div class="active-orders-list">{% for order in orders if order.status in active_statuses %}<article class="active-order-row status-{{order.status}}">
+<a class="active-order-main" href="#pedido-{{order.id}}"><span class="active-order-avatar">{{(order.customer_name or 'C')[:1]|upper}}</span><span><b>{{order.customer_name or 'Cliente'}}</b><small>{{order.order_code or ('Pedido #' ~ order.id)}} · {{order.created_at[11:16]}} · {{order.item_count}} item(ns)</small><em>{% if order.status=='new' %}Aguardando confirmação{% elif order.status=='confirmed' %}Pedido aceito{% elif order.status=='preparing' %}Em preparo{% elif order.status=='ready' %}Pronto{% else %}Saiu para entrega{% endif %}</em></span><strong>R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</strong></a>
+<div class="active-order-actions">{% if order.status=='new' %}<form action="/painel/pedidos/{{order.id}}/status" method="post"><input type="hidden" name="status" value="confirmed"><button class="btn primary">✓ Aceitar pedido</button></form><form action="/painel/pedidos/{{order.id}}/status" method="post"><input type="hidden" name="status" value="rejected"><button class="btn danger">Recusar</button></form>{% else %}<a class="btn soft" href="#pedido-{{order.id}}">Ver e atualizar</a>{% endif %}{% if order.customer_phone %}<a class="btn whatsapp" href="https://wa.me/55{{order.customer_phone|replace(' ','')|replace('(','')|replace(')','')|replace('-','')}}" target="_blank" rel="noopener">WhatsApp</a>{% endif %}</div>
+</article>{% endfor %}</div></section>{% endif %}
 <section class="panel pro-welcome" id="resumo">
 <div>
 <span class="kicker">Central do profissional</span>
@@ -276,13 +287,13 @@
 <b>{{order_summary.completed or 0}}</b>
 </article>
 </div>
-<div class="orders-list">{% for order in orders %}<article class="order-card {% if order.status in ['new','confirmed','preparing','ready','out_for_delivery'] %}active-order-card{% endif %}" data-order-status="{{order.status}}">
+<div class="orders-list">{% for order in orders %}<article id="pedido-{{order.id}}" class="order-card {% if order.status in ['new','confirmed','preparing','ready','out_for_delivery'] %}active-order-card{% endif %}" data-order-status="{{order.status}}">
 <div class="order-head">
 <div>
 <b>Pedido {{order.order_code or ('#' ~ order.id)}}</b>
 <small>{{order.created_at[:16]|replace('T',' ')}} · {{order.customer_name or 'Cliente não informado'}}</small>
 </div>
-<strong>R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</strong>
+<div class="order-head-status"><strong>R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</strong><span class="order-status-badge status-{{order.status}}">{% if order.status=='new' %}● Novo{% elif order.status=='confirmed' %}✓ Aceito{% elif order.status=='preparing' %}◷ Em preparo{% elif order.status=='ready' %}✓ Pronto{% elif order.status=='out_for_delivery' %}➜ Saiu para entrega{% elif order.status=='completed' %}✓ Finalizado{% elif order.status=='cancelled' %}× Cancelado{% else %}× Recusado{% endif %}</span></div>
 </div>
 <div class="order-info">
 <span>📦 {{order.item_count}} item(ns)</span>
@@ -536,5 +547,5 @@
 </section>{% endif %}
 </main>
 </div>
-<script src="/static/pro-panel-menu.js?v=25"></script><script src="/static/order-alerts.js?v=27"></script>
+<script src="/static/pro-panel-menu.js?v=25"></script><script src="/static/order-alerts.js?v=28"></script><script src="/static/pro-panel-view.js?v=31"></script>
 {% endblock %}
