@@ -214,7 +214,7 @@ def require_user(request: Request, role: Optional[str]=None):
 def context(request: Request, **kwargs):
     conn = db()
     cats = conn.execute("SELECT * FROM categories WHERE active=1 ORDER BY sort_order,name").fetchall()
-    banners = conn.execute("SELECT * FROM banners WHERE active=1 AND image_filename!='' ORDER BY sort_order,id LIMIT 10").fetchall()
+    banners = conn.execute("SELECT * FROM banners WHERE active=1 AND image_filename!='' ORDER BY sort_order,id LIMIT 3").fetchall()
     business_slides = conn.execute("SELECT id,slug,display_name,slide_image_filename FROM professionals WHERE blocked=0 AND in_slider=1 AND slide_image_filename!='' ORDER BY id DESC LIMIT 10").fetchall()
     settings = get_settings(conn)
     conn.close()
@@ -362,6 +362,12 @@ def init_db():
       ON analytics_events(professional_id,created_at);
     CREATE INDEX IF NOT EXISTS idx_analytics_type
       ON analytics_events(event_type);
+    CREATE TABLE IF NOT EXISTS daily_home_visits(
+      visit_date TEXT NOT NULL,
+      visitor_key TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY(visit_date,visitor_key)
+    );
     CREATE TABLE IF NOT EXISTS orders(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       professional_id INTEGER NOT NULL REFERENCES professionals(id) ON DELETE CASCADE,
@@ -619,6 +625,11 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
         params.append(category)
     if business_type in ("professional","restaurant","store","convenience","other"):
         where.append("p.business_type=?"); params.append(business_type)
+    visitor_key=request.cookies.get("nowup_visitor") or secrets.token_urlsafe(18)
+    visit_date=datetime.now(SAO_PAULO_TZ).date().isoformat()
+    conn.execute("INSERT OR IGNORE INTO daily_home_visits(visit_date,visitor_key,created_at) VALUES(?,?,?)",(visit_date,visitor_key,now_iso()))
+    conn.commit()
+    people_today=conn.execute("SELECT COUNT(*) FROM daily_home_visits WHERE visit_date=?",(visit_date,)).fetchone()[0]
     rows = conn.execute(f"""
       SELECT p.*, u.name as owner_name,
        COALESCE((SELECT ROUND(AVG(stars),1) FROM reviews r WHERE r.professional_id=p.id),0) rating,
@@ -641,7 +652,10 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
     offers=[r for r in rows if r["featured"]]
     recommended=[r for r in rows if r["business_type"]!="restaurant"]
     conn.close()
-    return templates.TemplateResponse("home.html", context(request, professionals=rows, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities))
+    response=templates.TemplateResponse("home.html", context(request, professionals=rows, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today))
+    if not request.cookies.get("nowup_visitor"):
+        response.set_cookie("nowup_visitor",visitor_key,max_age=31536000,httponly=True,samesite="lax",secure=request.url.scheme=="https")
+    return response
 
 @app.get("/profissionais", response_class=HTMLResponse)
 def professionals(request: Request, category: str="", city: str="", neighborhood: str="", cep: str="", q: str="", business_type: str=""):
@@ -694,7 +708,7 @@ def native_menu(request: Request, slug: str):
       WHERE pr.professional_id=? AND pr.available=1
       AND (NOT EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category))
         OR EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) AND pc.active=1))
-      ORDER BY pr.featured DESC,pr.category,pr.sort_order,pr.id DESC""",(p["id"],)).fetchall()
+      ORDER BY pr.category,pr.sort_order,pr.id DESC""",(p["id"],)).fetchall()
     menu_categories=[]
     for product in products:
         category=(product["category"] or "Geral").strip() or "Geral"
@@ -706,12 +720,10 @@ def native_menu(request: Request, slug: str):
     conn.execute("UPDATE professionals SET menu_clicks=menu_clicks+1 WHERE id=?",(p["id"],))
     conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"menu_click",now_iso())); conn.commit(); conn.close()
     status=shop_status(p)
-    direct_whatsapp=wa_link(p["whatsapp"],p["whatsapp_message"] or "Olá! Vi seu cardápio no NowUp e gostaria de fazer um pedido pelo WhatsApp.")
-    return templates.TemplateResponse("menu.html", context(request, pro=p, products=products, product_options=product_options, menu_categories=menu_categories, shop_status=status, direct_whatsapp=direct_whatsapp))
+    return templates.TemplateResponse("menu.html", context(request, pro=p, products=products, product_options=product_options, menu_categories=menu_categories, shop_status=status))
 
 @app.post("/p/{slug}/menu/pedido")
 def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...)):
-    logged=require_user(request,"customer")
     conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404)
     if not shop_status(p)["open"]: conn.close(); return RedirectResponse(f"/p/{slug}/menu?fechado=1",303)
@@ -742,7 +754,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
     payment_labels={"pix":"Pix","cash":"Dinheiro","credit":"Cartão de crédito","debit":"Cartão de débito","on_delivery":"Combinar no atendimento"}
     payment_method=payment_method if payment_method in payment_labels else "pix"
     change_for_cents=price_to_cents(change_for) if payment_method=="cash" and change_for.strip() else 0
-    customer_id=logged["id"]
+    logged=current_user(request); customer_id=logged["id"] if logged and logged["role"]=="customer" else None
     created=now_iso(); tracking_token=secrets.token_urlsafe(24)
     cur=conn.execute("""INSERT INTO orders(professional_id,customer_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at,subtotal_cents,delivery_fee_cents,neighborhood,address_reference,change_for_cents,tracking_token)
       VALUES(?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?)""",(p["id"],customer_id,customer_name.strip()[:120],customer_phone.strip()[:30],fulfillment_type,address.strip()[:300],notes.strip()[:500],"new",total,created,created,subtotal,delivery_fee,neighborhood.strip()[:120],address_reference.strip()[:220],change_for_cents,tracking_token))
@@ -1043,7 +1055,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     settings=get_settings(conn); support_link=wa_link(settings.get("support_whatsapp",""),"Olá! Sou profissional cadastrado na NowUp e preciso de ajuda com meu painel.")
     profile_fields=[p["display_name"],p["whatsapp"],p["description"],p["services"],p["city"],p["neighborhood"],p["avatar_filename"],p["cover_filename"],p["service_area"],p["opening_hours"]]
     profile_completion=round(sum(bool(str(v or "").strip()) for v in profile_fields)*100/len(profile_fields))
-    order_where=["o.professional_id=?", "(o.status IN ('new','confirmed','preparing','ready','out_for_delivery') OR date(o.created_at) BETWEEN ? AND ?)"]
+    order_where=["o.professional_id=?", "date(o.created_at) BETWEEN ? AND ?"]
     order_params=[p["id"],start.isoformat(),end.isoformat()]
     allowed_order_status={"new","confirmed","preparing","ready","out_for_delivery","completed","cancelled","rejected"}
     if pedido_status in allowed_order_status:
@@ -1052,7 +1064,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
         pedido_status="todos"
     orders=conn.execute(f"""SELECT o.*,
       COALESCE((SELECT SUM(oi.quantity) FROM order_items oi WHERE oi.order_id=o.id),0) item_count
-      FROM orders o WHERE {' AND '.join(order_where)} ORDER BY CASE WHEN o.status IN ('new','confirmed','preparing','ready','out_for_delivery') THEN 0 ELSE 1 END,o.id DESC LIMIT 100""",order_params).fetchall()
+      FROM orders o WHERE {' AND '.join(order_where)} ORDER BY o.id DESC LIMIT 100""",order_params).fetchall()
     order_items_by_order={}
     order_item_options={}
     if orders:
@@ -1088,11 +1100,8 @@ def pro_new_orders(request: Request, after: int=0):
     rows=conn.execute("""SELECT id,customer_name,total_cents,created_at FROM orders
       WHERE professional_id=? AND id>? ORDER BY id ASC LIMIT 10""",(p["id"],max(0,after))).fetchall()
     latest=conn.execute("SELECT COALESCE(MAX(id),0) FROM orders WHERE professional_id=?",(p["id"],)).fetchone()[0]
-    pending=conn.execute("""SELECT id,customer_name,total_cents,created_at FROM orders
-      WHERE professional_id=? AND status='new' ORDER BY id DESC LIMIT 1""",(p["id"],)).fetchone()
-    pending_count=conn.execute("SELECT COUNT(*) FROM orders WHERE professional_id=? AND status='new'",(p["id"],)).fetchone()[0]
     conn.close()
-    return JSONResponse({"latest_id":latest,"orders":[{"id":r["id"],"customer_name":r["customer_name"] or "Cliente","total_cents":r["total_cents"],"created_at":r["created_at"]} for r in rows],"pending_count":pending_count,"pending_order":{"id":pending["id"],"customer_name":pending["customer_name"] or "Cliente","total_cents":pending["total_cents"]} if pending else None})
+    return JSONResponse({"latest_id":latest,"orders":[{"id":r["id"],"customer_name":r["customer_name"] or "Cliente","total_cents":r["total_cents"],"created_at":r["created_at"]} for r in rows]})
 
 def price_to_cents(raw: str):
     value=(raw or "0").strip().replace("R$","").replace(" ","")
@@ -1130,8 +1139,6 @@ def pro_menu_category_delete(request: Request, category_id: int):
 @app.post("/painel/cardapio/produtos")
 def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None)):
     u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone(); fn=""
-    if featured and conn.execute("SELECT COUNT(*) FROM products WHERE professional_id=? AND featured=1",(p["id"],)).fetchone()[0] >= 3:
-        conn.close(); return RedirectResponse("/painel?erro=limite-promocoes#cardapio",303)
     if photo and photo.filename: fn=save_image(photo)
     created=now_iso(); conn.execute("INSERT INTO products(professional_id,name,description,category,price_cents,image_filename,available,created_at,updated_at,promo_price_cents,featured,max_quantity) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",(p["id"],name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,created,created,price_to_cents(promo_price) if promo_price.strip() else 0,1 if featured else 0,max(1,min(99,max_quantity))))
     conn.commit(); conn.close(); return RedirectResponse("/painel?ok=produto#cardapio",303)
@@ -1140,8 +1147,6 @@ def pro_product_add(request: Request, name: str=Form(...), description: str=Form
 def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None)):
     u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone(); product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=?",(product_id,p["id"])).fetchone()
     if not product: conn.close(); raise HTTPException(404)
-    if featured and not product["featured"] and conn.execute("SELECT COUNT(*) FROM products WHERE professional_id=? AND featured=1 AND id!=?",(p["id"],product_id)).fetchone()[0] >= 3:
-        conn.close(); return RedirectResponse("/painel?erro=limite-promocoes#cardapio",303)
     fn=product["image_filename"]
     if photo and photo.filename:
         new_fn=save_image(photo)
