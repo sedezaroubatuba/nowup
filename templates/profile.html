@@ -6,15 +6,17 @@
 <div class="profile-avatar">{% if pro.avatar_filename %}<img src="/uploads/{{pro.avatar_filename}}" alt="{{pro.display_name}}">{% else %}🏪{% endif %}</div>
 <div class="profile-heading">
 <div class="row">
-<h1>{{pro.display_name}}</h1>{% if pro.verified %}<span class="badge green">✓ Verificado</span>{% endif %}{% if pro.featured %}<span class="badge orange">Destaque</span>{% endif %}{% if pro.business_status=='open' %}<span class="badge green">● Atendendo</span>{% elif pro.business_status=='vacation' %}<span class="badge orange">Em férias</span>{% else %}<span class="badge">Fechado temporariamente</span>{% endif %}</div>
+<h1>{{pro.display_name}}</h1>{% if pro.verified %}<span class="badge green">✓ Verificado</span>{% endif %}{% if pro.featured %}<span class="badge orange">Destaque</span>{% endif %}<span class="badge {% if shop_status.open %}green{% else %}orange{% endif %}">● {{shop_status.label}}</span></div>
 <div class="stars">★ {{pro.rating}} <span class="muted">({{pro.review_count}} elogios e avaliações)</span>
 </div>
 <p class="muted">📍 {{pro.city}}{% if pro.neighborhood %} · {{pro.neighborhood}}{% endif %}</p>
 </div>
-<div class="profile-cta">
-<form action="/p/{{pro.slug}}/whatsapp" method="post">
-<button class="btn orange">Chamar no WhatsApp</button>
-</form>{% if product_count %}<a class="btn primary" href="/p/{{pro.slug}}/menu">Ver cardápio e pedir</a>{% endif %}{% if pro.menu_url %}<a class="btn soft" href="/p/{{pro.slug}}/cardapio" target="_blank" rel="noopener">Cardápio externo</a>{% endif %}{% if pro.instagram_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/instagram" target="_blank" rel="noopener">Instagram</a>{% endif %}{% if pro.facebook_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/facebook" target="_blank" rel="noopener">Facebook</a>{% endif %}{% if pro.website_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/site" target="_blank" rel="noopener">Site</a>{% endif %}{% if pro.external_url %}<a class="btn soft" href="/p/{{pro.slug}}/link" target="_blank" rel="noopener">Outro link</a>{% endif %}</div>
+<div class="profile-cta profile-primary-actions">
+{% if pro.address and not pro.hide_address %}<a class="btn soft" href="https://www.google.com/maps/search/?api=1&query={{pro.address|urlencode}}" target="_blank" rel="noopener">📍 Como chegar</a>{% else %}<span class="btn soft disabled">📍 Como chegar</span>{% endif %}
+<form action="/p/{{pro.slug}}/whatsapp" method="post"><button class="btn orange">💬 WhatsApp</button></form>
+<a class="btn primary" href="tel:{{pro.whatsapp}}">📞 Ligar</a>
+</div>
+<div class="profile-extra-actions">{% if product_count %}<a class="btn primary" href="/p/{{pro.slug}}/menu">Ver cardápio e pedir</a>{% endif %}{% if pro.menu_url %}<a class="btn soft" href="/p/{{pro.slug}}/cardapio" target="_blank" rel="noopener">Cardápio externo</a>{% endif %}{% if pro.instagram_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/instagram" target="_blank" rel="noopener">Instagram</a>{% endif %}{% if pro.facebook_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/facebook" target="_blank" rel="noopener">Facebook</a>{% endif %}{% if pro.website_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/site" target="_blank" rel="noopener">Site</a>{% endif %}{% if pro.external_url %}<a class="btn soft" href="/p/{{pro.slug}}/link" target="_blank" rel="noopener">Outro link</a>{% endif %}</div>
 </div>
 </section>
 <section class="section">
@@ -32,14 +34,14 @@
 <div>{% for c in pro_categories %}<span class="badge">{{c.icon}} {{c.name}}</span> {% endfor %}</div>
 </div>
 <div class="panel" id="fotos">
-<h3>Galeria</h3>
-<div class="gallery">{% for ph in photos %}<img src="/uploads/{{ph.filename}}" alt="{{ph.caption}}">{% else %}<p class="muted">Nenhuma foto publicada.</p>{% endfor %}</div>
+<h3>Fotos</h3>
+<div class="gallery">{% for ph in photos %}<img src="/uploads/{{ph.filename}}" alt="{{ph.caption}}">{% endfor %}{% for i in range(3 - photos|length) %}<div class="photo-placeholder">Foto em breve</div>{% endfor %}</div>
 </div>
 <div class="panel" id="publicacoes">
 <h3>Publicações</h3>{% for po in posts %}<article class="post">
 <p>{{po.text}}</p>{% if po.photo_filename %}<img class="postimg" src="/uploads/{{po.photo_filename}}">{% endif %}</article>{% else %}<p class="muted">Ainda sem publicações.</p>{% endfor %}</div>
 <div class="panel" id="avaliacoes">
-<h3>Elogios e avaliações</h3>{% if user and user.role=='customer' %}<form action="/p/{{pro.slug}}/avaliar" method="post" class="grid2">
+<h3>Elogios e avaliações <span class="rating-trust">★ {{pro.rating}} · {{pro.review_count}} {{'avaliação' if pro.review_count == 1 else 'avaliações'}}</span></h3>{% if user and user.role=='customer' %}<form action="/p/{{pro.slug}}/avaliar" method="post" class="grid2">
 <select name="stars">
 <option value="5">★★★★★ — 5</option>
 <option value="4">★★★★ — 4</option>
@@ -61,9 +63,9 @@
 <h3>Serviços</h3>
 <p>{{pro.services or 'Consulte diretamente pelo WhatsApp.'}}</p>{% if pro.service_area %}<p>
 <b>Área atendida:</b>
-<br>{{pro.service_area}}</p>{% endif %}{% if pro.opening_hours %}<p>
+<br>{{pro.service_area}}</p>{% endif %}{% if hours_lines %}<p>
 <b>Horários:</b>
-<br>{{pro.opening_hours}}</p>{% endif %}{% if pro.address and not pro.hide_address %}<p>
+{% for line in hours_lines %}<br>{{line}}{% endfor %}</p>{% elif pro.opening_hours %}<p><b>Horários:</b><br>{{pro.opening_hours}}</p>{% endif %}{% if pro.address and not pro.hide_address %}<p>
 <b>Endereço:</b>
 <br>{{pro.address}}{% if pro.cep %} · CEP {{pro.cep}}{% endif %}</p>{% endif %}<form action="/p/{{pro.slug}}/whatsapp" method="post">
 <button class="btn orange full-btn">WhatsApp</button>
