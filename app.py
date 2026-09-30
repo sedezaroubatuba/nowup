@@ -1,5 +1,5 @@
 from __future__ import annotations
-import os, re, io, hmac, hashlib, secrets, sqlite3, unicodedata, json
+import os, re, io, hmac, hashlib, secrets, sqlite3, unicodedata, json, shutil
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from pathlib import Path
@@ -647,6 +647,43 @@ def init_db():
                 conn.execute("INSERT INTO photos(professional_id,filename,caption,is_cover,created_at) SELECT ?,?,?,1,? WHERE NOT EXISTS(SELECT 1 FROM photos WHERE professional_id=?)",(pro["id"],image,name,created,pro["id"]))
                 conn.execute("INSERT INTO daily_promotions(professional_id,title,description,image_filename,created_day,created_at,expires_at,active) VALUES(?,?,?,?,?,?,?,1)",(pro["id"],title,description,image,day,created,expires))
         conn.execute("INSERT INTO site_settings(key,value) VALUES('v35_demo_home_ready','1')")
+    # V38: troca as artes simples por fotografias profissionais e acrescenta
+    # dois perfis coloridos. Roda uma única vez e tudo continua removível no ADM.
+    demo_visuals_ready=conn.execute("SELECT value FROM site_settings WHERE key='v38_demo_visuals_ready'").fetchone()
+    if not demo_visuals_ready:
+        demo_source=BASE/"static"/"demo"
+        visual_map={
+          "v35-demo-0@nowup.local":"demo-quiosque-pro.png",
+          "v35-demo-1@nowup.local":"demo-pizzaria-pro.png",
+          "v35-demo-2@nowup.local":"demo-burger-pro.png",
+          "v35-demo-3@nowup.local":"demo-quiosque-pro.png",
+        }
+        for email,filename in visual_map.items():
+            source=demo_source/filename; target=UPLOAD_DIR/filename
+            if source.exists() and not target.exists(): shutil.copyfile(source,target)
+            row=conn.execute("SELECT p.id FROM professionals p JOIN users u ON u.id=p.user_id WHERE u.email=?",(email,)).fetchone()
+            if row:
+                conn.execute("UPDATE professionals SET avatar_filename=?,cover_filename=?,featured_image_filename=? WHERE id=?",(filename,filename,filename,row["id"]))
+                conn.execute("UPDATE photos SET filename=? WHERE professional_id=?",(filename,row["id"]))
+                conn.execute("UPDATE daily_promotions SET image_filename=? WHERE professional_id=?",(filename,row["id"]))
+        extra_demos=[
+          ("Pet Mar Ubatuba","Itaguá","Banho, tosa, acessórios e cuidados para pets","other","demo-petshop-pro.png","Dia de beleza pet","Banho e hidratação com condição especial hoje"),
+          ("Barbearia Costa Azul","Centro","Cortes masculinos, barba e acabamento premium","professional","demo-barbearia-pro.png","Visual renovado","Corte e barba com atendimento agendado"),
+        ]
+        created=now_iso(); day=datetime.now(SAO_PAULO_TZ).date().isoformat(); expires="2036-12-31T23:59:59+00:00"
+        for idx,(name,neighborhood,services,business_type,image,title,description) in enumerate(extra_demos):
+            source=demo_source/image; target=UPLOAD_DIR/image
+            if source.exists() and not target.exists(): shutil.copyfile(source,target)
+            email=f"v38-demo-{idx}@nowup.local"
+            conn.execute("INSERT OR IGNORE INTO users(role,name,email,phone,password_hash,is_active,email_verified,created_at) VALUES('professional',?,?,?,?,1,1,?)",(name,email,"12999990000",hash_password(secrets.token_urlsafe(24)),created))
+            user_row=conn.execute("SELECT id FROM users WHERE email=?",(email,)).fetchone(); slug=slugify(name)+"-demonstracao"
+            conn.execute("""INSERT OR IGNORE INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,address,description,services,business_type,verified,featured,blocked,avatar_filename,cover_filename,featured_image_filename,is_demo,is_subscriber,created_at)
+                            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",(user_row["id"],slug,name,"CNPJ","","12999990000","Ubatuba",neighborhood,"","Ubatuba - SP","Perfil fictício para demonstração visual da NowUp.",services,business_type,1,1,0,image,image,image,1,1,created))
+            pro=conn.execute("SELECT id FROM professionals WHERE user_id=?",(user_row["id"],)).fetchone()
+            if pro:
+                conn.execute("INSERT INTO photos(professional_id,filename,caption,is_cover,created_at) SELECT ?,?,?,1,? WHERE NOT EXISTS(SELECT 1 FROM photos WHERE professional_id=?)",(pro["id"],image,name,created,pro["id"]))
+                if not conn.execute("SELECT 1 FROM daily_promotions WHERE professional_id=?",(pro["id"],)).fetchone(): conn.execute("INSERT INTO daily_promotions(professional_id,title,description,image_filename,created_day,created_at,expires_at,active) VALUES(?,?,?,?,?,?,?,1)",(pro["id"],title,description,image,day,created,expires))
+        conn.execute("INSERT INTO site_settings(key,value) VALUES('v38_demo_visuals_ready','1')")
     conn.commit(); conn.close()
 
 @app.on_event("startup")
