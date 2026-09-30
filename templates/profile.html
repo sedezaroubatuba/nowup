@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% block title %}{{pro.display_name}} | NowUp{% endblock %}{% block content %}
+{% extends 'base.html' %}{% block title %}{{pro.display_name}} | NowUp{% endblock %}{% block body_class %}public-profile-area{% endblock %}{% block content %}
 <section class="public-profile-hero">
 <div class="profile-cover" {% if pro.cover_filename %}style="background-image:url('/uploads/{{pro.cover_filename}}')"{% endif %}>
 </div>
