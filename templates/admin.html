@@ -45,7 +45,7 @@
 </section>
 <section class="panel" id="promocoes">
 <div class="section-title"><div><h2>Promoções publicadas pelas empresas</h2><p class="muted">Controle as ofertas públicas de 24 horas. Você pode ocultar uma publicação e reativá-la enquanto ainda estiver dentro do prazo.</p></div><span class="status-pill ok">{{stats.promotions}} ativa(s)</span></div>
-<div class="admin-promotion-grid">{% for offer in daily_promotions %}<article class="admin-promotion-card {{'expired' if offer.expires_at<=now_utc or not offer.active else ''}}"><img src="/uploads/{{offer.image_filename}}" alt="{{offer.title}}"><div><small>{{offer.display_name}}</small><h3>{{offer.title}}</h3>{% if offer.description %}<p>{{offer.description}}</p>{% endif %}<span class="status-pill {% if offer.active and offer.expires_at>now_utc %}ok{% endif %}">{% if not offer.active %}Oculta{% elif offer.expires_at<=now_utc %}Expirada{% else %}Pública{% endif %}</span><div class="row"><a class="btn soft tiny" href="/p/{{offer.slug}}" target="_blank">Ver empresa</a><form action="/admin/promocoes/{{offer.id}}/alternar" method="post"><button class="btn {% if offer.active %}danger{% else %}soft{% endif %} tiny">{{'Ocultar' if offer.active else 'Reativar'}}</button></form></div></div></article>{% else %}<p class="muted">Nenhuma promoção foi publicada.</p>{% endfor %}</div>
+<div class="admin-promotion-grid">{% for offer in daily_promotions %}<article class="admin-promotion-card {{'expired' if offer.expires_at<=now_utc or not offer.active else ''}}"><img src="/uploads/{{offer.image_filename}}" alt="{{offer.title}}"><div><small>{{offer.display_name}}</small><h3>{{offer.title}}</h3>{% if offer.description %}<p>{{offer.description}}</p>{% endif %}<span class="status-pill {% if offer.active and offer.expires_at>now_utc %}ok{% endif %}">{% if not offer.active %}Oculta{% elif offer.expires_at<=now_utc %}Expirada{% else %}Pública{% endif %}</span><div class="row"><a class="btn soft tiny" href="/p/{{offer.slug}}" target="_blank">Ver empresa</a><form action="/admin/promocoes/{{offer.id}}/alternar" method="post"><button class="btn {% if offer.active %}danger{% else %}soft{% endif %} tiny">{{'Ocultar' if offer.active else 'Reativar'}}</button></form><form action="/admin/promocoes/{{offer.id}}/excluir" method="post" onsubmit="return confirm('Apagar esta promoção definitivamente?')"><button class="btn danger tiny">Excluir</button></form></div></div></article>{% else %}<p class="muted">Nenhuma promoção foi publicada.</p>{% endfor %}</div>
 </section>
 <section class="panel" id="perfil">
 <div class="section-title">
@@ -399,6 +399,7 @@
 <form action="/admin/profissionais/{{p.id}}/acao/bloquear" method="post">
 <button class="btn {% if p.blocked %}soft{% else %}danger{% endif %} tiny">{{'Reativar' if p.blocked else 'Pausar/bloquear'}}</button>
 </form>
+{% if p.is_demo %}<form action="/admin/profissionais/{{p.id}}/excluir" method="post" onsubmit="return confirm('Apagar este perfil fictício e suas publicações?')"><button class="btn danger tiny">Excluir fictício</button></form>{% endif %}
 </div>
 </td>
 </tr>{% endfor %}</table>

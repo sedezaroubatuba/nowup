@@ -38,6 +38,13 @@
 <div><b>🔔 Novo pedido recebido!</b><span data-new-order-message>Abra a central de pedidos para conferir.</span></div>
 <button class="btn" type="button" data-open-new-order>Ver pedido</button>
 </div>
+<section class="v35-store-dashboard">
+<header class="v35-store-head"><a class="v35-logo" href="/">Now<span>Up</span><small>BRASIL</small></a><div class="v35-store-identity">{% if pro.avatar_filename %}<img src="/uploads/{{pro.avatar_filename}}" alt="">{% else %}<span>🏪</span>{% endif %}<div><h1>{{pro.display_name}}</h1><p>{{pro.services or 'Loja parceira NowUp'}} · {{pro.neighborhood or pro.city}}</p><b>⭐ {{pro.rating or '4,8'}} avaliações</b></div></div><div class="v35-open"><span>🏪 Loja aberta</span><i class="{% if shop_status.open %}on{% endif %}"></i></div></header>
+<div class="v35-stats"><article><span>🛍️</span><div><small>Pedidos hoje</small><b>{{order_summary.total or 0}}</b></div></article><article><span>📊</span><div><small>Vendas</small><b>R$ {{'%.2f'|format((order_summary.revenue_cents or 0)/100)|replace('.',',')}}</b></div></article><article><span>👁️</span><div><small>Visualizações</small><b>{{pro.views}}</b></div></article></div>
+<div class="v35-recent-title"><h2>Pedidos recentes</h2><a href="#pedidos">Ver todos ›</a></div>
+<div class="v35-recent-orders">{% for order in orders[:4] %}<article class="status-{{order.status}}"><span class="v35-order-avatar">{{(order.customer_name or 'C')[:1]|upper}}</span><div><b>{{order.customer_name or 'Cliente'}}</b><small>{{order.item_count}} item(ns) · {{order.created_at[11:16]}}</small></div><em>{% if order.status=='new' %}A confirmar{% elif order.status in ['confirmed','preparing','ready','out_for_delivery'] %}Pedido aceito{% else %}Concluído{% endif %}</em>{% if order.status=='new' %}<form action="/painel/pedidos/{{order.id}}/status" method="post"><input type="hidden" name="status" value="confirmed"><button>Aceitar pedido</button></form>{% else %}<a href="#pedido-{{order.id}}">›</a>{% endif %}</article>{% else %}<div class="v35-no-orders">Os próximos pedidos aparecerão aqui.</div>{% endfor %}</div>
+<h2 class="v35-actions-title">Ações rápidas</h2><div class="v35-actions"><a href="#cardapio"><span>🍴</span><b>Cardápio</b><small>Editar pratos</small></a><a href="#cardapio"><span>📦</span><b>Produtos</b><small>Gerenciar itens</small></a><a href="#promocoes"><span>🏷️</span><b>Promoções</b><small>Criar ofertas</small></a><a href="#horarios"><span>◷</span><b>Horários</b><small>Definir agenda</small></a><a href="#relatorios"><span>📊</span><b>Relatórios</b><small>Acompanhar vendas</small></a><a href="#perfil"><span>🏪</span><b>Perfil da loja</b><small>Editar informações</small></a></div>
+</section>
 {% set active_statuses=['new','confirmed','preparing','ready','out_for_delivery'] %}{% set ns=namespace(count=0) %}{% for order in orders %}{% if order.status in active_statuses %}{% set ns.count=ns.count+1 %}{% endif %}{% endfor %}
 {% if ns.count %}<section class="panel active-orders-inbox" id="pedidos-ativos">
 <div class="active-orders-title"><div><span class="kicker">Pedidos em andamento</span><h2>Caixa de pedidos</h2><p>Os pedidos permanecem aqui até serem finalizados, cancelados ou recusados.</p></div><span class="active-orders-count">{{ns.count}}</span></div>
@@ -115,13 +122,15 @@
 <details class="menu-settings" open><summary><b>⚙️ Entrega, retirada e pagamento</b></summary><form action="/painel/cardapio/configuracoes" method="post" class="product-form"><label>Taxa de entrega<input class="input" name="delivery_fee" value="{{'%.2f'|format(pro.delivery_fee_cents/100)|replace('.',',')}}" inputmode="decimal"></label><label>Pedido mínimo<input class="input" name="minimum_order" value="{{'%.2f'|format(pro.minimum_order_cents/100)|replace('.',',')}}" inputmode="decimal"></label><label>Tempo médio de preparo (minutos)<input class="input" type="number" min="5" max="240" name="prep_minutes" value="{{pro.prep_minutes}}"></label><label>Chave Pix<input class="input" name="pix_key" value="{{pro.pix_key}}" placeholder="Telefone, e-mail, CPF/CNPJ ou aleatória"></label><label class="check"><input type="checkbox" name="allows_delivery" value="1" {% if pro.allows_delivery %}checked{% endif %}> Aceitar entrega</label><label class="check"><input type="checkbox" name="allows_pickup" value="1" {% if pro.allows_pickup %}checked{% endif %}> Aceitar retirada</label><button class="btn primary">Salvar configurações</button></form></details>
 <div class="menu-category-manager">
 <h3>Categorias do cardápio</h3>
-<form action="/painel/cardapio/categorias" method="post" class="category-add-form">
+<form action="/painel/cardapio/categorias" method="post" enctype="multipart/form-data" class="category-add-form">
 <label>Nova categoria<input class="input" name="name" maxlength="80" placeholder="Ex.: Lanches, Bebidas, Porções" required></label>
+<label>Foto redonda da categoria<input class="input" type="file" name="image" accept="image/jpeg,image/png,image/webp"><small>Opcional. Aparece no botão redondo do cardápio.</small></label>
 <button class="btn primary">Adicionar categoria</button>
 </form>
 <div class="category-admin-list">{% for category in product_categories %}<div class="category-admin-row">
-<form action="/painel/cardapio/categorias/{{category.id}}" method="post">
+<form action="/painel/cardapio/categorias/{{category.id}}" method="post" enctype="multipart/form-data">
 <input class="input" name="name" value="{{category.name}}" required>
+<input class="input" type="file" name="image" accept="image/jpeg,image/png,image/webp" title="Trocar foto da categoria">
 <label class="check"><input type="checkbox" name="active" value="1" {% if category.active %}checked{% endif %}> Pública</label>
 <button class="btn soft tiny">Salvar</button>
 </form>
