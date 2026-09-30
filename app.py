@@ -478,6 +478,7 @@ def init_db():
     ensure_column(conn, "professionals", "business_hours", "TEXT NOT NULL DEFAULT '{}'")
     ensure_column(conn, "professionals", "business_status", "TEXT NOT NULL DEFAULT 'open'")
     ensure_column(conn, "professionals", "instagram_url", "TEXT DEFAULT ''")
+    ensure_column(conn, "product_categories", "image_filename", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "professionals", "facebook_url", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "website_url", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "whatsapp_message", "TEXT DEFAULT 'Olá! Encontrei você pelo NowUp e gostaria de saber mais.'")
@@ -735,14 +736,20 @@ def native_menu(request: Request, slug: str):
     for product in products:
         category=(product["category"] or "Geral").strip() or "Geral"
         if category not in menu_categories: menu_categories.append(category)
+    category_images={row["name"]:row["image_filename"] for row in conn.execute(
+        "SELECT name,image_filename FROM product_categories WHERE professional_id=? AND active=1",(p["id"],)
+    ).fetchall()}
     product_options={}
     for row in conn.execute("""SELECT po.* FROM product_options po JOIN products pr ON pr.id=po.product_id
       WHERE pr.professional_id=? AND po.available=1 ORDER BY po.sort_order,po.id""",(p["id"],)).fetchall():
         product_options.setdefault(row["product_id"],[]).append(row)
+    daily_promotions=conn.execute("""SELECT * FROM daily_promotions
+      WHERE professional_id=? AND active=1 AND expires_at>?
+      ORDER BY id DESC LIMIT 3""",(p["id"],now_iso())).fetchall()
     conn.execute("UPDATE professionals SET menu_clicks=menu_clicks+1 WHERE id=?",(p["id"],))
     conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"menu_click",now_iso())); conn.commit(); conn.close()
     status=shop_status(p)
-    return templates.TemplateResponse("menu.html", context(request, pro=p, products=products, product_options=product_options, menu_categories=menu_categories, shop_status=status))
+    return templates.TemplateResponse("menu.html", context(request, pro=p, products=products, product_options=product_options, menu_categories=menu_categories, category_images=category_images, daily_promotions=daily_promotions, shop_status=status))
 
 @app.post("/p/{slug}/menu/pedido")
 def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...)):
@@ -1135,21 +1142,29 @@ def price_to_cents(raw: str):
     except ValueError: raise HTTPException(400,"Preço inválido")
 
 @app.post("/painel/cardapio/categorias")
-def pro_menu_category_add(request: Request, name: str=Form(...)):
+def pro_menu_category_add(request: Request, name: str=Form(...), image: Optional[UploadFile]=File(None)):
     u=require_user(request,"professional"); clean=name.strip()[:80]
     if not clean: return RedirectResponse("/painel?erro=categoria#cardapio",303)
     conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
     next_order=conn.execute("SELECT COALESCE(MAX(sort_order),0)+1 FROM product_categories WHERE professional_id=?",(p["id"],)).fetchone()[0]
-    try: conn.execute("INSERT INTO product_categories(professional_id,name,sort_order,active,created_at) VALUES(?,?,?,?,?)",(p["id"],clean,next_order,1,now_iso())); conn.commit()
+    filename=save_image(image) if image and image.filename else ""
+    try: conn.execute("INSERT INTO product_categories(professional_id,name,sort_order,active,created_at,image_filename) VALUES(?,?,?,?,?,?)",(p["id"],clean,next_order,1,now_iso(),filename)); conn.commit()
     except sqlite3.IntegrityError: pass
     conn.close(); return RedirectResponse("/painel?ok=categoria#cardapio",303)
 
 @app.post("/painel/cardapio/categorias/{category_id}")
-def pro_menu_category_edit(request: Request, category_id: int, name: str=Form(...), active: Optional[str]=Form(None)):
+def pro_menu_category_edit(request: Request, category_id: int, name: str=Form(...), active: Optional[str]=Form(None), image: Optional[UploadFile]=File(None)):
     u=require_user(request,"professional"); clean=name.strip()[:80]
     conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone(); old=conn.execute("SELECT * FROM product_categories WHERE id=? AND professional_id=?",(category_id,p["id"])).fetchone()
     if old and clean:
-        conn.execute("UPDATE product_categories SET name=?,active=? WHERE id=?",(clean,1 if active else 0,category_id))
+        filename=old["image_filename"] or ""
+        if image and image.filename:
+            new_filename=save_image(image)
+            if filename:
+                try: (UPLOAD_DIR/filename).unlink(missing_ok=True)
+                except OSError: pass
+            filename=new_filename
+        conn.execute("UPDATE product_categories SET name=?,active=?,image_filename=? WHERE id=?",(clean,1 if active else 0,filename,category_id))
         conn.execute("UPDATE products SET category=?,updated_at=? WHERE professional_id=? AND lower(category)=lower(?)",(clean,now_iso(),p["id"],old["name"])); conn.commit()
     conn.close(); return RedirectResponse("/painel?ok=categoria#cardapio",303)
 
@@ -1157,6 +1172,9 @@ def pro_menu_category_edit(request: Request, category_id: int, name: str=Form(..
 def pro_menu_category_delete(request: Request, category_id: int):
     u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone(); row=conn.execute("SELECT * FROM product_categories WHERE id=? AND professional_id=?",(category_id,p["id"])).fetchone()
     if row:
+        if row["image_filename"]:
+            try: (UPLOAD_DIR/row["image_filename"]).unlink(missing_ok=True)
+            except OSError: pass
         conn.execute("UPDATE products SET category='Geral',updated_at=? WHERE professional_id=? AND lower(category)=lower(?)",(now_iso(),p["id"],row["name"]))
         conn.execute("DELETE FROM product_categories WHERE id=?",(category_id,)); conn.execute("INSERT OR IGNORE INTO product_categories(professional_id,name,sort_order,active,created_at) VALUES(?,?,?,?,?)",(p["id"],"Geral",999,1,now_iso())); conn.commit()
     conn.close(); return RedirectResponse("/painel?ok=categoria-excluida#cardapio",303)
