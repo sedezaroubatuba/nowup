@@ -276,7 +276,7 @@
 <b>{{order_summary.completed or 0}}</b>
 </article>
 </div>
-<div class="orders-list">{% for order in orders %}<article class="order-card">
+<div class="orders-list">{% for order in orders %}<article class="order-card {% if order.status in ['new','confirmed','preparing','ready','out_for_delivery'] %}active-order-card{% endif %}" data-order-status="{{order.status}}">
 <div class="order-head">
 <div>
 <b>Pedido {{order.order_code or ('#' ~ order.id)}}</b>
@@ -536,5 +536,5 @@
 </section>{% endif %}
 </main>
 </div>
-<script src="/static/pro-panel-menu.js?v=25"></script><script src="/static/order-alerts.js?v=24"></script>
+<script src="/static/pro-panel-menu.js?v=25"></script><script src="/static/order-alerts.js?v=27"></script>
 {% endblock %}

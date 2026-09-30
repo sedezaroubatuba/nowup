@@ -9,15 +9,15 @@
 </div></div></header>
 <div class="store-status {% if shop_status.open %}open{% else %}closed{% endif %}"><b>{{shop_status.label}}</b><span>{{shop_status.detail}}</span>{% if not shop_status.open %}<small>Você pode consultar o cardápio, mas os pedidos estão pausados neste momento.</small>{% endif %}</div>
 {% if menu_categories %}<nav class="menu-category-nav" aria-label="Categorias">
-<button type="button" class="active" data-category-filter="all">Todos</button>{% if products|selectattr('featured')|list %}<button type="button" data-category-filter="promocoes">🔥 Promoções</button>{% endif %}{% for category in menu_categories %}<button type="button" data-category-filter="{{category}}">{{category}}</button>{% endfor %}</nav>{% endif %}
+<button type="button" class="active" data-category-filter="all" onclick="filterNowUpMenu(this)">Todos</button>{% if products|selectattr('featured')|list %}<button type="button" data-category-filter="promocoes" onclick="filterNowUpMenu(this)">🔥 Promoções</button>{% endif %}{% for category in menu_categories %}<button type="button" data-category-filter="{{category}}" onclick="filterNowUpMenu(this)">{{category}}</button>{% endfor %}</nav>{% endif %}
 <div class="menu-layout"><main><div class="menu-products">
 {% for product in products %}<article class="menu-product" data-product data-category="{{product.category}}" data-featured="{{1 if product.featured else 0}}" data-id="{{product.id}}" data-name="{{product.name}}" data-price="{{product.promo_price_cents if product.promo_price_cents > 0 else product.price_cents}}" data-max="{{product.max_quantity}}">
 {% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" alt="{{product.name}}">{% else %}<div class="menu-product-placeholder">🍽</div>{% endif %}<div class="menu-product-info"><small>{% if product.featured %}🔥 PROMOÇÃO · {% endif %}{{product.category}}</small><h3>{{product.name}}</h3><p>{{product.description}}</p><div>
 <strong>{% if product.promo_price_cents > 0 %}<del>R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</del> R$ {{'%.2f'|format(product.promo_price_cents/100)|replace('.',',')}}{% else %}R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}{% endif %}</strong>
 {% if product_options.get(product.id) %}<div class="product-options"><small>Adicionais</small>{% for option in product_options.get(product.id,[]) %}<label><input type="checkbox" data-product-option value="{{option.id}}" data-option-name="{{option.name}}" data-option-price="{{option.price_cents}}"> {{option.name}}{% if option.price_cents %} + R$ {{'%.2f'|format(option.price_cents/100)|replace('.',',')}}{% endif %}</label>{% endfor %}</div>{% endif %}
-<div class="product-buy"><label>Qtd.<input class="product-quantity-input" type="number" min="1" max="99" step="1" value="1" inputmode="numeric" data-product-quantity {% if not shop_status.open %}disabled{% endif %}></label><button class="btn primary" type="button" data-add {% if not shop_status.open %}disabled{% endif %}>{% if shop_status.open %}Adicionar{% else %}Fechado{% endif %}</button></div>
+<div class="product-buy"><label>Qtd.<input class="product-quantity-input" type="number" min="1" max="99" step="1" value="1" inputmode="numeric" data-product-quantity {% if not shop_status.open or not user or user.role!='customer' %}disabled{% endif %}></label><button class="btn primary" type="button" data-add {% if not shop_status.open or not user or user.role!='customer' %}disabled{% endif %}>{% if not user or user.role!='customer' %}Entre para pedir{% elif shop_status.open %}Adicionar{% else %}Fechado{% endif %}</button></div>
 </div></div></article>{% else %}<div class="panel empty-state"><span>🍽</span><h2>Cardápio em preparação</h2><p class="muted">Esta empresa ainda não publicou produtos.</p></div>{% endfor %}
-</div></main><aside class="menu-cart"><div class="panel"><h2>Seu pedido</h2><div data-cart-items><p class="muted">Adicione produtos para começar.</p></div><div class="cart-total"><span>Total</span><b data-cart-total>R$ 0,00</b></div><button class="btn primary full-btn" type="button" data-checkout disabled>{% if shop_status.open %}Continuar pedido{% else %}Pedidos pausados{% endif %}</button></div></aside></div>
+</div></main><aside class="menu-cart"><div class="panel"><h2>Seu pedido</h2>{% if user and user.role=='customer' %}<div data-cart-items><p class="muted">Adicione produtos para começar.</p></div><div class="cart-total"><span>Total</span><b data-cart-total>R$ 0,00</b></div><button class="btn primary full-btn" type="button" data-checkout disabled>{% if shop_status.open %}Continuar pedido{% else %}Pedidos pausados{% endif %}</button>{% else %}<p class="muted">Para enviar pedidos dentro do NowUp, entre ou faça seu cadastro de cliente.</p><a class="btn primary full-btn" href="/entrar">Entrar</a><a class="btn soft full-btn" href="/cadastro/cliente">Cadastrar como cliente</a><a class="btn whatsapp full-btn" href="{{direct_whatsapp}}" target="_blank" rel="noopener">Pedir diretamente pelo WhatsApp</a><div data-cart-items hidden></div><b data-cart-total hidden>R$ 0,00</b><button type="button" data-checkout hidden disabled></button>{% endif %}</div></aside></div>
 </div>
 <dialog class="checkout-dialog" data-checkout-dialog><form action="/p/{{pro.slug}}/menu/pedido" method="post" data-order-form>
 <button class="dialog-close" type="button" data-dialog-close>×</button><h2>Finalizar pedido no NowUp</h2><p class="muted">O pedido será enviado diretamente para a sala de pedidos da loja.</p><input type="hidden" name="cart_json" data-cart-json>
@@ -28,5 +28,18 @@
 <label data-change hidden>Troco para quanto?<input class="input" name="change_for" inputmode="decimal" placeholder="Ex.: 100,00"></label><label>Observação geral<textarea name="notes" placeholder="Ex.: preciso de troco para R$ 100"></textarea></label>
 <div class="cart-total"><span>Total <small data-fee-note></small></span><b data-dialog-total>R$ 0,00</b></div><button class="btn primary full-btn" type="submit" data-submit-order>Enviar pedido pelo NowUp</button>
 </form></dialog></section>
-<script>window.NOWUP_MENU={{ {'deliveryFee':pro.delivery_fee_cents,'minimumOrder':pro.minimum_order_cents}|tojson }};</script><script src="/static/menu.js?v=25"></script>
+<script>
+window.NOWUP_MENU={{ {'deliveryFee':pro.delivery_fee_cents,'minimumOrder':pro.minimum_order_cents}|tojson }};
+function filterNowUpMenu(button){
+  const clean=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase().replace(/\s+/g,' ');
+  const selected=clean(button.dataset.categoryFilter);
+  document.querySelectorAll('[data-category-filter]').forEach(item=>item.classList.toggle('active',item===button));
+  document.querySelectorAll('[data-native-menu] [data-product]').forEach(product=>{
+    const category=clean(product.dataset.category),promotion=product.dataset.featured==='1';
+    const show=selected==='all'||(selected==='promocoes'?promotion:category===selected);
+    product.hidden=!show;product.classList.toggle('category-hidden',!show);
+    if(show)product.style.removeProperty('display');else product.style.setProperty('display','none','important');
+  });
+}
+</script><script src="/static/menu.js?v=26"></script>
 {% endblock %}
