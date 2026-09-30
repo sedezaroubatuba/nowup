@@ -3,6 +3,7 @@
   <section class="nu-top"><div class="container">
     <div class="nu-brand-row">
       <a class="nu-wordmark" href="/">Now<span>Up</span> <i>Brasil</i></a>
+      <div class="nu-account-actions">{% if user %}<a href="{% if user.role=='professional' %}/painel{% elif user.role=='customer' %}/cliente{% else %}/admin/entrar{% endif %}">{% if user.role=='professional' %}Painel profissional{% else %}Meu painel{% endif %}</a><form action="/sair" method="post"><button type="submit">Sair</button></form>{% else %}<a href="/entrar">Entrar</a><a class="primary" href="/cadastro/profissional">Painel profissional</a>{% endif %}</div>
       <label class="nu-location"><span>📍</span><select onchange="if(this.value) location.href='/?city='+encodeURIComponent(this.value)">{% for c in active_cities %}<option value="{{c}}" {% if city==c %}selected{% endif %}>{{c}}</option>{% endfor %}</select><b>▼</b></label>
     </div>
     <form class="nu-search" action="/profissionais"><span>⌕</span><input name="q" placeholder="O que você procura em {{city or 'Ubatuba'}}?"><input type="hidden" name="city" value="{{city}}"><button>Buscar</button></form>
