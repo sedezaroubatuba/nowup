@@ -611,6 +611,42 @@ def init_db():
     if not conn.execute("SELECT 1 FROM banners").fetchone():
         conn.execute("INSERT INTO banners(title,subtitle,created_at) VALUES(?,?,?)",
                      ("Divulgue sua empresa na NowUp","Espaço para publicidade por cidade ou categoria.",now_iso()))
+    # Conteúdo demonstrativo inicial para a home não nascer vazia. É criado uma
+    # única vez e pode ser removido definitivamente no painel administrativo.
+    demo_ready=conn.execute("SELECT value FROM site_settings WHERE key='v35_demo_home_ready'").fetchone()
+    if not demo_ready:
+        demo_art={
+          "demo-quiosque.svg":("#007adf","#03c7ce","QUIOSQUE","Frutos do mar"),
+          "demo-pizza.svg":("#ff5b38","#ffb000","PIZZARIA","Pizza artesanal"),
+          "demo-burger.svg":("#e8234f","#ff8c00","BURGER","Combo artesanal"),
+          "demo-caicara.svg":("#00a865","#70d33b","CAIÇARA","Sabor de Ubatuba"),
+        }
+        UPLOAD_DIR.mkdir(parents=True,exist_ok=True)
+        for filename,(c1,c2,label,sub) in demo_art.items():
+            target=UPLOAD_DIR/filename
+            if not target.exists():
+                target.write_text(f'''<svg xmlns="http://www.w3.org/2000/svg" width="900" height="560" viewBox="0 0 900 560"><defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="{c1}"/><stop offset="1" stop-color="{c2}"/></linearGradient></defs><rect width="900" height="560" rx="35" fill="url(#g)"/><circle cx="725" cy="115" r="150" fill="#fff" opacity=".16"/><circle cx="790" cy="470" r="220" fill="#fff" opacity=".1"/><text x="55" y="245" fill="#fff" font-family="Arial" font-size="76" font-weight="900">{label}</text><text x="60" y="315" fill="#fff" font-family="Arial" font-size="35" font-weight="700">{sub}</text><text x="60" y="420" fill="#fff" font-family="Arial" font-size="28">Demonstração NowUp • Ubatuba</text></svg>''',encoding="utf-8")
+        demo_items=[
+          ("Quiosque do Toninho","Praia Grande","Frutos do mar, porções e bebidas","demo-quiosque.svg","Açaí no ponto!","20% OFF no açaí de 500 ml"),
+          ("Pizzaria Maré Alta","Itaguá","Pizzas artesanais e massas","demo-pizza.svg","Pizza família","Pizza grande com refrigerante por R$ 59,90"),
+          ("Burger da Praia","Centro","Hambúrguer artesanal e combos","demo-burger.svg","Burger artesanal","15% OFF no combo completo"),
+          ("Sabor Caiçara","Perequê-Açu","Comida caiçara e pratos executivos","demo-caicara.svg","Prato caiçara","Almoço completo a partir de R$ 29,90"),
+        ]
+        expires="2036-12-31T23:59:59+00:00"; created=now_iso(); day=datetime.now(SAO_PAULO_TZ).date().isoformat()
+        for idx,(name,neighborhood,services,image,title,description) in enumerate(demo_items):
+            email=f"v35-demo-{idx}@nowup.local"
+            cur=conn.execute("INSERT OR IGNORE INTO users(role,name,email,phone,password_hash,is_active,email_verified,created_at) VALUES('professional',?,?,?, ?,1,1,?)",
+                             (name,email,"12999990000",hash_password(secrets.token_urlsafe(24)),created))
+            user_row=conn.execute("SELECT id FROM users WHERE email=?",(email,)).fetchone()
+            slug=slugify(name)+"-demonstracao"
+            conn.execute("""INSERT OR IGNORE INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,address,description,services,business_type,verified,featured,blocked,avatar_filename,cover_filename,is_demo,is_subscriber,created_at)
+                            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                         (user_row["id"],slug,name,"CNPJ","","12999990000","Ubatuba",neighborhood,"","Ubatuba - SP","Perfil de demonstração da NowUp.",services,"restaurant",1,1,0,image,image,1,1,created))
+            pro=conn.execute("SELECT id FROM professionals WHERE user_id=?",(user_row["id"],)).fetchone()
+            if pro:
+                conn.execute("INSERT INTO photos(professional_id,filename,caption,is_cover,created_at) SELECT ?,?,?,1,? WHERE NOT EXISTS(SELECT 1 FROM photos WHERE professional_id=?)",(pro["id"],image,name,created,pro["id"]))
+                conn.execute("INSERT INTO daily_promotions(professional_id,title,description,image_filename,created_day,created_at,expires_at,active) VALUES(?,?,?,?,?,?,?,1)",(pro["id"],title,description,image,day,created,expires))
+        conn.execute("INSERT INTO site_settings(key,value) VALUES('v35_demo_home_ready','1')")
     conn.commit(); conn.close()
 
 @app.on_event("startup")
@@ -1638,6 +1674,15 @@ def admin_toggle_daily_promotion(request: Request, promotion_id:int):
     conn.execute("UPDATE daily_promotions SET active=CASE active WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(promotion_id,))
     conn.commit(); conn.close(); return RedirectResponse("/admin#promocoes",303)
 
+@app.post("/admin/promocoes/{promotion_id}/excluir")
+def admin_delete_daily_promotion(request: Request, promotion_id:int):
+    require_user(request,"admin"); conn=db()
+    row=conn.execute("SELECT image_filename FROM daily_promotions WHERE id=?",(promotion_id,)).fetchone()
+    conn.execute("DELETE FROM daily_promotions WHERE id=?",(promotion_id,)); conn.commit(); conn.close()
+    # Imagens demo são compartilhadas com o perfil; as reais continuam sendo
+    # gerenciadas pela empresa que publicou a oferta.
+    return RedirectResponse("/admin?ok=promocao-excluida#promocoes",303)
+
 @app.post("/admin/perfis/demonstracao")
 def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsapp:str=Form(...), address:str=Form(...), photo:UploadFile=File(...)):
     require_user(request,"admin")
@@ -1681,8 +1726,12 @@ def admin_edit_professional(request: Request, pid:int, display_name:str=Form(...
 
 @app.post("/admin/profissionais/{pid}/excluir")
 def admin_delete_professional(request: Request, pid:int):
-    require_user(request,"admin")
-    return RedirectResponse("/admin?erro=exclusao-desativada#profissionais",303)
+    require_user(request,"admin"); conn=db()
+    pro=conn.execute("SELECT user_id,is_demo FROM professionals WHERE id=?",(pid,)).fetchone()
+    if not pro or not pro["is_demo"]:
+        conn.close(); return RedirectResponse("/admin?erro=exclusao-desativada#profissionais",303)
+    conn.execute("DELETE FROM users WHERE id=?",(pro["user_id"],)); conn.commit(); conn.close()
+    return RedirectResponse("/admin?ok=perfil-excluido#profissionais",303)
 
 @app.post("/admin/denuncias/{rid}/{status}")
 def admin_report_action(request: Request, rid:int, status:str):
