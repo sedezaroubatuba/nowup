@@ -647,11 +647,25 @@ def init_db():
                 conn.execute("INSERT INTO photos(professional_id,filename,caption,is_cover,created_at) SELECT ?,?,?,1,? WHERE NOT EXISTS(SELECT 1 FROM photos WHERE professional_id=?)",(pro["id"],image,name,created,pro["id"]))
                 conn.execute("INSERT INTO daily_promotions(professional_id,title,description,image_filename,created_day,created_at,expires_at,active) VALUES(?,?,?,?,?,?,?,1)",(pro["id"],title,description,image,day,created,expires))
         conn.execute("INSERT INTO site_settings(key,value) VALUES('v35_demo_home_ready','1')")
-    # V38: troca as artes simples por fotografias profissionais e acrescenta
-    # dois perfis coloridos. Roda uma única vez e tudo continua removível no ADM.
+    # V38: mantém as artes de demonstração disponíveis mesmo quando o banco fica
+    # em disco persistente e a pasta de uploads é recriada em um novo deploy.
+    # Os perfis continuam sendo criados uma única vez e removíveis pelo ADM.
+    demo_source=BASE/"static"/"demo"
+    demo_visual_files=(
+      "demo-quiosque-pro.png",
+      "demo-pizzaria-pro.png",
+      "demo-burger-pro.png",
+      "demo-petshop-pro.png",
+      "demo-barbearia-pro.png",
+    )
+    UPLOAD_DIR.mkdir(parents=True,exist_ok=True)
+    for filename in demo_visual_files:
+        source=demo_source/filename; target=UPLOAD_DIR/filename
+        if source.exists() and (not target.exists() or target.stat().st_size != source.stat().st_size):
+            shutil.copyfile(source,target)
+
     demo_visuals_ready=conn.execute("SELECT value FROM site_settings WHERE key='v38_demo_visuals_ready'").fetchone()
     if not demo_visuals_ready:
-        demo_source=BASE/"static"/"demo"
         visual_map={
           "v35-demo-0@nowup.local":"demo-quiosque-pro.png",
           "v35-demo-1@nowup.local":"demo-pizzaria-pro.png",
