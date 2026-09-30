@@ -706,10 +706,12 @@ def native_menu(request: Request, slug: str):
     conn.execute("UPDATE professionals SET menu_clicks=menu_clicks+1 WHERE id=?",(p["id"],))
     conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"menu_click",now_iso())); conn.commit(); conn.close()
     status=shop_status(p)
-    return templates.TemplateResponse("menu.html", context(request, pro=p, products=products, product_options=product_options, menu_categories=menu_categories, shop_status=status))
+    direct_whatsapp=wa_link(p["whatsapp"],p["whatsapp_message"] or "Olá! Vi seu cardápio no NowUp e gostaria de fazer um pedido pelo WhatsApp.")
+    return templates.TemplateResponse("menu.html", context(request, pro=p, products=products, product_options=product_options, menu_categories=menu_categories, shop_status=status, direct_whatsapp=direct_whatsapp))
 
 @app.post("/p/{slug}/menu/pedido")
 def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...)):
+    logged=require_user(request,"customer")
     conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404)
     if not shop_status(p)["open"]: conn.close(); return RedirectResponse(f"/p/{slug}/menu?fechado=1",303)
@@ -740,7 +742,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
     payment_labels={"pix":"Pix","cash":"Dinheiro","credit":"Cartão de crédito","debit":"Cartão de débito","on_delivery":"Combinar no atendimento"}
     payment_method=payment_method if payment_method in payment_labels else "pix"
     change_for_cents=price_to_cents(change_for) if payment_method=="cash" and change_for.strip() else 0
-    logged=current_user(request); customer_id=logged["id"] if logged and logged["role"]=="customer" else None
+    customer_id=logged["id"]
     created=now_iso(); tracking_token=secrets.token_urlsafe(24)
     cur=conn.execute("""INSERT INTO orders(professional_id,customer_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at,subtotal_cents,delivery_fee_cents,neighborhood,address_reference,change_for_cents,tracking_token)
       VALUES(?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?)""",(p["id"],customer_id,customer_name.strip()[:120],customer_phone.strip()[:30],fulfillment_type,address.strip()[:300],notes.strip()[:500],"new",total,created,created,subtotal,delivery_fee,neighborhood.strip()[:120],address_reference.strip()[:220],change_for_cents,tracking_token))
@@ -1041,7 +1043,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     settings=get_settings(conn); support_link=wa_link(settings.get("support_whatsapp",""),"Olá! Sou profissional cadastrado na NowUp e preciso de ajuda com meu painel.")
     profile_fields=[p["display_name"],p["whatsapp"],p["description"],p["services"],p["city"],p["neighborhood"],p["avatar_filename"],p["cover_filename"],p["service_area"],p["opening_hours"]]
     profile_completion=round(sum(bool(str(v or "").strip()) for v in profile_fields)*100/len(profile_fields))
-    order_where=["o.professional_id=?", "date(o.created_at) BETWEEN ? AND ?"]
+    order_where=["o.professional_id=?", "(o.status IN ('new','confirmed','preparing','ready','out_for_delivery') OR date(o.created_at) BETWEEN ? AND ?)"]
     order_params=[p["id"],start.isoformat(),end.isoformat()]
     allowed_order_status={"new","confirmed","preparing","ready","out_for_delivery","completed","cancelled","rejected"}
     if pedido_status in allowed_order_status:
@@ -1050,7 +1052,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
         pedido_status="todos"
     orders=conn.execute(f"""SELECT o.*,
       COALESCE((SELECT SUM(oi.quantity) FROM order_items oi WHERE oi.order_id=o.id),0) item_count
-      FROM orders o WHERE {' AND '.join(order_where)} ORDER BY o.id DESC LIMIT 100""",order_params).fetchall()
+      FROM orders o WHERE {' AND '.join(order_where)} ORDER BY CASE WHEN o.status IN ('new','confirmed','preparing','ready','out_for_delivery') THEN 0 ELSE 1 END,o.id DESC LIMIT 100""",order_params).fetchall()
     order_items_by_order={}
     order_item_options={}
     if orders:
@@ -1086,8 +1088,11 @@ def pro_new_orders(request: Request, after: int=0):
     rows=conn.execute("""SELECT id,customer_name,total_cents,created_at FROM orders
       WHERE professional_id=? AND id>? ORDER BY id ASC LIMIT 10""",(p["id"],max(0,after))).fetchall()
     latest=conn.execute("SELECT COALESCE(MAX(id),0) FROM orders WHERE professional_id=?",(p["id"],)).fetchone()[0]
+    pending=conn.execute("""SELECT id,customer_name,total_cents,created_at FROM orders
+      WHERE professional_id=? AND status='new' ORDER BY id DESC LIMIT 1""",(p["id"],)).fetchone()
+    pending_count=conn.execute("SELECT COUNT(*) FROM orders WHERE professional_id=? AND status='new'",(p["id"],)).fetchone()[0]
     conn.close()
-    return JSONResponse({"latest_id":latest,"orders":[{"id":r["id"],"customer_name":r["customer_name"] or "Cliente","total_cents":r["total_cents"],"created_at":r["created_at"]} for r in rows]})
+    return JSONResponse({"latest_id":latest,"orders":[{"id":r["id"],"customer_name":r["customer_name"] or "Cliente","total_cents":r["total_cents"],"created_at":r["created_at"]} for r in rows],"pending_count":pending_count,"pending_order":{"id":pending["id"],"customer_name":pending["customer_name"] or "Cliente","total_cents":pending["total_cents"]} if pending else None})
 
 def price_to_cents(raw: str):
     value=(raw or "0").strip().replace("R$","").replace(" ","")
