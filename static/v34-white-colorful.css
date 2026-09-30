@@ -117,3 +117,17 @@
 .public-profile-area .photo-placeholder{min-height:180px;display:grid;place-items:center;border-radius:14px;background:#f1f5fa;color:#7b8797}
 .public-profile-area .footer{background:#071936}
 @media(max-width:820px){.public-profile-area .profile-cover{height:190px;border-radius:0}.public-profile-area .profile-summary{display:grid;grid-template-columns:92px 1fr;padding:0 14px 18px}.public-profile-area .profile-avatar{width:92px;height:92px;margin-top:-40px}.public-profile-area .profile-heading h1{font-size:21px}.public-profile-area .profile-cta,.public-profile-area .profile-extra-actions{grid-column:1/-1}.public-profile-area .profile-cta{display:grid;grid-template-columns:repeat(3,1fr)}.public-profile-area .profile-cta .btn,.public-profile-area .profile-cta form,.public-profile-area .profile-cta form button{width:100%;font-size:11px;padding:10px 6px}.public-profile-area .section{padding-top:18px}.public-profile-area .profileGrid{gap:0}.public-profile-area .gallery{grid-template-columns:repeat(3,1fr)}.public-profile-area .photo-placeholder{min-height:120px;font-size:10px}}
+
+/* V37 — navegação clicável e rolagem horizontal presa às fileiras */
+html,body{max-width:100%;overflow-x:clip}
+.nowup-v19,.nowup-v19 .nu-home,.nowup-v19 .nu-home>section,.nowup-v19 .container{max-width:100%;min-width:0}
+.nu-brand-row{grid-template-columns:1fr auto auto!important}
+.nu-account-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;position:relative;z-index:12}
+.nu-account-actions a,.nu-account-actions button{display:inline-flex;align-items:center;justify-content:center;min-height:37px;padding:8px 12px;border:1px solid #dce6f2;border-radius:11px;background:#fff;color:var(--v34-navy);font:inherit;font-size:12px;font-weight:850;cursor:pointer;white-space:nowrap}
+.nu-account-actions a.primary{border-color:var(--v34-blue);background:var(--v34-blue);color:#fff}.nu-account-actions form{margin:0}
+.nowup-v19 .mobile-bottom-nav{display:grid!important;position:fixed!important;left:0!important;right:0!important;bottom:0!important;z-index:10000!important;pointer-events:auto!important;transform:none!important;max-width:none!important}
+.nowup-v19 .mobile-bottom-nav a{position:relative;z-index:1;pointer-events:auto!important;touch-action:manipulation}
+.nowup-v19 .nu-stories,.nowup-v19 .nu-categories,.nowup-v19 .daily-offers-row{max-width:100%;overflow-x:auto!important;overflow-y:hidden;overscroll-behavior-x:contain;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;touch-action:pan-x}
+.nowup-v19 .nu-stories>a,.nowup-v19 .nu-categories>a,.nowup-v19 .daily-offer-card{scroll-snap-align:start}
+.nowup-v19 .nu-card-row{max-width:100%;min-width:0}
+@media(max-width:820px){body.nowup-v19{width:100%;overflow-x:clip;touch-action:pan-y}.nowup-v19 .nu-home{width:100%;overflow-x:clip;padding-bottom:82px}.nowup-v19 .container{width:100%;margin-left:0;margin-right:0}.nu-brand-row{grid-template-columns:1fr auto!important;gap:8px}.nu-account-actions{grid-column:1/-1;grid-row:2;justify-content:flex-start;overflow-x:auto;padding:3px 0}.nu-location{grid-column:2;grid-row:1}.nu-account-actions a,.nu-account-actions button{min-height:34px;padding:7px 10px;font-size:11px}.nowup-v19 .nu-stories,.nowup-v19 .nu-categories{padding-left:0;padding-right:4px}.nowup-v19 .daily-offers-row{width:100%}.nowup-v19 .mobile-bottom-nav{height:70px;padding-bottom:calc(6px + env(safe-area-inset-bottom))}}
