@@ -3,6 +3,7 @@
 <aside class="sidebar">
 <div class="admin-brand"><span>NU</span><div><h3>Admin NowUp</h3><small>Central de controle</small></div></div>
 <a href="#dashboard">Dashboard</a>
+<a href="#relatorio-geral">Relatório geral</a>
 <a href="/admin/cms">Gestão completa do portal</a>
 <a href="#perfil">Meu perfil</a>
 <a href="#aparencia">Aparência</a>
@@ -40,6 +41,12 @@
 <b>{{stats.wa}}</b>
 </div>
 </div>
+</section>
+<section class="panel admin-report" id="relatorio-geral">
+<div class="section-title"><div><h2>📊 Relatório geral</h2><p class="muted">Visão completa de clientes, empresas, pedidos e faturamento.</p></div><span class="status-pill">{{report_start}} até {{report_end}}</span></div>
+<form action="/admin" method="get" class="report-filter"><label>Data inicial<input class="input" type="date" name="inicio" value="{{report_start}}"></label><label>Data final<input class="input" type="date" name="fim" value="{{report_end}}"></label><button class="btn primary">Atualizar relatório</button><a class="btn soft" href="/admin#relatorio-geral">Últimos 30 dias</a></form>
+<div class="admin-report-grid"><article><span>Clientes cadastrados</span><b>{{stats.customers}}</b></article><article><span>Profissionais e empresas</span><b>{{stats.professionals}}</b></article><article><span>Pedidos recebidos</span><b>{{report_orders.total or 0}}</b></article><article><span>Aguardando aceite</span><b>{{report_orders.new_orders or 0}}</b></article><article><span>Aceitos/em andamento</span><b>{{report_orders.accepted or 0}}</b></article><article><span>Finalizados</span><b>{{report_orders.completed or 0}}</b></article><article><span>Cancelados/rejeitados</span><b>{{report_orders.cancelled or 0}}</b></article><article class="money"><span>Faturamento válido</span><b>R$ {{'%.2f'|format((report_orders.revenue_cents or 0)/100)|replace('.', ',')}}</b></article><article class="money"><span>Ticket médio</span><b>R$ {{'%.2f'|format((report_orders.avg_ticket_cents or 0)/100)|replace('.', ',')}}</b></article></div>
+<h3>Empresas com mais pedidos</h3><div class="tablewrap"><table class="table"><tr><th>Empresa</th><th>Pedidos</th><th>Faturamento válido</th></tr>{% for item in report_top %}<tr><td>{{item.display_name}}</td><td>{{item.orders_count}}</td><td>R$ {{'%.2f'|format((item.revenue_cents or 0)/100)|replace('.', ',')}}</td></tr>{% else %}<tr><td colspan="3">Nenhum pedido no período.</td></tr>{% endfor %}</table></div>
 </section>
 <section class="panel" id="perfil">
 <div class="section-title">
@@ -346,8 +353,11 @@
 <label>Endereço
 <input class="input" name="address" placeholder="Ex.: Estufa II, Ubatuba - SP" required>
 </label>
-<label>Foto do perfil
-<input class="input" type="file" name="photo" accept="image/*" required>
+<label>Foto redonda do perfil
+<input class="input" type="file" name="avatar" accept="image/*" required>
+</label>
+<label>Foto de capa horizontal
+<input class="input" type="file" name="cover" accept="image/*" required>
 </label>
 <button class="btn primary" type="submit">Criar perfil fictício</button>
 </form>
@@ -363,12 +373,14 @@
 <th>Ações</th>
 </tr>{% for p in pros %}<tr>
 <td>
-<form action="/admin/profissionais/{{p.id}}/editar" method="post" class="admin-inline-edit">
+<form action="/admin/profissionais/{{p.id}}/editar" method="post" enctype="multipart/form-data" class="admin-inline-edit {% if p.is_demo %}demo-profile-edit{% endif %}">
 <input class="input" name="display_name" value="{{p.display_name}}" required>
 <input class="input" name="city" value="{{p.city}}" placeholder="Cidade">
 {% if p.is_demo %}
 <input type="hidden" name="email" value="{{p.email}}">
 <span class="tiny">Perfil fictício — sem e-mail</span>
+<label class="demo-photo-field">Foto do perfil<input class="input" type="file" name="avatar" accept="image/*"></label>
+<label class="demo-photo-field">Foto de capa<input class="input" type="file" name="cover" accept="image/*"></label>
 {% else %}
 <input class="input" type="email" name="email" value="{{p.email}}" required>
 {% endif %}
