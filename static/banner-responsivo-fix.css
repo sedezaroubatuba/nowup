@@ -40,6 +40,24 @@
   object-position: center center;
 }
 
+.nowup-v19 .nu-banner picture,
+.nu-home .nu-banner picture {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.banner-control-panel[data-banner-editor] .banner-live-preview {
+  width: min(100%, 760px);
+  height: auto !important;
+  aspect-ratio: 1180 / 280;
+}
+
+.banner-control-panel[data-banner-editor] .banner-live-preview.mobile-preview {
+  width: min(390px,100%);
+  aspect-ratio: 740 / 400;
+}
+
 @media (max-width: 820px) {
   .nowup-v19 .nu-banner,
   .nu-home .nu-banner {
