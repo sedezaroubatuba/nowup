@@ -1677,23 +1677,31 @@ def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsap
 
 @app.post("/admin/profissionais/{pid}/editar")
 def admin_edit_professional(request: Request, pid:int, display_name:str=Form(...), city:str=Form(""), email:str=Form(...), services:str=Form(""), business_type:str=Form(""), photo:Optional[UploadFile]=File(None)):
-    require_user(request,"admin"); normalized=normalize_email(email)
-    if not display_name.strip() or not normalized: return RedirectResponse("/admin#profissionais",303)
-    conn=db(); pro=conn.execute("SELECT user_id,is_demo,avatar_filename FROM professionals WHERE id=?",(pid,)).fetchone()
+    require_user(request,"admin")
+    if not display_name.strip(): return RedirectResponse("/admin?erro=nome-demo#demonstracoes",303)
+    conn=db(); pro=conn.execute("SELECT user_id,is_demo,avatar_filename,cover_filename FROM professionals WHERE id=?",(pid,)).fetchone()
     if pro:
+        normalized=email.strip().lower() if pro["is_demo"] else normalize_email(email)
+        if not normalized: conn.close(); return RedirectResponse("/admin?erro=email#profissionais",303)
         try:
             conn.execute("UPDATE professionals SET display_name=?,city=? WHERE id=?",(display_name.strip()[:120],city.strip()[:100],pid))
             if pro["is_demo"]:
                 kind=business_type if business_type in ("professional","restaurant","store","convenience","other") else "other"
                 filename=pro["avatar_filename"] or ""
-                if photo and photo.filename: filename=save_image(photo)
+                old_files={pro["avatar_filename"] or "",pro["cover_filename"] or ""}
+                if photo and photo.filename:
+                    filename=save_image(photo)
                 conn.execute("UPDATE professionals SET services=?,business_type=?,avatar_filename=?,cover_filename=? WHERE id=?",(services.strip()[:500],kind,filename,filename,pid))
                 existing=conn.execute("SELECT id FROM photos WHERE professional_id=? ORDER BY is_cover DESC,id LIMIT 1",(pid,)).fetchone()
                 if existing: conn.execute("UPDATE photos SET filename=?,caption='Foto de demonstração',is_cover=1 WHERE id=?",(filename,existing["id"]))
                 elif filename: conn.execute("INSERT INTO photos(professional_id,filename,caption,is_cover,created_at) VALUES(?,?,?,?,?)",(pid,filename,"Foto de demonstração",1,now_iso()))
+                if photo and photo.filename:
+                    for old in old_files-{filename,""}:
+                        try: (UPLOAD_DIR/old).unlink(missing_ok=True)
+                        except OSError: pass
             conn.execute("UPDATE users SET email=? WHERE id=?",(normalized,pro["user_id"])); conn.commit()
         except sqlite3.IntegrityError: conn.rollback()
-    conn.close(); return RedirectResponse("/admin#profissionais",303)
+    conn.close(); return RedirectResponse("/admin?ok=perfil-demo-atualizado#demonstracoes",303)
 
 @app.post("/admin/profissionais/{pid}/excluir")
 def admin_delete_professional(request: Request, pid:int):
