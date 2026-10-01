@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Optional
-from urllib.parse import quote, urlparse, urlencode
+from urllib.parse import quote, urlparse
 from urllib.request import Request as URLRequest, urlopen
 from urllib.error import HTTPError, URLError
 
@@ -214,12 +214,7 @@ def require_user(request: Request, role: Optional[str]=None):
 def context(request: Request, **kwargs):
     conn = db()
     cats = conn.execute("SELECT * FROM categories WHERE active=1 ORDER BY sort_order,name").fetchall()
-    banner_rows = conn.execute("SELECT * FROM banners WHERE active=1 AND image_filename!='' ORDER BY sort_order,id LIMIT 3").fetchall()
-    banners=[]
-    for row in banner_rows:
-        item=dict(row)
-        item.setdefault("mobile_image_filename","")
-        banners.append(item)
+    banners = conn.execute("SELECT * FROM banners WHERE active=1 AND image_filename!='' ORDER BY sort_order,id LIMIT 3").fetchall()
     business_slides = conn.execute("SELECT id,slug,display_name,slide_image_filename FROM professionals WHERE blocked=0 AND in_slider=1 AND slide_image_filename!='' ORDER BY id DESC LIMIT 10").fetchall()
     settings = get_settings(conn)
     conn.close()
@@ -312,21 +307,6 @@ def init_db():
       post_type TEXT NOT NULL DEFAULT 'post',
       created_at TEXT NOT NULL
     );
-    CREATE TABLE IF NOT EXISTS daily_promotions(
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      professional_id INTEGER NOT NULL REFERENCES professionals(id) ON DELETE CASCADE,
-      title TEXT NOT NULL DEFAULT '',
-      description TEXT NOT NULL DEFAULT '',
-      image_filename TEXT NOT NULL,
-      created_day TEXT NOT NULL,
-      created_at TEXT NOT NULL,
-      expires_at TEXT NOT NULL,
-      active INTEGER NOT NULL DEFAULT 1
-    );
-    CREATE INDEX IF NOT EXISTS idx_daily_promotions_public
-      ON daily_promotions(active,expires_at,created_at);
-    CREATE INDEX IF NOT EXISTS idx_daily_promotions_limit
-      ON daily_promotions(professional_id,created_day);
     CREATE TABLE IF NOT EXISTS reviews(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       customer_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -490,9 +470,7 @@ def init_db():
     ensure_column(conn, "professionals", "in_slider", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "professionals", "featured_image_filename", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "slide_image_filename", "TEXT DEFAULT ''")
-    ensure_column(conn, "professionals", "is_subscriber", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "banners", "image_filename", "TEXT DEFAULT ''")
-    ensure_column(conn, "banners", "mobile_image_filename", "TEXT DEFAULT ''")
     ensure_column(conn, "banners", "sort_order", "INTEGER NOT NULL DEFAULT 100")
     ensure_column(conn, "banners", "clicks", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "banners", "template", "INTEGER NOT NULL DEFAULT 1")
@@ -667,12 +645,6 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
       FROM posts po JOIN professionals p ON p.id=po.professional_id
       WHERE p.blocked=0 AND po.post_type!='status' ORDER BY po.id DESC LIMIT 12
     """).fetchall()
-    daily_promotions=conn.execute("""SELECT dp.*,p.display_name,p.slug,p.business_type,p.whatsapp,
-      p.business_status,p.business_hours,p.city,p.neighborhood
-      FROM daily_promotions dp JOIN professionals p ON p.id=dp.professional_id
-      WHERE dp.active=1 AND dp.expires_at>? AND p.blocked=0 AND p.is_subscriber=1
-      AND p.city LIKE ? ORDER BY dp.created_at DESC LIMIT 30""",(now_iso(),f"%{city}%")).fetchall()
-    daily_promotions=[dict(row,shop_status=shop_status(row)) for row in daily_promotions]
     user=current_user(request); favorite_ids=set()
     if user and user["role"]=="customer":
         favorite_ids={r[0] for r in conn.execute("SELECT professional_id FROM favorites WHERE customer_id=?",(user["id"],)).fetchall()}
@@ -680,21 +652,31 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
     offers=[r for r in rows if r["featured"]]
     recommended=[r for r in rows if r["business_type"]!="restaurant"]
     conn.close()
-    response=templates.TemplateResponse("home.html", context(request, professionals=rows, restaurants=restaurants, offers=offers, daily_promotions=daily_promotions, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today))
+    response=templates.TemplateResponse("home.html", context(request, professionals=rows, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today))
     if not request.cookies.get("nowup_visitor"):
         response.set_cookie("nowup_visitor",visitor_key,max_age=31536000,httponly=True,samesite="lax",secure=request.url.scheme=="https")
     return response
 
 @app.get("/profissionais", response_class=HTMLResponse)
 def professionals(request: Request, category: str="", city: str="", neighborhood: str="", cep: str="", q: str="", business_type: str=""):
-    params=[]
-    if q: params.append(("q",q))
-    if city: params.append(("city",city))
-    if category: params.append(("category",category))
-    if business_type: params.append(("business_type",business_type))
-    destination="/"
-    if params: destination += "?" + urlencode(params)
-    return RedirectResponse(destination,303)
+    conn=db(); where=["p.blocked=0"]; params=[]; cities=active_cities(get_settings(conn)); city=city.strip() or cities[0]
+    for field,val in [("p.city",city),("p.neighborhood",neighborhood),("p.cep",cep)]:
+        if val: where.append(f"{field} LIKE ?"); params.append(f"%{val}%")
+    if q:
+        where.append("(p.display_name LIKE ? OR p.services LIKE ? OR p.description LIKE ? OR EXISTS(SELECT 1 FROM professional_categories pcq JOIN categories cq ON cq.id=pcq.category_id WHERE pcq.professional_id=p.id AND cq.name LIKE ?))"); like=f"%{q.strip()}%"; params += [like,like,like,like]
+    if category:
+        where.append("EXISTS(SELECT 1 FROM professional_categories pc JOIN categories c ON c.id=pc.category_id WHERE pc.professional_id=p.id AND c.slug=?)"); params.append(category)
+    if business_type in ("professional","restaurant","store","convenience","other"):
+        where.append("p.business_type=?"); params.append(business_type)
+    rows=conn.execute(f"""
+      SELECT p.*,
+       COALESCE((SELECT ROUND(AVG(stars),1) FROM reviews r WHERE r.professional_id=p.id),0) rating,
+       (SELECT COUNT(*) FROM reviews r WHERE r.professional_id=p.id) review_count,
+       (SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1) cover
+      FROM professionals p WHERE {' AND '.join(where)}
+      ORDER BY p.featured DESC,p.verified DESC,rating DESC,p.id DESC LIMIT 100
+    """,params).fetchall(); conn.close()
+    return templates.TemplateResponse("professionals.html", context(request, professionals=rows, active_cities=cities, filters={"category":category,"city":city,"neighborhood":neighborhood,"cep":cep,"q":q,"business_type":business_type}))
 
 @app.get("/p/{slug}", response_class=HTMLResponse)
 def profile(request: Request, slug: str):
@@ -1024,9 +1006,6 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     p=conn.execute("SELECT * FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
     photos=conn.execute("SELECT * FROM photos WHERE professional_id=? ORDER BY is_cover DESC,id DESC",(p["id"],)).fetchall()
     posts=conn.execute("SELECT * FROM posts WHERE professional_id=? ORDER BY id DESC LIMIT 20",(p["id"],)).fetchall()
-    promotion_day=datetime.now(SAO_PAULO_TZ).date().isoformat()
-    daily_promotions=conn.execute("SELECT * FROM daily_promotions WHERE professional_id=? ORDER BY id DESC LIMIT 20",(p["id"],)).fetchall()
-    promotions_today=conn.execute("SELECT COUNT(*) FROM daily_promotions WHERE professional_id=? AND created_day=?",(p["id"],promotion_day)).fetchone()[0]
     products=conn.execute("SELECT * FROM products WHERE professional_id=? ORDER BY category,sort_order,id DESC",(p["id"],)).fetchall()
     product_options={}
     for row in conn.execute("""SELECT po.* FROM product_options po JOIN products pr ON pr.id=po.product_id
@@ -1112,7 +1091,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     latest_order_id=conn.execute("SELECT COALESCE(MAX(id),0) FROM orders WHERE professional_id=?",(p["id"],)).fetchone()[0]
     conn.close()
     status=shop_status(p); business_hours=parse_business_hours(p["business_hours"])
-    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, daily_promotions=daily_promotions, promotions_today=promotions_today, products=products, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, now_utc=now_iso()))
+    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, products=products, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id))
 
 @app.get("/painel/pedidos/novos")
 def pro_new_orders(request: Request, after: int=0):
@@ -1121,23 +1100,8 @@ def pro_new_orders(request: Request, after: int=0):
     rows=conn.execute("""SELECT id,customer_name,total_cents,created_at FROM orders
       WHERE professional_id=? AND id>? ORDER BY id ASC LIMIT 10""",(p["id"],max(0,after))).fetchall()
     latest=conn.execute("SELECT COALESCE(MAX(id),0) FROM orders WHERE professional_id=?",(p["id"],)).fetchone()[0]
-    pending=conn.execute("""SELECT id,customer_name,total_cents,created_at FROM orders
-      WHERE professional_id=? AND status='new' ORDER BY id DESC""",(p["id"],)).fetchall()
     conn.close()
-    pending_order=pending[0] if pending else None
-    return JSONResponse({"latest_id":latest,"pending_count":len(pending),"pending_order":({"id":pending_order["id"],"customer_name":pending_order["customer_name"] or "Cliente","total_cents":pending_order["total_cents"],"created_at":pending_order["created_at"]} if pending_order else None),"orders":[{"id":r["id"],"customer_name":r["customer_name"] or "Cliente","total_cents":r["total_cents"],"created_at":r["created_at"]} for r in rows]})
-
-@app.get("/cliente/pedidos/notificacoes")
-def customer_order_notifications(request: Request):
-    u=require_user(request,"customer"); conn=db()
-    order=conn.execute("""SELECT o.id,o.order_code,o.status,o.updated_at,p.display_name FROM orders o
-      JOIN professionals p ON p.id=o.professional_id
-      WHERE o.customer_id=? OR (o.customer_id IS NULL AND replace(replace(replace(replace(o.customer_phone,' ',''),'-',''),'(',''),')','')=?)
-      ORDER BY o.updated_at DESC,o.id DESC LIMIT 1""",(u["id"],normalize_phone(u["phone"] or "") or "__none__")).fetchone()
-    conn.close()
-    if not order: return JSONResponse({"order":None})
-    labels={"new":"Pedido enviado","confirmed":"Pedido aceito","preparing":"Pedido em preparo","ready":"Pedido pronto","out_for_delivery":"Pedido saiu para entrega","completed":"Pedido finalizado","cancelled":"Pedido cancelado","rejected":"Pedido recusado"}
-    return JSONResponse({"order":{"id":order["id"],"code":order["order_code"] or f"Pedido #{order['id']}","status":order["status"],"label":labels.get(order["status"],order["status"]),"updated_at":order["updated_at"],"store":order["display_name"]}})
+    return JSONResponse({"latest_id":latest,"orders":[{"id":r["id"],"customer_name":r["customer_name"] or "Cliente","total_cents":r["total_cents"],"created_at":r["created_at"]} for r in rows]})
 
 def price_to_cents(raw: str):
     value=(raw or "0").strip().replace("R$","").replace(" ","")
@@ -1420,34 +1384,6 @@ def publish_post(request: Request, text: str=Form(...), post_type: str=Form("pos
     if photo and photo.filename: fn=save_image(photo)
     conn.execute("INSERT INTO posts(professional_id,text,photo_filename,post_type,created_at) VALUES(?,?,?,?,?)",(p["id"],text[:500],fn,post_type,now_iso())); conn.commit(); conn.close(); return RedirectResponse("/painel?ok=post",303)
 
-@app.post("/painel/promocoes")
-def create_daily_promotion(request: Request, title: str=Form(...), description: str=Form(""), image: UploadFile=File(...)):
-    u=require_user(request,"professional"); conn=db()
-    p=conn.execute("SELECT id,is_subscriber FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
-    if not p or not p["is_subscriber"]:
-        conn.close(); return RedirectResponse("/painel?erro=assinatura#promocoes",303)
-    created_day=datetime.now(SAO_PAULO_TZ).date().isoformat()
-    count=conn.execute("SELECT COUNT(*) FROM daily_promotions WHERE professional_id=? AND created_day=?",(p["id"],created_day)).fetchone()[0]
-    if count>=2:
-        conn.close(); return RedirectResponse("/painel?erro=limite-ofertas#promocoes",303)
-    clean_title=title.strip()[:90]
-    if not clean_title:
-        conn.close(); return RedirectResponse("/painel?erro=titulo-oferta#promocoes",303)
-    filename=save_image(image); created_at=now_iso(); expires_at=(datetime.now(timezone.utc)+timedelta(hours=24)).isoformat()
-    conn.execute("""INSERT INTO daily_promotions(professional_id,title,description,image_filename,created_day,created_at,expires_at,active)
-      VALUES(?,?,?,?,?,?,?,1)""",(p["id"],clean_title,description.strip()[:220],filename,created_day,created_at,expires_at))
-    conn.commit(); conn.close(); return RedirectResponse("/painel?ok=promocao#promocoes",303)
-
-@app.post("/painel/promocoes/{promotion_id}/excluir")
-def delete_daily_promotion(request: Request, promotion_id:int):
-    u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
-    promotion=conn.execute("SELECT image_filename FROM daily_promotions WHERE id=? AND professional_id=?",(promotion_id,p["id"])).fetchone()
-    if promotion:
-        conn.execute("DELETE FROM daily_promotions WHERE id=?",(promotion_id,)); conn.commit()
-        try: (UPLOAD_DIR/promotion["image_filename"]).unlink(missing_ok=True)
-        except OSError: pass
-    conn.close(); return RedirectResponse("/painel#promocoes",303)
-
 @app.post("/p/{slug}/avaliar")
 def review(request: Request, slug:str, stars:int=Form(...), comment:str=Form("")):
     u=require_user(request,"customer"); stars=max(1,min(5,stars)); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
@@ -1483,16 +1419,13 @@ def admin(request: Request):
       "wa":conn.execute("SELECT COALESCE(SUM(whatsapp_clicks),0) FROM professionals").fetchone()[0],
       "views":conn.execute("SELECT COALESCE(SUM(views),0) FROM professionals").fetchone()[0],
       "menu":conn.execute("SELECT COALESCE(SUM(menu_clicks),0) FROM professionals").fetchone()[0],
-      "promotions":conn.execute("SELECT COUNT(*) FROM daily_promotions WHERE active=1 AND expires_at>?",(now_iso(),)).fetchone()[0],
     }
     pros=conn.execute("SELECT p.*,u.email,u.email_verified FROM professionals p JOIN users u ON u.id=p.user_id ORDER BY p.id DESC LIMIT 50").fetchall()
     clients=conn.execute("SELECT id,name,email,phone,is_active,email_verified,created_at FROM users WHERE role='customer' ORDER BY id DESC LIMIT 100").fetchall()
     admin_categories=conn.execute("SELECT * FROM categories ORDER BY sort_order,name").fetchall()
     reports=conn.execute("SELECT r.*,u.name customer,p.display_name professional FROM reports r JOIN users u ON u.id=r.customer_id JOIN professionals p ON p.id=r.professional_id ORDER BY r.id DESC LIMIT 50").fetchall()
-    suggestions=conn.execute("SELECT * FROM suggestions ORDER BY id DESC LIMIT 30").fetchall(); banners=conn.execute("SELECT * FROM banners ORDER BY sort_order,id").fetchall()
-    daily_promotions=conn.execute("""SELECT dp.*,p.display_name,p.slug FROM daily_promotions dp
-      JOIN professionals p ON p.id=dp.professional_id ORDER BY dp.id DESC LIMIT 100""").fetchall(); conn.close()
-    return templates.TemplateResponse("admin.html", context(request, stats=stats, pros=pros, clients=clients, admin_categories=admin_categories, reports=reports, suggestions=suggestions, admin_banners=banners, daily_promotions=daily_promotions, now_utc=now_iso()))
+    suggestions=conn.execute("SELECT * FROM suggestions ORDER BY id DESC LIMIT 30").fetchall(); banners=conn.execute("SELECT * FROM banners ORDER BY sort_order,id").fetchall(); conn.close()
+    return templates.TemplateResponse("admin.html", context(request, stats=stats, pros=pros, clients=clients, admin_categories=admin_categories, reports=reports, suggestions=suggestions, admin_banners=banners))
 
 NOWUP_THEMES = {
     "oceanico": ("#075BD8", "#FF6A00"),
@@ -1614,7 +1547,6 @@ def admin_pro_action(request: Request, pid:int, action:str):
     if action=="verificar": conn.execute("UPDATE professionals SET verified=CASE verified WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(pid,))
     elif action=="destaque": conn.execute("UPDATE professionals SET featured=CASE featured WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(pid,))
     elif action=="slide": conn.execute("UPDATE professionals SET in_slider=CASE in_slider WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(pid,))
-    elif action=="assinante": conn.execute("UPDATE professionals SET is_subscriber=CASE is_subscriber WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(pid,))
     elif action=="bloquear":
         pro=conn.execute("SELECT user_id,blocked FROM professionals WHERE id=?",(pid,)).fetchone()
         if pro:
@@ -1624,32 +1556,6 @@ def admin_pro_action(request: Request, pid:int, action:str):
             if new_blocked: conn.execute("DELETE FROM sessions WHERE user_id=?",(pro["user_id"],))
     else: conn.close(); raise HTTPException(400)
     conn.commit(); conn.close(); return RedirectResponse("/admin#profissionais",303)
-
-@app.post("/admin/promocoes/{promotion_id}/alternar")
-def admin_toggle_daily_promotion(request: Request, promotion_id:int):
-    require_user(request,"admin"); conn=db()
-    conn.execute("UPDATE daily_promotions SET active=CASE active WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(promotion_id,))
-    conn.commit(); conn.close(); return RedirectResponse("/admin#promocoes",303)
-
-@app.post("/admin/promocoes/demonstracao")
-def admin_create_demo_promotion(request: Request, professional_id:int=Form(...), title:str=Form(...), description:str=Form(""), image:UploadFile=File(...)):
-    require_user(request,"admin"); clean_title=title.strip()[:120]
-    if not clean_title: return RedirectResponse("/admin?erro=promocao-demo#demonstracoes",303)
-    conn=db(); pro=conn.execute("SELECT id FROM professionals WHERE id=? AND is_demo=1",(professional_id,)).fetchone()
-    if not pro: conn.close(); return RedirectResponse("/admin?erro=promocao-demo#demonstracoes",303)
-    filename=save_image(image); created=now_iso(); expires=(datetime.now(timezone.utc)+timedelta(days=3650)).isoformat()
-    conn.execute("UPDATE professionals SET is_subscriber=1,blocked=0 WHERE id=?",(professional_id,))
-    conn.execute("INSERT INTO daily_promotions(professional_id,title,description,image_filename,created_day,created_at,expires_at,active) VALUES(?,?,?,?,?,?,?,1)",(professional_id,clean_title,description.strip()[:240],filename,datetime.now(SAO_PAULO_TZ).date().isoformat(),created,expires))
-    conn.commit(); conn.close(); return RedirectResponse("/admin?ok=promocao-demo#demonstracoes",303)
-
-@app.post("/admin/promocoes/{promotion_id}/editar")
-def admin_edit_daily_promotion(request: Request, promotion_id:int, title:str=Form(...), description:str=Form(""), image:Optional[UploadFile]=File(None)):
-    require_user(request,"admin"); conn=db(); promotion=conn.execute("SELECT image_filename FROM daily_promotions WHERE id=?",(promotion_id,)).fetchone()
-    if not promotion: conn.close(); return RedirectResponse("/admin#demonstracoes",303)
-    filename=promotion["image_filename"]
-    if image and image.filename: filename=save_image(image)
-    conn.execute("UPDATE daily_promotions SET title=?,description=?,image_filename=? WHERE id=?",(title.strip()[:120],description.strip()[:240],filename,promotion_id)); conn.commit(); conn.close()
-    return RedirectResponse("/admin?ok=promocao-editada#demonstracoes",303)
 
 @app.post("/admin/perfis/demonstracao")
 def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsapp:str=Form(...), address:str=Form(...), photo:UploadFile=File(...)):
@@ -1681,32 +1587,16 @@ def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsap
     return RedirectResponse("/admin?ok=perfil-demo#profissionais",303)
 
 @app.post("/admin/profissionais/{pid}/editar")
-def admin_edit_professional(request: Request, pid:int, display_name:str=Form(...), city:str=Form(""), email:str=Form(...), services:str=Form(""), business_type:str=Form(""), photo:Optional[UploadFile]=File(None)):
-    require_user(request,"admin")
-    if not display_name.strip(): return RedirectResponse("/admin?erro=nome-demo#demonstracoes",303)
-    conn=db(); pro=conn.execute("SELECT user_id,is_demo,avatar_filename,cover_filename FROM professionals WHERE id=?",(pid,)).fetchone()
+def admin_edit_professional(request: Request, pid:int, display_name:str=Form(...), city:str=Form(""), email:str=Form(...)):
+    require_user(request,"admin"); normalized=normalize_email(email)
+    if not display_name.strip() or not normalized: return RedirectResponse("/admin#profissionais",303)
+    conn=db(); pro=conn.execute("SELECT user_id FROM professionals WHERE id=?",(pid,)).fetchone()
     if pro:
-        normalized=email.strip().lower() if pro["is_demo"] else normalize_email(email)
-        if not normalized: conn.close(); return RedirectResponse("/admin?erro=email#profissionais",303)
         try:
             conn.execute("UPDATE professionals SET display_name=?,city=? WHERE id=?",(display_name.strip()[:120],city.strip()[:100],pid))
-            if pro["is_demo"]:
-                kind=business_type if business_type in ("professional","restaurant","store","convenience","other") else "other"
-                filename=pro["avatar_filename"] or ""
-                old_files={pro["avatar_filename"] or "",pro["cover_filename"] or ""}
-                if photo and photo.filename:
-                    filename=save_image(photo)
-                conn.execute("UPDATE professionals SET services=?,business_type=?,avatar_filename=?,cover_filename=? WHERE id=?",(services.strip()[:500],kind,filename,filename,pid))
-                existing=conn.execute("SELECT id FROM photos WHERE professional_id=? ORDER BY is_cover DESC,id LIMIT 1",(pid,)).fetchone()
-                if existing: conn.execute("UPDATE photos SET filename=?,caption='Foto de demonstração',is_cover=1 WHERE id=?",(filename,existing["id"]))
-                elif filename: conn.execute("INSERT INTO photos(professional_id,filename,caption,is_cover,created_at) VALUES(?,?,?,?,?)",(pid,filename,"Foto de demonstração",1,now_iso()))
-                if photo and photo.filename:
-                    for old in old_files-{filename,""}:
-                        try: (UPLOAD_DIR/old).unlink(missing_ok=True)
-                        except OSError: pass
             conn.execute("UPDATE users SET email=? WHERE id=?",(normalized,pro["user_id"])); conn.commit()
         except sqlite3.IntegrityError: conn.rollback()
-    conn.close(); return RedirectResponse("/admin?ok=perfil-demo-atualizado#demonstracoes",303)
+    conn.close(); return RedirectResponse("/admin#profissionais",303)
 
 @app.post("/admin/profissionais/{pid}/excluir")
 def admin_delete_professional(request: Request, pid:int):
@@ -1720,35 +1610,27 @@ def admin_report_action(request: Request, rid:int, status:str):
     conn=db(); conn.execute("UPDATE reports SET status=? WHERE id=?",(status,rid)); conn.commit(); conn.close(); return RedirectResponse("/admin#denuncias",303)
 
 @app.post("/admin/banners")
-def admin_banner_add(request: Request, link:str=Form(""), brightness:int=Form(100), zoom:int=Form(100), position_x:int=Form(50), position_y:int=Form(50), desktop_height:int=Form(360), mobile_height:int=Form(240), image:UploadFile=File(...), mobile_image:Optional[UploadFile]=File(None)):
-    require_user(request,"admin"); fn=""; mobile_fn=""; conn=db(); ensure_column(conn,"banners","mobile_image_filename","TEXT DEFAULT ''"); conn.commit(); conn.close()
+def admin_banner_add(request: Request, link:str=Form(""), brightness:int=Form(100), zoom:int=Form(100), position_x:int=Form(50), position_y:int=Form(50), desktop_height:int=Form(360), mobile_height:int=Form(240), image:UploadFile=File(...)):
+    require_user(request,"admin"); fn=""
     if image and image.filename: fn=save_image(image)
-    if mobile_image and mobile_image.filename: mobile_fn=save_image(mobile_image)
     brightness=max(40,min(160,brightness)); zoom=max(100,min(200,zoom)); position_x=max(0,min(100,position_x)); position_y=max(0,min(100,position_y)); desktop_height=max(240,min(600,desktop_height)); mobile_height=max(180,min(500,mobile_height))
     conn=db(); next_order=conn.execute("SELECT COALESCE(MAX(sort_order),0)+1 FROM banners").fetchone()[0]
     active_count=conn.execute("SELECT COUNT(*) FROM banners WHERE active=1").fetchone()[0]
-    conn.execute("INSERT INTO banners(title,subtitle,link,image_filename,mobile_image_filename,sort_order,active,template,background_color,text_color,font_family,brightness,zoom,position_x,position_y,desktop_height,mobile_height,created_at) VALUES('','',?,?,?,?,?,1,'#000000','#ffffff','Inter',?,?,?,?,?,?,?)",(clean_link(link),fn,mobile_fn,next_order,1 if active_count<10 else 0,brightness,zoom,position_x,position_y,desktop_height,mobile_height,now_iso())); conn.commit(); conn.close(); return RedirectResponse("/admin#publicidade",303)
+    conn.execute("INSERT INTO banners(title,subtitle,link,image_filename,sort_order,active,template,background_color,text_color,font_family,brightness,zoom,position_x,position_y,desktop_height,mobile_height,created_at) VALUES('','',?,?,?,?,1,'#000000','#ffffff','Inter',?,?,?,?,?,?,?)",(clean_link(link),fn,next_order,1 if active_count<10 else 0,brightness,zoom,position_x,position_y,desktop_height,mobile_height,now_iso())); conn.commit(); conn.close(); return RedirectResponse("/admin#publicidade",303)
 
 @app.post("/admin/banners/{bid}/editar")
-def admin_banner_edit(request: Request, bid:int, link:str=Form(""), brightness:int=Form(100), zoom:int=Form(100), position_x:int=Form(50), position_y:int=Form(50), desktop_height:int=Form(360), mobile_height:int=Form(240), image:Optional[UploadFile]=File(None), mobile_image:Optional[UploadFile]=File(None)):
-    require_user(request,"admin"); conn=db(); ensure_column(conn,"banners","mobile_image_filename","TEXT DEFAULT ''"); conn.commit(); banner=conn.execute("SELECT * FROM banners WHERE id=?",(bid,)).fetchone()
+def admin_banner_edit(request: Request, bid:int, link:str=Form(""), brightness:int=Form(100), zoom:int=Form(100), position_x:int=Form(50), position_y:int=Form(50), desktop_height:int=Form(360), mobile_height:int=Form(240), image:Optional[UploadFile]=File(None)):
+    require_user(request,"admin"); conn=db(); banner=conn.execute("SELECT * FROM banners WHERE id=?",(bid,)).fetchone()
     if not banner: conn.close(); raise HTTPException(404)
     fn=banner["image_filename"] or ""
-    mobile_fn=banner["mobile_image_filename"] or ""
     if image and image.filename:
         new_fn=save_image(image)
         if fn:
             try: (UPLOAD_DIR/fn).unlink(missing_ok=True)
             except OSError: pass
         fn=new_fn
-    if mobile_image and mobile_image.filename:
-        new_mobile_fn=save_image(mobile_image)
-        if mobile_fn:
-            try: (UPLOAD_DIR/mobile_fn).unlink(missing_ok=True)
-            except OSError: pass
-        mobile_fn=new_mobile_fn
     brightness=max(40,min(160,brightness)); zoom=max(100,min(200,zoom)); position_x=max(0,min(100,position_x)); position_y=max(0,min(100,position_y)); desktop_height=max(240,min(600,desktop_height)); mobile_height=max(180,min(500,mobile_height))
-    conn.execute("UPDATE banners SET title='',subtitle='',link=?,image_filename=?,mobile_image_filename=?,template=1,background_color='#000000',text_color='#ffffff',font_family='Inter',brightness=?,zoom=?,position_x=?,position_y=?,desktop_height=?,mobile_height=? WHERE id=?",(clean_link(link),fn,mobile_fn,brightness,zoom,position_x,position_y,desktop_height,mobile_height,bid)); conn.commit(); conn.close()
+    conn.execute("UPDATE banners SET title='',subtitle='',link=?,image_filename=?,template=1,background_color='#000000',text_color='#ffffff',font_family='Inter',brightness=?,zoom=?,position_x=?,position_y=?,desktop_height=?,mobile_height=? WHERE id=?",(clean_link(link),fn,brightness,zoom,position_x,position_y,desktop_height,mobile_height,bid)); conn.commit(); conn.close()
     return RedirectResponse("/admin#publicidade",303)
 
 @app.post("/admin/banners/{bid}/alternar")
