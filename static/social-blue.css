@@ -99,4 +99,36 @@ body{padding-bottom:74px;background:#fff}.container{padding-left:14px;padding-ri
   .social-home .home-hero:before{
     background-image:linear-gradient(105deg,var(--theme-primary),transparent),var(--hero-image);
   }
+}/* Painéis NowUp em tema branco */
+body:has(.professional-area),
+body:has(.pro-dashboard),
+body:has(.admin-panel) {
+  background: #f5f7fb !important;
+  color: #172033 !important;
 }
+
+.professional-area,
+.pro-dashboard,
+.native-menu,
+.admin-panel,
+.panel-card,
+.dashboard-card,
+.order-metrics,
+.product-create,
+.order-products,
+.menu-settings {
+  background: #ffffff !important;
+  color: #172033 !important;
+}
+
+.professional-area input,
+.professional-area textarea,
+.professional-area select,
+.pro-dashboard input,
+.pro-dashboard textarea,
+.pro-dashboard select {
+  background: #ffffff !important;
+  color: #172033 !important;
+  border: 1px solid #dfe5ee !important;
+}
+,,
