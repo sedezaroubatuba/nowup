@@ -8,8 +8,6 @@
 <a href="#aparencia">Aparência</a>
 <a href="#categorias">Categorias</a>
 <a href="#publicidade">Publicidade</a>
-<a href="#promocoes">Promoções do dia</a>
-<a href="#demonstracoes">Editar demonstrações</a>
 <a href="#cadastro-rapido">Criar perfil fictício</a>
 <a href="#profissionais">Perfis</a>
 <a href="#clientes">Clientes</a>
@@ -41,12 +39,7 @@
 <span class="muted tiny">Cliques WhatsApp</span>
 <b>{{stats.wa}}</b>
 </div>
-<div class="stat"><span class="muted tiny">Promoções ativas</span><b>{{stats.promotions}}</b></div>
 </div>
-</section>
-<section class="panel" id="promocoes">
-<div class="section-title"><div><h2>Promoções publicadas pelas empresas</h2><p class="muted">Controle as ofertas públicas de 24 horas. Você pode ocultar uma publicação e reativá-la enquanto ainda estiver dentro do prazo.</p></div><span class="status-pill ok">{{stats.promotions}} ativa(s)</span></div>
-<div class="admin-promotion-grid">{% for offer in daily_promotions %}<article class="admin-promotion-card {{'expired' if offer.expires_at<=now_utc or not offer.active else ''}}"><img src="/uploads/{{offer.image_filename}}" alt="{{offer.title}}"><div><small>{{offer.display_name}}</small><h3>{{offer.title}}</h3>{% if offer.description %}<p>{{offer.description}}</p>{% endif %}<span class="status-pill {% if offer.active and offer.expires_at>now_utc %}ok{% endif %}">{% if not offer.active %}Oculta{% elif offer.expires_at<=now_utc %}Expirada{% else %}Pública{% endif %}</span><div class="row"><a class="btn soft tiny" href="/p/{{offer.slug}}" target="_blank">Ver empresa</a><form action="/admin/promocoes/{{offer.id}}/alternar" method="post"><button class="btn {% if offer.active %}danger{% else %}soft{% endif %} tiny">{{'Ocultar' if offer.active else 'Reativar'}}</button></form></div></div></article>{% else %}<p class="muted">Nenhuma promoção foi publicada.</p>{% endfor %}</div>
 </section>
 <section class="panel" id="perfil">
 <div class="section-title">
@@ -242,12 +235,10 @@
 <span class="status-pill">10 espaços disponíveis</span>
 </div>
 <h3>Criar novo slide</h3>
-<p class="muted"><b>Tamanhos corretos:</b> computador 1920 × 600 px e celular 1080 × 480 px. Envie as duas artes para evitar cortes ou encolhimento.</p>
+<p class="muted">Envie uma arte quadrada de 1080 × 1080. A prévia mostra o enquadramento real antes de salvar.</p>
 <form action="/admin/banners" method="post" enctype="multipart/form-data" class="banner-control-panel" data-banner-editor>
 <div class="banner-upload-row">
-<label>Banner para computador — 1920 × 600<input class="input" type="file" name="image" accept="image/*" required>
-</label>
-<label>Banner para celular — 1080 × 480<input class="input" type="file" name="mobile_image" accept="image/*">
+<label>Arte do banner (recomendado: 1080 × 1080)<input class="input" type="file" name="image" accept="image/*" required>
 </label>
 <label>Link ao clicar (opcional)<input class="input" name="link" placeholder="Perfil, cardápio, site ou WhatsApp">
 </label>
@@ -295,9 +286,7 @@
 </summary>
 <form action="/admin/banners/{{b.id}}/editar" method="post" enctype="multipart/form-data" class="banner-control-panel" data-banner-editor>
 <div class="banner-upload-row">
-<label>Trocar banner do computador — 1920 × 600<input class="input" type="file" name="image" accept="image/*">
-</label>
-<label>Trocar banner do celular — 1080 × 480<input class="input" type="file" name="mobile_image" accept="image/*">
+<label>Trocar arte<input class="input" type="file" name="image" accept="image/*">
 </label>
 <label>Link ao clicar<input class="input" name="link" value="{{b.link}}" placeholder="Link opcional">
 </label>
@@ -344,15 +333,6 @@
 </div>
 </details>{% endfor %}</div>
 </section>
-<section class="panel" id="demonstracoes">
-<div class="section-title"><div><h2>Editar demonstrações da tela inicial</h2><p class="muted">Personalize os perfis e promoções fictícias para apresentar o NowUp do seu jeito. Os perfis reais não são alterados aqui.</p></div><span class="status-pill">Modo demonstração</span></div>
-<h3>Perfis fictícios</h3>
-<div class="demo-admin-grid">{% for p in pros if p.is_demo %}<form action="/admin/profissionais/{{p.id}}/editar" method="post" enctype="multipart/form-data" class="demo-edit-card">{% if p.avatar_filename %}<img src="/uploads/{{p.avatar_filename}}" alt="{{p.display_name}}">{% endif %}<input type="hidden" name="email" value="{{p.email}}"><label>Nome<input class="input" name="display_name" value="{{p.display_name}}" required></label><label>Cidade<input class="input" name="city" value="{{p.city}}"></label><label>Categoria ou serviço<input class="input" name="services" value="{{p.services or ''}}" placeholder="Ex.: Restaurante, Pet shop, Mecânico"></label><label>Tipo<select name="business_type"><option value="restaurant" {% if p.business_type=='restaurant' %}selected{% endif %}>Restaurante/lanches</option><option value="store" {% if p.business_type=='store' %}selected{% endif %}>Loja/comércio</option><option value="convenience" {% if p.business_type=='convenience' %}selected{% endif %}>Adega/conveniência</option><option value="professional" {% if p.business_type=='professional' %}selected{% endif %}>Prestador de serviço</option><option value="other" {% if p.business_type=='other' %}selected{% endif %}>Outro</option></select></label><label>Trocar foto<input class="input" type="file" name="photo" accept="image/*"></label><button class="btn primary">Salvar perfil fictício</button></form>{% else %}<p class="muted">Crie um perfil fictício abaixo para começar.</p>{% endfor %}</div>
-<h3>Criar promoção de demonstração</h3>
-<form action="/admin/promocoes/demonstracao" method="post" enctype="multipart/form-data" class="grid-form"><label>Perfil fictício<select name="professional_id" required>{% for p in pros if p.is_demo %}<option value="{{p.id}}">{{p.display_name}}</option>{% endfor %}</select></label><label>Título<input class="input" name="title" placeholder="Ex.: Cerveja gelada em oferta" required></label><label>Descrição<input class="input" name="description" placeholder="Texto curto da promoção"></label><label>Imagem<input class="input" type="file" name="image" accept="image/*" required></label><button class="btn orange">Publicar demonstração</button></form>
-<h3>Editar promoções</h3>
-<div class="demo-promo-edit-grid">{% for offer in daily_promotions %}<form action="/admin/promocoes/{{offer.id}}/editar" method="post" enctype="multipart/form-data" class="demo-edit-card"><img src="/uploads/{{offer.image_filename}}" alt="{{offer.title}}"><small>{{offer.display_name}}</small><label>Título<input class="input" name="title" value="{{offer.title}}" required></label><label>Descrição<input class="input" name="description" value="{{offer.description or ''}}"></label><label>Trocar imagem<input class="input" type="file" name="image" accept="image/*"></label><button class="btn primary">Salvar promoção</button></form>{% else %}<p class="muted">Nenhuma promoção cadastrada. Crie a primeira acima.</p>{% endfor %}</div>
-</section>
 <section class="panel" id="cadastro-rapido">
 <h2>Cadastrar profissional fictício</h2>
 <p class="muted">Crie perfis de demonstração para preencher e testar o NowUp. Não precisa informar e-mail nem confirmar cadastro.</p>
@@ -397,7 +377,7 @@
 <a class="tiny" href="/p/{{p.slug}}">Ver perfil público</a>
 </td>
 <td>{{'Sim' if p.email_verified else 'Pendente'}}</td>
-<td>Mensalidade: {{'Ativa' if p.is_subscriber else 'Inativa'}}<br>Verificado: {{'Sim' if p.verified else 'Não'}}<br>Destaque: {{'Sim' if p.featured else 'Não'}}<br>No slide: {{'Sim' if p.in_slider else 'Não'}}<br>Bloqueado: {{'Sim' if p.blocked else 'Não'}}</td>
+<td>Verificado: {{'Sim' if p.verified else 'Não'}}<br>Destaque: {{'Sim' if p.featured else 'Não'}}<br>No slide: {{'Sim' if p.in_slider else 'Não'}}<br>Bloqueado: {{'Sim' if p.blocked else 'Não'}}</td>
 <td>
 <div class="row">
 <form action="/admin/profissionais/{{p.id}}/acao/verificar" method="post">
@@ -409,7 +389,6 @@
 <form action="/admin/profissionais/{{p.id}}/acao/slide" method="post">
 <button class="btn soft tiny">Slide</button>
 </form>
-<form action="/admin/profissionais/{{p.id}}/acao/assinante" method="post"><button class="btn {% if p.is_subscriber %}orange{% else %}soft{% endif %} tiny">{{'Desativar mensalidade' if p.is_subscriber else 'Ativar mensalidade'}}</button></form>
 <form action="/admin/profissionais/{{p.id}}/acao/bloquear" method="post">
 <button class="btn {% if p.blocked %}soft{% else %}danger{% endif %} tiny">{{'Reativar' if p.blocked else 'Pausar/bloquear'}}</button>
 </form>

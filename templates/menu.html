@@ -1,20 +1,80 @@
-{% extends 'base.html' %}
-{% block title %}Cardápio de {{pro.display_name}} | NowUp{% endblock %}
-{% block body_class %}nowup-menu-v33{% endblock %}
-{% block content %}
-<main class="nu-menu" data-native-menu><div class="nu-menu-shell">
-<header class="nu-menu-header"><div class="nu-menu-top"><a class="nu-menu-logo" href="/">Now<span>Up</span><small>BRASIL</small></a><div class="nu-menu-tools"><a href="/" aria-label="Buscar">⌕</a><a href="/p/{{pro.slug}}" aria-label="Voltar ao perfil">☰</a></div></div>
-<div class="nu-store">{% if pro.avatar_filename %}<img src="/uploads/{{pro.avatar_filename}}" alt="Logo de {{pro.display_name}}">{% else %}<span class="nu-store-avatar">🏪</span>{% endif %}<div class="nu-store-copy"><h1>{{pro.display_name}}</h1><p>{{pro.services or pro.description or 'Produtos e sabores especiais'}}</p><div class="nu-store-meta"><b>★ {{pro.rating or '5,0'}}</b><span class="{% if shop_status.open %}open{% else %}closed{% endif %}">● {{shop_status.label}}</span><span>🛵 {{pro.prep_minutes}} min</span></div></div><a class="nu-store-favorite" href="{% if user and user.role=='customer' %}/cliente#favoritos{% else %}/entrar{% endif %}" aria-label="Favoritar">♡</a></div></header>
-<nav class="nu-menu-categories" aria-label="Categorias"><button class="active" type="button" data-category-filter="all"><span>🔥</span><b>Mais pedidos</b></button>{% for category in menu_categories %}<button type="button" data-category-filter="{{category|lower}}"><span>{% if category_images.get(category) %}<img src="/uploads/{{category_images.get(category)}}" alt="">{% elif 'promo' in category|lower %}%{% elif 'bebid' in category|lower %}🥤{% elif 'premium' in category|lower or 'gourmet' in category|lower %}♛{% else %}🍽{% endif %}</span><b>{{category}}</b></button>{% endfor %}</nav>
-{% if daily_promotions %}<section class="nu-daily-slider" data-promo-slider>{% for offer in daily_promotions %}<article class="nu-daily-slide {% if loop.first %}active{% endif %}"><img src="/uploads/{{offer.image_filename}}" alt="{{offer.title}}"><div><small>PROMOÇÕES DO DIA</small><h2>{{offer.title}}</h2>{% if offer.description %}<p>{{offer.description}}</p>{% endif %}</div></article>{% endfor %}{% if daily_promotions|length > 1 %}<div class="nu-slider-dots">{% for offer in daily_promotions %}<button type="button" data-promo-index="{{loop.index0}}" class="{% if loop.first %}active{% endif %}" aria-label="Promoção {{loop.index}}"></button>{% endfor %}</div>{% endif %}</section>{% endif %}
-{% if not shop_status.open %}<div class="nu-store-warning"><b>{{shop_status.label}}</b><span>{{shop_status.detail}}. Você pode consultar o cardápio, mas os pedidos estão pausados.</span></div>{% endif %}
-<section class="nu-products-section"><header><h2>Mais pedidos</h2><button type="button" data-show-all>Ver todos ›</button></header><div class="menu-layout"><div class="menu-products">{% for product in products %}
-<article class="menu-product" data-product data-category="{{product.category|lower}}" data-id="{{product.id}}" data-name="{{product.name}}" data-price="{{product.promo_price_cents if product.promo_price_cents > 0 else product.price_cents}}" data-max="{{product.max_quantity}}">{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" alt="{{product.name}}">{% else %}<div class="menu-product-placeholder">🍽</div>{% endif %}<div class="menu-product-info"><small>{{product.category}}</small><h3>{{product.name}}</h3><p>{{product.description}}</p>
+{% extends 'base.html' %}{% block title %}Cardápio de {{pro.display_name}} | NowUp{% endblock %}{% block content %}
+<section class="native-menu" data-native-menu>
+<div class="container">
+<header class="menu-hero">
+<a href="/p/{{pro.slug}}">← Voltar ao perfil</a>
+<div>{% if pro.avatar_filename %}<img src="/uploads/{{pro.avatar_filename}}" alt="">{% else %}<span>🍽</span>{% endif %}<div>
+<small>Cardápio NowUp</small>
+<h1>{{pro.display_name}}</h1>
+<p>⏱ {{pro.prep_minutes}} min · Pedido mínimo R$ {{'%.2f'|format(pro.minimum_order_cents/100)|replace('.',',')}} · Entrega R$ {{'%.2f'|format(pro.delivery_fee_cents/100)|replace('.',',')}}</p>
+</div>
+</div>
+</header>
+<div class="store-status {% if shop_status.open %}open{% else %}closed{% endif %}"><b>{{shop_status.label}}</b><span>{{shop_status.detail}}</span>{% if not shop_status.open %}<small>Você pode consultar o cardápio, mas os pedidos estão pausados neste momento.</small>{% endif %}</div>
+{% if menu_categories %}<nav class="menu-category-nav" aria-label="Categorias">
+<button type="button" class="active" data-category-filter="all">Todos</button>{% for category in menu_categories %}<button type="button" data-category-filter="{{category|lower}}">{{category}}</button>{% endfor %}</nav>{% endif %}
+<div class="menu-layout">
+<main>
+<div class="menu-products">{% for product in products %}<article class="menu-product" data-product data-category="{{product.category|lower}}" data-id="{{product.id}}" data-name="{{product.name}}" data-price="{{product.promo_price_cents if product.promo_price_cents > 0 else product.price_cents}}" data-max="{{product.max_quantity}}">{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" alt="{{product.name}}">{% else %}<div class="menu-product-placeholder">🍽</div>{% endif %}<div class="menu-product-info">
+<small>{{product.category}}</small>
+<h3>{{product.name}}</h3>
+<p>{{product.description}}</p>
+<div>
+<strong>{% if product.promo_price_cents > 0 %}<del>R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</del> R$ {{'%.2f'|format(product.promo_price_cents/100)|replace('.',',')}}{% else %}R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}{% endif %}</strong>
 {% if product_options.get(product.id) %}<div class="product-options"><small>Adicionais</small>{% for option in product_options.get(product.id,[]) %}<label><input type="checkbox" data-product-option value="{{option.id}}" data-option-name="{{option.name}}" data-option-price="{{option.price_cents}}"> {{option.name}}{% if option.price_cents %} + R$ {{'%.2f'|format(option.price_cents/100)|replace('.',',')}}{% endif %}</label>{% endfor %}</div>{% endif %}
-<div class="nu-product-bottom"><strong>{% if product.promo_price_cents > 0 %}<del>R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</del> R$ {{'%.2f'|format(product.promo_price_cents/100)|replace('.',',')}}{% else %}R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}{% endif %}</strong><div class="product-buy"><label>Qtd.<input class="product-quantity-input" type="number" min="1" max="99" value="1" inputmode="numeric" data-product-quantity {% if not shop_status.open %}disabled{% endif %}></label><button type="button" data-add {% if not shop_status.open %}disabled{% endif %}>{% if shop_status.open %}＋ Adicionar{% else %}Fechado{% endif %}</button></div></div></div></article>
-{% else %}<div class="nu-menu-empty"><span>🍽</span><h2>Cardápio em preparação</h2><p>Esta empresa ainda não publicou produtos.</p></div>{% endfor %}</div>
-<aside class="menu-cart"><div><h2>Meu pedido</h2><div data-cart-items><p class="muted">Adicione produtos para começar.</p></div><div class="cart-total"><span>Total</span><b data-cart-total>R$ 0,00</b></div><button type="button" data-checkout disabled>{% if shop_status.open %}Ver carrinho →{% else %}Pedidos pausados{% endif %}</button></div></aside></div></section></div>
-<div class="nu-cart-dock" data-cart-dock><span>🛒</span><div><b>Meu pedido</b><small data-cart-count>0 itens</small></div><strong data-dock-total>R$ 0,00</strong><button type="button" data-dock-checkout>Ver carrinho →</button></div></main>
-<dialog class="checkout-dialog nu-checkout" data-checkout-dialog><form action="/p/{{pro.slug}}/menu/pedido" method="post" data-order-form><button class="dialog-close" type="button" data-dialog-close>×</button><h2>Finalizar pedido</h2><input type="hidden" name="cart_json" data-cart-json><label>Seu nome<input class="input" name="customer_name" required></label><label>Seu WhatsApp<input class="input" name="customer_phone" inputmode="tel" required></label><label>Como deseja receber?<select name="fulfillment_type" data-fulfillment>{% if pro.allows_pickup %}<option value="pickup">Retirar no local</option>{% endif %}{% if pro.allows_delivery %}<option value="delivery">Entrega (+ R$ {{'%.2f'|format(pro.delivery_fee_cents/100)|replace('.',',')}})</option>{% endif %}</select></label><div data-address hidden class="delivery-fields"><label>Endereço para entrega<input class="input" name="address"></label><label>Bairro<input class="input" name="neighborhood"></label><label>Referência<input class="input" name="address_reference"></label></div><label>Forma de pagamento<select name="payment_method" required data-payment><option value="pix">Pix{% if pro.pix_key %} — chave informada pela loja{% endif %}</option><option value="cash">Dinheiro</option><option value="credit">Cartão de crédito</option><option value="debit">Cartão de débito</option><option value="on_delivery">Combinar no atendimento</option></select></label><label data-change hidden>Troco para quanto?<input class="input" name="change_for" inputmode="decimal" placeholder="Ex.: 100,00"></label><label>Observação geral<textarea name="notes" placeholder="Ex.: sem cebola, ponto da carne..."></textarea></label><div class="cart-total"><span>Total <small data-fee-note></small></span><b data-dialog-total>R$ 0,00</b></div><button class="btn primary full-btn">Enviar pedido</button></form></dialog>
-<script>window.NOWUP_MENU={{ {'deliveryFee':pro.delivery_fee_cents,'minimumOrder':pro.minimum_order_cents}|tojson }};</script><script src="/static/menu.js?v=33"></script>
+<div class="product-buy"><label>Qtd.<input class="product-quantity-input" type="number" min="1" max="99" step="1" value="1" inputmode="numeric" data-product-quantity aria-label="Digite a quantidade" {% if not shop_status.open %}disabled{% endif %}></label><button class="btn primary" type="button" data-add {% if not shop_status.open %}disabled{% endif %}>{% if shop_status.open %}Adicionar{% else %}Fechado{% endif %}</button></div>
+</div>
+</div>
+</article>{% else %}<div class="panel empty-state">
+<span>🍽</span>
+<h2>Cardápio em preparação</h2>
+<p class="muted">Esta empresa ainda não publicou produtos.</p>
+</div>{% endfor %}</div>
+</main>
+<aside class="menu-cart">
+<div class="panel">
+<h2>Seu pedido</h2>
+<div data-cart-items>
+<p class="muted">Adicione produtos para começar.</p>
+</div>
+<div class="cart-total">
+<span>Total</span>
+<b data-cart-total>R$ 0,00</b>
+</div>
+<button class="btn primary full-btn" type="button" data-checkout disabled>{% if shop_status.open %}Continuar pedido{% else %}Pedidos pausados{% endif %}</button>
+</div>
+</aside>
+</div>
+</div>
+<dialog class="checkout-dialog" data-checkout-dialog>
+<form action="/p/{{pro.slug}}/menu/pedido" method="post" data-order-form>
+<button class="dialog-close" type="button" data-dialog-close>×</button>
+<h2>Finalizar pedido</h2>
+<input type="hidden" name="cart_json" data-cart-json>
+<label>Seu nome<input class="input" name="customer_name" required>
+</label>
+<label>Seu WhatsApp<input class="input" name="customer_phone" inputmode="tel" required>
+</label>
+<label>Como deseja receber?<select name="fulfillment_type" data-fulfillment>
+{% if pro.allows_pickup %}<option value="pickup">Retirar no local</option>{% endif %}
+{% if pro.allows_delivery %}<option value="delivery">Entrega (+ R$ {{'%.2f'|format(pro.delivery_fee_cents/100)|replace('.',',')}})</option>{% endif %}
+</select>
+</label>
+<div data-address hidden class="delivery-fields"><label>Endereço para entrega<input class="input" name="address"></label><label>Bairro<input class="input" name="neighborhood"></label><label>Referência<input class="input" name="address_reference"></label></div>
+<label>Forma de pagamento<select name="payment_method" required data-payment><option value="pix">Pix{% if pro.pix_key %} — chave informada pela loja{% endif %}</option><option value="cash">Dinheiro</option><option value="credit">Cartão de crédito</option><option value="debit">Cartão de débito</option><option value="on_delivery">Combinar no atendimento</option></select></label>
+<label data-change hidden>Troco para quanto?<input class="input" name="change_for" inputmode="decimal" placeholder="Ex.: 100,00"></label>
+<label>Observação geral do pedido<textarea name="notes" placeholder="Ex.: preciso de troco para R$ 100">
+</textarea>
+</label>
+<div class="cart-total">
+<span>Total <small data-fee-note></small></span>
+<b data-dialog-total>R$ 0,00</b>
+</div>
+<button class="btn primary full-btn">Enviar pedido pelo WhatsApp</button>
+</form>
+</dialog>
+</section>
+<script>window.NOWUP_MENU={{ {'deliveryFee':pro.delivery_fee_cents,'minimumOrder':pro.minimum_order_cents}|tojson }};</script>
+<script src="/static/menu.js?v=18">
+</script>
 {% endblock %}
