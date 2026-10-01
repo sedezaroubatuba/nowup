@@ -1,0 +1,72 @@
+/* NowUp — correção do banner patrocinado para PC e celular.
+   Deve ser carregado depois dos demais arquivos CSS. */
+
+/* O banner era um item flex sem largura definida e encolhia até a largura
+   da imagem (aprox. 150px). */
+.nowup-v19 .nu-banner,
+.nu-home .nu-banner {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  align-self: stretch;
+}
+
+.nowup-v19 .nu-banner .ad-slider,
+.nu-home .nu-banner .ad-slider {
+  width: min(100%, 1180px);
+  max-width: 1180px;
+  height: clamp(180px, 22vw, 280px) !important;
+  margin-inline: auto;
+  overflow: hidden;
+  border-radius: 20px;
+}
+
+/* A imagem ocupa o quadro inteiro sem voltar a ficar minúscula. */
+.nowup-v19 .nu-banner .ad-slide,
+.nu-home .nu-banner .ad-slide {
+  width: 100%;
+  height: 100% !important;
+}
+
+.nowup-v19 .nu-banner .slide-art,
+.nu-home .nu-banner .slide-art {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  object-position: center center;
+}
+
+@media (max-width: 820px) {
+  .nowup-v19 .nu-banner,
+  .nu-home .nu-banner {
+    width: 100%;
+    padding-inline: 14px;
+  }
+
+  .nowup-v19 .nu-banner .ad-slider,
+  .nu-home .nu-banner .ad-slider {
+    width: 100%;
+    height: auto !important;
+    aspect-ratio: 2 / 1;
+    border-radius: 16px;
+  }
+
+  .nowup-v19 .nu-banner .ad-slide,
+  .nu-home .nu-banner .ad-slide {
+    height: 100% !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .nowup-v19 .nu-banner,
+  .nu-home .nu-banner {
+    padding-inline: 14px;
+  }
+
+  .nowup-v19 .nu-banner .ad-slider,
+  .nu-home .nu-banner .ad-slider {
+    aspect-ratio: 1.85 / 1;
+    border-radius: 14px;
+  }
+}
