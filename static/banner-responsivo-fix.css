@@ -5,10 +5,13 @@
    da imagem (aprox. 150px). */
 .nowup-v19 .nu-banner,
 .nu-home .nu-banner {
-  width: 100%;
-  max-width: 100%;
+  width: min(100%, 1280px);
+  max-width: 1280px;
   box-sizing: border-box;
   align-self: stretch;
+  flex: 0 0 auto;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .nowup-v19 .nu-banner .ad-slider,
@@ -41,6 +44,7 @@
   .nowup-v19 .nu-banner,
   .nu-home .nu-banner {
     width: 100%;
+    max-width: 100%;
     padding-inline: 14px;
   }
 
