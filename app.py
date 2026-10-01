@@ -1,10 +1,10 @@
 from __future__ import annotations
-import os, re, io, hmac, hashlib, secrets, sqlite3, unicodedata, json, shutil
+import os, re, io, hmac, hashlib, secrets, sqlite3, unicodedata, json
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Optional
-from urllib.parse import quote, urlparse
+from urllib.parse import quote, urlparse, urlencode
 from urllib.request import Request as URLRequest, urlopen
 from urllib.error import HTTPError, URLError
 
@@ -478,7 +478,6 @@ def init_db():
     ensure_column(conn, "professionals", "business_hours", "TEXT NOT NULL DEFAULT '{}'")
     ensure_column(conn, "professionals", "business_status", "TEXT NOT NULL DEFAULT 'open'")
     ensure_column(conn, "professionals", "instagram_url", "TEXT DEFAULT ''")
-    ensure_column(conn, "product_categories", "image_filename", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "professionals", "facebook_url", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "website_url", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "whatsapp_message", "TEXT DEFAULT 'Olá! Encontrei você pelo NowUp e gostaria de saber mais.'")
@@ -611,93 +610,6 @@ def init_db():
     if not conn.execute("SELECT 1 FROM banners").fetchone():
         conn.execute("INSERT INTO banners(title,subtitle,created_at) VALUES(?,?,?)",
                      ("Divulgue sua empresa na NowUp","Espaço para publicidade por cidade ou categoria.",now_iso()))
-    # Conteúdo demonstrativo inicial para a home não nascer vazia. É criado uma
-    # única vez e pode ser removido definitivamente no painel administrativo.
-    demo_ready=conn.execute("SELECT value FROM site_settings WHERE key='v35_demo_home_ready'").fetchone()
-    if not demo_ready:
-        demo_art={
-          "demo-quiosque.svg":("#007adf","#03c7ce","QUIOSQUE","Frutos do mar"),
-          "demo-pizza.svg":("#ff5b38","#ffb000","PIZZARIA","Pizza artesanal"),
-          "demo-burger.svg":("#e8234f","#ff8c00","BURGER","Combo artesanal"),
-          "demo-caicara.svg":("#00a865","#70d33b","CAIÇARA","Sabor de Ubatuba"),
-        }
-        UPLOAD_DIR.mkdir(parents=True,exist_ok=True)
-        for filename,(c1,c2,label,sub) in demo_art.items():
-            target=UPLOAD_DIR/filename
-            if not target.exists():
-                target.write_text(f'''<svg xmlns="http://www.w3.org/2000/svg" width="900" height="560" viewBox="0 0 900 560"><defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="{c1}"/><stop offset="1" stop-color="{c2}"/></linearGradient></defs><rect width="900" height="560" rx="35" fill="url(#g)"/><circle cx="725" cy="115" r="150" fill="#fff" opacity=".16"/><circle cx="790" cy="470" r="220" fill="#fff" opacity=".1"/><text x="55" y="245" fill="#fff" font-family="Arial" font-size="76" font-weight="900">{label}</text><text x="60" y="315" fill="#fff" font-family="Arial" font-size="35" font-weight="700">{sub}</text><text x="60" y="420" fill="#fff" font-family="Arial" font-size="28">Demonstração NowUp • Ubatuba</text></svg>''',encoding="utf-8")
-        demo_items=[
-          ("Quiosque do Toninho","Praia Grande","Frutos do mar, porções e bebidas","demo-quiosque.svg","Açaí no ponto!","20% OFF no açaí de 500 ml"),
-          ("Pizzaria Maré Alta","Itaguá","Pizzas artesanais e massas","demo-pizza.svg","Pizza família","Pizza grande com refrigerante por R$ 59,90"),
-          ("Burger da Praia","Centro","Hambúrguer artesanal e combos","demo-burger.svg","Burger artesanal","15% OFF no combo completo"),
-          ("Sabor Caiçara","Perequê-Açu","Comida caiçara e pratos executivos","demo-caicara.svg","Prato caiçara","Almoço completo a partir de R$ 29,90"),
-        ]
-        expires="2036-12-31T23:59:59+00:00"; created=now_iso(); day=datetime.now(SAO_PAULO_TZ).date().isoformat()
-        for idx,(name,neighborhood,services,image,title,description) in enumerate(demo_items):
-            email=f"v35-demo-{idx}@nowup.local"
-            cur=conn.execute("INSERT OR IGNORE INTO users(role,name,email,phone,password_hash,is_active,email_verified,created_at) VALUES('professional',?,?,?, ?,1,1,?)",
-                             (name,email,"12999990000",hash_password(secrets.token_urlsafe(24)),created))
-            user_row=conn.execute("SELECT id FROM users WHERE email=?",(email,)).fetchone()
-            slug=slugify(name)+"-demonstracao"
-            conn.execute("""INSERT OR IGNORE INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,address,description,services,business_type,verified,featured,blocked,avatar_filename,cover_filename,is_demo,is_subscriber,created_at)
-                            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                         (user_row["id"],slug,name,"CNPJ","","12999990000","Ubatuba",neighborhood,"","Ubatuba - SP","Perfil de demonstração da NowUp.",services,"restaurant",1,1,0,image,image,1,1,created))
-            pro=conn.execute("SELECT id FROM professionals WHERE user_id=?",(user_row["id"],)).fetchone()
-            if pro:
-                conn.execute("INSERT INTO photos(professional_id,filename,caption,is_cover,created_at) SELECT ?,?,?,1,? WHERE NOT EXISTS(SELECT 1 FROM photos WHERE professional_id=?)",(pro["id"],image,name,created,pro["id"]))
-                conn.execute("INSERT INTO daily_promotions(professional_id,title,description,image_filename,created_day,created_at,expires_at,active) VALUES(?,?,?,?,?,?,?,1)",(pro["id"],title,description,image,day,created,expires))
-        conn.execute("INSERT INTO site_settings(key,value) VALUES('v35_demo_home_ready','1')")
-    # V38: mantém as artes de demonstração disponíveis mesmo quando o banco fica
-    # em disco persistente e a pasta de uploads é recriada em um novo deploy.
-    # Os perfis continuam sendo criados uma única vez e removíveis pelo ADM.
-    demo_source=BASE/"static"/"demo"
-    demo_visual_files=(
-      "demo-quiosque-pro.png",
-      "demo-pizzaria-pro.png",
-      "demo-burger-pro.png",
-      "demo-petshop-pro.png",
-      "demo-barbearia-pro.png",
-    )
-    UPLOAD_DIR.mkdir(parents=True,exist_ok=True)
-    for filename in demo_visual_files:
-        source=demo_source/filename; target=UPLOAD_DIR/filename
-        if source.exists() and (not target.exists() or target.stat().st_size != source.stat().st_size):
-            shutil.copyfile(source,target)
-
-    demo_visuals_ready=conn.execute("SELECT value FROM site_settings WHERE key='v38_demo_visuals_ready'").fetchone()
-    if not demo_visuals_ready:
-        visual_map={
-          "v35-demo-0@nowup.local":"demo-quiosque-pro.png",
-          "v35-demo-1@nowup.local":"demo-pizzaria-pro.png",
-          "v35-demo-2@nowup.local":"demo-burger-pro.png",
-          "v35-demo-3@nowup.local":"demo-quiosque-pro.png",
-        }
-        for email,filename in visual_map.items():
-            source=demo_source/filename; target=UPLOAD_DIR/filename
-            if source.exists() and not target.exists(): shutil.copyfile(source,target)
-            row=conn.execute("SELECT p.id FROM professionals p JOIN users u ON u.id=p.user_id WHERE u.email=?",(email,)).fetchone()
-            if row:
-                conn.execute("UPDATE professionals SET avatar_filename=?,cover_filename=?,featured_image_filename=? WHERE id=?",(filename,filename,filename,row["id"]))
-                conn.execute("UPDATE photos SET filename=? WHERE professional_id=?",(filename,row["id"]))
-                conn.execute("UPDATE daily_promotions SET image_filename=? WHERE professional_id=?",(filename,row["id"]))
-        extra_demos=[
-          ("Pet Mar Ubatuba","Itaguá","Banho, tosa, acessórios e cuidados para pets","other","demo-petshop-pro.png","Dia de beleza pet","Banho e hidratação com condição especial hoje"),
-          ("Barbearia Costa Azul","Centro","Cortes masculinos, barba e acabamento premium","professional","demo-barbearia-pro.png","Visual renovado","Corte e barba com atendimento agendado"),
-        ]
-        created=now_iso(); day=datetime.now(SAO_PAULO_TZ).date().isoformat(); expires="2036-12-31T23:59:59+00:00"
-        for idx,(name,neighborhood,services,business_type,image,title,description) in enumerate(extra_demos):
-            source=demo_source/image; target=UPLOAD_DIR/image
-            if source.exists() and not target.exists(): shutil.copyfile(source,target)
-            email=f"v38-demo-{idx}@nowup.local"
-            conn.execute("INSERT OR IGNORE INTO users(role,name,email,phone,password_hash,is_active,email_verified,created_at) VALUES('professional',?,?,?,?,1,1,?)",(name,email,"12999990000",hash_password(secrets.token_urlsafe(24)),created))
-            user_row=conn.execute("SELECT id FROM users WHERE email=?",(email,)).fetchone(); slug=slugify(name)+"-demonstracao"
-            conn.execute("""INSERT OR IGNORE INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,address,description,services,business_type,verified,featured,blocked,avatar_filename,cover_filename,featured_image_filename,is_demo,is_subscriber,created_at)
-                            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",(user_row["id"],slug,name,"CNPJ","","12999990000","Ubatuba",neighborhood,"","Ubatuba - SP","Perfil fictício para demonstração visual da NowUp.",services,business_type,1,1,0,image,image,image,1,1,created))
-            pro=conn.execute("SELECT id FROM professionals WHERE user_id=?",(user_row["id"],)).fetchone()
-            if pro:
-                conn.execute("INSERT INTO photos(professional_id,filename,caption,is_cover,created_at) SELECT ?,?,?,1,? WHERE NOT EXISTS(SELECT 1 FROM photos WHERE professional_id=?)",(pro["id"],image,name,created,pro["id"]))
-                if not conn.execute("SELECT 1 FROM daily_promotions WHERE professional_id=?",(pro["id"],)).fetchone(): conn.execute("INSERT INTO daily_promotions(professional_id,title,description,image_filename,created_day,created_at,expires_at,active) VALUES(?,?,?,?,?,?,?,1)",(pro["id"],title,description,image,day,created,expires))
-        conn.execute("INSERT INTO site_settings(key,value) VALUES('v38_demo_visuals_ready','1')")
     conn.commit(); conn.close()
 
 @app.on_event("startup")
@@ -769,24 +681,14 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
 
 @app.get("/profissionais", response_class=HTMLResponse)
 def professionals(request: Request, category: str="", city: str="", neighborhood: str="", cep: str="", q: str="", business_type: str=""):
-    conn=db(); where=["p.blocked=0"]; params=[]; cities=active_cities(get_settings(conn)); city=city.strip() or cities[0]
-    for field,val in [("p.city",city),("p.neighborhood",neighborhood),("p.cep",cep)]:
-        if val: where.append(f"{field} LIKE ?"); params.append(f"%{val}%")
-    if q:
-        where.append("(p.display_name LIKE ? OR p.services LIKE ? OR p.description LIKE ? OR EXISTS(SELECT 1 FROM professional_categories pcq JOIN categories cq ON cq.id=pcq.category_id WHERE pcq.professional_id=p.id AND cq.name LIKE ?))"); like=f"%{q.strip()}%"; params += [like,like,like,like]
-    if category:
-        where.append("EXISTS(SELECT 1 FROM professional_categories pc JOIN categories c ON c.id=pc.category_id WHERE pc.professional_id=p.id AND c.slug=?)"); params.append(category)
-    if business_type in ("professional","restaurant","store","convenience","other"):
-        where.append("p.business_type=?"); params.append(business_type)
-    rows=conn.execute(f"""
-      SELECT p.*,
-       COALESCE((SELECT ROUND(AVG(stars),1) FROM reviews r WHERE r.professional_id=p.id),0) rating,
-       (SELECT COUNT(*) FROM reviews r WHERE r.professional_id=p.id) review_count,
-       (SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1) cover
-      FROM professionals p WHERE {' AND '.join(where)}
-      ORDER BY p.featured DESC,p.verified DESC,rating DESC,p.id DESC LIMIT 100
-    """,params).fetchall(); conn.close()
-    return templates.TemplateResponse("professionals.html", context(request, professionals=rows, active_cities=cities, filters={"category":category,"city":city,"neighborhood":neighborhood,"cep":cep,"q":q,"business_type":business_type}))
+    params=[]
+    if q: params.append(("q",q))
+    if city: params.append(("city",city))
+    if category: params.append(("category",category))
+    if business_type: params.append(("business_type",business_type))
+    destination="/"
+    if params: destination += "?" + urlencode(params)
+    return RedirectResponse(destination,303)
 
 @app.get("/p/{slug}", response_class=HTMLResponse)
 def profile(request: Request, slug: str):
@@ -823,20 +725,14 @@ def native_menu(request: Request, slug: str):
     for product in products:
         category=(product["category"] or "Geral").strip() or "Geral"
         if category not in menu_categories: menu_categories.append(category)
-    category_images={row["name"]:row["image_filename"] for row in conn.execute(
-        "SELECT name,image_filename FROM product_categories WHERE professional_id=? AND active=1",(p["id"],)
-    ).fetchall()}
     product_options={}
     for row in conn.execute("""SELECT po.* FROM product_options po JOIN products pr ON pr.id=po.product_id
       WHERE pr.professional_id=? AND po.available=1 ORDER BY po.sort_order,po.id""",(p["id"],)).fetchall():
         product_options.setdefault(row["product_id"],[]).append(row)
-    daily_promotions=conn.execute("""SELECT * FROM daily_promotions
-      WHERE professional_id=? AND active=1 AND expires_at>?
-      ORDER BY id DESC LIMIT 3""",(p["id"],now_iso())).fetchall()
     conn.execute("UPDATE professionals SET menu_clicks=menu_clicks+1 WHERE id=?",(p["id"],))
     conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"menu_click",now_iso())); conn.commit(); conn.close()
     status=shop_status(p)
-    return templates.TemplateResponse("menu.html", context(request, pro=p, products=products, product_options=product_options, menu_categories=menu_categories, category_images=category_images, daily_promotions=daily_promotions, shop_status=status))
+    return templates.TemplateResponse("menu.html", context(request, pro=p, products=products, product_options=product_options, menu_categories=menu_categories, shop_status=status))
 
 @app.post("/p/{slug}/menu/pedido")
 def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...)):
@@ -1229,29 +1125,21 @@ def price_to_cents(raw: str):
     except ValueError: raise HTTPException(400,"Preço inválido")
 
 @app.post("/painel/cardapio/categorias")
-def pro_menu_category_add(request: Request, name: str=Form(...), image: Optional[UploadFile]=File(None)):
+def pro_menu_category_add(request: Request, name: str=Form(...)):
     u=require_user(request,"professional"); clean=name.strip()[:80]
     if not clean: return RedirectResponse("/painel?erro=categoria#cardapio",303)
     conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
     next_order=conn.execute("SELECT COALESCE(MAX(sort_order),0)+1 FROM product_categories WHERE professional_id=?",(p["id"],)).fetchone()[0]
-    filename=save_image(image) if image and image.filename else ""
-    try: conn.execute("INSERT INTO product_categories(professional_id,name,sort_order,active,created_at,image_filename) VALUES(?,?,?,?,?,?)",(p["id"],clean,next_order,1,now_iso(),filename)); conn.commit()
+    try: conn.execute("INSERT INTO product_categories(professional_id,name,sort_order,active,created_at) VALUES(?,?,?,?,?)",(p["id"],clean,next_order,1,now_iso())); conn.commit()
     except sqlite3.IntegrityError: pass
     conn.close(); return RedirectResponse("/painel?ok=categoria#cardapio",303)
 
 @app.post("/painel/cardapio/categorias/{category_id}")
-def pro_menu_category_edit(request: Request, category_id: int, name: str=Form(...), active: Optional[str]=Form(None), image: Optional[UploadFile]=File(None)):
+def pro_menu_category_edit(request: Request, category_id: int, name: str=Form(...), active: Optional[str]=Form(None)):
     u=require_user(request,"professional"); clean=name.strip()[:80]
     conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone(); old=conn.execute("SELECT * FROM product_categories WHERE id=? AND professional_id=?",(category_id,p["id"])).fetchone()
     if old and clean:
-        filename=old["image_filename"] or ""
-        if image and image.filename:
-            new_filename=save_image(image)
-            if filename:
-                try: (UPLOAD_DIR/filename).unlink(missing_ok=True)
-                except OSError: pass
-            filename=new_filename
-        conn.execute("UPDATE product_categories SET name=?,active=?,image_filename=? WHERE id=?",(clean,1 if active else 0,filename,category_id))
+        conn.execute("UPDATE product_categories SET name=?,active=? WHERE id=?",(clean,1 if active else 0,category_id))
         conn.execute("UPDATE products SET category=?,updated_at=? WHERE professional_id=? AND lower(category)=lower(?)",(clean,now_iso(),p["id"],old["name"])); conn.commit()
     conn.close(); return RedirectResponse("/painel?ok=categoria#cardapio",303)
 
@@ -1259,9 +1147,6 @@ def pro_menu_category_edit(request: Request, category_id: int, name: str=Form(..
 def pro_menu_category_delete(request: Request, category_id: int):
     u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone(); row=conn.execute("SELECT * FROM product_categories WHERE id=? AND professional_id=?",(category_id,p["id"])).fetchone()
     if row:
-        if row["image_filename"]:
-            try: (UPLOAD_DIR/row["image_filename"]).unlink(missing_ok=True)
-            except OSError: pass
         conn.execute("UPDATE products SET category='Geral',updated_at=? WHERE professional_id=? AND lower(category)=lower(?)",(now_iso(),p["id"],row["name"]))
         conn.execute("DELETE FROM product_categories WHERE id=?",(category_id,)); conn.execute("INSERT OR IGNORE INTO product_categories(professional_id,name,sort_order,active,created_at) VALUES(?,?,?,?,?)",(p["id"],"Geral",999,1,now_iso())); conn.commit()
     conn.close(); return RedirectResponse("/painel?ok=categoria-excluida#cardapio",303)
@@ -1725,15 +1610,6 @@ def admin_toggle_daily_promotion(request: Request, promotion_id:int):
     conn.execute("UPDATE daily_promotions SET active=CASE active WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(promotion_id,))
     conn.commit(); conn.close(); return RedirectResponse("/admin#promocoes",303)
 
-@app.post("/admin/promocoes/{promotion_id}/excluir")
-def admin_delete_daily_promotion(request: Request, promotion_id:int):
-    require_user(request,"admin"); conn=db()
-    row=conn.execute("SELECT image_filename FROM daily_promotions WHERE id=?",(promotion_id,)).fetchone()
-    conn.execute("DELETE FROM daily_promotions WHERE id=?",(promotion_id,)); conn.commit(); conn.close()
-    # Imagens demo são compartilhadas com o perfil; as reais continuam sendo
-    # gerenciadas pela empresa que publicou a oferta.
-    return RedirectResponse("/admin?ok=promocao-excluida#promocoes",303)
-
 @app.post("/admin/perfis/demonstracao")
 def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsapp:str=Form(...), address:str=Form(...), photo:UploadFile=File(...)):
     require_user(request,"admin")
@@ -1777,12 +1653,8 @@ def admin_edit_professional(request: Request, pid:int, display_name:str=Form(...
 
 @app.post("/admin/profissionais/{pid}/excluir")
 def admin_delete_professional(request: Request, pid:int):
-    require_user(request,"admin"); conn=db()
-    pro=conn.execute("SELECT user_id,is_demo FROM professionals WHERE id=?",(pid,)).fetchone()
-    if not pro or not pro["is_demo"]:
-        conn.close(); return RedirectResponse("/admin?erro=exclusao-desativada#profissionais",303)
-    conn.execute("DELETE FROM users WHERE id=?",(pro["user_id"],)); conn.commit(); conn.close()
-    return RedirectResponse("/admin?ok=perfil-excluido#profissionais",303)
+    require_user(request,"admin")
+    return RedirectResponse("/admin?erro=exclusao-desativada#profissionais",303)
 
 @app.post("/admin/denuncias/{rid}/{status}")
 def admin_report_action(request: Request, rid:int, status:str):
