@@ -1417,7 +1417,7 @@ def privacy(request: Request): return templates.TemplateResponse("privacy.html",
 def terms(request: Request): return templates.TemplateResponse("terms.html", context(request))
 
 @app.get("/admin", response_class=HTMLResponse)
-def admin(request: Request):
+def admin(request: Request, inicio: str="", fim: str=""):
     require_user(request,"admin"); conn=db()
     stats={
       "professionals":conn.execute("SELECT COUNT(*) FROM professionals").fetchone()[0],
@@ -1427,12 +1427,31 @@ def admin(request: Request):
       "views":conn.execute("SELECT COALESCE(SUM(views),0) FROM professionals").fetchone()[0],
       "menu":conn.execute("SELECT COALESCE(SUM(menu_clicks),0) FROM professionals").fetchone()[0],
     }
+    try:
+        report_end=datetime.strptime(fim,"%Y-%m-%d").date() if fim else datetime.now(timezone.utc).date()
+        report_start=datetime.strptime(inicio,"%Y-%m-%d").date() if inicio else report_end-timedelta(days=29)
+    except ValueError:
+        report_end=datetime.now(timezone.utc).date(); report_start=report_end-timedelta(days=29)
+    if report_start>report_end: report_start,report_end=report_end,report_start
+    if (report_end-report_start).days>366: report_start=report_end-timedelta(days=366)
+    report_orders=conn.execute("""SELECT COUNT(*) total,
+      SUM(CASE WHEN status='new' THEN 1 ELSE 0 END) new_orders,
+      SUM(CASE WHEN status IN ('confirmed','preparing','ready','out_for_delivery') THEN 1 ELSE 0 END) accepted,
+      SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) completed,
+      SUM(CASE WHEN status IN ('cancelled','rejected') THEN 1 ELSE 0 END) cancelled,
+      COALESCE(SUM(CASE WHEN status IN ('confirmed','preparing','ready','out_for_delivery','completed') THEN total_cents ELSE 0 END),0) revenue_cents,
+      COALESCE(ROUND(AVG(CASE WHEN status IN ('confirmed','preparing','ready','out_for_delivery','completed') THEN total_cents END)),0) avg_ticket_cents
+      FROM orders WHERE date(created_at) BETWEEN ? AND ?""",(report_start.isoformat(),report_end.isoformat())).fetchone()
+    report_top=conn.execute("""SELECT p.display_name,COUNT(o.id) orders_count,
+      COALESCE(SUM(CASE WHEN o.status IN ('confirmed','preparing','ready','out_for_delivery','completed') THEN o.total_cents ELSE 0 END),0) revenue_cents
+      FROM professionals p LEFT JOIN orders o ON o.professional_id=p.id AND date(o.created_at) BETWEEN ? AND ?
+      GROUP BY p.id ORDER BY orders_count DESC,revenue_cents DESC LIMIT 10""",(report_start.isoformat(),report_end.isoformat())).fetchall()
     pros=conn.execute("SELECT p.*,u.email,u.email_verified FROM professionals p JOIN users u ON u.id=p.user_id ORDER BY p.id DESC LIMIT 50").fetchall()
     clients=conn.execute("SELECT id,name,email,phone,is_active,email_verified,created_at FROM users WHERE role='customer' ORDER BY id DESC LIMIT 100").fetchall()
     admin_categories=conn.execute("SELECT * FROM categories ORDER BY sort_order,name").fetchall()
     reports=conn.execute("SELECT r.*,u.name customer,p.display_name professional FROM reports r JOIN users u ON u.id=r.customer_id JOIN professionals p ON p.id=r.professional_id ORDER BY r.id DESC LIMIT 50").fetchall()
     suggestions=conn.execute("SELECT * FROM suggestions ORDER BY id DESC LIMIT 30").fetchall(); banners=conn.execute("SELECT * FROM banners ORDER BY sort_order,id").fetchall(); conn.close()
-    return templates.TemplateResponse("admin.html", context(request, stats=stats, pros=pros, clients=clients, admin_categories=admin_categories, reports=reports, suggestions=suggestions, admin_banners=banners))
+    return templates.TemplateResponse("admin.html", context(request, stats=stats, pros=pros, clients=clients, admin_categories=admin_categories, reports=reports, suggestions=suggestions, admin_banners=banners, report_orders=report_orders, report_top=report_top, report_start=report_start.isoformat(), report_end=report_end.isoformat()))
 
 NOWUP_THEMES = {
     "oceanico": ("#075BD8", "#FF6A00"),
@@ -1565,12 +1584,17 @@ def admin_pro_action(request: Request, pid:int, action:str):
     conn.commit(); conn.close(); return RedirectResponse("/admin#profissionais",303)
 
 @app.post("/admin/perfis/demonstracao")
-def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsapp:str=Form(...), address:str=Form(...), photo:UploadFile=File(...)):
+def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsapp:str=Form(...), address:str=Form(...), avatar:Optional[UploadFile]=File(None), cover:Optional[UploadFile]=File(None), photo:Optional[UploadFile]=File(None)):
     require_user(request,"admin")
     name=display_name.strip()[:120]; phone=whatsapp.strip()[:30]; address=address.strip()[:240]
     if not name or not normalize_phone(phone) or not address:
         return RedirectResponse("/admin?erro=perfil-demo#cadastro-rapido",303)
-    filename=save_image(photo)
+    avatar_upload=avatar if avatar and avatar.filename else photo
+    cover_upload=cover if cover and cover.filename else None
+    if not avatar_upload or not avatar_upload.filename:
+        return RedirectResponse("/admin?erro=perfil-demo#cadastro-rapido",303)
+    avatar_filename=save_image(avatar_upload)
+    cover_filename=save_image(cover_upload) if cover_upload else avatar_filename
     conn=db()
     try:
         slug=unique_slug(conn,name)
@@ -1580,13 +1604,15 @@ def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsap
         uid=cur.lastrowid
         cur=conn.execute("""INSERT INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,address,description,services,business_type,verified,featured,blocked,avatar_filename,cover_filename,is_demo,created_at)
                             VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                         (uid,slug,name,"CNPJ","",phone,"Ubatuba","","",address,"Perfil demonstrativo criado para apresentar o funcionamento da NowUp.","Consulte diretamente pelo WhatsApp.","other",0,0,0,filename,filename,1,now_iso()))
+                         (uid,slug,name,"CNPJ","",phone,"Ubatuba","","",address,"Perfil demonstrativo criado para apresentar o funcionamento da NowUp.","Consulte diretamente pelo WhatsApp.","other",0,0,0,avatar_filename,cover_filename,1,now_iso()))
         pid=cur.lastrowid
-        conn.execute("INSERT INTO photos(professional_id,filename,caption,is_cover,created_at) VALUES(?,?,?,?,?)",(pid,filename,"Foto de perfil",1,now_iso()))
+        conn.execute("INSERT INTO photos(professional_id,filename,caption,is_cover,created_at) VALUES(?,?,?,?,?)",(pid,cover_filename,"Capa do perfil",1,now_iso()))
         conn.commit()
     except Exception:
         conn.rollback()
-        try: (UPLOAD_DIR/filename).unlink(missing_ok=True)
+        try:
+            (UPLOAD_DIR/avatar_filename).unlink(missing_ok=True)
+            if cover_filename != avatar_filename: (UPLOAD_DIR/cover_filename).unlink(missing_ok=True)
         except OSError: pass
         conn.close()
         return RedirectResponse("/admin?erro=perfil-demo#cadastro-rapido",303)
@@ -1594,13 +1620,16 @@ def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsap
     return RedirectResponse("/admin?ok=perfil-demo#profissionais",303)
 
 @app.post("/admin/profissionais/{pid}/editar")
-def admin_edit_professional(request: Request, pid:int, display_name:str=Form(...), city:str=Form(""), email:str=Form(...)):
+def admin_edit_professional(request: Request, pid:int, display_name:str=Form(...), city:str=Form(""), email:str=Form(...), avatar:Optional[UploadFile]=File(None), cover:Optional[UploadFile]=File(None)):
     require_user(request,"admin"); normalized=normalize_email(email)
     if not display_name.strip() or not normalized: return RedirectResponse("/admin#profissionais",303)
-    conn=db(); pro=conn.execute("SELECT user_id FROM professionals WHERE id=?",(pid,)).fetchone()
+    conn=db(); pro=conn.execute("SELECT user_id,avatar_filename,cover_filename,is_demo FROM professionals WHERE id=?",(pid,)).fetchone()
     if pro:
         try:
-            conn.execute("UPDATE professionals SET display_name=?,city=? WHERE id=?",(display_name.strip()[:120],city.strip()[:100],pid))
+            avatar_filename=pro["avatar_filename"] or ""; cover_filename=pro["cover_filename"] or ""
+            if pro["is_demo"] and avatar and avatar.filename: avatar_filename=save_image(avatar)
+            if pro["is_demo"] and cover and cover.filename: cover_filename=save_image(cover)
+            conn.execute("UPDATE professionals SET display_name=?,city=?,avatar_filename=?,cover_filename=? WHERE id=?",(display_name.strip()[:120],city.strip()[:100],avatar_filename,cover_filename,pid))
             conn.execute("UPDATE users SET email=? WHERE id=?",(normalized,pro["user_id"])); conn.commit()
         except sqlite3.IntegrityError: conn.rollback()
     conn.close(); return RedirectResponse("/admin#profissionais",303)
