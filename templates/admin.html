@@ -242,10 +242,12 @@
 <span class="status-pill">10 espaços disponíveis</span>
 </div>
 <h3>Criar novo slide</h3>
-<p class="muted">Envie uma arte quadrada de 1080 × 1080. A prévia mostra o enquadramento real antes de salvar.</p>
+<p class="muted"><b>Tamanhos corretos:</b> computador 1920 × 600 px e celular 1080 × 480 px. Envie as duas artes para evitar cortes ou encolhimento.</p>
 <form action="/admin/banners" method="post" enctype="multipart/form-data" class="banner-control-panel" data-banner-editor>
 <div class="banner-upload-row">
-<label>Arte do banner (recomendado: 1080 × 1080)<input class="input" type="file" name="image" accept="image/*" required>
+<label>Banner para computador — 1920 × 600<input class="input" type="file" name="image" accept="image/*" required>
+</label>
+<label>Banner para celular — 1080 × 480<input class="input" type="file" name="mobile_image" accept="image/*">
 </label>
 <label>Link ao clicar (opcional)<input class="input" name="link" placeholder="Perfil, cardápio, site ou WhatsApp">
 </label>
@@ -293,7 +295,9 @@
 </summary>
 <form action="/admin/banners/{{b.id}}/editar" method="post" enctype="multipart/form-data" class="banner-control-panel" data-banner-editor>
 <div class="banner-upload-row">
-<label>Trocar arte<input class="input" type="file" name="image" accept="image/*">
+<label>Trocar banner do computador — 1920 × 600<input class="input" type="file" name="image" accept="image/*">
+</label>
+<label>Trocar banner do celular — 1080 × 480<input class="input" type="file" name="mobile_image" accept="image/*">
 </label>
 <label>Link ao clicar<input class="input" name="link" value="{{b.link}}" placeholder="Link opcional">
 </label>
