@@ -4,6 +4,7 @@
     <div class="nu-brand-row">
       <a class="nu-wordmark" href="/">Now<span>Up</span> <i>Brasil</i></a>
       <label class="nu-location"><span>📍</span><select onchange="if(this.value) location.href='/?city='+encodeURIComponent(this.value)">{% for c in active_cities %}<option value="{{c}}" {% if city==c %}selected{% endif %}>{{c}}</option>{% endfor %}</select><b>▼</b></label>
+      {% if user %}<form class="nu-logout" action="/sair" method="post"><button type="submit" aria-label="Sair da conta">↪ <span>Sair</span></button></form>{% endif %}
     </div>
     <form class="nu-search" action="/profissionais"><span>⌕</span><input name="q" placeholder="O que você procura em {{city or 'Ubatuba'}}?"><input type="hidden" name="city" value="{{city}}"><button>Buscar</button></form>
     <div class="nu-stories">{% for p in professionals[:8] %}<a href="/p/{{p.slug}}"><span>{% if p.avatar_filename %}<img src="/uploads/{{p.avatar_filename}}" alt="Foto de perfil de {{p.display_name}}">{% else %}🏪{% endif %}</span><b>{{p.display_name}}</b></a>{% endfor %}{% if not professionals %}{% for c in categories[:7] %}<a href="/profissionais?category={{c.slug}}"><span>{{c.icon}}</span><b>{{c.name}}</b></a>{% endfor %}{% endif %}</div>
