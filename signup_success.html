@@ -1,0 +1,11 @@
+{% extends 'base.html' %}{% block title %}Cadastro concluído | NowUp{% endblock %}{% block content %}
+<div class="container"><div class="formCard" style="text-align:center">
+<div style="font-size:54px">✅</div><h1>Cadastro realizado com sucesso!</h1>
+{% if tipo=='profissional' %}
+<p class="muted">Seu perfil profissional foi criado. Agora complete suas fotos, descrição e serviços no painel.</p>
+<a class="btn primary" href="/painel">Ir para meu painel</a>
+{% else %}
+<p class="muted">Sua conta de cliente foi criada. Você já pode avaliar profissionais e usar os recursos da NowUp.</p>
+<a class="btn primary" href="/">Ir para a NowUp</a>
+{% endif %}
+</div></div>{% endblock %}

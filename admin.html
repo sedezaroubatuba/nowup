@@ -8,6 +8,7 @@
 <a href="#aparencia">Aparência</a>
 <a href="#categorias">Categorias</a>
 <a href="#publicidade">Publicidade</a>
+<a href="#cadastro-rapido">Criar perfil fictício</a>
 <a href="#profissionais">Perfis</a>
 <a href="#clientes">Clientes</a>
 <a href="#denuncias">Denúncias</a>
@@ -61,6 +62,26 @@
 <div class="section-title">
 <h2>Aparência e dados do site</h2>{% if email_service_ready %}<span class="status-pill ok">✓ E-mail configurado</span>{% else %}<span class="status-pill warn">E-mail pendente</span>{% endif %}</div>
 <form action="/admin/aparencia" method="post">
+<h3>Escolha um dos 20 temas</h3>
+<p class="muted">Toque em uma combinação para visualizar. Depois toque em <b>Salvar aparência</b>. Você pode mudar quantas vezes quiser.</p>
+<div class="theme-picker" data-theme-picker>
+{% set themes = [
+('oceanico','Oceânico','#075BD8','#FF6A00'),('royal','Azul Royal','#243BFF','#8B5CF6'),('turquesa','Turquesa','#007F8B','#20C997'),('esmeralda','Esmeralda','#087F5B','#F59F00'),('floresta','Floresta','#245C3A','#A3E635'),
+('por-do-sol','Pôr do sol','#C2410C','#FBBF24'),('coral','Coral','#E84855','#FF8A5B'),('rubi','Rubi','#B42318','#F04438'),('vinho','Vinho','#7F1D3F','#D946EF'),('uva','Uva','#6D28D9','#EC4899'),
+('lavanda','Lavanda','#7C3AED','#A78BFA'),('noturno','Noturno NowUp','#08131F','#08BCEB'),('grafite','Grafite','#263238','#00B8A9'),('preto-dourado','Preto e dourado','#171717','#D4A017'),('cafe','Café','#6F4E37','#D97706'),
+('areia','Areia dourada','#9A6700','#F2C14E'),('azul-petroleo','Azul petróleo','#164E63','#06B6D4'),('ceu','Azul céu','#0284C7','#22D3EE'),('brasil','Brasil','#08783E','#F7C600'),('neon','Neon','#312E81','#22C55E')
+] %}
+{% for id,nome,cor1,cor2 in themes %}
+<label class="theme-option" style="--theme-a:{{cor1}};--theme-b:{{cor2}}">
+<input type="radio" name="theme_name" value="{{id}}" data-primary="{{cor1}}" data-accent="{{cor2}}" {% if settings.theme_name==id %}checked{% endif %}>
+<span class="theme-swatch"></span><b>{{nome}}</b><small>{{cor1}} · {{cor2}}</small>
+</label>
+{% endfor %}
+<label class="theme-option custom-theme">
+<input type="radio" name="theme_name" value="personalizado" {% if not settings.theme_name or settings.theme_name=='personalizado' %}checked{% endif %}>
+<span class="theme-swatch"></span><b>Personalizado</b><small>Escolha abaixo</small>
+</label>
+</div>
 <div class="settings-grid">
 <div>
 <label>Nome da marca</label>
@@ -77,12 +98,12 @@
 </select>
 </div>
 <div>
-<label>Cor principal</label>
-<input class="input color-input" type="color" name="primary_color" value="{{settings.primary_color}}">
+<label>Cor principal do NowUp</label>
+<input class="input color-input" id="primary-color" type="color" name="primary_color" value="{{settings.primary_color}}">
 </div>
 <div>
-<label>Cor de destaque</label>
-<input class="input color-input" type="color" name="accent_color" value="{{settings.accent_color}}">
+<label>Segunda cor (botões e detalhes)</label>
+<input class="input color-input" id="accent-color" type="color" name="accent_color" value="{{settings.accent_color}}">
 </div>
 <div style="grid-column:1/-1">
 <label>Título inicial</label>
@@ -108,6 +129,22 @@
 </div>
 <button class="btn primary">Salvar aparência</button>
 </form>
+<hr>
+<div id="faixa-slides">
+<h3>Faixa de avisos e velocidade dos slides</h3>
+<p class="muted">Este bloco tem salvamento próprio para garantir que a faixa seja ativada corretamente.</p>
+{% if request.query_params.get('ok')=='faixa' %}<div class="alert success">Faixa e tempo dos slides salvos com sucesso.</div>{% endif %}
+<form action="/admin/faixa-e-slides" method="post" class="banner-control-panel">
+<label>Texto que ficará passando<input class="input" name="ticker_text" maxlength="300" value="{{settings.ticker_text}}" placeholder="Ex.: Cadastre sua empresa grátis no NowUp • Confira os destaques de Ubatuba"></label>
+<div class="settings-grid">
+<div><label>Cor da faixa<input class="input color-input" type="color" name="ticker_color" value="{{settings.ticker_color or '#e30613'}}"></label></div>
+<div><label>Tempo de cada slide<select name="slide_interval_seconds">{% for s in range(1,16) %}<option value="{{s}}" {% if (settings.slide_interval_seconds or 3)|int==s %}selected{% endif %}>{{s}} segundo{% if s>1 %}s{% endif %}</option>{% endfor %}</select></label></div>
+<div><label>Animação da faixa<select name="ticker_animation"><option value="continuous" {% if (settings.ticker_animation or 'continuous')=='continuous' %}selected{% endif %}>Passando continuamente</option><option value="blink" {% if settings.ticker_animation=='blink' %}selected{% endif %}>Piscando suavemente</option><option value="inside-out" {% if settings.ticker_animation=='inside-out' %}selected{% endif %}>Do centro para fora</option><option value="outside-in" {% if settings.ticker_animation=='outside-in' %}selected{% endif %}>Das pontas para o centro</option></select></label></div>
+</div>
+<label class="row"><input type="checkbox" name="ticker_enabled" value="1" {% if settings.ticker_enabled=='1' %}checked{% endif %}> Exibir a faixa no topo do site</label>
+<button class="btn primary">Salvar faixa e tempo dos slides</button>
+</form>
+</div>
 <hr>
 <h3>Trocar capa principal</h3>
 <p class="muted">Crie a montagem no GPT e envie aqui. Recomendação: imagem horizontal 1600 × 700.</p>
@@ -193,7 +230,7 @@
 <div class="section-title">
 <div>
 <h2>Slides e publicidade</h2>
-<p class="muted">Até 10 slides ativos, mudando automaticamente a cada 5 segundos. No celular, também é possível arrastar para o lado.</p>
+<p class="muted">Até 10 slides ativos, mudando automaticamente a cada {{settings.slide_interval_seconds or 3}} segundos. Você altera esse tempo em “Aparência e dados do site”. No celular, também é possível arrastar para o lado.</p>
 </div>
 <span class="status-pill">10 espaços disponíveis</span>
 </div>
@@ -296,6 +333,25 @@
 </div>
 </details>{% endfor %}</div>
 </section>
+<section class="panel" id="cadastro-rapido">
+<h2>Cadastrar profissional fictício</h2>
+<p class="muted">Crie perfis de demonstração para preencher e testar o NowUp. Não precisa informar e-mail nem confirmar cadastro.</p>
+<form action="/admin/perfis/demonstracao" method="post" enctype="multipart/form-data" class="grid-form">
+<label>Nome do profissional ou empresa
+<input class="input" name="display_name" placeholder="Ex.: João Eletricista" required>
+</label>
+<label>WhatsApp
+<input class="input" name="whatsapp" placeholder="Ex.: (12) 99999-9999" required>
+</label>
+<label>Endereço
+<input class="input" name="address" placeholder="Ex.: Estufa II, Ubatuba - SP" required>
+</label>
+<label>Foto do perfil
+<input class="input" type="file" name="photo" accept="image/*" required>
+</label>
+<button class="btn primary" type="submit">Criar perfil fictício</button>
+</form>
+</section>
 <section class="panel" id="profissionais">
 <h2>Profissionais e empresas</h2>
 <div class="tablewrap">
@@ -310,7 +366,12 @@
 <form action="/admin/profissionais/{{p.id}}/editar" method="post" class="admin-inline-edit">
 <input class="input" name="display_name" value="{{p.display_name}}" required>
 <input class="input" name="city" value="{{p.city}}" placeholder="Cidade">
+{% if p.is_demo %}
+<input type="hidden" name="email" value="{{p.email}}">
+<span class="tiny">Perfil fictício — sem e-mail</span>
+{% else %}
 <input class="input" type="email" name="email" value="{{p.email}}" required>
+{% endif %}
 <button class="btn primary tiny">Salvar</button>
 </form>
 <a class="tiny" href="/p/{{p.slug}}">Ver perfil público</a>
@@ -329,10 +390,7 @@
 <button class="btn soft tiny">Slide</button>
 </form>
 <form action="/admin/profissionais/{{p.id}}/acao/bloquear" method="post">
-<button class="btn danger tiny">Bloquear</button>
-</form>
-<form action="/admin/profissionais/{{p.id}}/excluir" method="post">
-<button class="btn danger tiny">Excluir</button>
+<button class="btn {% if p.blocked %}soft{% else %}danger{% endif %} tiny">{{'Reativar' if p.blocked else 'Pausar/bloquear'}}</button>
 </form>
 </div>
 </td>
@@ -364,10 +422,7 @@
 <td>
 <div class="row">
 <form action="/admin/clientes/{{c.id}}/alternar" method="post">
-<button class="btn soft">Ativar/bloquear</button>
-</form>
-<form action="/admin/clientes/{{c.id}}/excluir" method="post">
-<button class="btn danger">Excluir</button>
+<button class="btn {% if c.is_active %}danger{% else %}soft{% endif %}">{{'Pausar/bloquear' if c.is_active else 'Reativar'}}</button>
 </form>
 </div>
 </td>

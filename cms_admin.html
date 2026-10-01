@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% block title %}Gestão do portal | NowUp{% endblock %}{% block content %}
+{% extends 'base.html' %}{% block title %}Gestão do portal | NowUp{% endblock %}{% block body_class %}social-admin{% endblock %}{% block content %}
 <div class="container dashboard cms-dashboard"><aside class="sidebar"><h3>Gestão do portal</h3><a href="/admin">← Painel principal</a><a href="#configuracoes">Configurações e SEO</a><a href="#paginas">Páginas</a><a href="#blog">Blog/Notícias</a><a href="#comentarios">Comentários</a><a href="#leads">Contatos/Leads</a><a href="#usuarios">Usuários e permissões</a></aside><main>
 <section class="panel"><h1>Central de conteúdo NowUp</h1><p class="muted">{{cms_user.name}} · Nível: <b>{{cms_role}}</b></p></section>
 {% if cms_role=='admin' %}<section class="panel" id="configuracoes"><h2>1. Configurações gerais e SEO local</h2><form action="/admin/cms/configuracoes" method="post"><div class="grid2">
