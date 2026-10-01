@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block title %}Promoções em {{city}} | NowUp{% endblock %}
+{% block body_class %}promotions-page{% endblock %}
+{% block content %}
+<main class="section"><div class="container"><header class="promotions-hero"><div><span>OFERTAS LOCAIS</span><h1>Promoções em {{city}}</h1><p>Ofertas publicadas por empresas e profissionais da cidade.</p></div><form method="get"><select name="city" onchange="this.form.submit()">{% for c in active_cities %}<option {% if c==city %}selected{% endif %}>{{c}}</option>{% endfor %}</select></form></header>
+<div class="promotion-grid">{% for p in promotions %}<article class="promotion-card"><a href="/p/{{p.slug}}">{% if p.cover %}<img src="/uploads/{{p.cover}}" alt="{{p.display_name}}">{% else %}<span>🏪</span>{% endif %}<div><b>{{p.display_name}}</b><small>📍 {{p.neighborhood or p.city}}</small><strong>Ver promoção →</strong></div></a></article>{% else %}<div class="empty">Ainda não há promoções publicadas em {{city}}.</div>{% endfor %}</div></div></main>
+{% endblock %}
