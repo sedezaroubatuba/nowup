@@ -127,6 +127,7 @@ html,body{max-width:100%;overflow-x:clip}
 .nu-account-actions a.primary{border-color:var(--v34-blue);background:var(--v34-blue);color:#fff}.nu-account-actions form{margin:0}
 .nowup-v19 .mobile-bottom-nav{display:grid!important;position:fixed!important;left:0!important;right:0!important;bottom:0!important;z-index:10000!important;pointer-events:auto!important;transform:none!important;max-width:none!important}
 .nowup-v19 .mobile-bottom-nav a{position:relative;z-index:1;pointer-events:auto!important;touch-action:manipulation}
+.nu-account-actions{display:flex;align-items:center;gap:8px}.nu-account-actions form{margin:0}.nu-account-actions a,.nu-account-actions button{border:1px solid #d8e3ef;border-radius:10px;background:#fff;color:#17304f;padding:8px 12px;font:inherit;font-size:12px;font-weight:800;cursor:pointer}.nu-account-actions button{color:#c43232}
 .nowup-v19 .nu-stories,.nowup-v19 .nu-categories,.nowup-v19 .daily-offers-row{max-width:100%;overflow-x:auto!important;overflow-y:hidden;overscroll-behavior-x:contain;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;touch-action:pan-x}
 .nowup-v19 .nu-stories>a,.nowup-v19 .nu-categories>a,.nowup-v19 .daily-offer-card{scroll-snap-align:start}
 .nowup-v19 .nu-card-row{max-width:100%;min-width:0}
