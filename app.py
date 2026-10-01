@@ -24,7 +24,9 @@ DB_PATH = Path(os.getenv("NOWUP_DB", BASE / "data" / "nowup.db"))
 UPLOAD_DIR = Path(os.getenv("NOWUP_UPLOAD_DIR", BASE / "uploads"))
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-SESSION_DAYS = 30
+# Mantém clientes e profissionais conectados até escolherem sair.
+# O prazo longo existe apenas como proteção técnica do cookie/sessão.
+SESSION_DAYS = 3650
 MAX_PHOTOS = 10
 MAX_UPLOAD = 5 * 1024 * 1024
 ADMIN_SESSION_MINUTES = 30
@@ -213,23 +215,14 @@ def require_user(request: Request, role: Optional[str]=None):
 
 def context(request: Request, **kwargs):
     conn = db()
-    user = current_user(request)
     cats = conn.execute("SELECT * FROM categories WHERE active=1 ORDER BY sort_order,name").fetchall()
     banners = conn.execute("SELECT * FROM banners WHERE active=1 AND image_filename!='' ORDER BY sort_order,id LIMIT 3").fetchall()
     business_slides = conn.execute("SELECT id,slug,display_name,slide_image_filename FROM professionals WHERE blocked=0 AND in_slider=1 AND slide_image_filename!='' ORDER BY id DESC LIMIT 10").fetchall()
     settings = get_settings(conn)
-    notification_count = 0
-    if user and user["role"] == "customer":
-        notification_count = conn.execute("SELECT COUNT(*) FROM orders WHERE customer_id=? AND status NOT IN ('completed','cancelled','rejected')",(user["id"],)).fetchone()[0]
-    elif user and user["role"] == "professional":
-        notification_count = conn.execute("SELECT COUNT(*) FROM orders o JOIN professionals p ON p.id=o.professional_id WHERE p.user_id=? AND o.status='new'",(user["id"],)).fetchone()[0]
-    elif user and user["role"] == "admin":
-        notification_count = conn.execute("SELECT COUNT(*) FROM reports WHERE status='pending'").fetchone()[0]
     conn.close()
     return {
         "request": request,
-        "user": user,
-        "notification_count": notification_count,
+        "user": current_user(request),
         "categories": cats,
         "banners": banners,
         "business_slides": business_slides,
@@ -492,8 +485,6 @@ def init_db():
     ensure_column(conn, "banners", "position_y", "INTEGER NOT NULL DEFAULT 50")
     ensure_column(conn, "banners", "desktop_height", "INTEGER NOT NULL DEFAULT 360")
     ensure_column(conn, "banners", "mobile_height", "INTEGER NOT NULL DEFAULT 240")
-    ensure_column(conn, "banners", "mobile_image_filename", "TEXT NOT NULL DEFAULT ''")
-    ensure_column(conn, "users", "avatar_filename", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "orders", "payment_method", "TEXT NOT NULL DEFAULT 'pix'")
     ensure_column(conn, "orders", "order_code", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "orders", "subtotal_cents", "INTEGER NOT NULL DEFAULT 0")
@@ -667,18 +658,6 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
     if not request.cookies.get("nowup_visitor"):
         response.set_cookie("nowup_visitor",visitor_key,max_age=31536000,httponly=True,samesite="lax",secure=request.url.scheme=="https")
     return response
-
-@app.get("/promocoes", response_class=HTMLResponse)
-def promotions(request: Request, city: str=""):
-    conn=db(); cities=active_cities(get_settings(conn)); city=city.strip() or cities[0]
-    rows=conn.execute("""SELECT p.*,
-      COALESCE((SELECT ROUND(AVG(stars),1) FROM reviews r WHERE r.professional_id=p.id),0) rating,
-      (SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1) cover
-      FROM professionals p WHERE p.blocked=0 AND p.city LIKE ? AND
-      (p.featured=1 OR EXISTS(SELECT 1 FROM products pr WHERE pr.professional_id=p.id AND pr.promo_price_cents>0 AND pr.available=1))
-      ORDER BY p.featured DESC,p.id DESC""",(f"%{city}%",)).fetchall()
-    conn.close()
-    return templates.TemplateResponse("promotions.html",context(request,promotions=rows,city=city,active_cities=cities))
 
 @app.get("/profissionais", response_class=HTMLResponse)
 def professionals(request: Request, category: str="", city: str="", neighborhood: str="", cep: str="", q: str="", business_type: str=""):
@@ -1292,20 +1271,6 @@ def customer_panel(request: Request):
     conn.close()
     return templates.TemplateResponse("customer_panel.html", context(request, reviews=reviews, favorites=favorites, orders=orders))
 
-@app.post("/cliente/perfil")
-def customer_profile_update(request: Request, name: str=Form(...), phone: str=Form(""), avatar: Optional[UploadFile]=File(None)):
-    u=require_user(request,"customer"); conn=db(); current=conn.execute("SELECT avatar_filename FROM users WHERE id=?",(u["id"],)).fetchone()
-    avatar_filename=current["avatar_filename"] or ""
-    if avatar and avatar.filename:
-        new_filename=save_image(avatar)
-        if avatar_filename:
-            try: (UPLOAD_DIR/avatar_filename).unlink(missing_ok=True)
-            except OSError: pass
-        avatar_filename=new_filename
-    conn.execute("UPDATE users SET name=?,phone=?,avatar_filename=? WHERE id=?",(name.strip()[:120] or u["name"],phone.strip()[:30],avatar_filename,u["id"]))
-    conn.commit(); conn.close()
-    return RedirectResponse("/cliente?ok=perfil#perfil",303)
-
 @app.post("/favoritos/{professional_id}")
 def toggle_favorite(request: Request, professional_id: int, next: str=Form("/cliente")):
     u=require_user(request,"customer"); conn=db()
@@ -1647,39 +1612,33 @@ def admin_report_action(request: Request, rid:int, status:str):
     conn=db(); conn.execute("UPDATE reports SET status=? WHERE id=?",(status,rid)); conn.commit(); conn.close(); return RedirectResponse("/admin#denuncias",303)
 
 @app.post("/admin/banners")
-def admin_banner_add(request: Request, link:str=Form(""), brightness:int=Form(100), zoom:int=Form(100), position_x:int=Form(50), position_y:int=Form(50), desktop_height:int=Form(280), mobile_height:int=Form(400), image_desktop:UploadFile=File(...), image_mobile:UploadFile=File(...)):
-    require_user(request,"admin"); fn=save_image(image_desktop); mobile_fn=save_image(image_mobile)
+def admin_banner_add(request: Request, link:str=Form(""), brightness:int=Form(100), zoom:int=Form(100), position_x:int=Form(50), position_y:int=Form(50), desktop_height:int=Form(360), mobile_height:int=Form(240), image:UploadFile=File(...)):
+    require_user(request,"admin"); fn=""
+    if image and image.filename: fn=save_image(image)
     brightness=max(40,min(160,brightness)); zoom=max(100,min(200,zoom)); position_x=max(0,min(100,position_x)); position_y=max(0,min(100,position_y)); desktop_height=max(240,min(600,desktop_height)); mobile_height=max(180,min(500,mobile_height))
     conn=db(); next_order=conn.execute("SELECT COALESCE(MAX(sort_order),0)+1 FROM banners").fetchone()[0]
     active_count=conn.execute("SELECT COUNT(*) FROM banners WHERE active=1").fetchone()[0]
-    conn.execute("INSERT INTO banners(title,subtitle,link,image_filename,mobile_image_filename,sort_order,active,template,background_color,text_color,font_family,brightness,zoom,position_x,position_y,desktop_height,mobile_height,created_at) VALUES('','',?,?,?,?,?,1,'#000000','#ffffff','Inter',?,?,?,?,?,?,?)",(clean_link(link),fn,mobile_fn,next_order,1 if active_count<3 else 0,brightness,zoom,position_x,position_y,desktop_height,mobile_height,now_iso())); conn.commit(); conn.close(); return RedirectResponse("/admin#publicidade",303)
+    conn.execute("INSERT INTO banners(title,subtitle,link,image_filename,sort_order,active,template,background_color,text_color,font_family,brightness,zoom,position_x,position_y,desktop_height,mobile_height,created_at) VALUES('','',?,?,?,?,1,'#000000','#ffffff','Inter',?,?,?,?,?,?,?)",(clean_link(link),fn,next_order,1 if active_count<10 else 0,brightness,zoom,position_x,position_y,desktop_height,mobile_height,now_iso())); conn.commit(); conn.close(); return RedirectResponse("/admin#publicidade",303)
 
 @app.post("/admin/banners/{bid}/editar")
-def admin_banner_edit(request: Request, bid:int, link:str=Form(""), brightness:int=Form(100), zoom:int=Form(100), position_x:int=Form(50), position_y:int=Form(50), desktop_height:int=Form(280), mobile_height:int=Form(400), image_desktop:Optional[UploadFile]=File(None), image_mobile:Optional[UploadFile]=File(None)):
+def admin_banner_edit(request: Request, bid:int, link:str=Form(""), brightness:int=Form(100), zoom:int=Form(100), position_x:int=Form(50), position_y:int=Form(50), desktop_height:int=Form(360), mobile_height:int=Form(240), image:Optional[UploadFile]=File(None)):
     require_user(request,"admin"); conn=db(); banner=conn.execute("SELECT * FROM banners WHERE id=?",(bid,)).fetchone()
     if not banner: conn.close(); raise HTTPException(404)
     fn=banner["image_filename"] or ""
-    mobile_fn=banner["mobile_image_filename"] or ""
-    if image_desktop and image_desktop.filename:
-        new_fn=save_image(image_desktop)
+    if image and image.filename:
+        new_fn=save_image(image)
         if fn:
             try: (UPLOAD_DIR/fn).unlink(missing_ok=True)
             except OSError: pass
         fn=new_fn
-    if image_mobile and image_mobile.filename:
-        new_mobile_fn=save_image(image_mobile)
-        if mobile_fn:
-            try: (UPLOAD_DIR/mobile_fn).unlink(missing_ok=True)
-            except OSError: pass
-        mobile_fn=new_mobile_fn
     brightness=max(40,min(160,brightness)); zoom=max(100,min(200,zoom)); position_x=max(0,min(100,position_x)); position_y=max(0,min(100,position_y)); desktop_height=max(240,min(600,desktop_height)); mobile_height=max(180,min(500,mobile_height))
-    conn.execute("UPDATE banners SET title='',subtitle='',link=?,image_filename=?,mobile_image_filename=?,template=1,background_color='#000000',text_color='#ffffff',font_family='Inter',brightness=?,zoom=?,position_x=?,position_y=?,desktop_height=?,mobile_height=? WHERE id=?",(clean_link(link),fn,mobile_fn,brightness,zoom,position_x,position_y,desktop_height,mobile_height,bid)); conn.commit(); conn.close()
+    conn.execute("UPDATE banners SET title='',subtitle='',link=?,image_filename=?,template=1,background_color='#000000',text_color='#ffffff',font_family='Inter',brightness=?,zoom=?,position_x=?,position_y=?,desktop_height=?,mobile_height=? WHERE id=?",(clean_link(link),fn,brightness,zoom,position_x,position_y,desktop_height,mobile_height,bid)); conn.commit(); conn.close()
     return RedirectResponse("/admin#publicidade",303)
 
 @app.post("/admin/banners/{bid}/alternar")
 def admin_banner_toggle(request: Request, bid:int):
     require_user(request,"admin"); conn=db(); banner=conn.execute("SELECT active FROM banners WHERE id=?",(bid,)).fetchone()
-    if banner and not banner["active"] and conn.execute("SELECT COUNT(*) FROM banners WHERE active=1").fetchone()[0]>=3:
+    if banner and not banner["active"] and conn.execute("SELECT COUNT(*) FROM banners WHERE active=1").fetchone()[0]>=10:
         conn.close(); return RedirectResponse("/admin?erro=limite-slides#publicidade",303)
     conn.execute("UPDATE banners SET active=CASE active WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(bid,)); conn.commit(); conn.close(); return RedirectResponse("/admin#publicidade",303)
 
@@ -1712,12 +1671,10 @@ def admin_move_banner(request: Request, bid:int, direction:str):
 
 @app.post("/admin/banners/{bid}/excluir")
 def admin_delete_banner(request: Request, bid:int):
-    require_user(request,"admin"); conn=db(); banner=conn.execute("SELECT image_filename,mobile_image_filename FROM banners WHERE id=?",(bid,)).fetchone(); conn.execute("DELETE FROM banners WHERE id=?",(bid,)); conn.commit(); conn.close()
-    if banner:
-        for filename in (banner["image_filename"],banner["mobile_image_filename"]):
-            if filename:
-                try: (UPLOAD_DIR/filename).unlink(missing_ok=True)
-                except OSError: pass
+    require_user(request,"admin"); conn=db(); banner=conn.execute("SELECT image_filename FROM banners WHERE id=?",(bid,)).fetchone(); conn.execute("DELETE FROM banners WHERE id=?",(bid,)); conn.commit(); conn.close()
+    if banner and banner["image_filename"]:
+        try: (UPLOAD_DIR/banner["image_filename"]).unlink(missing_ok=True)
+        except OSError: pass
     return RedirectResponse("/admin#publicidade",303)
 
 @app.get("/anuncio/{bid}")
