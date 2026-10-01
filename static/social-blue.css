@@ -50,3 +50,53 @@ body{padding-bottom:74px;background:#fff}.container{padding-left:14px;padding-ri
 .social-home .social-wordmark span,.brand b{color:var(--social-cyan)}
 .social-home .social-search button{color:var(--social-blue)}
 .social-home .social-story-ring{background:linear-gradient(145deg,var(--social-blue),var(--social-cyan))}
+
+/*
+ * Tema responsivo unificado.
+ * Toda cor de identidade vem de --brand e --brand2, definidos uma única vez
+ * pelo painel administrativo em base.html. As media queries mudam somente o
+ * encaixe dos elementos; nunca criam uma segunda paleta para o celular.
+ */
+:root{
+  --theme-primary:var(--brand);
+  --theme-accent:var(--brand2);
+  --theme-primary-soft:color-mix(in srgb,var(--brand) 12%,#fff);
+  --theme-accent-soft:color-mix(in srgb,var(--brand2) 14%,#fff);
+}
+.social-home .social-discovery{
+  background:linear-gradient(125deg,var(--theme-primary),var(--theme-primary) 52%,var(--theme-accent));
+}
+.social-home .social-wordmark span,.brand b{color:var(--theme-accent)}
+.social-home .social-search button,.social-home .see-all{color:var(--theme-primary)}
+.social-home .social-story-ring{
+  background:linear-gradient(145deg,var(--theme-primary),var(--theme-accent));
+}
+.social-home .home-hero:before{
+  background-image:linear-gradient(105deg,color-mix(in srgb,var(--theme-primary) 88%,#06152c),color-mix(in srgb,var(--theme-primary) 58%,transparent),color-mix(in srgb,var(--theme-accent) 22%,transparent)),var(--hero-image);
+}
+.social-home .eyebrow{
+  background:linear-gradient(90deg,var(--theme-primary),var(--theme-accent));
+  color:#fff;
+}
+.social-home .quick-cat span{
+  color:#fff;
+  background:linear-gradient(145deg,var(--theme-primary),var(--theme-accent));
+}
+.social-home .quick-cat:nth-child(3n+2) span{
+  background:linear-gradient(145deg,var(--theme-accent),var(--theme-primary));
+}
+.social-home .quick-cat:nth-child(3n+3) span{
+  background:linear-gradient(145deg,var(--theme-primary),color-mix(in srgb,var(--theme-primary) 62%,var(--theme-accent)));
+}
+.social-home .quick-cat:nth-child(4n) span{
+  background:linear-gradient(145deg,var(--theme-accent),color-mix(in srgb,var(--theme-accent) 62%,var(--theme-primary)));
+}
+.mobile-bottom-nav a:first-child{color:var(--theme-primary)}
+.top .mobile-menu{color:var(--theme-primary);background:var(--theme-primary-soft)}
+
+@supports not (color:color-mix(in srgb,#000 50%,#fff)){
+  :root{--theme-primary-soft:#eef3ff;--theme-accent-soft:#fff0e3}
+  .social-home .home-hero:before{
+    background-image:linear-gradient(105deg,var(--theme-primary),transparent),var(--hero-image);
+  }
+}
