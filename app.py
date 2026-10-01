@@ -343,6 +343,7 @@ def init_db():
       subtitle TEXT DEFAULT '',
       link TEXT DEFAULT '',
       image_filename TEXT DEFAULT '',
+      mobile_image_filename TEXT DEFAULT '',
       sort_order INTEGER NOT NULL DEFAULT 100,
       clicks INTEGER NOT NULL DEFAULT 0,
       active INTEGER NOT NULL DEFAULT 1,
@@ -471,6 +472,7 @@ def init_db():
     ensure_column(conn, "professionals", "featured_image_filename", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "slide_image_filename", "TEXT DEFAULT ''")
     ensure_column(conn, "banners", "image_filename", "TEXT DEFAULT ''")
+    ensure_column(conn, "banners", "mobile_image_filename", "TEXT DEFAULT ''")
     ensure_column(conn, "banners", "sort_order", "INTEGER NOT NULL DEFAULT 100")
     ensure_column(conn, "banners", "clicks", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "banners", "template", "INTEGER NOT NULL DEFAULT 1")
@@ -1610,27 +1612,34 @@ def admin_report_action(request: Request, rid:int, status:str):
     conn=db(); conn.execute("UPDATE reports SET status=? WHERE id=?",(status,rid)); conn.commit(); conn.close(); return RedirectResponse("/admin#denuncias",303)
 
 @app.post("/admin/banners")
-def admin_banner_add(request: Request, link:str=Form(""), brightness:int=Form(100), zoom:int=Form(100), position_x:int=Form(50), position_y:int=Form(50), desktop_height:int=Form(360), mobile_height:int=Form(240), image:UploadFile=File(...)):
-    require_user(request,"admin"); fn=""
-    if image and image.filename: fn=save_image(image)
+def admin_banner_add(request: Request, link:str=Form(""), brightness:int=Form(100), zoom:int=Form(100), position_x:int=Form(50), position_y:int=Form(50), desktop_height:int=Form(360), mobile_height:int=Form(240), desktop_image:UploadFile=File(...), mobile_image:UploadFile=File(...)):
+    require_user(request,"admin"); desktop_fn=""; mobile_fn=""
+    if desktop_image and desktop_image.filename: desktop_fn=save_image(desktop_image)
+    if mobile_image and mobile_image.filename: mobile_fn=save_image(mobile_image)
     brightness=max(40,min(160,brightness)); zoom=max(100,min(200,zoom)); position_x=max(0,min(100,position_x)); position_y=max(0,min(100,position_y)); desktop_height=max(240,min(600,desktop_height)); mobile_height=max(180,min(500,mobile_height))
     conn=db(); next_order=conn.execute("SELECT COALESCE(MAX(sort_order),0)+1 FROM banners").fetchone()[0]
     active_count=conn.execute("SELECT COUNT(*) FROM banners WHERE active=1").fetchone()[0]
-    conn.execute("INSERT INTO banners(title,subtitle,link,image_filename,sort_order,active,template,background_color,text_color,font_family,brightness,zoom,position_x,position_y,desktop_height,mobile_height,created_at) VALUES('','',?,?,?,?,1,'#000000','#ffffff','Inter',?,?,?,?,?,?,?)",(clean_link(link),fn,next_order,1 if active_count<10 else 0,brightness,zoom,position_x,position_y,desktop_height,mobile_height,now_iso())); conn.commit(); conn.close(); return RedirectResponse("/admin#publicidade",303)
+    conn.execute("INSERT INTO banners(title,subtitle,link,image_filename,mobile_image_filename,sort_order,active,template,background_color,text_color,font_family,brightness,zoom,position_x,position_y,desktop_height,mobile_height,created_at) VALUES('','',?,?,?,?,?,1,'#000000','#ffffff','Inter',?,?,?,?,?,?,?)",(clean_link(link),desktop_fn,mobile_fn,next_order,1 if active_count<10 else 0,brightness,zoom,position_x,position_y,desktop_height,mobile_height,now_iso())); conn.commit(); conn.close(); return RedirectResponse("/admin#publicidade",303)
 
 @app.post("/admin/banners/{bid}/editar")
-def admin_banner_edit(request: Request, bid:int, link:str=Form(""), brightness:int=Form(100), zoom:int=Form(100), position_x:int=Form(50), position_y:int=Form(50), desktop_height:int=Form(360), mobile_height:int=Form(240), image:Optional[UploadFile]=File(None)):
+def admin_banner_edit(request: Request, bid:int, link:str=Form(""), brightness:int=Form(100), zoom:int=Form(100), position_x:int=Form(50), position_y:int=Form(50), desktop_height:int=Form(360), mobile_height:int=Form(240), desktop_image:Optional[UploadFile]=File(None), mobile_image:Optional[UploadFile]=File(None)):
     require_user(request,"admin"); conn=db(); banner=conn.execute("SELECT * FROM banners WHERE id=?",(bid,)).fetchone()
     if not banner: conn.close(); raise HTTPException(404)
-    fn=banner["image_filename"] or ""
-    if image and image.filename:
-        new_fn=save_image(image)
-        if fn:
-            try: (UPLOAD_DIR/fn).unlink(missing_ok=True)
+    desktop_fn=banner["image_filename"] or ""; mobile_fn=banner["mobile_image_filename"] or ""
+    if desktop_image and desktop_image.filename:
+        new_fn=save_image(desktop_image)
+        if desktop_fn:
+            try: (UPLOAD_DIR/desktop_fn).unlink(missing_ok=True)
             except OSError: pass
-        fn=new_fn
+        desktop_fn=new_fn
+    if mobile_image and mobile_image.filename:
+        new_mobile_fn=save_image(mobile_image)
+        if mobile_fn and mobile_fn != desktop_fn:
+            try: (UPLOAD_DIR/mobile_fn).unlink(missing_ok=True)
+            except OSError: pass
+        mobile_fn=new_mobile_fn
     brightness=max(40,min(160,brightness)); zoom=max(100,min(200,zoom)); position_x=max(0,min(100,position_x)); position_y=max(0,min(100,position_y)); desktop_height=max(240,min(600,desktop_height)); mobile_height=max(180,min(500,mobile_height))
-    conn.execute("UPDATE banners SET title='',subtitle='',link=?,image_filename=?,template=1,background_color='#000000',text_color='#ffffff',font_family='Inter',brightness=?,zoom=?,position_x=?,position_y=?,desktop_height=?,mobile_height=? WHERE id=?",(clean_link(link),fn,brightness,zoom,position_x,position_y,desktop_height,mobile_height,bid)); conn.commit(); conn.close()
+    conn.execute("UPDATE banners SET title='',subtitle='',link=?,image_filename=?,mobile_image_filename=?,template=1,background_color='#000000',text_color='#ffffff',font_family='Inter',brightness=?,zoom=?,position_x=?,position_y=?,desktop_height=?,mobile_height=? WHERE id=?",(clean_link(link),desktop_fn,mobile_fn,brightness,zoom,position_x,position_y,desktop_height,mobile_height,bid)); conn.commit(); conn.close()
     return RedirectResponse("/admin#publicidade",303)
 
 @app.post("/admin/banners/{bid}/alternar")
@@ -1669,10 +1678,12 @@ def admin_move_banner(request: Request, bid:int, direction:str):
 
 @app.post("/admin/banners/{bid}/excluir")
 def admin_delete_banner(request: Request, bid:int):
-    require_user(request,"admin"); conn=db(); banner=conn.execute("SELECT image_filename FROM banners WHERE id=?",(bid,)).fetchone(); conn.execute("DELETE FROM banners WHERE id=?",(bid,)); conn.commit(); conn.close()
-    if banner and banner["image_filename"]:
-        try: (UPLOAD_DIR/banner["image_filename"]).unlink(missing_ok=True)
-        except OSError: pass
+    require_user(request,"admin"); conn=db(); banner=conn.execute("SELECT image_filename,mobile_image_filename FROM banners WHERE id=?",(bid,)).fetchone(); conn.execute("DELETE FROM banners WHERE id=?",(bid,)); conn.commit(); conn.close()
+    if banner:
+        for filename in {banner["image_filename"], banner["mobile_image_filename"]}:
+            if filename:
+                try: (UPLOAD_DIR/filename).unlink(missing_ok=True)
+                except OSError: pass
     return RedirectResponse("/admin#publicidade",303)
 
 @app.get("/anuncio/{bid}")
