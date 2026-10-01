@@ -1115,8 +1115,23 @@ def pro_new_orders(request: Request, after: int=0):
     rows=conn.execute("""SELECT id,customer_name,total_cents,created_at FROM orders
       WHERE professional_id=? AND id>? ORDER BY id ASC LIMIT 10""",(p["id"],max(0,after))).fetchall()
     latest=conn.execute("SELECT COALESCE(MAX(id),0) FROM orders WHERE professional_id=?",(p["id"],)).fetchone()[0]
+    pending=conn.execute("""SELECT id,customer_name,total_cents,created_at FROM orders
+      WHERE professional_id=? AND status='new' ORDER BY id DESC""",(p["id"],)).fetchall()
     conn.close()
-    return JSONResponse({"latest_id":latest,"orders":[{"id":r["id"],"customer_name":r["customer_name"] or "Cliente","total_cents":r["total_cents"],"created_at":r["created_at"]} for r in rows]})
+    pending_order=pending[0] if pending else None
+    return JSONResponse({"latest_id":latest,"pending_count":len(pending),"pending_order":({"id":pending_order["id"],"customer_name":pending_order["customer_name"] or "Cliente","total_cents":pending_order["total_cents"],"created_at":pending_order["created_at"]} if pending_order else None),"orders":[{"id":r["id"],"customer_name":r["customer_name"] or "Cliente","total_cents":r["total_cents"],"created_at":r["created_at"]} for r in rows]})
+
+@app.get("/cliente/pedidos/notificacoes")
+def customer_order_notifications(request: Request):
+    u=require_user(request,"customer"); conn=db()
+    order=conn.execute("""SELECT o.id,o.order_code,o.status,o.updated_at,p.display_name FROM orders o
+      JOIN professionals p ON p.id=o.professional_id
+      WHERE o.customer_id=? OR (o.customer_id IS NULL AND replace(replace(replace(replace(o.customer_phone,' ',''),'-',''),'(',''),')','')=?)
+      ORDER BY o.updated_at DESC,o.id DESC LIMIT 1""",(u["id"],normalize_phone(u["phone"] or "") or "__none__")).fetchone()
+    conn.close()
+    if not order: return JSONResponse({"order":None})
+    labels={"new":"Pedido enviado","confirmed":"Pedido aceito","preparing":"Pedido em preparo","ready":"Pedido pronto","out_for_delivery":"Pedido saiu para entrega","completed":"Pedido finalizado","cancelled":"Pedido cancelado","rejected":"Pedido recusado"}
+    return JSONResponse({"order":{"id":order["id"],"code":order["order_code"] or f"Pedido #{order['id']}","status":order["status"],"label":labels.get(order["status"],order["status"]),"updated_at":order["updated_at"],"store":order["display_name"]}})
 
 def price_to_cents(raw: str):
     value=(raw or "0").strip().replace("R$","").replace(" ","")
