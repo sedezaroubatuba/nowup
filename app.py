@@ -636,14 +636,19 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
       SELECT p.*, u.name as owner_name,
        COALESCE((SELECT ROUND(AVG(stars),1) FROM reviews r WHERE r.professional_id=p.id),0) rating,
        (SELECT COUNT(*) FROM reviews r WHERE r.professional_id=p.id) review_count,
-       CASE WHEN p.featured=1 AND p.featured_image_filename!='' THEN p.featured_image_filename ELSE (SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1) END cover
+       COALESCE(
+         CASE WHEN p.featured=1 THEN NULLIF(p.featured_image_filename,'') END,
+         NULLIF(p.cover_filename,''),
+         NULLIF(p.avatar_filename,''),
+         (SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1)
+       ) cover
       FROM professionals p JOIN users u ON u.id=p.user_id
       WHERE {' AND '.join(where)}
       ORDER BY p.featured DESC,p.verified DESC,rating DESC,p.id DESC LIMIT 12
     """, params).fetchall()
     posts = conn.execute("""
       SELECT po.*,p.display_name,p.slug,p.city,
-      (SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1) avatar
+      COALESCE(NULLIF(p.avatar_filename,''),NULLIF(p.cover_filename,''),(SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1)) avatar
       FROM posts po JOIN professionals p ON p.id=po.professional_id
       WHERE p.blocked=0 AND po.post_type!='status' ORDER BY po.id DESC LIMIT 12
     """).fetchall()
@@ -674,7 +679,7 @@ def professionals(request: Request, category: str="", city: str="", neighborhood
       SELECT p.*,
        COALESCE((SELECT ROUND(AVG(stars),1) FROM reviews r WHERE r.professional_id=p.id),0) rating,
        (SELECT COUNT(*) FROM reviews r WHERE r.professional_id=p.id) review_count,
-       (SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1) cover
+       COALESCE(NULLIF(p.cover_filename,''),NULLIF(p.avatar_filename,''),(SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1)) cover
       FROM professionals p WHERE {' AND '.join(where)}
       ORDER BY p.featured DESC,p.verified DESC,rating DESC,p.id DESC LIMIT 100
     """,params).fetchall(); conn.close()
@@ -1612,9 +1617,10 @@ def admin_report_action(request: Request, rid:int, status:str):
     conn=db(); conn.execute("UPDATE reports SET status=? WHERE id=?",(status,rid)); conn.commit(); conn.close(); return RedirectResponse("/admin#denuncias",303)
 
 @app.post("/admin/banners")
-def admin_banner_add(request: Request, link:str=Form(""), brightness:int=Form(100), zoom:int=Form(100), position_x:int=Form(50), position_y:int=Form(50), desktop_height:int=Form(360), mobile_height:int=Form(240), image:UploadFile=File(...)):
+def admin_banner_add(request: Request, link:str=Form(""), brightness:int=Form(100), zoom:int=Form(100), position_x:int=Form(50), position_y:int=Form(50), desktop_height:int=Form(360), mobile_height:int=Form(240), image:Optional[UploadFile]=File(None)):
     require_user(request,"admin"); fn=""
     if image and image.filename: fn=save_image(image)
+    if not fn: return RedirectResponse("/admin?erro=imagem-banner#publicidade",303)
     brightness=max(40,min(160,brightness)); zoom=max(100,min(200,zoom)); position_x=max(0,min(100,position_x)); position_y=max(0,min(100,position_y)); desktop_height=max(240,min(600,desktop_height)); mobile_height=max(180,min(500,mobile_height))
     conn=db(); next_order=conn.execute("SELECT COALESCE(MAX(sort_order),0)+1 FROM banners").fetchone()[0]
     active_count=conn.execute("SELECT COUNT(*) FROM banners WHERE active=1").fetchone()[0]
