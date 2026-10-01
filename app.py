@@ -214,7 +214,12 @@ def require_user(request: Request, role: Optional[str]=None):
 def context(request: Request, **kwargs):
     conn = db()
     cats = conn.execute("SELECT * FROM categories WHERE active=1 ORDER BY sort_order,name").fetchall()
-    banners = conn.execute("SELECT * FROM banners WHERE active=1 AND image_filename!='' ORDER BY sort_order,id LIMIT 3").fetchall()
+    banner_rows = conn.execute("SELECT * FROM banners WHERE active=1 AND image_filename!='' ORDER BY sort_order,id LIMIT 3").fetchall()
+    banners=[]
+    for row in banner_rows:
+        item=dict(row)
+        item.setdefault("mobile_image_filename","")
+        banners.append(item)
     business_slides = conn.execute("SELECT id,slug,display_name,slide_image_filename FROM professionals WHERE blocked=0 AND in_slider=1 AND slide_image_filename!='' ORDER BY id DESC LIMIT 10").fetchall()
     settings = get_settings(conn)
     conn.close()
@@ -1716,7 +1721,7 @@ def admin_report_action(request: Request, rid:int, status:str):
 
 @app.post("/admin/banners")
 def admin_banner_add(request: Request, link:str=Form(""), brightness:int=Form(100), zoom:int=Form(100), position_x:int=Form(50), position_y:int=Form(50), desktop_height:int=Form(360), mobile_height:int=Form(240), image:UploadFile=File(...), mobile_image:Optional[UploadFile]=File(None)):
-    require_user(request,"admin"); fn=""; mobile_fn=""
+    require_user(request,"admin"); fn=""; mobile_fn=""; conn=db(); ensure_column(conn,"banners","mobile_image_filename","TEXT DEFAULT ''"); conn.commit(); conn.close()
     if image and image.filename: fn=save_image(image)
     if mobile_image and mobile_image.filename: mobile_fn=save_image(mobile_image)
     brightness=max(40,min(160,brightness)); zoom=max(100,min(200,zoom)); position_x=max(0,min(100,position_x)); position_y=max(0,min(100,position_y)); desktop_height=max(240,min(600,desktop_height)); mobile_height=max(180,min(500,mobile_height))
@@ -1726,7 +1731,7 @@ def admin_banner_add(request: Request, link:str=Form(""), brightness:int=Form(10
 
 @app.post("/admin/banners/{bid}/editar")
 def admin_banner_edit(request: Request, bid:int, link:str=Form(""), brightness:int=Form(100), zoom:int=Form(100), position_x:int=Form(50), position_y:int=Form(50), desktop_height:int=Form(360), mobile_height:int=Form(240), image:Optional[UploadFile]=File(None), mobile_image:Optional[UploadFile]=File(None)):
-    require_user(request,"admin"); conn=db(); banner=conn.execute("SELECT * FROM banners WHERE id=?",(bid,)).fetchone()
+    require_user(request,"admin"); conn=db(); ensure_column(conn,"banners","mobile_image_filename","TEXT DEFAULT ''"); conn.commit(); banner=conn.execute("SELECT * FROM banners WHERE id=?",(bid,)).fetchone()
     if not banner: conn.close(); raise HTTPException(404)
     fn=banner["image_filename"] or ""
     mobile_fn=banner["mobile_image_filename"] or ""
