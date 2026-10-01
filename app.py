@@ -1625,6 +1625,26 @@ def admin_toggle_daily_promotion(request: Request, promotion_id:int):
     conn.execute("UPDATE daily_promotions SET active=CASE active WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(promotion_id,))
     conn.commit(); conn.close(); return RedirectResponse("/admin#promocoes",303)
 
+@app.post("/admin/promocoes/demonstracao")
+def admin_create_demo_promotion(request: Request, professional_id:int=Form(...), title:str=Form(...), description:str=Form(""), image:UploadFile=File(...)):
+    require_user(request,"admin"); clean_title=title.strip()[:120]
+    if not clean_title: return RedirectResponse("/admin?erro=promocao-demo#demonstracoes",303)
+    conn=db(); pro=conn.execute("SELECT id FROM professionals WHERE id=? AND is_demo=1",(professional_id,)).fetchone()
+    if not pro: conn.close(); return RedirectResponse("/admin?erro=promocao-demo#demonstracoes",303)
+    filename=save_image(image); created=now_iso(); expires=(datetime.now(timezone.utc)+timedelta(days=3650)).isoformat()
+    conn.execute("UPDATE professionals SET is_subscriber=1,blocked=0 WHERE id=?",(professional_id,))
+    conn.execute("INSERT INTO daily_promotions(professional_id,title,description,image_filename,created_day,created_at,expires_at,active) VALUES(?,?,?,?,?,?,?,1)",(professional_id,clean_title,description.strip()[:240],filename,datetime.now(SAO_PAULO_TZ).date().isoformat(),created,expires))
+    conn.commit(); conn.close(); return RedirectResponse("/admin?ok=promocao-demo#demonstracoes",303)
+
+@app.post("/admin/promocoes/{promotion_id}/editar")
+def admin_edit_daily_promotion(request: Request, promotion_id:int, title:str=Form(...), description:str=Form(""), image:Optional[UploadFile]=File(None)):
+    require_user(request,"admin"); conn=db(); promotion=conn.execute("SELECT image_filename FROM daily_promotions WHERE id=?",(promotion_id,)).fetchone()
+    if not promotion: conn.close(); return RedirectResponse("/admin#demonstracoes",303)
+    filename=promotion["image_filename"]
+    if image and image.filename: filename=save_image(image)
+    conn.execute("UPDATE daily_promotions SET title=?,description=?,image_filename=? WHERE id=?",(title.strip()[:120],description.strip()[:240],filename,promotion_id)); conn.commit(); conn.close()
+    return RedirectResponse("/admin?ok=promocao-editada#demonstracoes",303)
+
 @app.post("/admin/perfis/demonstracao")
 def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsapp:str=Form(...), address:str=Form(...), photo:UploadFile=File(...)):
     require_user(request,"admin")
@@ -1655,13 +1675,21 @@ def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsap
     return RedirectResponse("/admin?ok=perfil-demo#profissionais",303)
 
 @app.post("/admin/profissionais/{pid}/editar")
-def admin_edit_professional(request: Request, pid:int, display_name:str=Form(...), city:str=Form(""), email:str=Form(...)):
+def admin_edit_professional(request: Request, pid:int, display_name:str=Form(...), city:str=Form(""), email:str=Form(...), services:str=Form(""), business_type:str=Form(""), photo:Optional[UploadFile]=File(None)):
     require_user(request,"admin"); normalized=normalize_email(email)
     if not display_name.strip() or not normalized: return RedirectResponse("/admin#profissionais",303)
-    conn=db(); pro=conn.execute("SELECT user_id FROM professionals WHERE id=?",(pid,)).fetchone()
+    conn=db(); pro=conn.execute("SELECT user_id,is_demo,avatar_filename FROM professionals WHERE id=?",(pid,)).fetchone()
     if pro:
         try:
             conn.execute("UPDATE professionals SET display_name=?,city=? WHERE id=?",(display_name.strip()[:120],city.strip()[:100],pid))
+            if pro["is_demo"]:
+                kind=business_type if business_type in ("professional","restaurant","store","convenience","other") else "other"
+                filename=pro["avatar_filename"] or ""
+                if photo and photo.filename: filename=save_image(photo)
+                conn.execute("UPDATE professionals SET services=?,business_type=?,avatar_filename=?,cover_filename=? WHERE id=?",(services.strip()[:500],kind,filename,filename,pid))
+                existing=conn.execute("SELECT id FROM photos WHERE professional_id=? ORDER BY is_cover DESC,id LIMIT 1",(pid,)).fetchone()
+                if existing: conn.execute("UPDATE photos SET filename=?,caption='Foto de demonstração',is_cover=1 WHERE id=?",(filename,existing["id"]))
+                elif filename: conn.execute("INSERT INTO photos(professional_id,filename,caption,is_cover,created_at) VALUES(?,?,?,?,?)",(pid,filename,"Foto de demonstração",1,now_iso()))
             conn.execute("UPDATE users SET email=? WHERE id=?",(normalized,pro["user_id"])); conn.commit()
         except sqlite3.IntegrityError: conn.rollback()
     conn.close(); return RedirectResponse("/admin#profissionais",303)
