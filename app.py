@@ -618,8 +618,8 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
     city = city.strip() or cities[0]
     params=[]; where=["p.blocked=0"]
     if q:
-        where.append("(p.display_name LIKE ? OR p.services LIKE ? OR p.description LIKE ? OR EXISTS(SELECT 1 FROM professional_categories pcq JOIN categories cq ON cq.id=pcq.category_id WHERE pcq.professional_id=p.id AND cq.name LIKE ?))")
-        like=f"%{q.strip()}%"; params += [like,like,like,like]
+        where.append("(p.display_name LIKE ? OR p.services LIKE ? OR p.description LIKE ? OR EXISTS(SELECT 1 FROM professional_categories pcq JOIN categories cq ON cq.id=pcq.category_id WHERE pcq.professional_id=p.id AND cq.name LIKE ?) OR EXISTS(SELECT 1 FROM products pr WHERE pr.professional_id=p.id AND pr.available=1 AND (pr.name LIKE ? OR pr.description LIKE ? OR pr.category LIKE ?)))")
+        like=f"%{q.strip()}%"; params += [like,like,like,like,like,like,like]
     if city:
         where.append("p.city LIKE ?"); params.append(f"%{city}%")
     if category:
@@ -636,6 +636,7 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
       SELECT p.*, u.name as owner_name,
        COALESCE((SELECT ROUND(AVG(stars),1) FROM reviews r WHERE r.professional_id=p.id),0) rating,
        (SELECT COUNT(*) FROM reviews r WHERE r.professional_id=p.id) review_count,
+       (SELECT COUNT(*) FROM products pr WHERE pr.professional_id=p.id AND pr.available=1) product_count,
        COALESCE(
          CASE WHEN p.featured=1 THEN NULLIF(p.featured_image_filename,'') END,
          NULLIF(p.cover_filename,''),
@@ -646,6 +647,8 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
       WHERE {' AND '.join(where)}
       ORDER BY p.featured DESC,p.verified DESC,rating DESC,p.id DESC LIMIT 12
     """, params).fetchall()
+    rows=[dict(r) for r in rows]
+    for row in rows: row["shop_status"]=shop_status(row)
     posts = conn.execute("""
       SELECT po.*,p.display_name,p.slug,p.city,
       COALESCE(NULLIF(p.avatar_filename,''),NULLIF(p.cover_filename,''),(SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1)) avatar
@@ -659,7 +662,7 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
     offers=[r for r in rows if r["featured"]]
     recommended=[r for r in rows if r["business_type"]!="restaurant"]
     conn.close()
-    response=templates.TemplateResponse("home.html", context(request, professionals=rows, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today))
+    response=templates.TemplateResponse("home.html", context(request, professionals=rows, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today, has_home_filter=bool(q or category or business_type)))
     if not request.cookies.get("nowup_visitor"):
         response.set_cookie("nowup_visitor",visitor_key,max_age=31536000,httponly=True,samesite="lax",secure=request.url.scheme=="https")
     return response
@@ -670,7 +673,7 @@ def professionals(request: Request, category: str="", city: str="", neighborhood
     for field,val in [("p.city",city),("p.neighborhood",neighborhood),("p.cep",cep)]:
         if val: where.append(f"{field} LIKE ?"); params.append(f"%{val}%")
     if q:
-        where.append("(p.display_name LIKE ? OR p.services LIKE ? OR p.description LIKE ? OR EXISTS(SELECT 1 FROM professional_categories pcq JOIN categories cq ON cq.id=pcq.category_id WHERE pcq.professional_id=p.id AND cq.name LIKE ?))"); like=f"%{q.strip()}%"; params += [like,like,like,like]
+        where.append("(p.display_name LIKE ? OR p.services LIKE ? OR p.description LIKE ? OR EXISTS(SELECT 1 FROM professional_categories pcq JOIN categories cq ON cq.id=pcq.category_id WHERE pcq.professional_id=p.id AND cq.name LIKE ?) OR EXISTS(SELECT 1 FROM products pr WHERE pr.professional_id=p.id AND pr.available=1 AND (pr.name LIKE ? OR pr.description LIKE ? OR pr.category LIKE ?)))"); like=f"%{q.strip()}%"; params += [like,like,like,like,like,like,like]
     if category:
         where.append("EXISTS(SELECT 1 FROM professional_categories pc JOIN categories c ON c.id=pc.category_id WHERE pc.professional_id=p.id AND c.slug=?)"); params.append(category)
     if business_type in ("professional","restaurant","store","convenience","other"):
