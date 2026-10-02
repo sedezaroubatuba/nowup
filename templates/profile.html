@@ -14,9 +14,9 @@
 <div class="profile-cta profile-primary-actions">
 {% if pro.address and not pro.hide_address %}<a class="btn soft" href="https://www.google.com/maps/search/?api=1&query={{pro.address|urlencode}}" target="_blank" rel="noopener">📍 Como chegar</a>{% else %}<span class="btn soft disabled">📍 Como chegar</span>{% endif %}
 <form action="/p/{{pro.slug}}/whatsapp" method="post"><button class="btn orange">💬 WhatsApp</button></form>
-<a class="btn primary" href="tel:{{pro.whatsapp}}">📞 Ligar</a>
+<span class="btn primary disabled">Contato protegido pela NowUp</span>
 </div>
-<div class="profile-extra-actions">{% if product_count %}<a class="btn primary" href="/p/{{pro.slug}}/menu">Ver cardápio e pedir</a>{% endif %}{% if pro.menu_url %}<a class="btn soft" href="/p/{{pro.slug}}/cardapio" target="_blank" rel="noopener">Cardápio externo</a>{% endif %}{% if pro.instagram_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/instagram" target="_blank" rel="noopener">Instagram</a>{% endif %}{% if pro.facebook_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/facebook" target="_blank" rel="noopener">Facebook</a>{% endif %}{% if pro.website_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/site" target="_blank" rel="noopener">Site</a>{% endif %}{% if pro.external_url %}<a class="btn soft" href="/p/{{pro.slug}}/link" target="_blank" rel="noopener">Outro link</a>{% endif %}</div>
+<div class="profile-extra-actions">{% if pro.instagram_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/instagram" target="_blank" rel="noopener">Instagram</a>{% endif %}{% if pro.facebook_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/facebook" target="_blank" rel="noopener">Facebook</a>{% endif %}{% if pro.website_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/site" target="_blank" rel="noopener">Site</a>{% endif %}{% if pro.external_url %}<a class="btn soft" href="/p/{{pro.slug}}/link" target="_blank" rel="noopener">Outro link</a>{% endif %}</div>
 </div>
 </section>
 <section class="section">
@@ -69,7 +69,7 @@
 <b>Endereço:</b>
 <br>{{pro.address}}{% if pro.cep %} · CEP {{pro.cep}}{% endif %}</p>{% endif %}<form action="/p/{{pro.slug}}/whatsapp" method="post">
 <button class="btn orange full-btn">WhatsApp</button>
-</form>{% if pro.menu_url %}<a class="btn primary full-btn" href="/p/{{pro.slug}}/cardapio" target="_blank" rel="noopener">Cardápio digital</a>{% endif %}</div>
+</form></div>
 <div class="panel">
 <h3>Números do perfil</h3>
 <p>
@@ -98,5 +98,4 @@
 </aside>
 </div>
 </section>
-{% if product_count %}<a class="btn primary native-menu-fab" href="/p/{{pro.slug}}/menu">🍽 Ver cardápio e pedir</a>{% endif %}
 {% endblock %}
