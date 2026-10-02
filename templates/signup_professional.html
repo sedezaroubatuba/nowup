@@ -17,6 +17,6 @@
 <input class="input" name="cep" placeholder="CEP"></div>
 <h3>Categoria principal</h3><p class="muted">Escolha uma categoria. Informe sua profissão ou especialidade no campo de serviços.</p><div class="checkgrid">{% for c in categories %}<label class="check"><input type="radio" name="category_ids" value="{{c.id}}" required> {{c.icon}} {{c.name}}</label>{% endfor %}</div>
 <textarea name="description" placeholder="Breve descrição do seu negócio"></textarea>
-<textarea name="services" placeholder="Serviços, produtos, cardápio ou promoções"></textarea>
+<textarea name="services" placeholder="Serviços, produtos, especialidades ou promoções"></textarea>
 <label class="check" style="display:block;margin:12px 0"><input type="checkbox" name="accept_terms" value="1" required> Li e aceito os <a href="/termos"><b>Termos de Uso</b></a> e a <a href="/privacidade"><b>Política de Privacidade</b></a>.</label>
 <button class="btn primary" style="width:100%">Confirmar cadastro profissional</button></form></div></div>{% endblock %}
