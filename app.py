@@ -602,6 +602,34 @@ def init_db():
         for user_id in demo_users:
             conn.execute("DELETE FROM users WHERE id=?", (user_id,))
         conn.execute("INSERT INTO site_settings(key,value) VALUES(?,?)", (demo_reset_key, now_iso()))
+    # V50: preenche a vitrine inicial com perfis demonstrativos editáveis no ADM.
+    demo_showcase_key="v50_showcase_profiles"
+    if not conn.execute("SELECT 1 FROM site_settings WHERE key=?",(demo_showcase_key,)).fetchone():
+        demo_assets=["demo-pizzaria-pro.png","demo-barbearia-pro.png","demo-burger-pro.png","demo-quiosque-pro.png","demo-petshop-pro.png"]
+        demo_profiles=[
+          ("Aloha Surf Shop","Lojas de vestuário","Artigos esportivos, moda praia e equipamentos para surf.","Praia Grande"),
+          ("Clínica Oceano","Saúde e bem-estar","Clínica de saúde e bem-estar em Ubatuba.","Centro"),
+          ("Bella Mar","Lojas de vestuário","Moda praia, roupas e acessórios.","Itaguá"),
+          ("Ubatuba Auto Center","Automóveis e motos","Serviços automotivos, revisão e manutenção.","Estufa II"),
+          ("Espaço Essência","Beleza e estética","Beleza, estética e cuidados pessoais.","Itaguá"),
+          ("Casa do Pescador","Comércio em geral","Pesca, náutica e artigos para lazer.","Centro"),
+          ("Trilha Ubatuba","Turismo e hospedagem","Turismo, trilhas e passeios locais.","Praia do Félix"),
+          ("Ubatuba Pet","Pet shops e veterinários","Pet shop, banho, tosa e cuidados.","Itaguá"),
+          ("Solar Decorações","Casa, móveis e decoração","Móveis, decoração e projetos de interiores.","Centro"),
+          ("Ilha Tour Ubatuba","Turismo e hospedagem","Passeios de lancha e experiências no mar.","Saco da Ribeira"),
+          ("Studio Maré","Beleza e estética","Massagem, estética e bem-estar.","Perequê-Açu"),
+          ("Ocean Garage","Automóveis e motos","Oficina, acessórios e serviços automotivos.","Estufa II"),
+          ("Horizonte Imóveis","Imobiliárias","Imóveis para venda, locação e temporada.","Centro"),
+          ("Ubatuba Tech","Tecnologia e eletrônicos","Informática, celulares e assistência técnica.","Itaguá"),
+          ("Clube Ubatuba","Esportes e lazer","Esportes, lazer e atividades para toda a família.","Centro")]
+        cat_ids={r["name"]:r["id"] for r in conn.execute("SELECT id,name FROM categories").fetchall()}; fallback=cat_ids.get("Comércio em geral")
+        for index,(name,category,services,neighborhood) in enumerate(demo_profiles):
+            email=f"v50-demo-{index+1}@nowup.local"; slug=unique_slug(conn,name); asset=demo_assets[index%len(demo_assets)]
+            cur=conn.execute("INSERT INTO users(role,name,email,phone,password_hash,is_active,email_verified,created_at) VALUES('professional',?,?,?,?,1,1,?)",(name,email,"12999990000",hash_password(secrets.token_urlsafe(32)),now_iso())); uid=cur.lastrowid
+            cur=conn.execute("""INSERT INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,address,description,services,business_type,verified,featured,blocked,avatar_filename,cover_filename,is_demo,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",(uid,slug,name,"CNPJ","","12999990000","Ubatuba",neighborhood,"",f"{neighborhood}, Ubatuba - SP",services,services,"professional",1,1 if index<5 else 0,0,asset,asset,1,now_iso()))
+            pid=cur.lastrowid; cid=cat_ids.get(category,fallback)
+            if cid: conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(pid,cid))
+        conn.execute("INSERT INTO site_settings(key,value) VALUES(?,?)",(demo_showcase_key,now_iso()))
     admin_email = os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
     admin_pass = os.getenv("NOWUP_ADMIN_PASSWORD", "nowup2026")
     admin = conn.execute("SELECT id FROM users WHERE email=?", (admin_email,)).fetchone()
