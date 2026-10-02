@@ -41,7 +41,7 @@
 <h3>Publicações</h3>{% for po in posts %}<article class="post">
 <p>{{po.text}}</p>{% if po.photo_filename %}<img class="postimg" src="/uploads/{{po.photo_filename}}">{% endif %}</article>{% else %}<p class="muted">Ainda sem publicações.</p>{% endfor %}</div>
 <div class="panel" id="avaliacoes">
-<h3>Elogios e avaliações <span class="rating-trust">★ {{pro.rating}} · {{pro.review_count}} {{'avaliação' if pro.review_count == 1 else 'avaliações'}}</span></h3>{% if user and user.role=='customer' %}<form action="/p/{{pro.slug}}/avaliar" method="post" class="grid2">
+<h3>Elogios e avaliações <span class="rating-trust">★ {{pro.rating}} · {{pro.review_count}} {{'avaliação' if pro.review_count == 1 else 'avaliações'}}</span></h3>{% if user and user.role=='customer' and can_review %}<form action="/p/{{pro.slug}}/avaliar" method="post" class="grid2">
 <select name="stars">
 <option value="5">★★★★★ — 5</option>
 <option value="4">★★★★ — 4</option>
@@ -51,7 +51,7 @@
 </select>
 <input class="input" name="comment" placeholder="Deixe um elogio ou conte como foi o atendimento">
 <button class="btn primary">Publicar</button>
-</form>{% elif not user %}<p>
+</form>{% elif user and user.role=='customer' %}<p class="muted">Você poderá avaliar esta empresa depois de concluir um pedido.</p>{% elif not user %}<p>
 <a class="btn soft" href="/entrar">Entre como cliente para avaliar</a>
 </p>{% endif %}{% for r in reviews %}<div class="review-item">
 <b>{{r.name}}</b> <span class="stars">{{'★'*r.stars}}</span>

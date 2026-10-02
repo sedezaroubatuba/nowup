@@ -51,17 +51,17 @@
 <button class="dialog-close" type="button" data-dialog-close>×</button>
 <h2>Finalizar pedido</h2>
 <input type="hidden" name="cart_json" data-cart-json>
-<label>Seu nome<input class="input" name="customer_name" required>
+<label>Seu nome<input class="input" name="customer_name" value="{% if user and user.role=='customer' %}{{user.name}}{% endif %}" required>
 </label>
-<label>Seu WhatsApp<input class="input" name="customer_phone" inputmode="tel" required>
+<label>Seu WhatsApp<input class="input" name="customer_phone" value="{% if user and user.role=='customer' %}{{user.phone}}{% endif %}" inputmode="tel" required>
 </label>
 <label>Como deseja receber?<select name="fulfillment_type" data-fulfillment>
 {% if pro.allows_pickup %}<option value="pickup">Retirar no local</option>{% endif %}
 {% if pro.allows_delivery %}<option value="delivery">Entrega (+ R$ {{'%.2f'|format(pro.delivery_fee_cents/100)|replace('.',',')}})</option>{% endif %}
 </select>
 </label>
-<div data-address hidden class="delivery-fields"><label>Endereço para entrega<input class="input" name="address"></label><label>Bairro<input class="input" name="neighborhood"></label><label>Referência<input class="input" name="address_reference"></label></div>
-<label>Forma de pagamento<select name="payment_method" required data-payment><option value="pix">Pix{% if pro.pix_key %} — chave informada pela loja{% endif %}</option><option value="cash">Dinheiro</option><option value="credit">Cartão de crédito</option><option value="debit">Cartão de débito</option><option value="on_delivery">Combinar no atendimento</option></select></label>
+<div data-address hidden class="delivery-fields"><label>Endereço para entrega<input class="input" name="address" value="{% if user and user.role=='customer' %}{{user.address}}{% endif %}"></label><label>Bairro<input class="input" name="neighborhood" value="{% if user and user.role=='customer' %}{{user.neighborhood}}{% endif %}"></label><label>Referência<input class="input" name="address_reference"></label></div>
+<label>Forma de pagamento<select name="payment_method" required data-payment><option value="pix" {% if user and user.role=='customer' and user.preferred_payment=='pix' %}selected{% endif %}>Pix{% if pro.pix_key %} — chave informada pela loja{% endif %}</option><option value="cash" {% if user and user.role=='customer' and user.preferred_payment=='cash' %}selected{% endif %}>Dinheiro</option><option value="credit" {% if user and user.role=='customer' and user.preferred_payment=='credit' %}selected{% endif %}>Cartão de crédito</option><option value="debit" {% if user and user.role=='customer' and user.preferred_payment=='debit' %}selected{% endif %}>Cartão de débito</option><option value="on_delivery" {% if user and user.role=='customer' and user.preferred_payment=='on_delivery' %}selected{% endif %}>Combinar no atendimento</option></select></label>
 <label data-change hidden>Troco para quanto?<input class="input" name="change_for" inputmode="decimal" placeholder="Ex.: 100,00"></label>
 <label>Observação geral do pedido<textarea name="notes" placeholder="Ex.: preciso de troco para R$ 100">
 </textarea>
