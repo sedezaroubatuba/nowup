@@ -594,6 +594,14 @@ def init_db():
                 conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(row["professional_id"],category_ids[target]))
         conn.execute(f"DELETE FROM categories WHERE slug NOT IN ({placeholders})", desired_slugs)
         conn.execute("INSERT INTO site_settings(key,value) VALUES(?,?)",(catalog_key,"1"))
+    # V49: remove uma única vez os antigos perfis de demonstração para que o
+    # administrador possa recriá-los corretamente pelo novo formulário.
+    demo_reset_key = "v49_demo_profiles_reset"
+    if not conn.execute("SELECT 1 FROM site_settings WHERE key=?", (demo_reset_key,)).fetchone():
+        demo_users=[r[0] for r in conn.execute("SELECT user_id FROM professionals WHERE is_demo=1").fetchall()]
+        for user_id in demo_users:
+            conn.execute("DELETE FROM users WHERE id=?", (user_id,))
+        conn.execute("INSERT INTO site_settings(key,value) VALUES(?,?)", (demo_reset_key, now_iso()))
     admin_email = os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
     admin_pass = os.getenv("NOWUP_ADMIN_PASSWORD", "nowup2026")
     admin = conn.execute("SELECT id FROM users WHERE email=?", (admin_email,)).fetchone()
@@ -1493,7 +1501,9 @@ def admin(request: Request, inicio: str="", fim: str=""):
       COALESCE(SUM(CASE WHEN o.status IN ('confirmed','preparing','ready','out_for_delivery','completed') THEN o.total_cents ELSE 0 END),0) revenue_cents
       FROM professionals p LEFT JOIN orders o ON o.professional_id=p.id AND date(o.created_at) BETWEEN ? AND ?
       GROUP BY p.id ORDER BY orders_count DESC,revenue_cents DESC LIMIT 10""",(report_start.isoformat(),report_end.isoformat())).fetchall()
-    pros=conn.execute("SELECT p.*,u.email,u.email_verified FROM professionals p JOIN users u ON u.id=p.user_id ORDER BY p.id DESC LIMIT 50").fetchall()
+    pros=conn.execute("""SELECT p.*,u.email,u.email_verified,
+      (SELECT category_id FROM professional_categories pc WHERE pc.professional_id=p.id LIMIT 1) category_id
+      FROM professionals p JOIN users u ON u.id=p.user_id ORDER BY p.id DESC LIMIT 100""").fetchall()
     clients=conn.execute("SELECT id,name,email,phone,is_active,email_verified,created_at FROM users WHERE role='customer' ORDER BY id DESC LIMIT 100").fetchall()
     admin_categories=conn.execute("SELECT * FROM categories ORDER BY sort_order,name").fetchall()
     reports=conn.execute("SELECT r.*,u.name customer,p.display_name professional FROM reports r JOIN users u ON u.id=r.customer_id JOIN professionals p ON p.id=r.professional_id ORDER BY r.id DESC LIMIT 50").fetchall()
@@ -1631,7 +1641,7 @@ def admin_pro_action(request: Request, pid:int, action:str):
     conn.commit(); conn.close(); return RedirectResponse("/admin#profissionais",303)
 
 @app.post("/admin/perfis/demonstracao")
-def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsapp:str=Form(...), address:str=Form(...), avatar:Optional[UploadFile]=File(None), cover:Optional[UploadFile]=File(None), photo:Optional[UploadFile]=File(None)):
+def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsapp:str=Form(...), address:str=Form(...), category_id:int=Form(...), city:str=Form("Ubatuba"), neighborhood:str=Form(""), description:str=Form(""), services:str=Form(""), avatar:Optional[UploadFile]=File(None), cover:Optional[UploadFile]=File(None), photo:Optional[UploadFile]=File(None)):
     require_user(request,"admin")
     name=display_name.strip()[:120]; phone=whatsapp.strip()[:30]; address=address.strip()[:240]
     if not name or not normalize_phone(phone) or not address:
@@ -1649,10 +1659,14 @@ def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsap
         cur=conn.execute("INSERT INTO users(role,name,email,phone,password_hash,is_active,email_verified,created_at) VALUES('professional',?,?,?,?,1,1,?)",
                          (name,demo_email,phone,hash_password(secrets.token_urlsafe(32)),now_iso()))
         uid=cur.lastrowid
+        category=conn.execute("SELECT id,slug FROM categories WHERE id=? AND active=1",(category_id,)).fetchone()
+        if not category: raise ValueError("categoria inválida")
+        business_type="restaurant" if "restaurante" in category["slug"] else ("convenience" if "conveniencia" in category["slug"] else ("professional" if "prestador" in category["slug"] else "other"))
         cur=conn.execute("""INSERT INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,address,description,services,business_type,verified,featured,blocked,avatar_filename,cover_filename,is_demo,created_at)
                             VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                         (uid,slug,name,"CNPJ","",phone,"Ubatuba","","",address,"Perfil demonstrativo criado para apresentar o funcionamento da NowUp.","Consulte diretamente pelo WhatsApp.","other",0,0,0,avatar_filename,cover_filename,1,now_iso()))
+                         (uid,slug,name,"CNPJ","",phone,city.strip()[:100] or "Ubatuba",neighborhood.strip()[:120],"",address,description.strip()[:1200],services.strip()[:1200],business_type,0,0,0,avatar_filename,cover_filename,1,now_iso()))
         pid=cur.lastrowid
+        conn.execute("INSERT INTO professional_categories(professional_id,category_id) VALUES(?,?)",(pid,category_id))
         conn.execute("INSERT INTO photos(professional_id,filename,caption,is_cover,created_at) VALUES(?,?,?,?,?)",(pid,cover_filename,"Capa do perfil",1,now_iso()))
         conn.commit()
     except Exception:
@@ -1667,7 +1681,7 @@ def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsap
     return RedirectResponse("/admin?ok=perfil-demo#profissionais",303)
 
 @app.post("/admin/profissionais/{pid}/editar")
-def admin_edit_professional(request: Request, pid:int, display_name:str=Form(...), city:str=Form(""), email:str=Form(...), avatar:Optional[UploadFile]=File(None), cover:Optional[UploadFile]=File(None)):
+def admin_edit_professional(request: Request, pid:int, display_name:str=Form(...), city:str=Form(""), email:str=Form(...), whatsapp:str=Form(""), address:str=Form(""), neighborhood:str=Form(""), description:str=Form(""), services:str=Form(""), category_id:int=Form(0), avatar:Optional[UploadFile]=File(None), cover:Optional[UploadFile]=File(None)):
     require_user(request,"admin"); normalized=normalize_email(email)
     if not display_name.strip() or not normalized: return RedirectResponse("/admin#profissionais",303)
     conn=db(); pro=conn.execute("SELECT user_id,avatar_filename,cover_filename,is_demo FROM professionals WHERE id=?",(pid,)).fetchone()
@@ -1676,15 +1690,41 @@ def admin_edit_professional(request: Request, pid:int, display_name:str=Form(...
             avatar_filename=pro["avatar_filename"] or ""; cover_filename=pro["cover_filename"] or ""
             if pro["is_demo"] and avatar and avatar.filename: avatar_filename=save_image(avatar)
             if pro["is_demo"] and cover and cover.filename: cover_filename=save_image(cover)
-            conn.execute("UPDATE professionals SET display_name=?,city=?,avatar_filename=?,cover_filename=? WHERE id=?",(display_name.strip()[:120],city.strip()[:100],avatar_filename,cover_filename,pid))
+            conn.execute("UPDATE professionals SET display_name=?,city=?,whatsapp=?,address=?,neighborhood=?,description=?,services=?,avatar_filename=?,cover_filename=? WHERE id=?",(display_name.strip()[:120],city.strip()[:100],whatsapp.strip()[:30],address.strip()[:240],neighborhood.strip()[:120],description.strip()[:1200],services.strip()[:1200],avatar_filename,cover_filename,pid))
+            if pro["is_demo"] and category_id:
+                conn.execute("DELETE FROM professional_categories WHERE professional_id=?",(pid,))
+                conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) SELECT ?,id FROM categories WHERE id=? AND active=1",(pid,category_id))
             conn.execute("UPDATE users SET email=? WHERE id=?",(normalized,pro["user_id"])); conn.commit()
         except sqlite3.IntegrityError: conn.rollback()
     conn.close(); return RedirectResponse("/admin#profissionais",303)
 
 @app.post("/admin/profissionais/{pid}/excluir")
 def admin_delete_professional(request: Request, pid:int):
-    require_user(request,"admin")
-    return RedirectResponse("/admin?erro=exclusao-desativada#profissionais",303)
+    require_user(request,"admin"); conn=db()
+    pro=conn.execute("SELECT user_id,is_demo,avatar_filename,cover_filename FROM professionals WHERE id=?",(pid,)).fetchone()
+    if not pro or not pro["is_demo"]:
+        conn.close(); return RedirectResponse("/admin?erro=apenas-perfil-ficticio#profissionais",303)
+    files=[pro["avatar_filename"],pro["cover_filename"]]
+    files += [r[0] for r in conn.execute("SELECT filename FROM photos WHERE professional_id=?",(pid,)).fetchall()]
+    conn.execute("DELETE FROM users WHERE id=?",(pro["user_id"],)); conn.commit(); conn.close()
+    for filename in set(f for f in files if f):
+        try: (UPLOAD_DIR/filename).unlink(missing_ok=True)
+        except OSError: pass
+    return RedirectResponse("/admin?ok=perfil-excluido#profissionais",303)
+
+@app.post("/admin/perfis/demonstracao/excluir-todos")
+def admin_delete_all_demo_profiles(request: Request):
+    require_user(request,"admin"); conn=db()
+    rows=conn.execute("SELECT user_id,avatar_filename,cover_filename FROM professionals WHERE is_demo=1").fetchall()
+    files=[]
+    for row in rows:
+        files.extend([row["avatar_filename"],row["cover_filename"]])
+        conn.execute("DELETE FROM users WHERE id=?",(row["user_id"],))
+    conn.commit(); conn.close()
+    for filename in set(f for f in files if f):
+        try: (UPLOAD_DIR/filename).unlink(missing_ok=True)
+        except OSError: pass
+    return RedirectResponse("/admin?ok=perfis-ficticios-excluidos#profissionais",303)
 
 @app.post("/admin/denuncias/{rid}/{status}")
 def admin_report_action(request: Request, rid:int, status:str):
