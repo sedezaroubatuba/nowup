@@ -35,6 +35,7 @@
 .nowup-v19 .nu-card-title{display:flex;align-items:center;gap:7px}.nowup-v19 .nu-card-title h3{margin:0}.nowup-v19 .nu-card-title span{display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#1687ed;color:#fff;font-size:11px;font-weight:900}.nowup-v19 .nu-shop-status{display:inline-flex;width:max-content;margin:4px 0 7px;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:850}.nowup-v19 .nu-shop-status.open{background:#e9fff4;color:#079257}.nowup-v19 .nu-shop-status.closed{background:#fff0ed;color:#c04432}.nowup-v19 .nu-card small{display:block}
 .nowup-v19 .nu-demand{background:#fff8dc;border-color:#f5cf4d;color:#6b5310}
 .nowup-v19 .mobile-bottom-nav{background:#fff;border-color:#e1e8f0;box-shadow:0 -8px 26px rgba(15,49,94,.1)}
+.mobile-bottom-nav{grid-template-columns:repeat(4,1fr)}
 .nowup-v19 .mobile-bottom-nav a{color:#526178}.nowup-v19 .mobile-bottom-nav a:first-child{color:var(--v34-blue)}
 
 /* PAINEL DO LOJISTA */
