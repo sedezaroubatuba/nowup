@@ -9,7 +9,7 @@ from urllib.request import Request as URLRequest, urlopen
 from urllib.error import HTTPError, URLError
 
 from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from PIL import Image
@@ -269,6 +269,12 @@ def init_db():
       icon TEXT DEFAULT '🛠️',
       active INTEGER NOT NULL DEFAULT 1,
       sort_order INTEGER NOT NULL DEFAULT 100
+    );
+    CREATE TABLE IF NOT EXISTS image_blobs(
+      filename TEXT PRIMARY KEY,
+      mime_type TEXT NOT NULL DEFAULT 'image/jpeg',
+      content BLOB NOT NULL,
+      created_at TEXT NOT NULL
     );
     CREATE TABLE IF NOT EXISTS professionals(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1433,8 +1439,23 @@ def save_image(upload: UploadFile):
         im=im.convert("RGB")
         im.thumbnail((1600,1600))
     except Exception: raise HTTPException(400,"Arquivo não é uma imagem válida")
-    filename=secrets.token_hex(16)+".jpg"; im.save(UPLOAD_DIR/filename,"JPEG",quality=88,optimize=True)
+    filename=secrets.token_hex(16)+".jpg"
+    output=io.BytesIO(); im.save(output,"JPEG",quality=88,optimize=True); encoded=output.getvalue()
+    (UPLOAD_DIR/filename).write_bytes(encoded)
+    image_conn=db()
+    image_conn.execute("INSERT OR REPLACE INTO image_blobs(filename,mime_type,content,created_at) VALUES(?,?,?,?)",(filename,"image/jpeg",encoded,now_iso()))
+    image_conn.commit(); image_conn.close()
     return filename
+
+@app.get("/media/{filename}")
+def persistent_image(filename: str):
+    safe=Path(filename).name
+    if safe != filename: raise HTTPException(404)
+    path=UPLOAD_DIR/safe
+    if path.is_file(): return FileResponse(path)
+    conn=db(); row=conn.execute("SELECT mime_type,content FROM image_blobs WHERE filename=?",(safe,)).fetchone(); conn.close()
+    if not row: raise HTTPException(404)
+    return Response(content=row["content"],media_type=row["mime_type"],headers={"Cache-Control":"public, max-age=31536000, immutable"})
 
 @app.post("/painel/fotos")
 def upload_photo(request: Request, photo: UploadFile=File(...), caption: str=Form("")):
