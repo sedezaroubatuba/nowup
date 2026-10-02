@@ -1,9 +1,9 @@
 {% extends 'base.html' %}{% block title %}{{pro.display_name}} | NowUp{% endblock %}{% block content %}
 <section class="public-profile-hero">
-<div class="profile-cover" {% if pro.cover_filename %}style="background-image:url('/uploads/{{pro.cover_filename}}')"{% endif %}>
+<div class="profile-cover" {% if pro.cover_filename %}style="background-image:url('/media/{{pro.cover_filename}}')"{% endif %}>
 </div>
 <div class="container profile-summary">
-<div class="profile-avatar">{% if pro.avatar_filename %}<img src="/uploads/{{pro.avatar_filename}}" alt="{{pro.display_name}}">{% else %}🏪{% endif %}</div>
+<div class="profile-avatar">{% if pro.avatar_filename %}<img src="/media/{{pro.avatar_filename}}" alt="{{pro.display_name}}">{% else %}🏪{% endif %}</div>
 <div class="profile-heading">
 <div class="row">
 <h1>{{pro.display_name}}</h1>{% if pro.verified %}<span class="badge green">✓ Verificado</span>{% endif %}{% if pro.featured %}<span class="badge orange">Destaque</span>{% endif %}<span class="badge {% if shop_status.open %}green{% else %}orange{% endif %}">● {{shop_status.label}}</span></div>
@@ -35,11 +35,11 @@
 </div>
 <div class="panel" id="fotos">
 <h3>Fotos</h3>
-<div class="gallery">{% for ph in photos %}<img src="/uploads/{{ph.filename}}" alt="{{ph.caption}}">{% endfor %}{% for i in range(3 - photos|length) %}<div class="photo-placeholder">Foto em breve</div>{% endfor %}</div>
+<div class="gallery">{% for ph in photos %}<img src="/media/{{ph.filename}}" alt="{{ph.caption}}">{% endfor %}{% for i in range(3 - photos|length) %}<div class="photo-placeholder">Foto em breve</div>{% endfor %}</div>
 </div>
 <div class="panel" id="publicacoes">
 <h3>Publicações</h3>{% for po in posts %}<article class="post">
-<p>{{po.text}}</p>{% if po.photo_filename %}<img class="postimg" src="/uploads/{{po.photo_filename}}">{% endif %}</article>{% else %}<p class="muted">Ainda sem publicações.</p>{% endfor %}</div>
+<p>{{po.text}}</p>{% if po.photo_filename %}<img class="postimg" src="/media/{{po.photo_filename}}">{% endif %}</article>{% else %}<p class="muted">Ainda sem publicações.</p>{% endfor %}</div>
 <div class="panel" id="avaliacoes">
 <h3>Elogios e avaliações <span class="rating-trust">★ {{pro.rating}} · {{pro.review_count}} {{'avaliação' if pro.review_count == 1 else 'avaliações'}}</span></h3>{% if user and user.role=='customer' and can_review %}<form action="/p/{{pro.slug}}/avaliar" method="post" class="grid2">
 <select name="stars">

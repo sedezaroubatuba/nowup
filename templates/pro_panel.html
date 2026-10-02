@@ -142,7 +142,7 @@
 </details>
 <nav class="menu-category-nav pro-product-filters" aria-label="Filtrar produtos do painel"><button type="button" class="active" data-pro-category="all">Todos</button><button type="button" data-pro-category="promocoes">Promoções</button>{% for category in product_categories %}<button type="button" data-pro-category="{{category.name}}">{{category.name}}</button>{% endfor %}</nav>
 <div class="product-admin-grid" data-pro-products>{% for product in products %}<details class="product-admin-card" data-pro-product data-category="{{product.category}}" data-featured="{{1 if product.featured else 0}}">
-<summary>{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" alt="">{% else %}<span class="product-placeholder">🍽</span>{% endif %}<div>
+<summary>{% if product.image_filename %}<img src="/media/{{product.image_filename}}" alt="">{% else %}<span class="product-placeholder">🍽</span>{% endif %}<div>
 <b>{{product.name}}</b>
 <small>{{product.category}} · R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</small>
 </div>
@@ -357,9 +357,9 @@
 </div>
 <p class="muted">A foto fica redonda e a capa aparece no alto do seu perfil. Imagens são otimizadas automaticamente.</p>
 <div class="identity-preview" data-identity-preview>
-<div class="mini-cover" data-cover-preview {% if pro.cover_filename %}style="background-image:url('/uploads/{{pro.cover_filename}}')"{% endif %}>
+<div class="mini-cover" data-cover-preview {% if pro.cover_filename %}style="background-image:url('/media/{{pro.cover_filename}}')"{% endif %}>
 </div>
-<div class="mini-avatar" data-avatar-preview>{% if pro.avatar_filename %}<img src="/uploads/{{pro.avatar_filename}}">{% else %}<span>🏪</span>{% endif %}</div>
+<div class="mini-avatar" data-avatar-preview>{% if pro.avatar_filename %}<img src="/media/{{pro.avatar_filename}}">{% else %}<span>🏪</span>{% endif %}</div>
 </div>
 <form action="/painel/identidade" method="post" enctype="multipart/form-data" class="grid2" data-identity-form>
 <label>Foto de perfil<input class="input" type="file" name="avatar" accept="image/*">
@@ -528,7 +528,7 @@
 <input class="input" name="caption" placeholder="Legenda opcional">
 <button class="btn primary">Adicionar foto</button>
 </form>{% endif %}<div class="photoManager" style="margin-top:16px">{% for ph in photos %}<div class="pm">
-<img src="/uploads/{{ph.filename}}">
+<img src="/media/{{ph.filename}}">
 <div class="tiny">{% if ph.is_cover %}<b>Capa das buscas</b>{% endif %} {{ph.caption}}</div>
 <div class="row">
 <form action="/painel/fotos/{{ph.id}}/capa" method="post">
