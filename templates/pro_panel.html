@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% block title %}Painel do profissional | NowUp{% endblock %}{% block body_class %}professional-area{% endblock %}{% block content %}
+{% extends 'base.html' %}{% block title %}Painel do profissional | NowUp{% endblock %}{% block body_class %}professional-area {% if pro.business_type=='restaurant' %}restaurant-area{% else %}service-area{% endif %}{% endblock %}{% block content %}
 <div class="container dashboard pro-dashboard">
 <button class="pro-edit-fab" type="button" data-pro-menu-toggle aria-expanded="false" aria-controls="pro-edit-menu">☰ Editar painel</button>
 <aside class="sidebar pro-sidebar" id="pro-edit-menu">
@@ -10,11 +10,11 @@
 </div>
 </div>
 <a href="#resumo">📊 Visão geral</a>
-<a href="#cardapio">🍽 Meu cardápio</a>
+{% if pro.business_type=='restaurant' %}<a href="#cardapio">🍽 Meu cardápio</a>{% endif %}
 <a href="#horarios">🕒 Horários e situação</a>
 <a href="#relatorios">📈 Relatórios</a>
-<a href="#pedidos">🧾 Pedidos</a>
-<a href="#mais-pedidos">🏆 Mais pedidos</a>
+{% if pro.business_type=='restaurant' %}<a href="#pedidos">🧾 Pedidos</a>
+<a href="#mais-pedidos">🏆 Mais pedidos</a>{% endif %}
 <a href="#identidade">🖼 Foto e capa</a>
 <a href="#perfil">✏️ Editar perfil</a>
 <a href="#links">💬 Contatos</a>
@@ -468,12 +468,12 @@
 <small>Receba pedidos e orçamentos.</small>
 <input class="input" name="whatsapp" value="{{pro.whatsapp}}" required>
 </label>
-<label>
+{% if pro.business_type=='restaurant' %}<label>
 <span class="link-icon">🍽</span>
 <b>Cardápio digital</b>
 <small>Link do cardápio ou catálogo.</small>
 <input class="input" type="url" name="menu_url" value="{{pro.menu_url}}" placeholder="https://...">
-</label>
+</label>{% else %}<input type="hidden" name="menu_url" value="">{% endif %}
 <label>
 <span class="link-icon">📸</span>
 <b>Instagram</b>
