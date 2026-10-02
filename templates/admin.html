@@ -353,6 +353,13 @@
 <label>Endereço
 <input class="input" name="address" placeholder="Ex.: Estufa II, Ubatuba - SP" required>
 </label>
+<label>Categoria
+<select class="input" name="category_id" required><option value="">Escolha a categoria</option>{% for cat in admin_categories %}{% if cat.active %}<option value="{{cat.id}}">{{cat.icon}} {{cat.name}}</option>{% endif %}{% endfor %}</select>
+</label>
+<label>Cidade<input class="input" name="city" value="Ubatuba" required></label>
+<label>Bairro<input class="input" name="neighborhood" placeholder="Ex.: Estufa II"></label>
+<label>Breve descrição<textarea class="input" name="description" rows="3" placeholder="Conte o que a empresa oferece"></textarea></label>
+<label>Serviços ou produtos<textarea class="input" name="services" rows="3" placeholder="Ex.: almoço, entrega e retirada"></textarea></label>
 <label>Foto redonda do perfil
 <input class="input" type="file" name="avatar" accept="image/*" required>
 </label>
@@ -364,6 +371,7 @@
 </section>
 <section class="panel" id="profissionais">
 <h2>Profissionais e empresas</h2>
+{% if pros|selectattr('is_demo')|list|length %}<form action="/admin/perfis/demonstracao/excluir-todos" method="post" onsubmit="return confirm('Excluir TODOS os perfis fictícios? Os perfis reais não serão apagados.')"><button class="btn danger" type="submit">Excluir todos os perfis fictícios</button></form>{% endif %}
 <div class="tablewrap">
 <table class="table">
 <tr>
@@ -379,10 +387,17 @@
 {% if p.is_demo %}
 <input type="hidden" name="email" value="{{p.email}}">
 <span class="tiny">Perfil fictício — sem e-mail</span>
+<input class="input" name="whatsapp" value="{{p.whatsapp}}" placeholder="WhatsApp" required>
+<input class="input" name="address" value="{{p.address}}" placeholder="Endereço" required>
+<input class="input" name="neighborhood" value="{{p.neighborhood}}" placeholder="Bairro">
+<select class="input" name="category_id" required>{% for cat in admin_categories %}{% if cat.active %}<option value="{{cat.id}}" {% if p.category_id == cat.id %}selected{% endif %}>{{cat.icon}} {{cat.name}}</option>{% endif %}{% endfor %}</select>
+<textarea class="input" name="description" rows="2" placeholder="Descrição">{{p.description}}</textarea>
+<textarea class="input" name="services" rows="2" placeholder="Serviços ou produtos">{{p.services}}</textarea>
 <label class="demo-photo-field">Foto do perfil<input class="input" type="file" name="avatar" accept="image/*"></label>
 <label class="demo-photo-field">Foto de capa<input class="input" type="file" name="cover" accept="image/*"></label>
 {% else %}
 <input class="input" type="email" name="email" value="{{p.email}}" required>
+<input type="hidden" name="whatsapp" value="{{p.whatsapp}}"><input type="hidden" name="address" value="{{p.address}}"><input type="hidden" name="neighborhood" value="{{p.neighborhood}}"><input type="hidden" name="description" value="{{p.description}}"><input type="hidden" name="services" value="{{p.services}}">
 {% endif %}
 <button class="btn primary tiny">Salvar</button>
 </form>
@@ -404,6 +419,7 @@
 <form action="/admin/profissionais/{{p.id}}/acao/bloquear" method="post">
 <button class="btn {% if p.blocked %}soft{% else %}danger{% endif %} tiny">{{'Reativar' if p.blocked else 'Pausar/bloquear'}}</button>
 </form>
+{% if p.is_demo %}<form action="/admin/profissionais/{{p.id}}/excluir" method="post" onsubmit="return confirm('Excluir definitivamente este perfil fictício?')"><button class="btn danger tiny" type="submit">Excluir perfil</button></form>{% endif %}
 </div>
 </td>
 </tr>{% endfor %}</table>
