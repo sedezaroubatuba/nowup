@@ -324,6 +324,16 @@ def init_db():
       created_at TEXT NOT NULL,
       PRIMARY KEY(customer_id,professional_id)
     );
+    CREATE TABLE IF NOT EXISTS notifications(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      message TEXT NOT NULL DEFAULT '',
+      link TEXT NOT NULL DEFAULT '',
+      read_at TEXT DEFAULT '',
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id,read_at,id);
     CREATE TABLE IF NOT EXISTS reports(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       customer_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -451,6 +461,9 @@ def init_db():
     ensure_column(conn, "users", "email_verified", "INTEGER NOT NULL DEFAULT 1")
     ensure_column(conn, "users", "verification_token", "TEXT DEFAULT ''")
     ensure_column(conn, "users", "verification_expires_at", "TEXT DEFAULT ''")
+    ensure_column(conn, "users", "address", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "users", "neighborhood", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "users", "preferred_payment", "TEXT NOT NULL DEFAULT 'pix'")
     ensure_column(conn, "professionals", "business_type", "TEXT NOT NULL DEFAULT 'professional'")
     ensure_column(conn, "professionals", "external_url", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "menu_url", "TEXT DEFAULT ''")
@@ -494,6 +507,7 @@ def init_db():
     ensure_column(conn, "orders", "change_for_cents", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "orders", "customer_id", "INTEGER REFERENCES users(id) ON DELETE SET NULL")
     ensure_column(conn, "orders", "tracking_token", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "orders", "cancellation_reason", "TEXT NOT NULL DEFAULT ''")
     conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_tracking_token ON orders(tracking_token) WHERE tracking_token!=''")
     ensure_column(conn, "professionals", "delivery_fee_cents", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "professionals", "minimum_order_cents", "INTEGER NOT NULL DEFAULT 0")
@@ -705,10 +719,13 @@ def profile(request: Request, slug: str):
     reviews=conn.execute("SELECT r.*,u.name FROM reviews r JOIN users u ON u.id=r.customer_id WHERE r.professional_id=? ORDER BY r.id DESC",(p["id"],)).fetchall()
     cats=conn.execute("SELECT c.* FROM categories c JOIN professional_categories pc ON pc.category_id=c.id WHERE pc.professional_id=?",(p["id"],)).fetchall()
     product_count=conn.execute("SELECT COUNT(*) FROM products WHERE professional_id=? AND available=1",(p["id"],)).fetchone()[0]
+    current=current_user(request); can_review=False
+    if current and current["role"]=="customer":
+        can_review=bool(conn.execute("SELECT 1 FROM orders WHERE customer_id=? AND professional_id=? AND status='completed' LIMIT 1",(current["id"],p["id"])).fetchone())
     conn.close()
     pub=dict(p); pub["document_masked"]=mask_doc(pub["document"]); pub["wa_link"]=wa_link(pub["whatsapp"],pub.get("whatsapp_message") or "Olá! Encontrei você pelo NowUp e gostaria de saber mais.")
     status=shop_status(p)
-    return templates.TemplateResponse("profile.html", context(request, pro=pub, photos=photos, posts=posts, reviews=reviews, pro_categories=cats, product_count=product_count, shop_status=status, hours_lines=business_hours_lines(p)))
+    return templates.TemplateResponse("profile.html", context(request, pro=pub, photos=photos, posts=posts, reviews=reviews, pro_categories=cats, product_count=product_count, shop_status=status, hours_lines=business_hours_lines(p), can_review=can_review))
 
 @app.get("/p/{slug}/menu", response_class=HTMLResponse)
 def native_menu(request: Request, slug: str):
@@ -734,6 +751,8 @@ def native_menu(request: Request, slug: str):
 
 @app.post("/p/{slug}/menu/pedido")
 def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...)):
+    logged=current_user(request)
+    if not logged or logged["role"]!="customer": return RedirectResponse("/entrar?erro=pedido-login",303)
     conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404)
     if not shop_status(p)["open"]: conn.close(); return RedirectResponse(f"/p/{slug}/menu?fechado=1",303)
@@ -764,7 +783,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
     payment_labels={"pix":"Pix","cash":"Dinheiro","credit":"Cartão de crédito","debit":"Cartão de débito","on_delivery":"Combinar no atendimento"}
     payment_method=payment_method if payment_method in payment_labels else "pix"
     change_for_cents=price_to_cents(change_for) if payment_method=="cash" and change_for.strip() else 0
-    logged=current_user(request); customer_id=logged["id"] if logged and logged["role"]=="customer" else None
+    customer_id=logged["id"]
     created=now_iso(); tracking_token=secrets.token_urlsafe(24)
     cur=conn.execute("""INSERT INTO orders(professional_id,customer_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at,subtotal_cents,delivery_fee_cents,neighborhood,address_reference,change_for_cents,tracking_token)
       VALUES(?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?)""",(p["id"],customer_id,customer_name.strip()[:120],customer_phone.strip()[:30],fulfillment_type,address.strip()[:300],notes.strip()[:500],"new",total,created,created,subtotal,delivery_fee,neighborhood.strip()[:120],address_reference.strip()[:220],change_for_cents,tracking_token))
@@ -1202,15 +1221,22 @@ def pro_product_delete(request: Request, product_id: int):
     conn.close(); return RedirectResponse("/painel?ok=produto-excluido#cardapio",303)
 
 @app.post("/painel/pedidos/{order_id}/status")
-def pro_order_status(request: Request, order_id: int, status: str=Form(...)):
+def pro_order_status(request: Request, order_id: int, status: str=Form(...), reason: str=Form("")):
     u=require_user(request,"professional")
     allowed={"new","confirmed","preparing","ready","out_for_delivery","completed","cancelled","rejected"}
     if status not in allowed: raise HTTPException(400,"Status inválido")
     conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
-    order=conn.execute("SELECT id FROM orders WHERE id=? AND professional_id=?",(order_id,p["id"])).fetchone()
+    order=conn.execute("SELECT id,status,customer_id,tracking_token FROM orders WHERE id=? AND professional_id=?",(order_id,p["id"])).fetchone()
     if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
-    conn.execute("UPDATE orders SET status=?,updated_at=? WHERE id=?",(status,now_iso(),order_id))
+    reason=reason.strip()[:300]
+    if status in {"cancelled","rejected"} and not reason:
+        conn.close(); return RedirectResponse(f"/painel?erro=motivo-obrigatorio#pedido-{order_id}",303)
+    conn.execute("UPDATE orders SET status=?,cancellation_reason=?,updated_at=? WHERE id=?",(status,reason if status in {"cancelled","rejected"} else "",now_iso(),order_id))
     conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)",(order_id,status,now_iso()))
+    if order["customer_id"] and status != order["status"]:
+        label=ORDER_STATUS_LABELS.get(status,status); message=f"Seu pedido foi atualizado para: {label}."
+        if reason: message += f" Motivo: {reason}"
+        conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(order["customer_id"],"Atualização do pedido",message,f"/pedido/{order['tracking_token']}",now_iso()))
     conn.commit(); conn.close()
     return RedirectResponse("/painel?ok=pedido#pedidos",303)
 
@@ -1269,15 +1295,31 @@ def customer_panel(request: Request):
     reviews=conn.execute("""SELECT r.*,p.display_name,p.slug FROM reviews r
       JOIN professionals p ON p.id=r.professional_id WHERE r.customer_id=? ORDER BY r.id DESC""",(u["id"],)).fetchall()
     favorites=conn.execute("""SELECT p.*,
-      (SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1) cover
+      COALESCE(NULLIF(p.cover_filename,''),NULLIF(p.avatar_filename,''),(SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1)) cover
       FROM favorites f JOIN professionals p ON p.id=f.professional_id
       WHERE f.customer_id=? AND p.blocked=0 ORDER BY f.created_at DESC""",(u["id"],)).fetchall()
     orders=conn.execute("""SELECT o.*,p.display_name,p.slug FROM orders o
       JOIN professionals p ON p.id=o.professional_id
       WHERE o.customer_id=? OR (o.customer_id IS NULL AND replace(replace(replace(replace(o.customer_phone,' ',''),'-',''),'(',''),')','')=?)
-      ORDER BY o.id DESC LIMIT 12""",(u["id"],normalize_phone(u["phone"] or "") or "__none__")).fetchall()
+      ORDER BY o.id DESC LIMIT 30""",(u["id"],normalize_phone(u["phone"] or "") or "__none__")).fetchall()
+    notifications=conn.execute("SELECT * FROM notifications WHERE user_id=? ORDER BY id DESC LIMIT 30",(u["id"],)).fetchall()
+    unread_notifications=conn.execute("SELECT COUNT(*) FROM notifications WHERE user_id=? AND read_at=''",(u["id"],)).fetchone()[0]
     conn.close()
-    return templates.TemplateResponse("customer_panel.html", context(request, reviews=reviews, favorites=favorites, orders=orders))
+    return templates.TemplateResponse("customer_panel.html", context(request, reviews=reviews, favorites=favorites, orders=orders, notifications=notifications, unread_notifications=unread_notifications, status_labels=ORDER_STATUS_LABELS))
+
+@app.post("/cliente/conta")
+def customer_account_update(request: Request, name: str=Form(...), phone: str=Form(""), address: str=Form(""), neighborhood: str=Form(""), preferred_payment: str=Form("pix")):
+    u=require_user(request,"customer"); clean_name=name.strip()[:120]; clean_phone=phone.strip()[:30]
+    if not clean_name or (clean_phone and not normalize_phone(clean_phone)):
+        return RedirectResponse("/cliente?erro=conta#conta",303)
+    if preferred_payment not in {"pix","cash","credit","debit","on_delivery"}: preferred_payment="pix"
+    conn=db(); conn.execute("UPDATE users SET name=?,phone=?,address=?,neighborhood=?,preferred_payment=? WHERE id=?",(clean_name,clean_phone,address.strip()[:300],neighborhood.strip()[:120],preferred_payment,u["id"])); conn.commit(); conn.close()
+    return RedirectResponse("/cliente?ok=conta#conta",303)
+
+@app.post("/cliente/notificacoes/ler")
+def customer_notifications_read(request: Request):
+    u=require_user(request,"customer"); conn=db(); conn.execute("UPDATE notifications SET read_at=? WHERE user_id=? AND read_at=''",(now_iso(),u["id"])); conn.commit(); conn.close()
+    return RedirectResponse("/cliente#notificacoes",303)
 
 @app.post("/favoritos/{professional_id}")
 def toggle_favorite(request: Request, professional_id: int, next: str=Form("/cliente")):
@@ -1398,6 +1440,8 @@ def publish_post(request: Request, text: str=Form(...), post_type: str=Form("pos
 def review(request: Request, slug:str, stars:int=Form(...), comment:str=Form("")):
     u=require_user(request,"customer"); stars=max(1,min(5,stars)); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404)
+    completed=conn.execute("SELECT 1 FROM orders WHERE customer_id=? AND professional_id=? AND status='completed' LIMIT 1",(u["id"],p["id"])).fetchone()
+    if not completed: conn.close(); return RedirectResponse(f"/p/{slug}?erro=avaliacao-sem-pedido#avaliacoes",303)
     conn.execute("""INSERT INTO reviews(customer_id,professional_id,stars,comment,created_at) VALUES(?,?,?,?,?)
                   ON CONFLICT(customer_id,professional_id) DO UPDATE SET stars=excluded.stars,comment=excluded.comment,created_at=excluded.created_at""",
                  (u["id"],p["id"],stars,comment[:500],now_iso())); conn.commit(); conn.close(); return RedirectResponse(f"/p/{slug}#avaliacoes",303)
