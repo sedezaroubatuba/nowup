@@ -714,7 +714,17 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
     user=current_user(request); favorite_ids=set()
     if user and user["role"]=="customer":
         favorite_ids={r[0] for r in conn.execute("SELECT professional_id FROM favorites WHERE customer_id=?",(user["id"],)).fetchall()}
-    restaurants=[r for r in rows if r["business_type"]=="restaurant"]
+    restaurant_params=[city] if city else []
+    restaurant_city="AND p.city LIKE ?" if city else ""
+    restaurants=[dict(r) for r in conn.execute(f"""
+      SELECT p.*,
+       COALESCE((SELECT ROUND(AVG(stars),1) FROM reviews r WHERE r.professional_id=p.id),0) rating,
+       (SELECT COUNT(*) FROM reviews r WHERE r.professional_id=p.id) review_count,
+       COALESCE(NULLIF(p.cover_filename,''),NULLIF(p.avatar_filename,''),(SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1)) cover
+      FROM professionals p
+      WHERE p.blocked=0 AND p.business_type='restaurant' {restaurant_city}
+      ORDER BY p.featured DESC,p.verified DESC,rating DESC,p.id DESC LIMIT 100
+    """,restaurant_params).fetchall()]
     offers=[r for r in rows if r["featured"]]
     recommended=[r for r in rows if r["business_type"]!="restaurant"]
     conn.close()
@@ -1690,17 +1700,15 @@ def admin_pro_action(request: Request, pid:int, action:str):
     conn.commit(); conn.close(); return RedirectResponse("/admin#profissionais",303)
 
 @app.post("/admin/perfis/demonstracao")
-def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsapp:str=Form(...), address:str=Form(...), category_id:int=Form(...), city:str=Form("Ubatuba"), neighborhood:str=Form(""), description:str=Form(""), services:str=Form(""), avatar:Optional[UploadFile]=File(None), cover:Optional[UploadFile]=File(None), photo:Optional[UploadFile]=File(None)):
+def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsapp:str=Form(...), address:str=Form(...), category_id:int=Form(...), business_type:str=Form("professional"), menu_url:str=Form(""), city:str=Form("Ubatuba"), neighborhood:str=Form(""), description:str=Form(""), services:str=Form(""), avatar:Optional[UploadFile]=File(None), cover:Optional[UploadFile]=File(None), photo:Optional[UploadFile]=File(None)):
     require_user(request,"admin")
     name=display_name.strip()[:120]; phone=whatsapp.strip()[:30]; address=address.strip()[:240]
     if not name or not normalize_phone(phone) or not address:
         return RedirectResponse("/admin?erro=perfil-demo#cadastro-rapido",303)
     avatar_upload=avatar if avatar and avatar.filename else photo
     cover_upload=cover if cover and cover.filename else None
-    if not avatar_upload or not avatar_upload.filename:
-        return RedirectResponse("/admin?erro=perfil-demo#cadastro-rapido",303)
-    avatar_filename=save_image(avatar_upload)
-    cover_filename=save_image(cover_upload) if cover_upload else avatar_filename
+    avatar_filename=save_image(avatar_upload) if avatar_upload and avatar_upload.filename else ""
+    cover_filename=save_image(cover_upload) if cover_upload and cover_upload.filename else avatar_filename
     conn=db()
     try:
         slug=unique_slug(conn,name)
@@ -1710,13 +1718,13 @@ def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsap
         uid=cur.lastrowid
         category=conn.execute("SELECT id,slug FROM categories WHERE id=? AND active=1",(category_id,)).fetchone()
         if not category: raise ValueError("categoria inválida")
-        business_type="restaurant" if "restaurante" in category["slug"] else ("convenience" if "conveniencia" in category["slug"] else ("professional" if "prestador" in category["slug"] else "other"))
-        cur=conn.execute("""INSERT INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,address,description,services,business_type,verified,featured,blocked,avatar_filename,cover_filename,is_demo,created_at)
-                            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                         (uid,slug,name,"CNPJ","",phone,city.strip()[:100] or "Ubatuba",neighborhood.strip()[:120],"",address,description.strip()[:1200],services.strip()[:1200],business_type,0,0,0,avatar_filename,cover_filename,1,now_iso()))
+        if business_type not in ("professional","restaurant","store","convenience","other"): business_type="professional"
+        cur=conn.execute("""INSERT INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,address,description,services,business_type,menu_url,verified,featured,blocked,avatar_filename,cover_filename,is_demo,created_at)
+                            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                         (uid,slug,name,"CNPJ","",phone,city.strip()[:100] or "Ubatuba",neighborhood.strip()[:120],"",address,description.strip()[:1200],services.strip()[:1200],business_type,clean_link(menu_url),0,0,0,avatar_filename,cover_filename,1,now_iso()))
         pid=cur.lastrowid
         conn.execute("INSERT INTO professional_categories(professional_id,category_id) VALUES(?,?)",(pid,category_id))
-        conn.execute("INSERT INTO photos(professional_id,filename,caption,is_cover,created_at) VALUES(?,?,?,?,?)",(pid,cover_filename,"Capa do perfil",1,now_iso()))
+        if cover_filename: conn.execute("INSERT INTO photos(professional_id,filename,caption,is_cover,created_at) VALUES(?,?,?,?,?)",(pid,cover_filename,"Capa do perfil",1,now_iso()))
         conn.commit()
     except Exception:
         conn.rollback()
@@ -1730,16 +1738,19 @@ def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsap
     return RedirectResponse("/admin?ok=perfil-demo#profissionais",303)
 
 @app.post("/admin/profissionais/{pid}/editar")
-def admin_edit_professional(request: Request, pid:int, display_name:str=Form(...), city:str=Form(""), email:str=Form(...), whatsapp:str=Form(""), address:str=Form(""), neighborhood:str=Form(""), description:str=Form(""), services:str=Form(""), category_id:int=Form(0), avatar:Optional[UploadFile]=File(None), cover:Optional[UploadFile]=File(None)):
-    require_user(request,"admin"); normalized=normalize_email(email)
-    if not display_name.strip() or not normalized: return RedirectResponse("/admin#profissionais",303)
+def admin_edit_professional(request: Request, pid:int, display_name:str=Form(...), city:str=Form(""), email:str=Form(...), whatsapp:str=Form(""), address:str=Form(""), neighborhood:str=Form(""), description:str=Form(""), services:str=Form(""), menu_url:str=Form(""), business_type:str=Form("professional"), category_id:int=Form(0), avatar:Optional[UploadFile]=File(None), cover:Optional[UploadFile]=File(None)):
+    require_user(request,"admin")
+    if not display_name.strip(): return RedirectResponse("/admin#profissionais",303)
     conn=db(); pro=conn.execute("SELECT user_id,avatar_filename,cover_filename,is_demo FROM professionals WHERE id=?",(pid,)).fetchone()
     if pro:
         try:
+            normalized=email if pro["is_demo"] else normalize_email(email)
+            if not normalized: conn.close(); return RedirectResponse("/admin#profissionais",303)
+            if business_type not in ("professional","restaurant","store","convenience","other"): business_type="professional"
             avatar_filename=pro["avatar_filename"] or ""; cover_filename=pro["cover_filename"] or ""
             if pro["is_demo"] and avatar and avatar.filename: avatar_filename=save_image(avatar)
             if pro["is_demo"] and cover and cover.filename: cover_filename=save_image(cover)
-            conn.execute("UPDATE professionals SET display_name=?,city=?,whatsapp=?,address=?,neighborhood=?,description=?,services=?,avatar_filename=?,cover_filename=? WHERE id=?",(display_name.strip()[:120],city.strip()[:100],whatsapp.strip()[:30],address.strip()[:240],neighborhood.strip()[:120],description.strip()[:1200],services.strip()[:1200],avatar_filename,cover_filename,pid))
+            conn.execute("UPDATE professionals SET display_name=?,city=?,whatsapp=?,address=?,neighborhood=?,description=?,services=?,menu_url=?,business_type=?,avatar_filename=?,cover_filename=? WHERE id=?",(display_name.strip()[:120],city.strip()[:100],whatsapp.strip()[:30],address.strip()[:240],neighborhood.strip()[:120],description.strip()[:1200],services.strip()[:1200],clean_link(menu_url),business_type,avatar_filename,cover_filename,pid))
             if pro["is_demo"] and category_id:
                 conn.execute("DELETE FROM professional_categories WHERE professional_id=?",(pid,))
                 conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) SELECT ?,id FROM categories WHERE id=? AND active=1",(pid,category_id))
