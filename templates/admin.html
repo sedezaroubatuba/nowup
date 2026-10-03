@@ -14,7 +14,6 @@
 <a href="#clientes">Clientes</a>
 <a href="#denuncias">Denúncias</a>
 <a href="#sugestoes">Sugestões</a>
-<form class="admin-logout-form" action="/sair" method="post"><button class="btn danger admin-logout" type="submit">↪ Sair do ADM</button></form>
 </aside>
 <main>
 <section class="panel" id="dashboard">
@@ -167,7 +166,7 @@
 </div>
 </div>
 <div class="banner-live-preview hero-live-preview {% if settings.hero_image_filename %}has-image{% endif %}">
-<img {% if settings.hero_image_filename %}src="/media/{{settings.hero_image_filename}}"{% endif %} alt="Prévia da capa">
+<img {% if settings.hero_image_filename %}src="/uploads/{{settings.hero_image_filename}}"{% endif %} alt="Prévia da capa">
 <span>Escolha uma imagem para visualizar</span>
 </div>
 <div class="banner-sliders">
@@ -294,7 +293,7 @@
 <button class="btn primary">Salvar novo banner</button>
 </form>{% if request.query_params.get('erro')=='limite-slides' %}<div class="alert danger">O limite é de 10 slides ativos. Desative um antes de ativar outro.</div>{% elif request.query_params.get('erro')=='imagem-banner' %}<div class="alert danger">Escolha uma imagem antes de salvar o banner.</div>{% endif %}<div class="banner-admin-list">{% for b in admin_banners %}<details class="banner-editor-card">
 <summary>
-<img class="banner-admin-thumb" src="/media/{{b.image_filename}}" alt="Banner {{loop.index}}"><span><b>Banner {{loop.index}}</b><small>{{'Ativo' if b.active else 'Inativo'}} · {{b.clicks}} cliques</small></span><strong>Editar ▾</strong>
+<img class="banner-admin-thumb" src="/uploads/{{b.image_filename}}" alt="Banner {{loop.index}}"><span><b>Banner {{loop.index}}</b><small>{{'Ativo' if b.active else 'Inativo'}} · {{b.clicks}} cliques</small></span><strong>Editar ▾</strong>
 </summary>
 <div class="banner-quick-actions"><form action="/admin/banners/{{b.id}}/alternar" method="post"><button class="btn soft">{{'⏸ Desativar' if b.active else '▶ Ativar'}}</button></form><form action="/admin/banners/{{b.id}}/excluir" method="post"><button class="btn danger">🗑 Excluir banner</button></form></div>
 <form action="/admin/banners/{{b.id}}/editar" method="post" enctype="multipart/form-data" class="banner-control-panel" data-banner-editor>
@@ -312,7 +311,7 @@
 </div>
 </div>
 <div class="banner-live-preview has-image">
-<img src="/media/{{b.image_filename}}" alt="Prévia do banner">
+<img src="/uploads/{{b.image_filename}}" alt="Prévia do banner">
 </div>
 <div class="banner-size-presets" data-banner-presets><b>Tamanho pronto</b><div><button type="button" class="btn soft" data-banner-size="compact">Compacto</button><button type="button" class="btn soft" data-banner-size="recommended">Recomendado</button><button type="button" class="btn soft" data-banner-size="large">Grande</button><button type="button" class="btn soft" data-banner-size="featured">Destaque</button></div><small data-size-description>Toque em uma opção para ajustar automaticamente.</small></div>
 <div class="banner-sliders">
@@ -357,22 +356,15 @@
 <label>Categoria
 <select class="input" name="category_id" required><option value="">Escolha a categoria</option>{% for cat in admin_categories %}{% if cat.active %}<option value="{{cat.id}}">{{cat.icon}} {{cat.name}}</option>{% endif %}{% endfor %}</select>
 </label>
-<label>Tipo do perfil
-<select class="input" name="business_type" required><option value="professional">Prestador de serviço (somente WhatsApp)</option><option value="restaurant">Restaurante/lanchonete (com cardápio)</option><option value="store">Loja/comércio</option><option value="convenience">Adega/conveniência</option><option value="other">Outro negócio</option></select>
-</label>
-<label>Link do cardápio da loja (opcional)
-<input class="input" type="url" name="menu_url" placeholder="https://...">
-<small>Se ficar vazio, o restaurante usará o cardápio interno do NowUp.</small>
-</label>
 <label>Cidade<input class="input" name="city" value="Ubatuba" required></label>
 <label>Bairro<input class="input" name="neighborhood" placeholder="Ex.: Estufa II"></label>
 <label>Breve descrição<textarea class="input" name="description" rows="3" placeholder="Conte o que a empresa oferece"></textarea></label>
 <label>Serviços ou produtos<textarea class="input" name="services" rows="3" placeholder="Ex.: almoço, entrega e retirada"></textarea></label>
 <label>Foto redonda do perfil
-<input class="input" type="file" name="avatar" accept="image/*">
+<input class="input" type="file" name="avatar" accept="image/*" required>
 </label>
 <label>Foto de capa horizontal
-<input class="input" type="file" name="cover" accept="image/*">
+<input class="input" type="file" name="cover" accept="image/*" required>
 </label>
 <button class="btn primary" type="submit">Criar perfil fictício</button>
 </form>
@@ -395,30 +387,24 @@
 {% if p.is_demo %}
 <input type="hidden" name="email" value="{{p.email}}">
 <span class="tiny">Perfil fictício — sem e-mail</span>
-<div class="demo-photo-preview" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-{% if p.avatar_filename %}<span><img src="/media/{{p.avatar_filename}}" alt="Foto de {{p.display_name}}" style="width:64px;height:64px;border-radius:50%;object-fit:cover"><small style="display:block">Foto atual</small></span>{% endif %}
-{% if p.cover_filename %}<span><img src="/media/{{p.cover_filename}}" alt="Capa de {{p.display_name}}" style="width:120px;height:64px;border-radius:8px;object-fit:cover"><small style="display:block">Capa atual</small></span>{% endif %}
-</div>
 <input class="input" name="whatsapp" value="{{p.whatsapp}}" placeholder="WhatsApp" required>
 <input class="input" name="address" value="{{p.address}}" placeholder="Endereço" required>
 <input class="input" name="neighborhood" value="{{p.neighborhood}}" placeholder="Bairro">
 <select class="input" name="category_id" required>{% for cat in admin_categories %}{% if cat.active %}<option value="{{cat.id}}" {% if p.category_id == cat.id %}selected{% endif %}>{{cat.icon}} {{cat.name}}</option>{% endif %}{% endfor %}</select>
-<select class="input" name="business_type"><option value="professional" {% if p.business_type=='professional' %}selected{% endif %}>Prestador (WhatsApp)</option><option value="restaurant" {% if p.business_type=='restaurant' %}selected{% endif %}>Restaurante (cardápio)</option><option value="store" {% if p.business_type=='store' %}selected{% endif %}>Loja/comércio</option><option value="convenience" {% if p.business_type=='convenience' %}selected{% endif %}>Adega/conveniência</option><option value="other" {% if p.business_type=='other' %}selected{% endif %}>Outro</option></select>
 <textarea class="input" name="description" rows="2" placeholder="Descrição">{{p.description}}</textarea>
 <textarea class="input" name="services" rows="2" placeholder="Serviços ou produtos">{{p.services}}</textarea>
-<input class="input" type="url" name="menu_url" value="{{p.menu_url}}" placeholder="Link do cardápio (restaurantes)">
-<label class="demo-photo-field">Trocar foto do perfil<input class="input" type="file" name="avatar" accept="image/jpeg,image/png,image/webp"></label>
-<label class="demo-photo-field">Trocar foto de capa<input class="input" type="file" name="cover" accept="image/jpeg,image/png,image/webp"></label>
+<label class="demo-photo-field">Foto do perfil<input class="input" type="file" name="avatar" accept="image/*"></label>
+<label class="demo-photo-field">Foto de capa<input class="input" type="file" name="cover" accept="image/*"></label>
 {% else %}
 <input class="input" type="email" name="email" value="{{p.email}}" required>
-<input type="hidden" name="whatsapp" value="{{p.whatsapp}}"><input type="hidden" name="address" value="{{p.address}}"><input type="hidden" name="neighborhood" value="{{p.neighborhood}}"><input type="hidden" name="description" value="{{p.description}}"><input type="hidden" name="services" value="{{p.services}}"><input type="hidden" name="menu_url" value="{{p.menu_url}}"><input type="hidden" name="business_type" value="{{p.business_type}}">
+<input type="hidden" name="whatsapp" value="{{p.whatsapp}}"><input type="hidden" name="address" value="{{p.address}}"><input type="hidden" name="neighborhood" value="{{p.neighborhood}}"><input type="hidden" name="description" value="{{p.description}}"><input type="hidden" name="services" value="{{p.services}}">
 {% endif %}
 <button class="btn primary tiny">Salvar</button>
 </form>
 <a class="tiny" href="/p/{{p.slug}}">Ver perfil público</a>
 </td>
 <td>{{'Sim' if p.email_verified else 'Pendente'}}</td>
-<td>Verificado: {{'Sim' if p.verified else 'Não'}}<br>Destaque: {{'Sim' if p.featured else 'Não'}}<br>No slide: {{'Sim' if p.in_slider else 'Não'}}<br>Bloqueado: {{'Sim' if p.blocked else 'Não'}}</td>
+<td>Plano: <b>{{'Premium' if p.is_premium else 'Gratuito'}}</b><br>Verificado: {{'Sim' if p.verified else 'Não'}}<br>Destaque: {{'Sim' if p.featured else 'Não'}}<br>No slide: {{'Sim' if p.in_slider else 'Não'}}<br>Bloqueado: {{'Sim' if p.blocked else 'Não'}}</td>
 <td>
 <div class="row">
 <form action="/admin/profissionais/{{p.id}}/acao/verificar" method="post">
@@ -426,6 +412,9 @@
 </form>
 <form action="/admin/profissionais/{{p.id}}/acao/destaque" method="post">
 <button class="btn orange tiny">Destaque</button>
+</form>
+<form action="/admin/profissionais/{{p.id}}/acao/premium" method="post">
+<button class="btn {% if p.is_premium %}orange{% else %}soft{% endif %} tiny">{{'Remover Premium' if p.is_premium else 'Ativar Premium'}}</button>
 </form>
 <form action="/admin/profissionais/{{p.id}}/acao/slide" method="post">
 <button class="btn soft tiny">Slide</button>

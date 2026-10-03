@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% block title %}Painel do profissional | NowUp{% endblock %}{% block body_class %}professional-area {% if pro.business_type=='restaurant' %}restaurant-area{% else %}service-area{% endif %}{% endblock %}{% block content %}
+{% extends 'base.html' %}{% block title %}Painel do profissional | NowUp{% endblock %}{% block body_class %}professional-area{% endblock %}{% block content %}
 <div class="container dashboard pro-dashboard">
 <button class="pro-edit-fab" type="button" data-pro-menu-toggle aria-expanded="false" aria-controls="pro-edit-menu">☰ Editar painel</button>
 <aside class="sidebar pro-sidebar" id="pro-edit-menu">
@@ -10,11 +10,11 @@
 </div>
 </div>
 <a href="#resumo">📊 Visão geral</a>
-{% if pro.business_type=='restaurant' %}<a href="#cardapio">🍽 Meu cardápio</a>{% endif %}
+<a href="#cardapio">{% if pro.offer_mode=='catalog' %}🛍 Meu catálogo{% else %}🍽 Meu cardápio{% endif %} {% if not pro.is_premium %}🔒{% endif %}</a>
 <a href="#horarios">🕒 Horários e situação</a>
 <a href="#relatorios">📈 Relatórios</a>
-{% if pro.business_type=='restaurant' %}<a href="#pedidos">🧾 Pedidos</a>
-<a href="#mais-pedidos">🏆 Mais pedidos</a>{% endif %}
+<a href="#pedidos">🧾 Pedidos</a>
+<a href="#mais-pedidos">🏆 Mais pedidos</a>
 <a href="#identidade">🖼 Foto e capa</a>
 <a href="#perfil">✏️ Editar perfil</a>
 <a href="#links">💬 Contatos</a>
@@ -46,6 +46,7 @@
 <span class="kicker">Central do profissional</span>
 <h1>Olá, {{pro.display_name}}</h1>
 <p>Gerencie sua vitrine e acompanhe o interesse dos clientes.</p>
+<p><span class="status-pill {% if pro.is_premium %}ok{% endif %}">{{'Plano Premium' if pro.is_premium else 'Plano gratuito'}}</span></p>
 <p><span class="status-pill {% if shop_status.open %}ok{% endif %}">{{shop_status.label}}</span> <small>{{shop_status.detail}}</small></p>
 <div class="completion">
 <span>
@@ -94,14 +95,17 @@
 </form>
 </section>
 <section class="panel menu-manager" id="cardapio">
+{% if not pro.is_premium %}
+<div class="empty-state full"><span>🔒</span><h2>Cardápio e catálogo são recursos Premium</h2><p class="muted">Seu perfil gratuito continua público com descrição, serviços, fotos, localização e botão do WhatsApp. Assine o Premium para cadastrar produtos, preços, categorias e receber pedidos.</p>{% if support_link!='#' %}<a class="btn primary" href="{{support_link}}" target="_blank" rel="noopener">Quero ativar o Premium</a>{% endif %}</div>
+{% else %}
 <div class="section-title">
 <div>
 <span class="kicker">Venda pelo NowUp</span>
-<h2>Meu cardápio</h2>
+<h2>{{'Meu catálogo' if pro.offer_mode=='catalog' else 'Meu cardápio'}}</h2>
 </div>
-<a class="btn soft" href="/p/{{pro.slug}}/menu" target="_blank">Ver cardápio público</a>
+<a class="btn soft" href="/p/{{pro.slug}}/menu" target="_blank">Ver {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}} público</a>
 </div>
-<p class="muted">Cadastre categorias e produtos. O cliente monta o carrinho e envia o pedido diretamente para sua sala de pedidos no NowUp.</p>
+<p class="muted">Cadastre categorias e produtos. O cliente monta o carrinho e envia o pedido pelo NowUp.</p>
 <details class="menu-settings" open><summary><b>⚙️ Entrega, retirada e pagamento</b></summary><form action="/painel/cardapio/configuracoes" method="post" class="product-form"><label>Taxa de entrega<input class="input" name="delivery_fee" value="{{'%.2f'|format(pro.delivery_fee_cents/100)|replace('.',',')}}" inputmode="decimal"></label><label>Pedido mínimo<input class="input" name="minimum_order" value="{{'%.2f'|format(pro.minimum_order_cents/100)|replace('.',',')}}" inputmode="decimal"></label><label>Tempo médio de preparo (minutos)<input class="input" type="number" min="5" max="240" name="prep_minutes" value="{{pro.prep_minutes}}"></label><label>Chave Pix<input class="input" name="pix_key" value="{{pro.pix_key}}" placeholder="Telefone, e-mail, CPF/CNPJ ou aleatória"></label><label class="check"><input type="checkbox" name="allows_delivery" value="1" {% if pro.allows_delivery %}checked{% endif %}> Aceitar entrega</label><label class="check"><input type="checkbox" name="allows_pickup" value="1" {% if pro.allows_pickup %}checked{% endif %}> Aceitar retirada</label><button class="btn primary">Salvar configurações</button></form></details>
 <div class="menu-category-manager">
 <h3>Categorias do cardápio</h3>
@@ -142,7 +146,7 @@
 </details>
 <nav class="menu-category-nav pro-product-filters" aria-label="Filtrar produtos do painel"><button type="button" class="active" data-pro-category="all">Todos</button><button type="button" data-pro-category="promocoes">Promoções</button>{% for category in product_categories %}<button type="button" data-pro-category="{{category.name}}">{{category.name}}</button>{% endfor %}</nav>
 <div class="product-admin-grid" data-pro-products>{% for product in products %}<details class="product-admin-card" data-pro-product data-category="{{product.category}}" data-featured="{{1 if product.featured else 0}}">
-<summary>{% if product.image_filename %}<img src="/media/{{product.image_filename}}" alt="">{% else %}<span class="product-placeholder">🍽</span>{% endif %}<div>
+<summary>{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" alt="">{% else %}<span class="product-placeholder">🍽</span>{% endif %}<div>
 <b>{{product.name}}</b>
 <small>{{product.category}} · R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</small>
 </div>
@@ -175,6 +179,7 @@
 <h3>Seu cardápio está vazio</h3>
 <p class="muted">Use o botão “Adicionar produto” para começar.</p>
 </div>{% endfor %}</div>
+{% endif %}
 </section>
 <section class="panel analytics-panel" id="relatorios">
 <div class="section-title">
@@ -357,9 +362,9 @@
 </div>
 <p class="muted">A foto fica redonda e a capa aparece no alto do seu perfil. Imagens são otimizadas automaticamente.</p>
 <div class="identity-preview" data-identity-preview>
-<div class="mini-cover" data-cover-preview {% if pro.cover_filename %}style="background-image:url('/media/{{pro.cover_filename}}')"{% endif %}>
+<div class="mini-cover" data-cover-preview {% if pro.cover_filename %}style="background-image:url('/uploads/{{pro.cover_filename}}')"{% endif %}>
 </div>
-<div class="mini-avatar" data-avatar-preview>{% if pro.avatar_filename %}<img src="/media/{{pro.avatar_filename}}">{% else %}<span>🏪</span>{% endif %}</div>
+<div class="mini-avatar" data-avatar-preview>{% if pro.avatar_filename %}<img src="/uploads/{{pro.avatar_filename}}">{% else %}<span>🏪</span>{% endif %}</div>
 </div>
 <form action="/painel/identidade" method="post" enctype="multipart/form-data" class="grid2" data-identity-form>
 <label>Foto de perfil<input class="input" type="file" name="avatar" accept="image/*">
@@ -431,6 +436,11 @@
 <option value="other" {% if pro.business_type=='other' %}selected{% endif %}>Outro</option>
 </select>
 </label>
+<label>O que deseja oferecer?<select name="offer_mode">
+<option value="services" {% if pro.offer_mode=='services' %}selected{% endif %}>Somente serviços e contato pelo WhatsApp</option>
+<option value="menu" {% if pro.offer_mode=='menu' %}selected{% endif %}>Cardápio com produtos (Premium)</option>
+<option value="catalog" {% if pro.offer_mode=='catalog' %}selected{% endif %}>Catálogo de produtos (Premium)</option>
+</select></label>
 <label class="check privacy-check">
 <input type="checkbox" name="hide_address" value="1" {% if pro.hide_address %}checked{% endif %}> Ocultar meu endereço exato no perfil público</label>
 </div>
@@ -468,12 +478,12 @@
 <small>Receba pedidos e orçamentos.</small>
 <input class="input" name="whatsapp" value="{{pro.whatsapp}}" required>
 </label>
-{% if pro.business_type=='restaurant' %}<label>
+<label>
 <span class="link-icon">🍽</span>
-<b>Cardápio digital</b>
-<small>Link do cardápio ou catálogo.</small>
-<input class="input" type="url" name="menu_url" value="{{pro.menu_url}}" placeholder="https://...">
-</label>{% else %}<input type="hidden" name="menu_url" value="">{% endif %}
+<b>Cardápio ou catálogo externo {% if not pro.is_premium %}🔒{% endif %}</b>
+<small>{{'Link liberado no plano Premium.' if not pro.is_premium else 'Link completo do cardápio ou catálogo.'}}</small>
+<input class="input" type="url" name="menu_url" value="{{pro.menu_url if pro.is_premium else ''}}" placeholder="https://..." {% if not pro.is_premium %}disabled{% endif %}>
+</label>
 <label>
 <span class="link-icon">📸</span>
 <b>Instagram</b>
@@ -528,7 +538,7 @@
 <input class="input" name="caption" placeholder="Legenda opcional">
 <button class="btn primary">Adicionar foto</button>
 </form>{% endif %}<div class="photoManager" style="margin-top:16px">{% for ph in photos %}<div class="pm">
-<img src="/media/{{ph.filename}}">
+<img src="/uploads/{{ph.filename}}">
 <div class="tiny">{% if ph.is_cover %}<b>Capa das buscas</b>{% endif %} {{ph.caption}}</div>
 <div class="row">
 <form action="/painel/fotos/{{ph.id}}/capa" method="post">

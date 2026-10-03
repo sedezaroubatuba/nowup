@@ -10,6 +10,7 @@
 <input class="input" type="password" name="password" placeholder="Senha (mín. 8 caracteres)" minlength="8" required>
 <input class="input" type="password" name="password_confirm" placeholder="Confirme sua senha" minlength="8" required>
 <select name="business_type" required><option value="professional">Prestador de serviço</option><option value="restaurant">Restaurante ou lanchonete</option><option value="store">Loja ou comércio</option><option value="convenience">Conveniência ou adega</option><option value="other">Outro negócio</option></select>
+<select name="offer_mode" required><option value="services">Quero divulgar meus serviços e receber contatos</option><option value="menu">Quero usar cardápio (recurso Premium)</option><option value="catalog">Quero usar catálogo de produtos (recurso Premium)</option></select>
 <select name="doc_type"><option>CNPJ</option><option>CPF</option></select>
 <input class="input" name="document" placeholder="CNPJ ou CPF" required>
 <select name="city" required>{% for c in active_cities %}<option value="{{c}}">{{c}}</option>{% endfor %}</select>
