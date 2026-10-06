@@ -1,0 +1,15 @@
+html.nowup-navigation-open{overflow:hidden}
+dialog.nowup-navigation{position:fixed;inset:0 auto 0 0;margin:0;width:min(360px,92vw);max-width:92vw;height:100dvh;max-height:100dvh;box-sizing:border-box;border:0;padding:22px 20px 30px;background:#fff;color:#14365d;overflow:auto;overscroll-behavior:contain;box-shadow:8px 0 35px #09275530;text-align:left}
+dialog.nowup-navigation:not([open]){display:none!important}
+.nowup-navigation::backdrop{background:rgba(5,20,40,.5)}
+.nowup-navigation-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:20px;border-bottom:1px solid #e3eaf2}
+.nowup-navigation-header b{font-size:20px}.nowup-navigation-header small{display:block;color:#63758a;margin-top:5px}
+.nowup-navigation-header button{border:0;border-radius:12px;background:#eef4fb;color:#14365d;min-width:44px;min-height:44px;font-size:22px;cursor:pointer}
+.nowup-navigation-links{display:grid;gap:4px;padding:14px 0}
+.nowup-navigation-links a{display:flex;align-items:center;gap:14px;min-height:48px;border-radius:12px;padding:9px 12px;box-sizing:border-box;color:#14365d!important;background:#fff;text-decoration:none;font-size:20px}
+.nowup-navigation-links a span{font-size:15px;font-weight:650}.nowup-navigation-links a:hover{background:#edf4fd}
+.nowup-navigation :focus-visible{outline:3px solid #08bceb;outline-offset:2px}
+.nowup-navigation-city{display:grid;gap:10px;padding-top:18px;border-top:1px solid #e3eaf2}.nowup-navigation-city label{font-weight:700}
+.nowup-navigation-city select,.nowup-navigation-city input{width:100%;min-height:46px;padding:10px;border:1px solid #cbd9e8;border-radius:10px;font:inherit;box-sizing:border-box;background:#fff;color:#14365d}
+.nowup-navigation-city button{min-height:46px;border:0;border-radius:10px;background:#123e7d;color:#fff;font:inherit;font-weight:700;padding:10px;cursor:pointer}
+.nowup-navigation-logout{padding-top:20px}.nowup-navigation-logout button{width:100%;min-height:46px;border:1px solid #f1c9ce;border-radius:10px;background:#fff3f4;color:#a52239;font:inherit;font-weight:700;cursor:pointer}
