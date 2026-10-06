@@ -401,6 +401,14 @@ def init_db():
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS order_messages(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+      sender_role TEXT NOT NULL,
+      body TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_order_messages_order ON order_messages(order_id,id);
     CREATE TABLE IF NOT EXISTS order_items(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
@@ -830,7 +838,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
             qty=min(qty,max(1,product["max_quantity"] or 99)); chosen=[]; extras=0
             option_ids=raw.get("options",[]) if isinstance(raw,dict) else []
             if isinstance(option_ids,list):
-                for oid in option_ids[:20]:
+                for oid in dict.fromkeys(str(x) for x in option_ids[:20]):
                     try: option=conn.execute("SELECT * FROM product_options WHERE id=? AND product_id=? AND available=1",(int(oid),pid)).fetchone()
                     except (TypeError,ValueError): option=None
                     if option: chosen.append(option); extras += option["price_cents"]
@@ -1264,11 +1272,14 @@ def pro_menu_settings(request: Request, delivery_fee: str=Form("0"), minimum_ord
     conn.commit(); conn.close(); return RedirectResponse("/painel?ok=config-cardapio#cardapio",303)
 
 @app.post("/painel/cardapio/produtos/{product_id}/adicionais")
-def pro_product_option_add(request: Request, product_id: int, option_name: str=Form(...), option_price: str=Form("0")):
+def pro_product_option_add(request: Request, product_id: int, option_name: str=Form(...), option_price: str=Form("0"), option_kind: str=Form("add")):
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"])
     product=conn.execute("SELECT id FROM products WHERE id=? AND professional_id=?",(product_id,p["id"])).fetchone()
     if not product: conn.close(); raise HTTPException(404)
     name=option_name.strip()[:100]
+    if option_kind=="remove":
+        name="Sem " + name.removeprefix("Sem ").removeprefix("sem ")
+        option_price="0"
     if name:
         next_order=conn.execute("SELECT COALESCE(MAX(sort_order),0)+1 FROM product_options WHERE product_id=?",(product_id,)).fetchone()[0]
         conn.execute("INSERT INTO product_options(product_id,name,price_cents,available,sort_order) VALUES(?,?,?,?,?)",(product_id,name,price_to_cents(option_price),1,next_order)); conn.commit()
@@ -1891,3 +1902,34 @@ def banner_click(bid:int):
 
 @app.get("/health")
 def health(): return JSONResponse({"ok":True,"service":"NowUp"})
+
+# Conversa por pedido: somente o cliente e a loja responsáveis podem acessar.
+def authorized_order_chat(request, order_id):
+    u=current_user(request)
+    if not u: raise HTTPException(401,"Entre para conversar sobre o pedido")
+    conn=db()
+    order=conn.execute("SELECT o.*,p.user_id AS owner_id FROM orders o JOIN professionals p ON p.id=o.professional_id WHERE o.id=?",(order_id,)).fetchone()
+    if not order or not ((u["role"]=="customer" and order["customer_id"]==u["id"]) or (u["role"]=="professional" and order["owner_id"]==u["id"])):
+        conn.close(); raise HTTPException(403,"Pedido não disponível para esta conta")
+    return conn,u,order
+
+@app.get("/pedidos/{order_id}/conversa")
+def order_chat_read(request: Request, order_id: int, after: int=0):
+    conn,u,order=authorized_order_chat(request,order_id)
+    rows=conn.execute("SELECT id,sender_role,body,created_at FROM order_messages WHERE order_id=? AND id>? ORDER BY id LIMIT 100",(order_id,max(0,after))).fetchall()
+    conn.close(); return JSONResponse({"messages":[dict(r) for r in rows],"role":u["role"]})
+
+@app.post("/pedidos/{order_id}/conversa")
+def order_chat_send(request: Request, order_id: int, message: str=Form(...)):
+    conn,u,order=authorized_order_chat(request,order_id)
+    body=message.strip()
+    if not body or len(body)>1500:
+        conn.close(); raise HTTPException(400,"Escreva uma mensagem de até 1500 caracteres")
+    if order["status"] in {"completed","cancelled","rejected"}:
+        conn.close(); raise HTTPException(400,"Este pedido foi encerrado")
+    conn.execute("INSERT INTO order_messages(order_id,sender_role,body,created_at) VALUES(?,?,?,?)",(order_id,u["role"],body,now_iso()))
+    recipient=order["owner_id"] if u["role"]=="customer" else order["customer_id"]
+    link=f"/painel#pedido-{order_id}" if u["role"]=="customer" else f"/pedido/{order['tracking_token']}"
+    if recipient:
+        conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(recipient,"Nova mensagem no pedido",body[:180],link,now_iso()))
+    conn.commit(); conn.close(); return JSONResponse({"ok":True})
