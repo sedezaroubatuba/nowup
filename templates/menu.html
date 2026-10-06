@@ -21,8 +21,8 @@
 <p>{{product.description}}</p>
 <div>
 <strong>{% if product.promo_price_cents > 0 %}<del>R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</del> R$ {{'%.2f'|format(product.promo_price_cents/100)|replace('.',',')}}{% else %}R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}{% endif %}</strong>
-{% if product_options.get(product.id) %}<div class="product-options"><small>Adicionais</small>{% for option in product_options.get(product.id,[]) %}<label><input type="checkbox" data-product-option value="{{option.id}}" data-option-name="{{option.name}}" data-option-price="{{option.price_cents}}"> {{option.name}}{% if option.price_cents %} + R$ {{'%.2f'|format(option.price_cents/100)|replace('.',',')}}{% endif %}</label>{% endfor %}</div>{% endif %}
-<div class="product-buy"><label>Qtd.<input class="product-quantity-input" type="number" min="1" max="99" step="1" value="1" inputmode="numeric" data-product-quantity aria-label="Digite a quantidade" {% if not shop_status.open %}disabled{% endif %}></label><button class="btn primary" type="button" data-add {% if not shop_status.open %}disabled{% endif %}>{% if shop_status.open %}Adicionar{% else %}Fechado{% endif %}</button></div>
+{% if product_options.get(product.id) %}<div class="product-options"><small>Personalize: adicionais e ingredientes para retirar</small>{% for option in product_options.get(product.id,[]) %}<label><input type="checkbox" data-product-option value="{{option.id}}" data-option-name="{{option.name}}" data-option-price="{{option.price_cents}}"> {{option.name}}{% if option.price_cents %} + R$ {{'%.2f'|format(option.price_cents/100)|replace('.',',')}}{% endif %}</label>{% endfor %}</div>{% endif %}
+<label>Observações deste item<textarea data-product-notes maxlength="300" placeholder="Ex.: bem passado, sem cebola"></textarea></label><div class="product-buy"><label>Qtd.<input class="product-quantity-input" type="number" min="1" max="99" step="1" value="1" inputmode="numeric" data-product-quantity aria-label="Digite a quantidade" {% if not shop_status.open %}disabled{% endif %}></label><button class="btn primary" type="button" data-add {% if not shop_status.open %}disabled{% endif %}>{% if shop_status.open %}Adicionar{% else %}Fechado{% endif %}</button></div>
 </div>
 </div>
 </article>{% else %}<div class="panel empty-state">
@@ -70,11 +70,11 @@
 <span>Total <small data-fee-note></small></span>
 <b data-dialog-total>R$ 0,00</b>
 </div>
-<button class="btn primary full-btn">Enviar pedido pelo WhatsApp</button>
+<button class="btn primary full-btn">Enviar pedido pelo NowUp</button>
 </form>
 </dialog>
 </section>
 <script>window.NOWUP_MENU={{ {'deliveryFee':pro.delivery_fee_cents,'minimumOrder':pro.minimum_order_cents}|tojson }};</script>
-<script src="/static/menu.js?v=18">
+<script src="/static/menu.js?v=58">
 </script>
 {% endblock %}
