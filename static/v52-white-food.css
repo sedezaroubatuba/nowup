@@ -1,0 +1,18 @@
+/* Final public theme override, after legacy themes. */
+body.v50-directory-home,body.v50-directory-home .v50-home{background:#fff!important;color:#14365d!important;background-image:none!important}
+body.v50-directory-home .v50-head,body.v50-directory-home .mobile-bottom-nav,body.v50-directory-home .v50-card{background:#fff!important;color:#14365d!important}
+body.v50-directory-home .v50-business h1,body.v50-directory-home .v50-highlights h2,body.v50-directory-home .v50-card h3,body.v50-directory-home .v50-categories a{color:#14365d!important}
+body.v50-directory-home .mobile-bottom-nav{border-top:1px solid #e2e8f0!important;box-shadow:0 -3px 15px #1234560a}
+body.v50-directory-home .mobile-bottom-nav a{color:#53667e!important}
+body.v50-directory-home .v50-categories a{flex:0 0 85px;width:85px;min-width:85px}
+body.v50-directory-home .v50-categories span{white-space:normal;line-height:1.25;overflow:visible;font-size:11px}
+body.v50-directory-home .v50-categories i{background:#fff3e1!important;border:2px solid #ff981f;box-shadow:0 3px 9px #17365f12}
+body.v50-directory-home .v50-categories a:nth-child(2) i{background:#e7efff!important;border-color:#3478ee}
+body.v50-directory-home .v50-categories a:nth-child(3) i{background:#e5f7ea!important;border-color:#32b45c}
+body.v50-directory-home .v50-categories a:nth-child(4) i{background:#ffe9f2!important;border-color:#ec4b96}
+body.v50-directory-home .v50-categories a:nth-child(5) i{background:#f1eaff!important;border-color:#9455df}
+body.v50-directory-home .v50-categories a:nth-child(6) i{background:#e1f7fa!important;border-color:#12a4b8}
+body.v50-directory-home .v50-categories a.is-selected i{outline:3px solid #14365d;outline-offset:3px}
+.v52-menu{padding:12px;display:flex;gap:16px;flex-wrap:wrap;background:#f1f6fc}.v52-menu[hidden]{display:none}.v52-menu a{color:#14365d;font-weight:700}
+.v50-search input{min-width:0;background:#fff!important;color:#14365d!important}
+@media(max-width:700px){body.v50-directory-home .v50-grid .v50-card:nth-child(n+10){display:block}body.v50-directory-home .v50-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}.v50-business header{flex-wrap:wrap;gap:6px}}

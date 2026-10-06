@@ -1,0 +1,12 @@
+NOWUP V52 — tela branca e foco em alimentação e compras locais
+
+Antes de substituir, faça uma cópia dos arquivos e do banco de dados.
+
+RAIZ: substitua app.py na raiz do projeto.
+TEMPLATES: envie home.html, base.html, professionals.html e signup_professional.html para templates/.
+STATIC: envie v52-white-food.css para static/.
+Envie os três pacotes antes de concluir o deploy. Não apague data/ nem uploads/.
+
+A tela principal fica branca, com categorias em círculos coloridos. As buscas públicas mostram apenas os segmentos permitidos. Cadastros antigos de outros segmentos são preservados, mas deixam de aparecer na vitrine.
+Os filtros mantêm categoria, cidade e termo de busca. Cardápio e catálogo Premium continuam com as regras existentes.
+Esta atualização não recupera imagens já perdidas no servidor.
