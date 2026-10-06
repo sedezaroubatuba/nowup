@@ -1,4 +1,15 @@
 {% extends 'base.html' %}{% block title %}Painel do profissional | NowUp{% endblock %}{% block body_class %}professional-area{% endblock %}{% block content %}
+<style>
+body.professional-area .pro-dashboard .order-alert-control{display:flex!important}
+body.professional-area .pro-dashboard .new-order-alert:not([hidden]){display:flex!important}
+body.professional-area .pro-dashboard .new-order-alert[hidden]{display:none!important}
+body.professional-area .pro-dashboard #pedidos-ativos{display:block!important}
+body.professional-area .pro-dashboard.show-full-dashboard #pedidos{display:block!important}
+body.professional-area .pro-dashboard #pedidos-ativos h2,body.professional-area .pro-dashboard .active-order-main strong{color:#12314a!important}
+body.professional-area .pro-dashboard .active-order-main small{color:#526678!important}
+body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!important}
+</style>
+
 <div class="container dashboard pro-dashboard">
 <button class="pro-edit-fab" type="button" data-pro-menu-toggle aria-expanded="false" aria-controls="pro-edit-menu">☰ Editar painel</button>
 <aside class="sidebar pro-sidebar" id="pro-edit-menu">
@@ -561,5 +572,5 @@
 </section>{% endif %}
 </main>
 </div>
-<script src="/static/order-chat.js?v=58"></script><script src="/static/pro-panel-menu.js?v=25"></script><script src="/static/order-alerts.js?v=58"></script>
+<script src="/static/order-chat.js?v=58"></script><script src="/static/pro-panel-menu.js?v=59"></script><script src="/static/order-alerts.js?v=59"></script>
 {% endblock %}
