@@ -1189,10 +1189,17 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
       WHERE o.professional_id=? AND o.status!='cancelled' AND date(o.created_at) BETWEEN ? AND ?
       GROUP BY lower(oi.product_name) ORDER BY quantity DESC,revenue_cents DESC LIMIT 15""",
       (p["id"],start.isoformat(),end.isoformat())).fetchall()
+    store_notifications=conn.execute("SELECT * FROM notifications WHERE user_id=? ORDER BY id DESC LIMIT 30",(u["id"],)).fetchall()
+    store_client_orders=conn.execute("SELECT id,customer_id,order_code,status,total_cents,created_at FROM orders WHERE professional_id=? ORDER BY id DESC",(p["id"],)).fetchall()
+    store_clients=conn.execute("""SELECT customer_id,customer_name,COUNT(*) AS order_count,
+      MAX(created_at) AS last_order,
+      SUM(CASE WHEN status='completed' THEN total_cents ELSE 0 END) AS completed_cents
+      FROM orders WHERE professional_id=? AND customer_id IS NOT NULL
+      GROUP BY customer_id ORDER BY last_order DESC""",(p["id"],)).fetchall()
     latest_order_id=conn.execute("SELECT COALESCE(MAX(id),0) FROM orders WHERE professional_id=?",(p["id"],)).fetchone()[0]
     conn.close()
     status=shop_status(p); business_hours=parse_business_hours(p["business_hours"])
-    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, products=products, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id))
+    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, products=products, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id,store_clients=store_clients,store_client_orders=store_client_orders,store_notifications=store_notifications))
 
 @app.get("/painel/pedidos/novos")
 def pro_new_orders(request: Request, after: int=0):
