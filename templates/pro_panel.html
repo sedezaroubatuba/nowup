@@ -97,6 +97,8 @@
 <section class="panel menu-manager" id="cardapio">
 {% if not pro.is_premium %}
 <div class="empty-state full"><span>🔒</span><h2>Cardápio e catálogo são recursos Premium</h2><p class="muted">Seu perfil gratuito continua público com descrição, serviços, fotos, localização e botão do WhatsApp. Assine o Premium para cadastrar produtos, preços, categorias e receber pedidos.</p>{% if support_link!='#' %}<a class="btn primary" href="{{support_link}}" target="_blank" rel="noopener">Quero ativar o Premium</a>{% endif %}</div>
+{% elif pro.offer_mode not in ['menu','catalog'] %}
+<h2>Ative seu cardápio ou catálogo</h2><p>Em Meu perfil, escolha “Cardápio com produtos” ou “Catálogo de produtos” e salve para começar a cadastrar seus itens.</p><a class="btn primary" href="#perfil">Configurar meu perfil</a>
 {% else %}
 <div class="section-title">
 <div>
