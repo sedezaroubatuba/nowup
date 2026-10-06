@@ -148,7 +148,7 @@
 </details>
 <nav class="menu-category-nav pro-product-filters" aria-label="Filtrar produtos do painel"><button type="button" class="active" data-pro-category="all">Todos</button><button type="button" data-pro-category="promocoes">Promoções</button>{% for category in product_categories %}<button type="button" data-pro-category="{{category.name}}">{{category.name}}</button>{% endfor %}</nav>
 <div class="product-admin-grid" data-pro-products>{% for product in products %}<details class="product-admin-card" data-pro-product data-category="{{product.category}}" data-featured="{{1 if product.featured else 0}}">
-<summary>{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" alt="">{% else %}<span class="product-placeholder">🍽</span>{% endif %}<div>
+<summary>{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" onerror="this.onerror=null;this.src='/static/product-placeholder.svg'" alt="">{% else %}<span class="product-placeholder">🍽</span>{% endif %}<div>
 <b>{{product.name}}</b>
 <small>{{product.category}} · R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</small>
 </div>

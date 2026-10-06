@@ -1,9 +1,9 @@
-{% extends 'base.html' %}{% block title %}Cardápio de {{pro.display_name}} | NowUp{% endblock %}{% block content %}
+{% extends 'base.html' %}{% block title %}Cardápio de {{pro.display_name}} | NowUp{% endblock %}{% block body_class %}public-menu-area{% endblock %}{% block content %}
 <section class="native-menu" data-native-menu>
 <div class="container">
 <header class="menu-hero">
 <a href="/p/{{pro.slug}}">← Voltar ao perfil</a>
-<div>{% if pro.avatar_filename %}<img src="/media/{{pro.avatar_filename}}" alt="">{% else %}<span>🍽</span>{% endif %}<div>
+<div>{% if pro.avatar_filename %}<img src="/uploads/{{pro.avatar_filename}}" alt="">{% else %}<span>🍽</span>{% endif %}<div>
 <small>Cardápio NowUp</small>
 <h1>{{pro.display_name}}</h1>
 <p>⏱ {{pro.prep_minutes}} min · Pedido mínimo R$ {{'%.2f'|format(pro.minimum_order_cents/100)|replace('.',',')}} · Entrega R$ {{'%.2f'|format(pro.delivery_fee_cents/100)|replace('.',',')}}</p>
@@ -15,7 +15,7 @@
 <button type="button" class="active" data-category-filter="all">Todos</button>{% for category in menu_categories %}<button type="button" data-category-filter="{{category|lower}}">{{category}}</button>{% endfor %}</nav>{% endif %}
 <div class="menu-layout">
 <main>
-<div class="menu-products">{% for product in products %}<article class="menu-product" data-product data-category="{{product.category|lower}}" data-id="{{product.id}}" data-name="{{product.name}}" data-price="{{product.promo_price_cents if product.promo_price_cents > 0 else product.price_cents}}" data-max="{{product.max_quantity}}">{% if product.image_filename %}<img src="/media/{{product.image_filename}}" alt="{{product.name}}">{% else %}<div class="menu-product-placeholder">🍽</div>{% endif %}<div class="menu-product-info">
+<div class="menu-products">{% for product in products %}<article class="menu-product" data-product data-category="{{product.category|lower}}" data-id="{{product.id}}" data-name="{{product.name}}" data-price="{{product.promo_price_cents if product.promo_price_cents > 0 else product.price_cents}}" data-max="{{product.max_quantity}}">{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" onerror="this.onerror=null;this.src='/static/product-placeholder.svg'" alt="{{product.name}}">{% else %}<div class="menu-product-placeholder">🍽</div>{% endif %}<div class="menu-product-info">
 <small>{{product.category}}</small>
 <h3>{{product.name}}</h3>
 <p>{{product.description}}</p>
