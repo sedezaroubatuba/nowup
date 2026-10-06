@@ -863,6 +863,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
     for product,qty,item_notes,chosen,unit in clean_items:
         item_cur=conn.execute("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes) VALUES(?,?,?,?,?,?)",(order_id,product["id"],product["name"],qty,unit,item_notes))
         for option in chosen: conn.execute("INSERT INTO order_item_options(order_item_id,option_id,option_name,price_cents) VALUES(?,?,?,?)",(item_cur.lastrowid,option["id"],option["name"],option["price_cents"]))
+    conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(p["user_id"],"Novo pedido no NowUp",f"{order_code} — {customer_name.strip()[:120]}",f"/painel#pedido-{order_id}",created))
     conn.commit(); conn.close()
     return RedirectResponse(f"/pedido/{tracking_token}",303)
 
@@ -1200,8 +1201,10 @@ def pro_new_orders(request: Request, after: int=0):
     rows=conn.execute("""SELECT id,customer_name,total_cents,created_at FROM orders
       WHERE professional_id=? AND id>? ORDER BY id ASC LIMIT 10""",(p["id"],max(0,after))).fetchall()
     latest=conn.execute("SELECT COALESCE(MAX(id),0) FROM orders WHERE professional_id=?",(p["id"],)).fetchone()[0]
+    pending=conn.execute("SELECT COUNT(*) FROM orders WHERE professional_id=? AND status='new'",(p["id"],)).fetchone()[0]
+    pending_order=conn.execute("SELECT id,customer_name,total_cents,created_at FROM orders WHERE professional_id=? AND status='new' ORDER BY id DESC LIMIT 1",(p["id"],)).fetchone()
     conn.close()
-    return JSONResponse({"latest_id":latest,"orders":[{"id":r["id"],"customer_name":r["customer_name"] or "Cliente","total_cents":r["total_cents"],"created_at":r["created_at"]} for r in rows]})
+    return JSONResponse({"latest_id":latest,"pending_count":pending,"pending_order":dict(pending_order) if pending_order else None,"orders":[{"id":r["id"],"customer_name":r["customer_name"] or "Cliente","total_cents":r["total_cents"],"created_at":r["created_at"]} for r in rows]})
 
 def price_to_cents(raw: str):
     value=(raw or "0").strip().replace("R$","").replace(" ","")

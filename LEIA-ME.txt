@@ -1,0 +1,11 @@
+NOWUP V59 — CORREÇÃO DOS BOTÕES E ALERTAS
+Faça backup. Esta atualização pressupõe que a V58 já foi instalada.
+RAIZ: substituir app.py.
+TEMPLATES: substituir pro_panel.html dentro de templates.
+STATIC: substituir pro-panel-menu.js e order-alerts.js dentro de static.
+Não enviar este LEIA-ME nem alterar data/uploads.
+Após o deploy, recarregue o painel e toque em Ativar alertas de pedidos.
+O painel deve permanecer aberto para consultar pedidos e tocar o alarme.
+Ver e atualizar agora revela a seção de detalhes. Novos pedidos são registrados também no sininho da loja; o sininho pode exigir recarregar a página para atualizar sua contagem.
+Teste: faça um pedido em uma conta de cliente e confira o aviso no painel da loja. Aceite o pedido e confira que o alarme para quando não há outros pendentes. Toque em Ver e atualizar e confira os detalhes e a conversa.
+Validado localmente: resposta do servidor para pedidos pendentes e aceitos, sintaxe JS e template. Falta validação no Render/celular.
