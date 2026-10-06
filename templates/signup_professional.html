@@ -4,20 +4,20 @@
 {% if erro=='email_indisponivel' %}<div class="alert danger">A confirmação de e-mail está temporariamente indisponível. O administrador precisa concluir a configuração.</div>{% elif erro=='envio_email' %}<div class="alert danger">Não foi possível enviar a confirmação. Nenhuma conta foi liberada; tente novamente.</div>{% endif %}
 {% if erro=='email_invalido' %}<div class="alert danger">Digite um e-mail real e válido. O domínio do e-mail também é verificado.</div>{% elif erro=='telefone' %}<div class="alert danger">Digite um celular válido com DDD.</div>{% elif erro=='admin' %}<div class="alert danger">Este e-mail está reservado para o administrador. Use outro e-mail para cadastro comum.</div>{% elif erro=='email' %}<div class="alert danger">Este e-mail já está cadastrado. Tente entrar na sua conta.</div>{% elif erro=='senha' %}<div class="alert danger">A senha precisa ter pelo menos 8 caracteres.</div>{% elif erro=='confirmacao' %}<div class="alert danger">As duas senhas não são iguais.</div>{% elif erro=='termos' %}<div class="alert danger">Você precisa aceitar os Termos de Uso e a Política de Privacidade.</div>{% endif %}
 <form method="post"><div class="grid2">
-<input class="input" name="name" placeholder="Nome profissional / empresa" required>
+<input class="input" name="name" placeholder="Nome da loja" required>
 <input class="input" type="email" name="email" placeholder="E-mail" required>
 <input class="input" name="phone" placeholder="WhatsApp" required>
 <input class="input" type="password" name="password" placeholder="Senha (mín. 8 caracteres)" minlength="8" required>
 <input class="input" type="password" name="password_confirm" placeholder="Confirme sua senha" minlength="8" required>
-<select name="business_type" required><option value="professional">Prestador de serviço</option><option value="restaurant">Restaurante ou lanchonete</option><option value="store">Loja ou comércio</option><option value="convenience">Conveniência ou adega</option><option value="other">Outro negócio</option></select>
-<select name="offer_mode" required><option value="services">Quero divulgar meus serviços e receber contatos</option><option value="menu">Quero usar cardápio (recurso Premium)</option><option value="catalog">Quero usar catálogo de produtos (recurso Premium)</option></select>
+<select name="business_type" required><option value="restaurant">Restaurante ou lanchonete</option><option value="store">Loja ou comércio</option><option value="convenience">Conveniência ou adega</option></select>
+<select name="offer_mode" required><option value="services">Quero divulgar minha loja e receber contatos</option><option value="menu">Quero usar cardápio (recurso Premium)</option><option value="catalog">Quero usar catálogo de produtos (recurso Premium)</option></select>
 <select name="doc_type"><option>CNPJ</option><option>CPF</option></select>
 <input class="input" name="document" placeholder="CNPJ ou CPF" required>
 <select name="city" required>{% for c in active_cities %}<option value="{{c}}">{{c}}</option>{% endfor %}</select>
 <input class="input" name="neighborhood" placeholder="Bairro">
 <input class="input" name="cep" placeholder="CEP"></div>
-<h3>Categoria principal</h3><p class="muted">Escolha uma categoria. Informe sua profissão ou especialidade no campo de serviços.</p><div class="checkgrid">{% for c in categories %}<label class="check"><input type="radio" name="category_ids" value="{{c.id}}" required> {{c.icon}} {{c.name}}</label>{% endfor %}</div>
+<h3>Categoria principal</h3><p class="muted">Escolha uma categoria. Escolha o segmento principal da sua loja.</p><div class="checkgrid">{% for c in categories %}<label class="check"><input type="radio" name="category_ids" value="{{c.id}}" required> {{c.icon}} {{c.name}}</label>{% endfor %}</div>
 <textarea name="description" placeholder="Breve descrição do seu negócio"></textarea>
-<textarea name="services" placeholder="Serviços, produtos, especialidades ou promoções"></textarea>
+<textarea name="services" placeholder="Produtos, especialidades ou promoções"></textarea>
 <label class="check" style="display:block;margin:12px 0"><input type="checkbox" name="accept_terms" value="1" required> Li e aceito os <a href="/termos"><b>Termos de Uso</b></a> e a <a href="/privacidade"><b>Política de Privacidade</b></a>.</label>
 <button class="btn primary" style="width:100%">Confirmar cadastro profissional</button></form></div></div>{% endblock %}
