@@ -1,0 +1,21 @@
+NOWUP V56 — CADASTRO FICTÍCIO SIMPLES
+
+Envie somente os arquivos incluídos, sem apagar nenhuma pasta.
+RAIZ: app.py na raiz do projeto.
+TEMPLATES: admin.html em templates.
+STATIC: image-editor.js e v56-demo-simple.js em static.
+Envie os três conjuntos no mesmo commit e aguarde o deploy do Render.
+
+No ADM: Criar perfil fictício → escolher uma foto → nome → Criar loja fictícia.
+WhatsApp genérico: 00000000000 (apenas demonstração, sem atendimento).
+Uma foto é usada no perfil e na capa. Sem editor de recorte neste cadastro.
+Categoria padrão: primeira categoria ativa da home. Cidade padrão: primeira cidade configurada.
+Mais opções permite mudar categoria, cidade, capa e detalhes.
+Sem e-mail, senha, documento ou endereço obrigatório. O sistema cria a conta de demonstração internamente.
+Arquivos JPG, PNG ou WebP de até 5 MB. Orientação EXIF corrigida ao salvar.
+As fotos continuam usando NOWUP_UPLOAD_DIR: mantenha /app/persist/uploads no Render.
+
+Este pacote inclui somente as mudanças do cadastro, partindo da raiz V52 BRANCO-CATEGORIAS. É compatível com os templates de fotos V54 e o menu V55. Mantenha os arquivos V55 já enviados.
+Verificado: cadastro via HTTP em banco isolado, upload, foto/capa automática, nomes repetidos, restrição ADM, categoria da home e reversão de falhas. Teste visual no celular deve ser feito após publicação.
+
+Também inclui Editar perfil, Salvar alterações e Excluir perfil. Edição fictícia não valida email interno nem exige endereço. Testado ciclo criar, editar foto/nome, salvar e excluir.
