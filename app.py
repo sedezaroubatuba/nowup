@@ -12,7 +12,7 @@ from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from PIL import Image
+from PIL import Image, ImageOps
 from email_validator import validate_email, EmailNotValidError
 from admin_customization import router as admin_customization_router
 from mailing import send_verification, send_email
@@ -1467,7 +1467,7 @@ def save_image(upload: UploadFile):
         im=Image.open(io.BytesIO(data)); im.verify()
         im=Image.open(io.BytesIO(data))
         if im.width*im.height>24_000_000: raise HTTPException(400,"Imagem com resolução muito alta")
-        im=im.convert("RGB")
+        im=ImageOps.exif_transpose(im).convert("RGB")
         im.thumbnail((1600,1600))
     except Exception: raise HTTPException(400,"Arquivo não é uma imagem válida")
     filename=secrets.token_hex(16)+".jpg"; im.save(UPLOAD_DIR/filename,"JPEG",quality=88,optimize=True)
@@ -1707,62 +1707,79 @@ def admin_pro_action(request: Request, pid:int, action:str):
     conn.commit(); conn.close(); return RedirectResponse("/admin#profissionais",303)
 
 @app.post("/admin/perfis/demonstracao")
-def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsapp:str=Form(...), address:str=Form(...), category_id:int=Form(...), city:str=Form("Ubatuba"), neighborhood:str=Form(""), description:str=Form(""), services:str=Form(""), avatar:Optional[UploadFile]=File(None), cover:Optional[UploadFile]=File(None), photo:Optional[UploadFile]=File(None)):
+def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsapp:str=Form("00000000000"), address:str=Form(""), category_id:int=Form(0), city:str=Form(""), neighborhood:str=Form(""), description:str=Form(""), services:str=Form(""), avatar:Optional[UploadFile]=File(None), cover:Optional[UploadFile]=File(None), photo:Optional[UploadFile]=File(None)):
     require_user(request,"admin")
-    name=display_name.strip()[:120]; phone=whatsapp.strip()[:30]; address=address.strip()[:240]
-    if not name or not normalize_phone(phone) or not address:
-        return RedirectResponse("/admin?erro=perfil-demo#cadastro-rapido",303)
+    name=display_name.strip()[:120]; phone=whatsapp.strip()[:30] or "00000000000"
+    if not name or not normalize_phone(phone):
+        return RedirectResponse("/admin?erro=perfil-demo-dados#cadastro-rapido",303)
     avatar_upload=avatar if avatar and avatar.filename else photo
     cover_upload=cover if cover and cover.filename else None
     if not avatar_upload or not avatar_upload.filename:
-        return RedirectResponse("/admin?erro=perfil-demo#cadastro-rapido",303)
-    avatar_filename=save_image(avatar_upload)
-    cover_filename=save_image(cover_upload) if cover_upload else avatar_filename
-    conn=db()
+        return RedirectResponse("/admin?erro=perfil-demo-foto#cadastro-rapido",303)
+    conn=db(); saved=[]
     try:
+        available=conn.execute("SELECT id,slug FROM categories WHERE active=1 AND slug IN ("+",".join("?" for _ in PUBLIC_CATEGORY_SLUGS)+") ORDER BY sort_order,name",PUBLIC_CATEGORY_SLUGS).fetchall()
+        category=next((c for c in available if c["id"]==category_id),None) if category_id else next(iter(available),None)
+        if not category: raise ValueError("categoria inválida")
+        avatar_filename=save_image(avatar_upload); saved.append(avatar_filename)
+        cover_filename=save_image(cover_upload) if cover_upload else avatar_filename
+        if cover_filename!=avatar_filename: saved.append(cover_filename)
         slug=unique_slug(conn,name)
         demo_email=f"demo-{secrets.token_hex(8)}@nowup.local"
-        cur=conn.execute("INSERT INTO users(role,name,email,phone,password_hash,is_active,email_verified,created_at) VALUES('professional',?,?,?,?,1,1,?)",
-                         (name,demo_email,phone,hash_password(secrets.token_urlsafe(32)),now_iso()))
+        cur=conn.execute("INSERT INTO users(role,name,email,phone,password_hash,is_active,email_verified,created_at) VALUES('professional',?,?,?,?,1,1,?)",(name,demo_email,phone,hash_password(secrets.token_urlsafe(32)),now_iso()))
         uid=cur.lastrowid
-        category=conn.execute("SELECT id,slug FROM categories WHERE id=? AND active=1",(category_id,)).fetchone()
-        if not category: raise ValueError("categoria inválida")
-        business_type="restaurant" if "restaurante" in category["slug"] else ("convenience" if "conveniencia" in category["slug"] else ("professional" if "prestador" in category["slug"] else "other"))
+        business_type="restaurant" if "restaurante" in category["slug"] else ("convenience" if "conveniencia" in category["slug"] else "other")
+        demo_city=city.strip()[:100] or active_cities(get_settings(conn))[0]
         cur=conn.execute("""INSERT INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,address,description,services,business_type,verified,featured,blocked,avatar_filename,cover_filename,is_demo,created_at)
-                            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                         (uid,slug,name,"CNPJ","",phone,city.strip()[:100] or "Ubatuba",neighborhood.strip()[:120],"",address,description.strip()[:1200],services.strip()[:1200],business_type,0,0,0,avatar_filename,cover_filename,1,now_iso()))
+                            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",(uid,slug,name,"CNPJ","",phone,demo_city,neighborhood.strip()[:120],"",address.strip()[:240],description.strip()[:1200],services.strip()[:1200],business_type,0,0,0,avatar_filename,cover_filename,1,now_iso()))
         pid=cur.lastrowid
-        conn.execute("INSERT INTO professional_categories(professional_id,category_id) VALUES(?,?)",(pid,category_id))
+        conn.execute("INSERT INTO professional_categories(professional_id,category_id) VALUES(?,?)",(pid,category["id"]))
         conn.execute("INSERT INTO photos(professional_id,filename,caption,is_cover,created_at) VALUES(?,?,?,?,?)",(pid,cover_filename,"Capa do perfil",1,now_iso()))
         conn.commit()
-    except Exception:
+    except Exception as exc:
         conn.rollback()
-        try:
-            (UPLOAD_DIR/avatar_filename).unlink(missing_ok=True)
-            if cover_filename != avatar_filename: (UPLOAD_DIR/cover_filename).unlink(missing_ok=True)
-        except OSError: pass
+        for filename in saved:
+            try: (UPLOAD_DIR/filename).unlink(missing_ok=True)
+            except OSError: pass
+        error="perfil-demo"
+        if isinstance(exc,HTTPException): error="perfil-demo-foto"
+        return RedirectResponse(f"/admin?erro={error}#cadastro-rapido",303)
+    finally:
         conn.close()
-        return RedirectResponse("/admin?erro=perfil-demo#cadastro-rapido",303)
-    conn.close()
-    return RedirectResponse("/admin?ok=perfil-demo#profissionais",303)
+    return RedirectResponse("/admin?ok=perfil-demo#cadastro-rapido",303)
 
 @app.post("/admin/profissionais/{pid}/editar")
-def admin_edit_professional(request: Request, pid:int, display_name:str=Form(...), city:str=Form(""), email:str=Form(...), whatsapp:str=Form(""), address:str=Form(""), neighborhood:str=Form(""), description:str=Form(""), services:str=Form(""), category_id:int=Form(0), avatar:Optional[UploadFile]=File(None), cover:Optional[UploadFile]=File(None)):
-    require_user(request,"admin"); normalized=normalize_email(email)
-    if not display_name.strip() or not normalized: return RedirectResponse("/admin#profissionais",303)
-    conn=db(); pro=conn.execute("SELECT user_id,avatar_filename,cover_filename,is_demo FROM professionals WHERE id=?",(pid,)).fetchone()
-    if pro:
-        try:
-            avatar_filename=pro["avatar_filename"] or ""; cover_filename=pro["cover_filename"] or ""
-            if pro["is_demo"] and avatar and avatar.filename: avatar_filename=save_image(avatar)
-            if pro["is_demo"] and cover and cover.filename: cover_filename=save_image(cover)
-            conn.execute("UPDATE professionals SET display_name=?,city=?,whatsapp=?,address=?,neighborhood=?,description=?,services=?,avatar_filename=?,cover_filename=? WHERE id=?",(display_name.strip()[:120],city.strip()[:100],whatsapp.strip()[:30],address.strip()[:240],neighborhood.strip()[:120],description.strip()[:1200],services.strip()[:1200],avatar_filename,cover_filename,pid))
-            if pro["is_demo"] and category_id:
-                conn.execute("DELETE FROM professional_categories WHERE professional_id=?",(pid,))
-                conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) SELECT ?,id FROM categories WHERE id=? AND active=1",(pid,category_id))
-            conn.execute("UPDATE users SET email=? WHERE id=?",(normalized,pro["user_id"])); conn.commit()
-        except sqlite3.IntegrityError: conn.rollback()
-    conn.close(); return RedirectResponse("/admin#profissionais",303)
+def admin_edit_professional(request: Request, pid:int, display_name:str=Form(...), city:str=Form(""), email:str=Form(""), whatsapp:str=Form(""), address:str=Form(""), neighborhood:str=Form(""), description:str=Form(""), services:str=Form(""), category_id:int=Form(0), avatar:Optional[UploadFile]=File(None), cover:Optional[UploadFile]=File(None)):
+    require_user(request,"admin"); conn=db(); saved=[]
+    pro=conn.execute("SELECT p.*,u.email FROM professionals p JOIN users u ON u.id=p.user_id WHERE p.id=?",(pid,)).fetchone()
+    try:
+        if not pro or not display_name.strip(): return RedirectResponse("/admin?erro=editar-perfil#profissionais",303)
+        normalized=pro["email"] if pro["is_demo"] else normalize_email(email)
+        phone=(whatsapp.strip() or "00000000000") if pro["is_demo"] else whatsapp.strip()
+        if not normalized or (pro["is_demo"] and not normalize_phone(phone)): return RedirectResponse("/admin?erro=editar-perfil#profissionais",303)
+        if pro["is_demo"] and category_id:
+            category=conn.execute("SELECT id FROM categories WHERE id=? AND active=1",(category_id,)).fetchone()
+            if not category: return RedirectResponse("/admin?erro=editar-perfil#profissionais",303)
+        avatar_filename=pro["avatar_filename"] or ""; cover_filename=pro["cover_filename"] or ""
+        if pro["is_demo"] and avatar and avatar.filename:
+            avatar_filename=save_image(avatar); saved.append(avatar_filename)
+            if not cover_filename or cover_filename==pro["avatar_filename"]: cover_filename=avatar_filename
+        if pro["is_demo"] and cover and cover.filename:
+            cover_filename=save_image(cover); saved.append(cover_filename)
+        conn.execute("UPDATE professionals SET display_name=?,city=?,whatsapp=?,address=?,neighborhood=?,description=?,services=?,avatar_filename=?,cover_filename=? WHERE id=?",(display_name.strip()[:120],city.strip()[:100] or pro["city"],phone[:30],address.strip()[:240],neighborhood.strip()[:120],description.strip()[:1200],services.strip()[:1200],avatar_filename,cover_filename,pid))
+        if pro["is_demo"] and category_id:
+            conn.execute("DELETE FROM professional_categories WHERE professional_id=?",(pid,))
+            conn.execute("INSERT INTO professional_categories(professional_id,category_id) VALUES(?,?)",(pid,category_id))
+        conn.execute("UPDATE users SET email=? WHERE id=?",(normalized,pro["user_id"])); conn.commit()
+    except Exception:
+        conn.rollback()
+        for filename in saved:
+            try: (UPLOAD_DIR/filename).unlink(missing_ok=True)
+            except OSError: pass
+        return RedirectResponse("/admin?erro=editar-perfil#profissionais",303)
+    finally:
+        conn.close()
+    return RedirectResponse("/admin?ok=perfil-editado#profissionais",303)
 
 @app.post("/admin/profissionais/{pid}/excluir")
 def admin_delete_professional(request: Request, pid:int):
