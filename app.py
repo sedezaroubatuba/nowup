@@ -213,9 +213,15 @@ def require_user(request: Request, role: Optional[str]=None):
         raise HTTPException(403, "Acesso não autorizado")
     return u
 
+PUBLIC_CATEGORY_SLUGS = ("restaurantes-e-lanchonetes", "lanches-e-pizzarias", "padarias-e-cafeterias", "doces-e-sorveterias", "mercados-e-mercearias", "conveniencias-e-adegas", "pet-shops-e-veterinarios")
+
+def public_business_scope():
+    slugs = ",".join("'" + slug + "'" for slug in PUBLIC_CATEGORY_SLUGS)
+    return f"EXISTS(SELECT 1 FROM professional_categories scope_pc JOIN categories scope_c ON scope_c.id=scope_pc.category_id WHERE scope_pc.professional_id=p.id AND scope_c.active=1 AND scope_c.slug IN ({slugs}))"
+
 def context(request: Request, **kwargs):
     conn = db()
-    cats = conn.execute("SELECT * FROM categories WHERE active=1 ORDER BY sort_order,name").fetchall()
+    cats = conn.execute("SELECT * FROM categories WHERE active=1 AND slug IN (" + ",".join("?" for _ in PUBLIC_CATEGORY_SLUGS) + ") ORDER BY sort_order,name", PUBLIC_CATEGORY_SLUGS).fetchall()
     banners = conn.execute("SELECT * FROM banners WHERE active=1 AND image_filename!='' ORDER BY sort_order,id LIMIT 3").fetchall()
     business_slides = conn.execute("SELECT id,slug,display_name,slide_image_filename FROM professionals WHERE blocked=0 AND in_slider=1 AND slide_image_filename!='' ORDER BY id DESC LIMIT 10").fetchall()
     settings = get_settings(conn)
@@ -596,6 +602,20 @@ def init_db():
                 conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(row["professional_id"],category_ids[target]))
         conn.execute(f"DELETE FROM categories WHERE slug NOT IN ({placeholders})", desired_slugs)
         conn.execute("INSERT INTO site_settings(key,value) VALUES(?,?)",(catalog_key,"1"))
+    # V52: preserve existing categories and assignments; change only public visibility.
+    if not conn.execute("SELECT 1 FROM site_settings WHERE key='v52_food_catalog' ").fetchone():
+        food_categories = [
+            ("Restaurantes e lanchonetes", "🍽️"), ("Lanches e pizzarias", "🍔"),
+            ("Padarias e cafeterias", "🥖"), ("Doces e sorveterias", "🍨"),
+            ("Mercados e mercearias", "🛒"), ("Conveniências e adegas", "🍻"),
+            ("Pet shops e veterinários", "🐾")]
+        for order, (name, icon) in enumerate(food_categories, 1):
+            conn.execute("INSERT OR IGNORE INTO categories(name,slug,icon,sort_order,active) VALUES(?,?,?,?,1)", (name,slugify(name),icon,order))
+        conn.execute("INSERT INTO site_settings(key,value) VALUES('v52_food_catalog','1')")
+    # The old v2 initializer reactivates categories on every startup.
+    conn.execute("UPDATE categories SET active=0 WHERE slug NOT IN (" + ",".join("?" for _ in PUBLIC_CATEGORY_SLUGS) + ")", PUBLIC_CATEGORY_SLUGS)
+    for order, slug in enumerate(PUBLIC_CATEGORY_SLUGS, 1):
+        conn.execute("UPDATE categories SET sort_order=? WHERE slug=?", (order,slug))
     # V49: remove uma única vez os antigos perfis de demonstração para que o
     # administrador possa recriá-los corretamente pelo novo formulário.
     demo_reset_key = "v49_demo_profiles_reset"
@@ -668,7 +688,7 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
     settings = get_settings(conn)
     cities = active_cities(settings)
     city = city.strip() or cities[0]
-    params=[]; where=["p.blocked=0"]
+    params=[]; where=["p.blocked=0", public_business_scope()]
     if q:
         where.append("(p.display_name LIKE ? OR p.services LIKE ? OR p.description LIKE ? OR EXISTS(SELECT 1 FROM professional_categories pcq JOIN categories cq ON cq.id=pcq.category_id WHERE pcq.professional_id=p.id AND cq.name LIKE ?) OR EXISTS(SELECT 1 FROM products pr WHERE pr.professional_id=p.id AND pr.available=1 AND (pr.name LIKE ? OR pr.description LIKE ? OR pr.category LIKE ?)))")
         like=f"%{q.strip()}%"; params += [like,like,like,like,like,like,like]
@@ -721,7 +741,7 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
 
 @app.get("/profissionais", response_class=HTMLResponse)
 def professionals(request: Request, category: str="", city: str="", neighborhood: str="", cep: str="", q: str="", business_type: str=""):
-    conn=db(); where=["p.blocked=0"]; params=[]; cities=active_cities(get_settings(conn)); city=city.strip() or cities[0]
+    conn=db(); where=["p.blocked=0", public_business_scope()]; params=[]; cities=active_cities(get_settings(conn)); city=city.strip() or cities[0]
     for field,val in [("p.city",city),("p.neighborhood",neighborhood),("p.cep",cep)]:
         if val: where.append(f"{field} LIKE ?"); params.append(f"%{val}%")
     if q:
