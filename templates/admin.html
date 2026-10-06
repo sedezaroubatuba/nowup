@@ -341,36 +341,32 @@
 </details>{% endfor %}</div>
 </section>
 <section class="panel" id="cadastro-rapido">
-<h2>Cadastrar profissional fictício</h2>
-<p class="muted">Crie perfis de demonstração para preencher e testar o NowUp. Não precisa informar e-mail nem confirmar cadastro.</p>
-<form action="/admin/perfis/demonstracao" method="post" enctype="multipart/form-data" class="grid-form">
-<label>Nome do profissional ou empresa
-<input class="input" name="display_name" placeholder="Ex.: João Eletricista" required>
-</label>
-<label>WhatsApp
-<input class="input" name="whatsapp" placeholder="Ex.: (12) 99999-9999" required>
-</label>
-<label>Endereço
-<input class="input" name="address" placeholder="Ex.: Estufa II, Ubatuba - SP" required>
-</label>
-<label>Categoria
-<select class="input" name="category_id" required><option value="">Escolha a categoria</option>{% for cat in admin_categories %}{% if cat.active %}<option value="{{cat.id}}">{{cat.icon}} {{cat.name}}</option>{% endif %}{% endfor %}</select>
-</label>
-<label>Cidade<input class="input" name="city" value="Ubatuba" required></label>
-<label>Bairro<input class="input" name="neighborhood" placeholder="Ex.: Estufa II"></label>
-<label>Breve descrição<textarea class="input" name="description" rows="3" placeholder="Conte o que a empresa oferece"></textarea></label>
-<label>Serviços ou produtos<textarea class="input" name="services" rows="3" placeholder="Ex.: almoço, entrega e retirada"></textarea></label>
-<label>Foto redonda do perfil
-<input class="input" type="file" name="avatar" accept="image/*" required>
-</label>
-<label>Foto de capa horizontal
-<input class="input" type="file" name="cover" accept="image/*" required>
-</label>
-<button class="btn primary" type="submit">Criar perfil fictício</button>
+<h2>Criar loja fictícia</h2>
+<p class="muted">Escolha uma foto, coloque o nome e clique em criar. O WhatsApp genérico já vem preenchido.</p>
+{% if request.query_params.get('ok')=='perfil-demo' %}<div class="alert success">Loja fictícia criada! <a href="/" target="_blank" rel="noopener">Ver tela principal →</a> Você já pode cadastrar outra.</div>{% endif %}
+{% if request.query_params.get('erro','').startswith('perfil-demo') %}<div class="alert danger">{% if request.query_params.get('erro')=='perfil-demo-foto' %}Selecione uma foto JPG, PNG ou WebP válida, de até 5 MB.{% elif request.query_params.get('erro')=='perfil-demo-dados' %}Confira o nome e o WhatsApp (10 ou 11 números).{% else %}Não foi possível criar. Confira se existe uma categoria ativa da tela principal e tente novamente.{% endif %}</div>{% endif %}
+<form action="/admin/perfis/demonstracao" method="post" enctype="multipart/form-data" class="grid-form" id="demo-simple-form">
+<label>Foto da loja<input class="input" type="file" name="avatar" accept="image/jpeg,image/png,image/webp" data-simple-upload required><img data-demo-preview="avatar" alt="Prévia da foto da loja" hidden style="width:100px;height:100px;object-fit:cover;border-radius:16px;margin-top:10px"><small>Uma foto só: ela também será usada como capa.</small></label>
+<label>Nome da loja<input class="input" name="display_name" placeholder="Ex.: Quiosque Brisa do Mar" maxlength="120" required></label>
+<label>WhatsApp genérico<input class="input" name="whatsapp" type="tel" inputmode="tel" value="00000000000"><small>Pode deixar assim para demonstração ou trocar pelo seu número.</small></label>
+<details style="grid-column:1/-1"><summary style="cursor:pointer;padding:12px 0;font-weight:700">Mais opções (opcional)</summary><div class="grid-form">
+<label>Categoria<select class="input" name="category_id"><option value="0">Automática — primeira categoria da home</option>{% for cat in admin_categories %}{% if cat.active and cat.slug in ['restaurantes-e-lanchonetes','lanches-e-pizzarias','padarias-e-cafeterias','doces-e-sorveterias','mercados-e-mercearias','conveniencias-e-adegas','pet-shops-e-veterinarios'] %}<option value="{{cat.id}}">{{cat.icon}} {{cat.name}}</option>{% endif %}{% endfor %}</select></label>
+<label>Cidade<input class="input" name="city" placeholder="Automática — cidade principal do site"></label>
+<label>Endereço<input class="input" name="address" placeholder="Opcional"></label>
+<label>Bairro<input class="input" name="neighborhood" placeholder="Opcional"></label>
+<label>Descrição<textarea class="input" name="description" rows="2" placeholder="Opcional"></textarea></label>
+<label>Serviços ou produtos<textarea class="input" name="services" rows="2" placeholder="Opcional"></textarea></label>
+<label>Outra foto para capa<input class="input" type="file" name="cover" accept="image/jpeg,image/png,image/webp" data-simple-upload><img data-demo-preview="cover" alt="Prévia da capa" hidden style="width:160px;height:90px;object-fit:cover;margin-top:10px"></label>
+</div></details>
+<p id="demo-photo-error" role="alert" hidden style="color:#a52239;grid-column:1/-1"></p>
+<button class="btn primary" type="submit">Criar loja fictícia</button>
 </form>
+<script src="/static/v56-demo-simple.js?v=56" defer></script>
 </section>
 <section class="panel" id="profissionais">
 <h2>Profissionais e empresas</h2>
+{% if request.query_params.get('ok')=='perfil-editado' %}<div class="alert success">Alterações salvas.</div>{% elif request.query_params.get('ok')=='perfil-excluido' %}<div class="alert success">Perfil fictício excluído.</div>{% endif %}
+{% if request.query_params.get('erro')=='editar-perfil' %}<div class="alert danger">Não foi possível salvar. Confira os dados e a foto e tente novamente.</div>{% endif %}
 {% if pros|selectattr('is_demo')|list|length %}<form action="/admin/perfis/demonstracao/excluir-todos" method="post" onsubmit="return confirm('Excluir TODOS os perfis fictícios? Os perfis reais não serão apagados.')"><button class="btn danger" type="submit">Excluir todos os perfis fictícios</button></form>{% endif %}
 <div class="tablewrap">
 <table class="table">
@@ -381,26 +377,26 @@
 <th>Ações</th>
 </tr>{% for p in pros %}<tr>
 <td>
-<form action="/admin/profissionais/{{p.id}}/editar" method="post" enctype="multipart/form-data" class="admin-inline-edit {% if p.is_demo %}demo-profile-edit{% endif %}">
+<details><summary class="btn soft tiny" style="cursor:pointer">Editar perfil</summary><form action="/admin/profissionais/{{p.id}}/editar" method="post" enctype="multipart/form-data" class="admin-inline-edit {% if p.is_demo %}demo-profile-edit{% endif %}">
 <input class="input" name="display_name" value="{{p.display_name}}" required>
 <input class="input" name="city" value="{{p.city}}" placeholder="Cidade">
 {% if p.is_demo %}
 <input type="hidden" name="email" value="{{p.email}}">
 <span class="tiny">Perfil fictício — sem e-mail</span>
 <input class="input" name="whatsapp" value="{{p.whatsapp}}" placeholder="WhatsApp" required>
-<input class="input" name="address" value="{{p.address}}" placeholder="Endereço" required>
+<input class="input" name="address" value="{{p.address}}" placeholder="Endereço (opcional)">
 <input class="input" name="neighborhood" value="{{p.neighborhood}}" placeholder="Bairro">
 <select class="input" name="category_id" required>{% for cat in admin_categories %}{% if cat.active %}<option value="{{cat.id}}" {% if p.category_id == cat.id %}selected{% endif %}>{{cat.icon}} {{cat.name}}</option>{% endif %}{% endfor %}</select>
 <textarea class="input" name="description" rows="2" placeholder="Descrição">{{p.description}}</textarea>
 <textarea class="input" name="services" rows="2" placeholder="Serviços ou produtos">{{p.services}}</textarea>
-<label class="demo-photo-field">Foto do perfil<input class="input" type="file" name="avatar" accept="image/*"></label>
-<label class="demo-photo-field">Foto de capa<input class="input" type="file" name="cover" accept="image/*"></label>
+<label class="demo-photo-field">Foto do perfil<input class="input" type="file" name="avatar" accept="image/jpeg,image/png,image/webp" data-simple-upload></label>
+<label class="demo-photo-field">Foto de capa<input class="input" type="file" name="cover" accept="image/jpeg,image/png,image/webp" data-simple-upload></label>
 {% else %}
 <input class="input" type="email" name="email" value="{{p.email}}" required>
 <input type="hidden" name="whatsapp" value="{{p.whatsapp}}"><input type="hidden" name="address" value="{{p.address}}"><input type="hidden" name="neighborhood" value="{{p.neighborhood}}"><input type="hidden" name="description" value="{{p.description}}"><input type="hidden" name="services" value="{{p.services}}">
 {% endif %}
-<button class="btn primary tiny">Salvar</button>
-</form>
+<button class="btn primary tiny">Salvar alterações</button>
+</form></details>
 <a class="tiny" href="/p/{{p.slug}}">Ver perfil público</a>
 </td>
 <td>{{'Sim' if p.email_verified else 'Pendente'}}</td>
@@ -445,8 +441,8 @@
 <input class="input" name="name" value="{{c.name}}" required>
 <input class="input" type="email" name="email" value="{{c.email}}" required>
 <input class="input" name="phone" value="{{c.phone}}">
-<button class="btn primary tiny">Salvar</button>
-</form>
+<button class="btn primary tiny">Salvar alterações</button>
+</form></details>
 </td>
 <td>{{'Sim' if c.email_verified else 'Pendente'}}</td>
 <td>{{'Ativo' if c.is_active else 'Bloqueado'}}</td>
