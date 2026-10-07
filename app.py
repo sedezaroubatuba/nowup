@@ -1190,6 +1190,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
       GROUP BY lower(oi.product_name) ORDER BY quantity DESC,revenue_cents DESC LIMIT 15""",
       (p["id"],start.isoformat(),end.isoformat())).fetchall()
     store_notifications=conn.execute("SELECT * FROM notifications WHERE user_id=? ORDER BY id DESC LIMIT 30",(u["id"],)).fetchall()
+    latest_notification_id=store_notifications[0]["id"] if store_notifications else 0
     store_client_orders=conn.execute("SELECT id,customer_id,order_code,status,total_cents,created_at FROM orders WHERE professional_id=? ORDER BY id DESC",(p["id"],)).fetchall()
     store_clients=conn.execute("""SELECT customer_id,customer_name,COUNT(*) AS order_count,
       MAX(created_at) AS last_order,
@@ -1199,7 +1200,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     latest_order_id=conn.execute("SELECT COALESCE(MAX(id),0) FROM orders WHERE professional_id=?",(p["id"],)).fetchone()[0]
     conn.close()
     status=shop_status(p); business_hours=parse_business_hours(p["business_hours"])
-    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, products=products, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id,store_clients=store_clients,store_client_orders=store_client_orders,store_notifications=store_notifications))
+    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, products=products, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
 
 @app.get("/painel/pedidos/novos")
 def pro_new_orders(request: Request, after: int=0):
@@ -1209,9 +1210,19 @@ def pro_new_orders(request: Request, after: int=0):
       WHERE professional_id=? AND id>? ORDER BY id ASC LIMIT 10""",(p["id"],max(0,after))).fetchall()
     latest=conn.execute("SELECT COALESCE(MAX(id),0) FROM orders WHERE professional_id=?",(p["id"],)).fetchone()[0]
     pending=conn.execute("SELECT COUNT(*) FROM orders WHERE professional_id=? AND status='new'",(p["id"],)).fetchone()[0]
-    pending_order=conn.execute("SELECT id,customer_name,total_cents,created_at FROM orders WHERE professional_id=? AND status='new' ORDER BY id DESC LIMIT 1",(p["id"],)).fetchone()
+    pending_order=conn.execute("SELECT id,order_code,customer_name,total_cents,created_at,status FROM orders WHERE professional_id=? AND status='new' ORDER BY id DESC LIMIT 1",(p["id"],)).fetchone()
     conn.close()
     return JSONResponse({"latest_id":latest,"pending_count":pending,"pending_order":dict(pending_order) if pending_order else None,"orders":[{"id":r["id"],"customer_name":r["customer_name"] or "Cliente","total_cents":r["total_cents"],"created_at":r["created_at"]} for r in rows]})
+
+@app.get("/painel/notificacoes/recentes")
+def pro_recent_notifications(request: Request, after: int=0):
+    u=require_user(request,"professional")
+    conn=db()
+    rows=conn.execute("""SELECT id,title,message,link,created_at FROM notifications
+      WHERE user_id=? AND id>? ORDER BY id ASC LIMIT 30""",(u["id"],max(0,after))).fetchall()
+    latest=conn.execute("SELECT COALESCE(MAX(id),0) FROM notifications WHERE user_id=?",(u["id"],)).fetchone()[0]
+    conn.close()
+    return JSONResponse({"latest_id":latest,"notifications":[dict(r) for r in rows]})
 
 def price_to_cents(raw: str):
     value=(raw or "0").strip().replace("R$","").replace(" ","")
