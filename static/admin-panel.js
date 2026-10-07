@@ -7,7 +7,7 @@
     const toggle = document.getElementById('nu-admin-toggle');
     const title = document.getElementById('nu-admin-title');
     const sections = Array.from(root.querySelectorAll('main > section.panel[id]'));
-    const links = Array.from(nav.querySelectorAll('a[href^="#"]'));
+    const links = Array.from(root.querySelectorAll('a[href^="#"]'));
     function remember(id) { try { sessionStorage.setItem('nowup-admin-area', id); } catch (_) {} }
     function saved() { try { return sessionStorage.getItem('nowup-admin-area'); } catch (_) { return null; } }
     function resolve(hash) {
