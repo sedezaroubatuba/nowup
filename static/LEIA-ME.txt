@@ -1,0 +1,6 @@
+NOWUP V62 — Painel administrativo organizado
+Instale os dois ZIPs: templates/admin.html na pasta templates e static/admin-panel.js na pasta static.
+Mantenha os demais arquivos da V61. Não é necessário trocar arquivos da raiz.
+Menu administrativo com uma área por vez e acesso a Sair.
+Após publicar no Render, recarregue o painel para receber os arquivos novos.
+Validação local não substitui teste no seu projeto com dados reais.
