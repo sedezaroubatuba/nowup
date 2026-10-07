@@ -5,7 +5,7 @@
 <a href="#dashboard">Visão geral</a>
 <a href="#relatorio-geral">Relatório geral</a>
 <a href="/admin/cms">Gestão completa do portal</a>
-<a href="#perfil">Meu perfil</a>
+<a href="#configuracoes">Configurações</a><a href="#perfil">Meu perfil</a>
 <a href="#aparencia">Aparência</a>
 <a href="#categorias">Categorias</a>
 <a href="#publicidade">Publicidade</a>
@@ -16,33 +16,14 @@
 <a href="#sugestoes">Sugestões</a>
 </aside>
 <main>
-<div class="nu-admin-toolbar"><button type="button" class="btn soft" id="nu-admin-toggle" aria-controls="nu-admin-nav" aria-expanded="false" aria-label="Abrir menu administrativo">☰ Menu</button><strong id="nu-admin-title">Visão geral</strong><a class="btn soft" href="/">Ver site</a><form action="/sair" method="post"><button class="btn danger">Sair</button></form></div>
-<section class="panel" id="dashboard">
-<h1>Painel Administrativo</h1>
-<p><a class="btn primary" href="/admin/cms">⚙️ Configurações, páginas, SEO, blog e contatos</a></p>
-<div class="stats">
-<div class="stat">
-<span class="muted tiny">Perfis</span>
-<b>{{stats.professionals}}</b>
-</div>
-<div class="stat">
-<span class="muted tiny">Clientes</span>
-<b>{{stats.customers}}</b>
-</div>
-<div class="stat">
-<span class="muted tiny">Denúncias</span>
-<b>{{stats.reports}}</b>
-</div>
-<div class="stat">
-<span class="muted tiny">Visualizações</span>
-<b>{{stats.views}}</b>
-</div>
-<div class="stat">
-<span class="muted tiny">Cliques WhatsApp</span>
-<b>{{stats.wa}}</b>
-</div>
-</div>
-</section>
+<div class="nu-admin-toolbar"><button type="button" class="btn soft" id="nu-admin-toggle" aria-controls="nu-admin-nav" aria-expanded="false" aria-label="Abrir menu administrativo">☰ Menu</button><a class="nu-admin-logo" href="#dashboard">NowUp<span> Brasil</span></a><strong id="nu-admin-title">Visão geral</strong><a class="btn soft" href="/">Ver site</a><form action="/sair" method="post"><button class="btn danger">Sair</button></form></div>
+<section class="panel" id="dashboard"><h1>Painel administrativo</h1><p class="muted">Gerencie o NowUp Brasil de forma simples e rápida.</p><div class="nu-shortcuts"><a class="nu-shortcut blue" href="#profissionais"><span class="nu-icon" aria-hidden="true">👥</span><span><b>Perfis</b><small>Gerencie lojas e profissionais</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut green" href="#clientes"><span class="nu-icon" aria-hidden="true">👤</span><span><b>Clientes</b><small>Acompanhe os cadastros</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut purple" href="#categorias"><span class="nu-icon" aria-hidden="true">▣</span><span><b>Categorias</b><small>Organize as categorias</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut yellow" href="#publicidade"><span class="nu-icon" aria-hidden="true">📣</span><span><b>Publicidade</b><small>Gerencie banners e anúncios</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut pink" href="#relatorio-geral"><span class="nu-icon" aria-hidden="true">▥</span><span><b>Relatórios</b><small>Consulte pedidos e desempenho</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut cyan" href="#cadastro-rapido"><span class="nu-icon" aria-hidden="true">＋</span><span><b>Criar perfil fictício</b><small>Cadastre perfis de demonstração</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut purple" href="#aparencia"><span class="nu-icon" aria-hidden="true">◉</span><span><b>Aparência</b><small>Personalize cores e capa</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut pink" href="#denuncias"><span class="nu-icon" aria-hidden="true">⚠</span><span><b>Denúncias</b><small>Consulte denúncias recebidas</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut blue" href="#configuracoes"><span class="nu-icon" aria-hidden="true">⚙</span><span><b>Configurações</b><small>Dados administrativos e portal</small></span><span aria-hidden="true">›</span></a></div><div class="nu-summary">
+<a href="#profissionais"><b>{{stats.professionals}}</b><span>Perfis cadastrados</span><small>Ver todos →</small></a>
+<a href="#clientes"><b>{{stats.customers}}</b><span>Clientes cadastrados</span><small>Ver todos →</small></a>
+<a href="#categorias"><b>{{admin_categories|length}}</b><span>Categorias</span><small>Ver todas →</small></a>
+<a href="#publicidade"><b>{{admin_banners|length}}</b><span>Banners cadastrados</span><small>Ver todos →</small></a>
+</div><div class="nu-overview"><article><h2>Resumo da plataforma</h2><p>Visualizações: <b>{{stats.views}}</b></p><p>Cliques no WhatsApp: <b>{{stats.wa}}</b></p><p>Denúncias: <b>{{stats.reports}}</b></p><a href="#relatorio-geral">Abrir relatório geral →</a></article><article><h2>Perfis cadastrados</h2>{% for p in pros[:4] %}<a class="nu-profile-row" href="/p/{{p.slug}}"><span><b>{{p.display_name}}</b><small>{{p.city}}</small></span><span class="status-pill">{{'Bloqueado' if p.blocked else 'Ativo'}}</span></a>{% else %}<p class="muted">Nenhum perfil cadastrado.</p>{% endfor %}<a href="#profissionais">Gerenciar todos os perfis →</a></article></div></section>
+<section class="panel" id="configuracoes"><h2>Configurações</h2><p class="muted">Acesse os ajustes administrativos e a gestão do portal.</p><div class="nu-shortcuts"><a class="nu-shortcut blue" href="#perfil">Meu perfil administrativo ›</a><a class="nu-shortcut purple" href="/admin/cms">Configurações do portal ›</a><a class="nu-shortcut cyan" href="#sugestoes">Sugestões recebidas ›</a></div></section>
 <section class="panel admin-report" id="relatorio-geral">
 <div class="section-title"><div><h2>📊 Relatório geral</h2><p class="muted">Visão completa de clientes, empresas, pedidos e faturamento.</p></div><span class="status-pill">{{report_start}} até {{report_end}}</span></div>
 <form action="/admin#relatorio-geral" method="get" class="report-filter"><label>Data inicial<input class="input" type="date" name="inicio" value="{{report_start}}"></label><label>Data final<input class="input" type="date" name="fim" value="{{report_end}}"></label><button class="btn primary">Atualizar relatório</button><a class="btn soft" href="/admin#relatorio-geral">Últimos 30 dias</a></form>
@@ -478,5 +459,10 @@
 .nu-admin{display:grid!important;grid-template-columns:240px minmax(0,1fr);gap:20px;position:relative}.nu-admin main{min-width:0}.nu-admin .sidebar{display:flex!important;flex-direction:column;align-self:start;position:sticky;top:85px;max-height:calc(100dvh - 100px);overflow:auto}.nu-admin .sidebar a[aria-current="page"]{background:var(--primary,#075bd8);color:white;border-radius:10px}.nu-admin-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}.nu-admin-toolbar strong{flex:1}.nu-admin-toolbar form{margin:0}.nu-admin .panel[hidden]{display:none!important}.nu-admin .tablewrap{overflow-x:auto}.nu-admin input,.nu-admin textarea,.nu-admin select{max-width:100%}.nu-admin #nu-admin-toggle{display:none}.nu-admin .panel{scroll-margin-top:90px}
 @media(max-width:800px){.nu-admin{grid-template-columns:minmax(0,1fr)!important}.nu-admin #nu-admin-toggle{display:inline-flex}.nu-admin .sidebar{display:none!important;position:relative;top:auto;max-height:65dvh;grid-row:2}.nu-admin.nav-open .sidebar{display:flex!important}.nu-admin main{grid-row:1}.nu-admin.nav-open main{grid-row:3}.nu-admin.nav-open .sidebar{grid-row:1}.nu-admin .stats,.nu-admin .admin-report-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.nu-admin .settings-grid,.nu-admin .grid2{grid-template-columns:minmax(0,1fr)}}
 </style>
-<script src="{{ url_for('static', path='admin-panel.js') }}?v=62" defer></script>
+<script src="{{ url_for('static', path='admin-panel.js') }}?v=64" defer></script>
+
+<style>
+body.social-admin{background:#f5f8fc;color:#102344}.nu-admin{display:block!important;max-width:1240px}.nu-admin main{width:100%}.nu-admin .sidebar{display:none!important}.nu-admin.nav-open .sidebar{display:flex!important;position:relative;top:0;margin-bottom:16px;max-height:65dvh}.nu-admin #nu-admin-toggle{display:inline-flex!important}.nu-admin-toolbar{padding:16px;background:white;border:1px solid #e4ebf4;border-radius:16px}.nu-admin-logo{font-size:24px;font-weight:900;color:#102344;text-decoration:none}.nu-admin-logo span{color:#00a6d6}.nu-admin-toolbar #nu-admin-title{font-size:12px;color:#526782}.nu-admin #dashboard{background:transparent;border:0;padding:4px}.nu-admin h1{font-size:32px;margin:12px 0 6px}.nu-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:24px 0}.nu-shortcut{display:flex;align-items:center;gap:14px;min-height:112px;padding:20px;border-radius:16px;text-decoration:none;color:#102344;border:1px solid transparent;transition:transform .15s}.nu-shortcut:hover{transform:translateY(-2px);border-color:#aac5e5}.nu-shortcut:focus-visible{outline:3px solid #075bd8;outline-offset:3px}.nu-shortcut>span:nth-child(2){flex:1}.nu-shortcut b{display:block;font-size:19px}.nu-shortcut small{display:block;line-height:1.4;color:#4f6380;margin-top:6px}.nu-icon{display:grid;place-items:center;width:58px;height:58px;flex-shrink:0;border-radius:50%;font-size:29px;background:#ffffff80}.blue{background:#e4f2ff}.green{background:#e5faef}.purple{background:#f1e9fd}.yellow{background:#fff6df}.pink{background:#fde7f0}.cyan{background:#e0f6fc}.nu-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}.nu-summary>a,.nu-overview>article{background:white;border:1px solid #e4ebf4;border-radius:16px;padding:20px;color:#102344;text-decoration:none}.nu-summary b{display:block;font-size:28px}.nu-summary span,.nu-summary small{display:block;margin-top:6px}.nu-summary small{color:#075bd8}.nu-overview{display:grid;grid-template-columns:1fr 1fr;gap:18px}.nu-overview h2{font-size:18px}.nu-profile-row{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid #edf1f7;text-decoration:none;color:#102344}.nu-profile-row small{display:block;color:#526782}.nu-admin .panel:not(#dashboard){background:white;border:1px solid #e4ebf4;border-radius:16px}
+@media(max-width:800px){.nu-admin{padding:10px!important}.nu-admin h1{font-size:25px}.nu-admin-toolbar{gap:8px;padding:12px}.nu-admin-logo{font-size:19px;flex:1}.nu-admin-toolbar #nu-admin-title{display:none}.nu-admin-toolbar>.btn{display:none}.nu-admin.nav-open main{grid-row:auto}.nu-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0}.nu-shortcut{min-height:130px;padding:14px;flex-wrap:wrap;gap:8px}.nu-icon{width:40px;height:40px;font-size:22px}.nu-shortcut>span:nth-child(2){flex-basis:100%;order:3}.nu-shortcut>span:last-child{margin-left:auto}.nu-shortcut b{font-size:16px}.nu-shortcut small{font-size:12px}.nu-shortcuts>.nu-shortcut:last-child:nth-child(odd){grid-column:1/-1}.nu-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.nu-summary>a{padding:14px}.nu-overview{grid-template-columns:1fr}}
+</style>
 {% endblock %}
