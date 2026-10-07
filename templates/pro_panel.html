@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% block title %}Painel do profissional | NowUp{% endblock %}{% block body_class %}professional-area{% endblock %}{% block content %}<link rel="stylesheet" href="/static/pro-panel-navigation.css?v=60">
+{% extends 'base.html' %}{% block title %}Painel do profissional | NowUp{% endblock %}{% block body_class %}professional-area{% endblock %}{% block content %}{% set status_labels = status_labels|default({'new':'Pedido recebido','confirmed':'Pedido aceito','preparing':'Em preparo','ready':'Pronto','out_for_delivery':'Saiu para entrega','completed':'Concluído','cancelled':'Cancelado','rejected':'Recusado'}, true) %}<link rel="stylesheet" href="/static/pro-panel-navigation.css?v=60">
 <style>
 body.professional-area .pro-dashboard .order-alert-control{display:flex!important}
 body.professional-area .pro-dashboard .new-order-alert:not([hidden]){display:flex!important}
