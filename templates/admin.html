@@ -324,7 +324,7 @@
 </form>
 <script src="/static/v56-demo-simple.js?v=56" defer></script>
 </section>
-<section class="panel" id="profissionais">
+<section class="panel" id="profissionais">{% if request.query_params.get('aviso')=='email-enviando' %}<p role="status">O e-mail da análise anterior ainda está sendo enviado. Aguarde antes de mudar a decisão.</p>{% endif %}{% if request.query_params.get('ok')=='analise' %}<p role="status">Análise salva.</p>{% endif %}{% if request.query_params.get('aviso')=='email-falhou' %}<p role="alert">A decisão foi salva, mas não foi possível enviar o e-mail. Confira a configuração de e-mail e use “Reenviar e-mail”.</p>{% endif %}{% if request.query_params.get('erro')=='email-pendente' %}<p role="alert">O profissional precisa confirmar o e-mail antes de aprovar a loja.</p>{% elif request.query_params.get('erro')=='aprovar-cadastro' %}<p role="alert">Use “Aprovar e ativar” para liberar esse cadastro.</p>{% endif %}
 <h2>Profissionais e empresas</h2>
 {% if request.query_params.get('ok')=='perfil-editado' %}<div class="alert success">Alterações salvas.</div>{% elif request.query_params.get('ok')=='perfil-excluido' %}<div class="alert success">Perfil fictício excluído.</div>{% endif %}
 {% if request.query_params.get('erro')=='editar-perfil' %}<div class="alert danger">Não foi possível salvar. Confira os dados e a foto e tente novamente.</div>{% endif %}
@@ -361,9 +361,10 @@
 <a class="tiny" href="/p/{{p.slug}}">Ver perfil público</a>
 </td>
 <td>{{'Sim' if p.email_verified else 'Pendente'}}</td>
-<td>Plano: <b>{{'Premium' if p.is_premium else 'Gratuito'}}</b><br>Verificado: {{'Sim' if p.verified else 'Não'}}<br>Destaque: {{'Sim' if p.featured else 'Não'}}<br>No slide: {{'Sim' if p.in_slider else 'Não'}}<br>Bloqueado: {{'Sim' if p.blocked else 'Não'}}</td>
+<td><b>Cadastro: {{ {'pending':'Aguardando análise','approved':'Aprovado','rejected':'Recusado'}.get(p.admission_status,p.admission_status) }}</b>{% if p.admission_reason %}<p>{{p.admission_reason}}</p>{% endif %}{% if admission_mail_states.get(p.id) %}<p>E-mail: {{ {'sent':'Enviado','failed':'Falhou','pending':'Aguardando envio','sending':'Envio em andamento'}.get(admission_mail_states.get(p.id),admission_mail_states.get(p.id)) }}</p>{% endif %}<br>Plano: <b>{{'Premium' if p.is_premium else 'Gratuito'}}</b><br>Verificado: {{'Sim' if p.verified else 'Não'}}<br>Destaque: {{'Sim' if p.featured else 'Não'}}<br>No slide: {{'Sim' if p.in_slider else 'Não'}}<br>Bloqueado: {{'Sim' if p.blocked else 'Não'}}</td>
 <td>
 <div class="row">
+{% if not p.is_demo %}{% if p.admission_status!='approved' %}<form action="/admin/profissionais/{{p.id}}/analise/approved" method="post"><button class="btn primary tiny" type="submit">Aprovar e ativar</button></form>{% endif %}{% if p.admission_status!='rejected' %}<details><summary class="btn danger tiny">Recusar cadastro</summary><form action="/admin/profissionais/{{p.id}}/analise/rejected" method="post"><label>Motivo (opcional)<textarea class="input" name="reason" maxlength="500" placeholder="Explique o motivo ao profissional"></textarea></label><button class="btn danger tiny" type="submit">Confirmar recusa</button></form></details>{% endif %}{% if admission_mail_states.get(p.id) in ['failed','pending'] %}<form action="/admin/profissionais/{{p.id}}/analise/reenviar-email" method="post"><button class="btn soft tiny" type="submit">Reenviar e-mail</button></form>{% endif %}{% endif %}
 <form action="/admin/profissionais/{{p.id}}/acao/verificar" method="post">
 <button class="btn soft tiny">Verificar</button>
 </form>
@@ -376,9 +377,9 @@
 <form action="/admin/profissionais/{{p.id}}/acao/slide" method="post">
 <button class="btn soft tiny">Slide</button>
 </form>
-<form action="/admin/profissionais/{{p.id}}/acao/bloquear" method="post">
+{% if p.admission_status=='approved' %}<form action="/admin/profissionais/{{p.id}}/acao/bloquear" method="post">
 <button class="btn {% if p.blocked %}soft{% else %}danger{% endif %} tiny">{{'Reativar' if p.blocked else 'Pausar/bloquear'}}</button>
-</form>
+</form>{% endif %}
 {% if p.is_demo %}<form action="/admin/profissionais/{{p.id}}/excluir" method="post" onsubmit="return confirm('Excluir definitivamente este perfil fictício?')"><button class="btn danger tiny" type="submit">Excluir perfil</button></form>{% endif %}
 </div>
 </td>

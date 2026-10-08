@@ -17,6 +17,7 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 <a href="#hoje">📅 Pedidos de hoje</a><a href="#resumo">📊 Visão geral</a><a href="#pedidos">🧾 Pedidos</a><a href="#cardapio">🛍 Produtos e cardápio</a><a href="#adicionais">➕ Adicionais</a><a href="#clientes">👥 Clientes</a><a href="#relatorios">📈 Relatórios</a><a href="#perfil">🏪 Perfil da loja</a><a href="#horarios">⚙️ Configurações</a><a href="#publicar">➕ Publicações</a><a href="/p/{{pro.slug}}">↗ Ver perfil público</a>
 <form action="/sair" method="post"><button class="btn danger">Sair</button></form></aside>
 <main>
+{% if pro.admission_status=='pending' %}<div class="alert">Seu cadastro está em análise pelo ADM. Você pode preparar seu painel, mas a loja ainda não aparece aos clientes.</div>{% elif pro.admission_status=='rejected' %}<div class="alert danger">Seu cadastro não foi aprovado.{% if pro.admission_reason %} {{pro.admission_reason}}{% endif %} Entre em contato com o NowUp para esclarecer informações.</div>{% endif %}
 {% if request.query_params.get('ok') %}<div class="alert success">Alterações salvas com sucesso.</div>{% endif %}
 {% if request.query_params.get('erro')=='limite-promocoes' %}<div class="alert">Você já atingiu o limite de 3 produtos em promoção. Retire um destaque antes de adicionar outro.</div>{% endif %}
 {% if request.query_params.get('erro')=='motivo-obrigatorio' %}<div class="alert danger">Informe o motivo do cancelamento ou da recusa.</div>{% endif %}
@@ -290,6 +291,8 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 </article>
 </div>
 <div class="orders-list">{% for order in orders %}<article id="pedido-{{order.id}}" class="order-card {% if order.status in ['new','confirmed','preparing','ready','out_for_delivery'] %}active-order-card{% endif %}" data-order-status="{{order.status}}">
+<section class="v69-receipt" hidden><h1>{{pro.display_name}}</h1><h2>Pedido {{order.order_code or ('#' ~ order.id)}}</h2><p>{{order.created_at[:16]|replace('T',' ')}}</p><p><b>Cliente:</b> {{order.customer_name}}<br><b>Telefone:</b> {{order.customer_phone}}</p><p><b>{{'Entrega' if order.fulfillment_type=='delivery' else 'Retirada no local'}}</b>{% if order.address %}<br>{{order.address}}{% endif %}{% if order.neighborhood %}<br>Bairro: {{order.neighborhood}}{% endif %}{% if order.address_reference %}<br>Referência: {{order.address_reference}}{% endif %}</p><hr>
+{% for item in order_items_by_order.get(order.id,[]) %}<p><b>{{item.quantity}} × {{item.product_name}}</b><br>R$ {{'%.2f'|format(item.unit_price_cents/100)|replace('.',',')}} cada · R$ {{'%.2f'|format(item.quantity*item.unit_price_cents/100)|replace('.',',')}}{% if order_item_options.get(item.id) %}<br>{{order_item_options.get(item.id)|map(attribute='option_name')|join(', ')}}{% endif %}{% if item.notes %}<br>Obs.: {{item.notes}}{% endif %}</p>{% endfor %}<hr><p>Subtotal: R$ {{'%.2f'|format(order.subtotal_cents/100)|replace('.',',')}}<br>Entrega: R$ {{'%.2f'|format(order.delivery_fee_cents/100)|replace('.',',')}}</p><h2>Total: R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</h2><p>Pagamento: {{ {'pix':'Pix','cash':'Dinheiro','credit':'Cartão de crédito','debit':'Cartão de débito','on_delivery':'Combinar no atendimento'}.get(order.payment_method,order.payment_method) }}{% if order.change_for_cents %}<br>Troco para R$ {{'%.2f'|format(order.change_for_cents/100)|replace('.',',')}}{% endif %}</p>{% if order.notes %}<p><b>Observações:</b> {{order.notes}}</p>{% endif %}</section>
 <div class="order-head">
 <div>
 <b>Pedido {{order.order_code or ('#' ~ order.id)}}</b>
@@ -558,5 +561,5 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 </section>{% endif %}
 </main>
 </div>
-<script src="/static/order-chat.js?v=61"></script><script src="/static/pro-panel-menu.js?v=68"></script><script src="/static/order-alerts.js?v=61"></script>
+<script src="/static/order-chat.js?v=61"></script><script src="/static/pro-panel-menu.js?v=69"></script><script src="/static/order-alerts.js?v=61"></script>
 {% endblock %}
