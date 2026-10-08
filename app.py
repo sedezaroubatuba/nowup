@@ -768,7 +768,7 @@ def profile(request: Request, slug: str):
     if current and current["role"]=="customer":
         can_review=bool(conn.execute("SELECT 1 FROM orders WHERE customer_id=? AND professional_id=? AND status='completed' LIMIT 1",(current["id"],p["id"])).fetchone())
     conn.close()
-    pub=dict(p); pub["document_masked"]=mask_doc(pub["document"]); pub["wa_link"]=wa_link(pub["whatsapp"],pub.get("whatsapp_message") or "Olá! Encontrei você pelo NowUp e gostaria de saber mais.")
+    pub=dict(p); pub.update(menu_url="",external_url="",instagram_url="",facebook_url="",website_url=""); pub["document_masked"]=mask_doc(pub["document"]); pub["wa_link"]="/p/"+quote(pub["slug"],safe="")
     status=shop_status(p)
     return templates.TemplateResponse("profile.html", context(request, pro=pub, photos=photos, posts=posts, reviews=reviews, pro_categories=cats, product_count=product_count, shop_status=status, hours_lines=business_hours_lines(p), can_review=can_review))
 
@@ -895,42 +895,23 @@ def order_tracking_whatsapp(token: str):
     conn=db(); order=tracked_order(conn,token)
     if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
     message=order_whatsapp_message(conn,order); conn.execute("UPDATE orders SET whatsapp_opened=1 WHERE id=?",(order["id"],)); conn.commit(); conn.close()
-    return RedirectResponse(wa_link(order["whatsapp"],message),303)
+    return RedirectResponse("/pedido/"+quote(token,safe=""),303)
 
 @app.post("/p/{slug}/whatsapp")
 def whatsapp_click(slug: str):
-    conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved'",(slug,)).fetchone()
-    if not p: conn.close(); raise HTTPException(404)
-    conn.execute("UPDATE professionals SET whatsapp_clicks=whatsapp_clicks+1 WHERE id=?",(p["id"],))
-    conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"whatsapp_click",now_iso())); conn.commit(); conn.close()
-    return RedirectResponse(wa_link(p["whatsapp"],p["whatsapp_message"] or "Olá! Encontrei você pelo NowUp e gostaria de saber mais."), status_code=303)
+    return RedirectResponse("/p/"+quote(slug,safe=""),303)
 
 @app.get("/p/{slug}/cardapio")
 def menu_click(slug: str):
-    conn=db(); p=conn.execute("SELECT id,menu_url,is_premium FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved'",(slug,)).fetchone()
-    if not p or not p["is_premium"] or not clean_link(p["menu_url"]): conn.close(); raise HTTPException(404)
-    conn.execute("UPDATE professionals SET menu_clicks=menu_clicks+1 WHERE id=?",(p["id"],))
-    conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"menu_click",now_iso())); conn.commit(); target=p["menu_url"]; conn.close()
-    return RedirectResponse(target,303)
+    return RedirectResponse("/p/"+quote(slug,safe="") + "/menu",303)
 
 @app.get("/p/{slug}/link")
 def external_click(slug: str):
-    conn=db(); p=conn.execute("SELECT id,external_url FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved'",(slug,)).fetchone()
-    if not p or not clean_link(p["external_url"]): conn.close(); raise HTTPException(404)
-    conn.execute("UPDATE professionals SET external_clicks=external_clicks+1 WHERE id=?",(p["id"],))
-    conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"external_click",now_iso())); conn.commit(); target=p["external_url"]; conn.close()
-    return RedirectResponse(target,303)
+    return RedirectResponse("/p/"+quote(slug,safe=""),303)
 
 @app.get("/p/{slug}/social/{network}")
 def social_click(slug: str, network: str):
-    columns={"instagram":"instagram_url","facebook":"facebook_url","site":"website_url"}
-    column=columns.get(network)
-    if not column: raise HTTPException(404)
-    conn=db(); p=conn.execute(f"SELECT id,{column} target FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved'",(slug,)).fetchone()
-    if not p or not clean_link(p["target"]): conn.close(); raise HTTPException(404)
-    conn.execute("UPDATE professionals SET external_clicks=external_clicks+1 WHERE id=?",(p["id"],))
-    conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"external_click",now_iso())); conn.commit(); target=p["target"]; conn.close()
-    return RedirectResponse(target,303)
+    return RedirectResponse("/p/"+quote(slug,safe=""),303)
 
 @app.get("/cadastro/cliente", response_class=HTMLResponse)
 def signup_customer_page(request: Request): return templates.TemplateResponse("signup_customer.html", context(request))
@@ -1497,10 +1478,8 @@ def toggle_favorite(request: Request, professional_id: int, next: str=Form("/cli
 @app.post("/painel/links")
 def pro_links(request: Request, whatsapp: str=Form(...), external_url: str=Form(""), menu_url: str=Form(""), instagram_url: str=Form(""), facebook_url: str=Form(""), website_url: str=Form("")):
     u=require_user(request,"professional"); conn=db()
-    plan=conn.execute("SELECT is_premium FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
-    if not plan or not plan["is_premium"]: menu_url=""
-    conn.execute("UPDATE professionals SET whatsapp=?,external_url=?,menu_url=?,instagram_url=?,facebook_url=?,website_url=? WHERE user_id=?",(whatsapp.strip(),clean_link(external_url),clean_link(menu_url),clean_link(instagram_url),clean_link(facebook_url),clean_link(website_url),u["id"]))
-    conn.commit(); conn.close(); return RedirectResponse("/painel?ok=links#links",303)
+    conn.execute("UPDATE professionals SET external_url='',menu_url='',instagram_url='',facebook_url='',website_url='' WHERE user_id=?",(u["id"],))
+    conn.commit(); conn.close(); return RedirectResponse("/painel#perfil",303)
 
 @app.post("/painel/identidade")
 def pro_identity(request: Request, avatar: Optional[UploadFile]=File(None), cover: Optional[UploadFile]=File(None)):
