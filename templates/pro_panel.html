@@ -21,9 +21,18 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 {% if request.query_params.get('ok') %}<div class="alert success">Alterações salvas com sucesso.</div>{% endif %}
 {% if request.query_params.get('erro')=='limite-promocoes' %}<div class="alert">Você já atingiu o limite de 3 produtos em promoção. Retire um destaque antes de adicionar outro.</div>{% endif %}
 {% if request.query_params.get('erro')=='motivo-obrigatorio' %}<div class="alert danger">Informe o motivo do cancelamento ou da recusa.</div>{% endif %}
+<section class="panel" data-push75 aria-label="Avisos neste aparelho">
+<h2>Avisos de pedidos neste aparelho</h2>
+<p>Receba avisos mesmo com o painel fechado. A loja aberta ou pausada é controlada separadamente.</p>
+<button type="button" class="btn" data-push-enable>🔔 Ativar avisos neste aparelho</button>
+<button type="button" class="btn soft" data-push-test hidden>Testar aviso</button>
+<button type="button" class="btn ghost" data-push-disable hidden>Desativar neste aparelho</button>
+<p data-push-message role="status">Ative e permita as notificações. Ao sair da conta, os avisos deste aparelho serão desativados.</p>
+<small>No iPhone, use o NowUp adicionado à Tela de Início. O recebimento depende das permissões e da conexão do aparelho.</small>
+</section>
 <div class="order-alert-control" data-order-alerts data-latest-order-id="{{latest_order_id}}" data-latest-notification-id="{{latest_notification_id}}">
-<button class="btn order-alert-enable" type="button" data-enable-order-alerts>🔔 Ativar alertas de pedidos</button>
-<small data-alert-status>Ative para ouvir um toque forte quando chegar um pedido novo.</small>
+<button class="btn order-alert-enable" type="button" data-enable-order-alerts>🔊 Ativar som com painel aberto</button>
+<small data-alert-status>O som funciona enquanto este painel estiver aberto.</small>
 </div>
 <div class="new-order-alert" data-new-order-alert hidden role="alert">
 <div><b>🔔 Novo pedido recebido!</b><span data-new-order-message>Abra a central de pedidos para conferir.</span></div>
@@ -517,4 +526,5 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 <footer class="nowup-panel-bottom"><button type="button" class="nowup-back-top" data-panel-back-top aria-label="Voltar ao topo do painel">↑ Voltar ao topo</button></footer>
 <script src="/static/panel-back-top.js?v=70" defer></script>
 
+<link rel="manifest" href="/static/nowup-lojista.webmanifest"><script src="/static/pro-push75.js?v=75" defer></script>
 {% endblock %}
