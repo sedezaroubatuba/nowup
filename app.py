@@ -244,12 +244,11 @@ def require_user(request: Request, role: Optional[str]=None):
 PUBLIC_CATEGORY_SLUGS = ("restaurantes-e-lanchonetes", "lanches-e-pizzarias", "padarias-e-cafeterias", "doces-e-sorveterias", "mercados-e-mercearias", "conveniencias-e-adegas", "pet-shops-e-veterinarios")
 
 def public_business_scope():
-    slugs = ",".join("'" + slug + "'" for slug in PUBLIC_CATEGORY_SLUGS)
-    return f"EXISTS(SELECT 1 FROM professional_categories scope_pc JOIN categories scope_c ON scope_c.id=scope_pc.category_id WHERE scope_pc.professional_id=p.id AND scope_c.active=1 AND scope_c.slug IN ({slugs}))"
+    return "EXISTS(SELECT 1 FROM professional_categories scope_pc JOIN categories scope_c ON scope_c.id=scope_pc.category_id WHERE scope_pc.professional_id=p.id AND scope_c.active=1)"
 
 def context(request: Request, **kwargs):
     conn = db()
-    cats = conn.execute("SELECT * FROM categories WHERE active=1 AND slug IN (" + ",".join("?" for _ in PUBLIC_CATEGORY_SLUGS) + ") ORDER BY sort_order,name", PUBLIC_CATEGORY_SLUGS).fetchall()
+    cats = conn.execute("SELECT * FROM categories WHERE active=1 ORDER BY sort_order,name").fetchall()
     banners = conn.execute("SELECT * FROM banners WHERE active=1 AND image_filename!='' ORDER BY sort_order,id LIMIT 3").fetchall()
     business_slides = conn.execute("SELECT id,slug,display_name,slide_image_filename FROM professionals WHERE blocked=0 AND in_slider=1 AND slide_image_filename!='' ORDER BY id DESC LIMIT 10").fetchall()
     settings = get_settings(conn)
@@ -588,78 +587,21 @@ def init_db():
     }
     for key, value in defaults.items():
         conn.execute("INSERT OR IGNORE INTO site_settings(key,value) VALUES(?,?)", (key,value))
-    # Categorias amplas; profissões específicas são encontradas pelos serviços/palavras-chave.
-    default_categories = [
-      ("Restaurantes e lanchonetes","🍽️"), ("Prestadores de serviços","🛠️"),
-      ("Lojas de vestuário","👕"), ("Pet shops e veterinários","🐾"),
-      ("Conveniências e adegas","🛒"), ("Mercados e mercearias","🧺"),
-      ("Padarias e cafeterias","☕"), ("Beleza e estética","💇"),
-      ("Saúde e bem-estar","🩺"), ("Farmácias","💊"),
-      ("Casa, móveis e decoração","🛋️"), ("Materiais de construção","🧱"),
-      ("Automóveis e motos","🚗"), ("Tecnologia e eletrônicos","📱"),
-      ("Turismo e hospedagem","🏨"), ("Imobiliárias","🏠"),
-      ("Educação e cursos","🎓"), ("Esportes e lazer","⚽"),
-      ("Calçados e acessórios","👟"), ("Comércio em geral","🏪")
-    ]
-    catalog_key = "category_catalog_v2"
-    catalog_ready = conn.execute("SELECT value FROM site_settings WHERE key=?", (catalog_key,)).fetchone()
-    for i,(name,icon) in enumerate(default_categories,1):
-        slug=slugify(name)
-        conn.execute("INSERT OR IGNORE INTO categories(name,slug,icon,sort_order,active) VALUES(?,?,?,?,1)",(name,slug,icon,i))
-        conn.execute("UPDATE categories SET name=?,icon=?,sort_order=?,active=1 WHERE slug=?",(name,icon,i,slug))
-    if not catalog_ready:
-        desired_slugs=[slugify(name) for name,_ in default_categories]
-        placeholders=",".join("?" for _ in desired_slugs)
-        category_ids={r["slug"]:r["id"] for r in conn.execute(
-            f"SELECT id,slug FROM categories WHERE slug IN ({placeholders})", desired_slugs
-        ).fetchall()}
-        old_assignments=conn.execute("""
-          SELECT DISTINCT pc.professional_id,c.name,c.slug,p.business_type
-          FROM professional_categories pc
-          JOIN categories c ON c.id=pc.category_id
-          JOIN professionals p ON p.id=pc.professional_id
-        """).fetchall()
-        conn.execute(f"DELETE FROM professional_categories WHERE category_id NOT IN (SELECT id FROM categories WHERE slug IN ({placeholders}))", desired_slugs)
-        for row in old_assignments:
-            old=(row["name"] or "").lower()
-            if row["slug"] in category_ids:
-                target=row["slug"]
-            elif "pet" in old or "veterin" in old:
-                target="pet-shops-e-veterinarios"
-            elif row["business_type"] == "restaurant":
-                target="restaurantes-e-lanchonetes"
-            elif row["business_type"] == "convenience":
-                target="conveniencias-e-adegas"
-            elif row["business_type"] == "professional":
-                target="prestadores-de-servicos"
-            else:
-                target="comercio-em-geral"
-            if category_ids.get(target):
-                conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(row["professional_id"],category_ids[target]))
-        conn.execute(f"DELETE FROM categories WHERE slug NOT IN ({placeholders})", desired_slugs)
-        conn.execute("INSERT INTO site_settings(key,value) VALUES(?,?)",(catalog_key,"1"))
-    # V52: preserve existing categories and assignments; change only public visibility.
-    if not conn.execute("SELECT 1 FROM site_settings WHERE key='v52_food_catalog' ").fetchone():
-        food_categories = [
+    # V66: o ADM é a fonte das categorias. Não redefinir nomes, ícones,
+    # ordem, status ou vínculos já cadastrados ao reiniciar o aplicativo.
+    if not conn.execute("SELECT 1 FROM categories LIMIT 1").fetchone():
+        initial_categories = [
             ("Restaurantes e lanchonetes", "🍽️"), ("Lanches e pizzarias", "🍔"),
             ("Padarias e cafeterias", "🥖"), ("Doces e sorveterias", "🍨"),
             ("Mercados e mercearias", "🛒"), ("Conveniências e adegas", "🍻"),
-            ("Pet shops e veterinários", "🐾")]
-        for order, (name, icon) in enumerate(food_categories, 1):
-            conn.execute("INSERT OR IGNORE INTO categories(name,slug,icon,sort_order,active) VALUES(?,?,?,?,1)", (name,slugify(name),icon,order))
-        conn.execute("INSERT INTO site_settings(key,value) VALUES('v52_food_catalog','1')")
-    # The old v2 initializer reactivates categories on every startup.
-    conn.execute("UPDATE categories SET active=0 WHERE slug NOT IN (" + ",".join("?" for _ in PUBLIC_CATEGORY_SLUGS) + ")", PUBLIC_CATEGORY_SLUGS)
-    for order, slug in enumerate(PUBLIC_CATEGORY_SLUGS, 1):
-        conn.execute("UPDATE categories SET sort_order=? WHERE slug=?", (order,slug))
-    # V49: remove uma única vez os antigos perfis de demonstração para que o
-    # administrador possa recriá-los corretamente pelo novo formulário.
-    demo_reset_key = "v49_demo_profiles_reset"
-    if not conn.execute("SELECT 1 FROM site_settings WHERE key=?", (demo_reset_key,)).fetchone():
-        demo_users=[r[0] for r in conn.execute("SELECT user_id FROM professionals WHERE is_demo=1").fetchall()]
-        for user_id in demo_users:
-            conn.execute("DELETE FROM users WHERE id=?", (user_id,))
-        conn.execute("INSERT INTO site_settings(key,value) VALUES(?,?)", (demo_reset_key, now_iso()))
+            ("Pet shops e veterinários", "🐾"), ("Farmácias", "💊")]
+        for order, (name, icon) in enumerate(initial_categories, 1):
+            conn.execute("INSERT INTO categories(name,slug,icon,sort_order,active) VALUES(?,?,?,?,1)",
+                         (name, slugify(name), icon, order))
+    conn.execute("INSERT OR IGNORE INTO site_settings(key,value) VALUES('category_catalog_v2','1')")
+    conn.execute("INSERT OR IGNORE INTO site_settings(key,value) VALUES('v52_food_catalog','1')")
+    # Preservar perfis fictícios existentes, inclusive bancos sem a antiga marca.
+    conn.execute("INSERT OR IGNORE INTO site_settings(key,value) VALUES('v49_demo_profiles_reset',?)", (now_iso(),))
     # V50: preenche a vitrine inicial com perfis demonstrativos editáveis no ADM.
     demo_showcase_key="v50_showcase_profiles"
     if not conn.execute("SELECT 1 FROM site_settings WHERE key=?",(demo_showcase_key,)).fetchone():
@@ -1689,11 +1631,23 @@ def admin_ticker_and_slides(request: Request, ticker_color:str=Form("#e30613"), 
     return RedirectResponse("/admin?ok=faixa#faixa-slides",303)
 
 @app.post("/admin/categorias")
-def admin_add_category(request: Request, name:str=Form(...), icon:str=Form("🛠️")):
-    require_user(request,"admin"); conn=db()
-    try: conn.execute("INSERT INTO categories(name,slug,icon,sort_order) VALUES(?,?,?,999)",(name.strip(),slugify(name),icon[:8])); conn.commit()
-    except sqlite3.IntegrityError: pass
-    conn.close(); return RedirectResponse("/admin#categorias",303)
+def admin_add_category(request: Request, name:str=Form(...), icon:str=Form("🍔")):
+    require_user(request,"admin")
+    clean=name.strip()
+    if not clean or len(clean)>120 or not slugify(clean):
+        return RedirectResponse("/admin?erro=categoria-nome#categorias",303)
+    conn=db()
+    try:
+        order=conn.execute("SELECT COALESCE(MAX(sort_order),0)+1 FROM categories").fetchone()[0]
+        conn.execute("INSERT INTO categories(name,slug,icon,sort_order,active) VALUES(?,?,?,?,1)",
+                     (clean,slugify(clean),(icon.strip() or "🏪")[:12],order))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        conn.rollback()
+        return RedirectResponse("/admin?erro=categoria-existente#categorias",303)
+    finally:
+        conn.close()
+    return RedirectResponse("/admin?ok=categoria#categorias",303)
 
 @app.post("/admin/categorias/{cid}/alternar")
 def admin_toggle_category(request: Request, cid:int):
@@ -1778,7 +1732,7 @@ def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsap
         return RedirectResponse("/admin?erro=perfil-demo-foto#cadastro-rapido",303)
     conn=db(); saved=[]
     try:
-        available=conn.execute("SELECT id,slug FROM categories WHERE active=1 AND slug IN ("+",".join("?" for _ in PUBLIC_CATEGORY_SLUGS)+") ORDER BY sort_order,name",PUBLIC_CATEGORY_SLUGS).fetchall()
+        available=conn.execute("SELECT id,slug FROM categories WHERE active=1 ORDER BY sort_order,name").fetchall()
         category=next((c for c in available if c["id"]==category_id),None) if category_id else next(iter(available),None)
         if not category: raise ValueError("categoria inválida")
         avatar_filename=save_image(avatar_upload); saved.append(avatar_filename)
