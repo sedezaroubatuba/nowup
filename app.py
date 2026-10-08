@@ -55,6 +55,34 @@ async def security_headers_and_csrf(request: Request, call_next):
     return response
 
 
+
+# Renova o acesso de clientes e profissionais ao retornarem ao site.
+# Reutiliza o token existente e não recria sessões encerradas ou revogadas.
+@app.middleware("http")
+async def renew_saved_login(request: Request, call_next):
+    response = await call_next(request)
+    token = request.cookies.get("nowup_session")
+    if (request.method != "GET" or not token or response.status_code != 200
+            or "text/html" not in response.headers.get("content-type", "")
+            or any(item.startswith("nowup_session=") for item in response.headers.getlist("set-cookie"))):
+        return response
+    conn = db()
+    try:
+        expires = (datetime.now(timezone.utc) + timedelta(days=SESSION_DAYS)).isoformat()
+        updated = conn.execute("""UPDATE sessions SET expires_at=?
+            WHERE token=? AND expires_at>? AND user_id IN
+            (SELECT id FROM users WHERE is_active=1 AND role IN ('customer','professional'))""",
+            (expires, token, now_iso())).rowcount
+        conn.commit()
+    finally:
+        conn.close()
+    if updated:
+        response.set_cookie("nowup_session", token, max_age=SESSION_DAYS*86400,
+            httponly=True, samesite="lax", path="/",
+            secure=request.url.scheme == "https" or os.getenv("NOWUP_HTTPS", "0") == "1")
+    return response
+
+
 def now_iso():
     return datetime.now(timezone.utc).isoformat()
 
