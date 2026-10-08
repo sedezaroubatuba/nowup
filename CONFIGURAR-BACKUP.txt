@@ -1,0 +1,99 @@
+NOWUP V71 — BACKUP COMPLETO E R2 PRIVADO
+Base: V70. Instale os três pacotes juntos. Faça uma cópia do código atual antes.
+
+1. ARQUIVOS
+RAIZ: app.py, nowup_backup.py, restore_backup.py, GERAR-CHAVE.py e requirements.txt.
+TEMPLATES: templates/admin.html.
+STATIC: static/admin-backups.js.
+Preserve todos os outros arquivos do projeto. Faça commit e deploy.
+Não apague seu banco, a pasta uploads nem as variáveis de acesso já configuradas.
+
+2. CRIAR O DESTINO EXTERNO NA SUA CONTA CLOUDFLARE
+Acesse https://dash.cloudflare.com/ e abra R2 Object Storage.
+Conclua a ativação e confira os termos/cobrança exibidos pela Cloudflare.
+Crie o bucket nowup-backups na classe Standard.
+Mantenha privado: não habilite r2.dev e não vincule domínio público.
+Gere credenciais S3 com Object Read & Write restritas ao bucket nowup-backups.
+Guarde Access Key ID, Secret Access Key e endpoint S3 HTTPS.
+Não coloque chaves no GitHub, em prints nem no chat.
+nowup-produtos não é necessário para o backup; migração de fotos é outra etapa.
+
+3. RENDER — SERVIÇO NOWUP — ENVIRONMENT
+Adicione:
+NOWUP_BACKUP_ENABLED = 0 (durante a configuração e teste)
+NOWUP_BACKUP_S3_BUCKET = nowup-backups
+NOWUP_BACKUP_S3_ENDPOINT = endpoint HTTPS fornecido pela Cloudflare, sem nome do bucket
+NOWUP_BACKUP_S3_REGION = auto
+NOWUP_BACKUP_S3_ACCESS_KEY = sua Access Key ID
+NOWUP_BACKUP_S3_SECRET_KEY = sua Secret Access Key
+NOWUP_BACKUP_S3_PREFIX = nowup-backups
+NOWUP_BACKUP_ENCRYPTION_KEY = chave gerada pelo arquivo GERAR-CHAVE.py
+NOWUP_BACKUP_NOTIFY_EMAIL = seu e-mail de administrador
+
+Gere a chave uma única vez: no Shell do Render execute python GERAR-CHAVE.py.
+Copie o resultado diretamente para NOWUP_BACKUP_ENCRYPTION_KEY.
+Guarde essa chave também fora do Render em um gerenciador de senhas.
+Sem ela os backups externos criptografados não poderão ser recuperados.
+Não gere outra chave nos próximos deploys. Não incluímos chave pronta no ZIP.
+
+4. CONFERIR PERSISTÊNCIA
+O módulo usa os mesmos NOWUP_DB e NOWUP_UPLOAD_DIR do app.
+No projeto anterior eram /app/persist/nowup.db e /app/persist/uploads.
+Confira no Render; não troque caminhos de um banco existente sem migrar os dados.
+O diretório de status usa a pasta do banco/backup-control por padrão e deve ser persistente.
+NOWUP_BACKUP_STATE_DIR é opcional. Não coloque dentro de static ou uploads.
+
+5. TESTE E ATIVAÇÃO
+Abra ADM → Backups.
+Baixe um backup manual e guarde em local privado.
+Clique Enviar backup externo agora e aguarde status com data de envio confirmado.
+Veja no R2 pastas nowup-backups/daily e nowup-backups/weekly e arquivos .zip.enc.
+Se falhar, confira caminhos/credenciais e eventuais fotos já ausentes.
+Só depois da primeira cópia externa confirmada altere NOWUP_BACKUP_ENABLED para 1.
+Salve e faça o deploy. O trabalho verifica a necessidade ao iniciar e de hora em hora.
+O envio diário ocorre após 03h em Brasília, no primeiro ciclo disponível.
+Se o serviço estiver desligado, não há execução; tenta novamente quando voltar.
+Em caso de falha, tenta no próximo ciclo enquanto o serviço estiver funcionando.
+O ADM mostra falhas. E-mail depende do envio Brevo já configurado e funcional.
+
+6. O QUE ESTÁ INCLUÍDO
+Cópia consistente SQLite, verificação de integridade e fotos em uploads.
+Manifesto com hashes SHA-256 para conferência e recuperação.
+Backup externo criptografado AES-256-GCM e enviado por HTTPS.
+Download manual ZIP NÃO criptografado, apenas após login ADM e POST de mesma origem.
+Guardar 7 cópias diárias e 4 semanais; exclusão antiga só após envio confirmado.
+Cópias diárias do mesmo dia são substituídas; semanais capturam o primeiro envio da semana.
+A confirmação remota verifica tamanho e metadado; a recuperação real ainda deve ser testada.
+O código não vai no backup de dados: preserve GitHub e os ZIPs de código separadamente.
+Banco e fotos são capturados em sequência, não em transação única. Se faltarem fotos referenciadas,
+a geração falha em vez de afirmar que existe backup completo. Uma foto já perdida não reaparece.
+
+7. RECUPERAÇÃO DE TESTE — SEM APAGAR O SITE
+Baixe um .zip.enc do bucket R2 para um computador com Python e os requirements instalados.
+Copie restore_backup.py e nowup_backup.py para a mesma pasta.
+Execute: python restore_backup.py SEU-BACKUP.zip.enc --output RECUPERACAO-TESTE
+A pasta RECUPERACAO-TESTE não pode existir. Informe a chave em entrada oculta.
+O utilitário verifica a criptografia, os hashes e o banco e recupera em pasta separada.
+Também aceita o ZIP manual, sem pedir chave.
+Para teste funcional, rode uma cópia do código com NOWUP_DB apontando ao banco recuperado
+ e NOWUP_UPLOAD_DIR às fotos recuperadas. Desative backup e e-mails nessa cópia de teste.
+Não execute recuperação diretamente sobre o site ativo. Compare contas, produtos, pedidos e fotos.
+A troca final em produção deve ser planejada com o serviço parado e uma cópia prévia.
+
+8. CUSTO E LIMITES
+R2 tem franquias de armazenamento e operações, não uma garantia de custo zero.
+As 11 versões guardadas contam no espaço. Fotos de 1 GB podem resultar em cerca de 11 GB
+ de versões antes da compressão. Veja uso e faturamento na sua conta.
+Backups geram arquivos temporários completos no servidor: acompanhe espaço livre e tamanho.
+O arquivo não migra as fotos para nowup-produtos nem elimina os custos do Render.
+Nenhum serviço garante que arquivos nunca serão apagados: mantenha a chave e uma cópia manual.
+
+Documentação oficial:
+https://developers.cloudflare.com/r2/get-started/s3/
+https://developers.cloudflare.com/r2/pricing/
+
+VALIDAÇÃO LOCAL
+Testados: cópia/restauração SQLite+fotos, criptografia e detecção de adulteração,
+retenção externa com serviço simulado, falha sem exclusão de cópias anteriores,
+acesso ADM/origem e compilação dos arquivos.
+Não enviado à sua conta Cloudflare e não aplicado ao Render por este pacote.

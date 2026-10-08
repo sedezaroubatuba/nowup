@@ -2067,3 +2067,10 @@ def order_chat_send(request: Request, order_id: int, message: str=Form(...)):
     if recipient:
         conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(recipient,"Nova mensagem no pedido",body[:180],link,now_iso()))
     conn.commit(); conn.close(); return JSONResponse({"ok":True})
+
+# V71: isolated backup routes and automatic off-site worker.
+import nowup_backup
+nowup_backup.configure(require_user, DB_PATH, UPLOAD_DIR)
+app.include_router(nowup_backup.router)
+app.add_event_handler("startup", nowup_backup.start)
+app.add_event_handler("shutdown", nowup_backup.stop)
