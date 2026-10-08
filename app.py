@@ -770,7 +770,7 @@ def native_menu(request: Request, slug: str):
     if not p["is_premium"] or p["offer_mode"] not in ("menu","catalog"):
         conn.close(); return RedirectResponse(f"/p/{slug}?recurso=premium",303)
     products=conn.execute("""SELECT pr.* FROM products pr
-      WHERE pr.professional_id=? AND pr.available=1
+      WHERE pr.professional_id=?
       AND (NOT EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category))
         OR EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) AND pc.active=1))
       ORDER BY pr.category,pr.sort_order,pr.id DESC""",(p["id"],)).fetchall()
@@ -804,6 +804,8 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
         try: pid=int(raw.get("id")); qty=max(1,min(99,int(raw.get("quantity",1)))); item_notes=str(raw.get("notes","")).strip()[:300]
         except (TypeError,ValueError,AttributeError): continue
         product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=? AND available=1",(pid,p["id"])).fetchone()
+        if not product:
+            conn.close(); raise HTTPException(400,"Um produto do carrinho ficou indisponível. Atualize o cardápio antes de enviar o pedido.")
         if product:
             qty=min(qty,max(1,product["max_quantity"] or 99)); chosen=[]; extras=0
             option_ids=raw.get("options",[]) if isinstance(raw,dict) else []
@@ -1071,8 +1073,30 @@ def logout(request: Request):
         conn=db(); conn.execute("DELETE FROM sessions WHERE token=?",(token,)); conn.commit(); conn.close()
     resp=RedirectResponse("/",303); resp.delete_cookie("nowup_session"); return resp
 
+def order_day_bounds(day):
+    """Limites UTC do dia comercial em São Paulo, incluindo a virada da data."""
+    local_start=datetime.combine(day, datetime.min.time(), tzinfo=SAO_PAULO_TZ)
+    local_end=local_start+timedelta(days=1)
+    return local_start.astimezone(timezone.utc).isoformat(), local_end.astimezone(timezone.utc).isoformat()
+
+def orders_for_day(conn, professional_id, day, status="todos"):
+    lower, upper=order_day_bounds(day)
+    params=[professional_id,lower,upper]
+    where="o.professional_id=? AND o.created_at>=? AND o.created_at<?"
+    if status in ORDER_STATUS_LABELS:
+        where+=" AND o.status=?"; params.append(status)
+    rows=conn.execute(f"""SELECT o.*,
+        COALESCE((SELECT SUM(oi.quantity) FROM order_items oi WHERE oi.order_id=o.id),0) item_count
+        FROM orders o WHERE {where} ORDER BY o.id DESC""",params).fetchall()
+    result=[]
+    for raw in rows:
+        row=dict(raw)
+        row["created_at"]=datetime.fromisoformat(row["created_at"]).astimezone(SAO_PAULO_TZ).isoformat()
+        result.append(row)
+    return result
+
 @app.get("/painel", response_class=HTMLResponse)
-def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido_status: str="todos"):
+def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido_status: str="todos", pedido_dia: str="", abrir_pedido: int=0):
     u=require_user(request,"professional"); conn=db()
     p=conn.execute("SELECT * FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
     photos=conn.execute("SELECT * FROM photos WHERE professional_id=? ORDER BY is_cover DESC,id DESC",(p["id"],)).fetchall()
@@ -1093,7 +1117,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
             conn.execute("INSERT OR IGNORE INTO product_categories(professional_id,name,sort_order,active,created_at) VALUES(?,?,?,?,?)",(p["id"],name,index,1,now_iso()))
         conn.commit(); product_categories=conn.execute("SELECT * FROM product_categories WHERE professional_id=? ORDER BY sort_order,id",(p["id"],)).fetchall()
     selected={r[0] for r in conn.execute("SELECT category_id FROM professional_categories WHERE professional_id=?",(p["id"],)).fetchall()}
-    today=datetime.now(timezone.utc).date()
+    today=datetime.now(SAO_PAULO_TZ).date()
     try:
         if inicio and fim:
             start=datetime.strptime(inicio,"%Y-%m-%d").date(); end=datetime.strptime(fim,"%Y-%m-%d").date()
@@ -1126,20 +1150,30 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     settings=get_settings(conn); support_link=wa_link(settings.get("support_whatsapp",""),"Olá! Sou profissional cadastrado na NowUp e preciso de ajuda com meu painel.")
     profile_fields=[p["display_name"],p["whatsapp"],p["description"],p["services"],p["city"],p["neighborhood"],p["avatar_filename"],p["cover_filename"],p["service_area"],p["opening_hours"]]
     profile_completion=round(sum(bool(str(v or "").strip()) for v in profile_fields)*100/len(profile_fields))
-    order_where=["o.professional_id=?", "date(o.created_at) BETWEEN ? AND ?"]
-    order_params=[p["id"],start.isoformat(),end.isoformat()]
-    allowed_order_status={"new","confirmed","preparing","ready","out_for_delivery","completed","cancelled","rejected"}
-    if pedido_status in allowed_order_status:
-        order_where.append("o.status=?"); order_params.append(pedido_status)
-    else:
-        pedido_status="todos"
-    orders=conn.execute(f"""SELECT o.*,
-      COALESCE((SELECT SUM(oi.quantity) FROM order_items oi WHERE oi.order_id=o.id),0) item_count
-      FROM orders o WHERE {' AND '.join(order_where)} ORDER BY o.id DESC LIMIT 100""",order_params).fetchall()
+    try:
+        order_day=datetime.strptime(pedido_dia,"%Y-%m-%d").date() if pedido_dia else today
+    except ValueError:
+        order_day=today
+    if abrir_pedido:
+        focus=conn.execute("SELECT created_at FROM orders WHERE id=? AND professional_id=?", (abrir_pedido,p["id"])).fetchone()
+        if focus:
+            order_day=datetime.fromisoformat(focus["created_at"]).astimezone(SAO_PAULO_TZ).date()
+    if pedido_status not in ORDER_STATUS_LABELS: pedido_status="todos"
+    orders=orders_for_day(conn,p["id"],order_day,pedido_status)
+    today_orders=orders_for_day(conn,p["id"],today)
+    valid_day_totals=[row["total_cents"] for row in orders if row["status"] not in ('cancelled','rejected')]
+    day_order_summary={"total":len(orders),"revenue_cents":sum(valid_day_totals),
+                       "avg_ticket_cents":round(sum(valid_day_totals)/len(valid_day_totals)) if valid_day_totals else 0,
+                       "completed":sum(row["status"]=="completed" for row in orders)}
+
+    if abrir_pedido and not any(row["id"]==abrir_pedido for row in orders):
+        # Um alerta pode abrir um pedido fora do filtro de status escolhido.
+        focus_orders=orders_for_day(conn,p["id"],order_day)
+        orders.extend(row for row in focus_orders if row["id"]==abrir_pedido)
     order_items_by_order={}
     order_item_options={}
-    if orders:
-        order_ids=[order["id"] for order in orders]; placeholders=",".join("?" for _ in order_ids)
+    if orders or today_orders:
+        order_ids=list(dict.fromkeys(order["id"] for order in orders+today_orders)); placeholders=",".join("?" for _ in order_ids)
         for item in conn.execute(f"SELECT * FROM order_items WHERE order_id IN ({placeholders}) ORDER BY id",order_ids).fetchall():
             order_items_by_order.setdefault(item["order_id"],[]).append(item)
         for option in conn.execute(f"""SELECT oio.* FROM order_item_options oio JOIN order_items oi ON oi.id=oio.order_item_id
@@ -1170,17 +1204,18 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     latest_order_id=conn.execute("SELECT COALESCE(MAX(id),0) FROM orders WHERE professional_id=?",(p["id"],)).fetchone()[0]
     conn.close()
     status=shop_status(p); business_hours=parse_business_hours(p["business_hours"])
-    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, products=products, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
+    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, products=products, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, today_orders=today_orders, day_order_summary=day_order_summary, order_day=order_day.isoformat(), today_day=today.isoformat(), order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
 
 @app.get("/painel/pedidos/novos")
 def pro_new_orders(request: Request, after: int=0):
     u=require_user(request,"professional"); conn=db()
     p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+    lower,upper=order_day_bounds(datetime.now(SAO_PAULO_TZ).date())
     rows=conn.execute("""SELECT id,customer_name,total_cents,created_at FROM orders
-      WHERE professional_id=? AND id>? ORDER BY id ASC LIMIT 10""",(p["id"],max(0,after))).fetchall()
+      WHERE professional_id=? AND id>? AND created_at>=? AND created_at<? ORDER BY id ASC LIMIT 10""",(p["id"],max(0,after),lower,upper)).fetchall()
     latest=conn.execute("SELECT COALESCE(MAX(id),0) FROM orders WHERE professional_id=?",(p["id"],)).fetchone()[0]
-    pending=conn.execute("SELECT COUNT(*) FROM orders WHERE professional_id=? AND status='new'",(p["id"],)).fetchone()[0]
-    pending_order=conn.execute("SELECT id,order_code,customer_name,total_cents,created_at,status FROM orders WHERE professional_id=? AND status='new' ORDER BY id DESC LIMIT 1",(p["id"],)).fetchone()
+    pending=conn.execute("SELECT COUNT(*) FROM orders WHERE professional_id=? AND status='new' AND created_at>=? AND created_at<?",(p["id"],lower,upper)).fetchone()[0]
+    pending_order=conn.execute("SELECT id,order_code,customer_name,total_cents,created_at,status FROM orders WHERE professional_id=? AND status='new' AND created_at>=? AND created_at<? ORDER BY id DESC LIMIT 1",(p["id"],lower,upper)).fetchone()
     conn.close()
     return JSONResponse({"latest_id":latest,"pending_count":pending,"pending_order":dict(pending_order) if pending_order else None,"orders":[{"id":r["id"],"customer_name":r["customer_name"] or "Cliente","total_cents":r["total_cents"],"created_at":r["created_at"]} for r in rows]})
 
@@ -1262,6 +1297,35 @@ def pro_menu_settings(request: Request, delivery_fee: str=Form("0"), minimum_ord
       (price_to_cents(delivery_fee),price_to_cents(minimum_order),max(5,min(240,prep_minutes)),pix_key.strip()[:180],1 if allows_delivery else 0,1 if allows_pickup else 0,u["id"]))
     conn.commit(); conn.close(); return RedirectResponse("/painel?ok=config-cardapio#cardapio",303)
 
+@app.post("/painel/cardapio/produtos/{product_id}/disponibilidade")
+def pro_product_availability(request: Request, product_id: int, available: int=Form(...)):
+    u=require_user(request,"professional"); conn=db()
+    try:
+        p=require_premium_catalog(conn,u["id"])
+        changed=conn.execute("UPDATE products SET available=?,updated_at=? WHERE id=? AND professional_id=?",
+                            (1 if available==1 else 0,now_iso(),product_id,p["id"])).rowcount
+        if not changed: raise HTTPException(404,"Produto não encontrado")
+        conn.commit()
+    finally: conn.close()
+    return RedirectResponse("/painel?ok=disponibilidade#cardapio",303)
+
+@app.post("/painel/cardapio/adicionais")
+def pro_option_from_section(request: Request, product_id: int=Form(...), option_name: str=Form(...), option_price: str=Form("0"), option_kind: str=Form("add")):
+    pro_product_option_add(request,product_id,option_name,option_price,option_kind)
+    return RedirectResponse("/painel?ok=adicional#adicionais",303)
+
+@app.post("/painel/cardapio/adicionais/{option_id}/disponibilidade")
+def pro_option_availability(request: Request, option_id: int, available: int=Form(...)):
+    u=require_user(request,"professional"); conn=db()
+    try:
+        p=require_premium_catalog(conn,u["id"])
+        changed=conn.execute("UPDATE product_options SET available=? WHERE id=? AND product_id IN (SELECT id FROM products WHERE professional_id=?)",
+                            (1 if available==1 else 0,option_id,p["id"])).rowcount
+        if not changed: raise HTTPException(404,"Adicional não encontrado")
+        conn.commit()
+    finally: conn.close()
+    return RedirectResponse("/painel?ok=adicional#adicionais",303)
+
 @app.post("/painel/cardapio/produtos/{product_id}/adicionais")
 def pro_product_option_add(request: Request, product_id: int, option_name: str=Form(...), option_price: str=Form("0"), option_kind: str=Form("add")):
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"])
@@ -1280,7 +1344,7 @@ def pro_product_option_add(request: Request, product_id: int, option_name: str=F
 def pro_product_option_delete(request: Request, option_id: int):
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"])
     conn.execute("DELETE FROM product_options WHERE id=? AND product_id IN (SELECT id FROM products WHERE professional_id=?)",(option_id,p["id"])); conn.commit(); conn.close()
-    return RedirectResponse("/painel?ok=adicional-excluido#cardapio",303)
+    return RedirectResponse("/painel?ok=adicional-excluido#adicionais",303)
 
 @app.post("/painel/cardapio/produtos/{product_id}/excluir")
 def pro_product_delete(request: Request, product_id: int):
@@ -1302,7 +1366,7 @@ def pro_order_status(request: Request, order_id: int, status: str=Form(...), rea
     if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
     reason=reason.strip()[:300]
     if status in {"cancelled","rejected"} and not reason:
-        conn.close(); return RedirectResponse(f"/painel?erro=motivo-obrigatorio#pedido-{order_id}",303)
+        conn.close(); return RedirectResponse(f"/painel?erro=motivo-obrigatorio&abrir_pedido={order_id}#pedido-{order_id}",303)
     conn.execute("UPDATE orders SET status=?,cancellation_reason=?,updated_at=? WHERE id=?",(status,reason if status in {"cancelled","rejected"} else "",now_iso(),order_id))
     conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)",(order_id,status,now_iso()))
     if order["customer_id"] and status != order["status"]:
@@ -1310,7 +1374,7 @@ def pro_order_status(request: Request, order_id: int, status: str=Form(...), rea
         if reason: message += f" Motivo: {reason}"
         conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(order["customer_id"],"Atualização do pedido",message,f"/pedido/{order['tracking_token']}",now_iso()))
     conn.commit(); conn.close()
-    return RedirectResponse("/painel?ok=pedido#pedidos",303)
+    return RedirectResponse(f"/painel?ok=pedido&abrir_pedido={order_id}#pedido-{order_id}",303)
 
 @app.post("/painel/pedidos/{order_id}/editar")
 def pro_order_edit(request: Request, order_id: int, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), notes: str=Form("")):
@@ -1320,7 +1384,7 @@ def pro_order_edit(request: Request, order_id: int, customer_name: str=Form(...)
     fulfillment_type="delivery" if fulfillment_type=="delivery" else "pickup"
     if payment_method not in {"pix","cash","credit","debit","on_delivery"}: payment_method="pix"
     conn.execute("UPDATE orders SET customer_name=?,customer_phone=?,fulfillment_type=?,payment_method=?,address=?,notes=?,updated_at=? WHERE id=?",(customer_name.strip()[:120],customer_phone.strip()[:30],fulfillment_type,payment_method,address.strip()[:300],notes.strip()[:500],now_iso(),order_id))
-    conn.commit(); conn.close(); return RedirectResponse("/painel?ok=pedido-editado#pedidos",303)
+    conn.commit(); conn.close(); return RedirectResponse(f"/painel?ok=pedido-editado&abrir_pedido={order_id}#pedido-{order_id}",303)
 
 @app.post("/painel/pedidos/{order_id}/itens/{item_id}")
 def pro_order_item_edit(request: Request, order_id: int, item_id: int, quantity: int=Form(1), notes: str=Form(""), remove: Optional[str]=Form(None)):
@@ -1332,7 +1396,7 @@ def pro_order_item_edit(request: Request, order_id: int, item_id: int, quantity:
     subtotal=conn.execute("SELECT COALESCE(SUM(quantity*unit_price_cents),0) FROM order_items WHERE order_id=?",(order_id,)).fetchone()[0]
     delivery_fee=conn.execute("SELECT delivery_fee_cents FROM orders WHERE id=?",(order_id,)).fetchone()[0]
     conn.execute("UPDATE orders SET subtotal_cents=?,total_cents=?,updated_at=? WHERE id=?",(subtotal,subtotal+delivery_fee,now_iso(),order_id)); conn.commit(); conn.close()
-    return RedirectResponse("/painel?ok=item-editado#pedidos",303)
+    return RedirectResponse(f"/painel?ok=item-editado&abrir_pedido={order_id}#pedido-{order_id}",303)
 
 @app.post("/painel/horarios")
 async def pro_business_hours(request: Request):
