@@ -1,0 +1,6 @@
+V73 — Limpeza do ADM
+Aplicar após a V72. Colocar admin.html na pasta templates do GitHub substituindo o anterior. Não enviar este LEIA-ME para templates.
+Remove a área Aparência: temas/cores, editor da capa principal e faixa de avisos, junto com seus atalhos.
+Mantém Perfis, Financeiro, Backups, Categorias e Publicidade. Não altera dados salvos nem arquivos de imagens.
+Não há arquivos de raiz ou static nesta atualização.
+Após o deploy, atualizar o navegador com Ctrl+Shift+R e conferir o ADM.

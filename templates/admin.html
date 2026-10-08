@@ -9,7 +9,7 @@
 <a href="#relatorio-geral">Relatório geral</a>
 <a href="/admin/cms">Gestão completa do portal</a>
 <a href="#configuracoes">Configurações</a><a href="#perfil">Meu perfil</a>
-<a href="#aparencia">Aparência</a>
+
 <a href="#categorias">Categorias</a>
 <a href="#publicidade">Publicidade</a>
 <a href="#cadastro-rapido">Criar perfil fictício</a>
@@ -22,7 +22,7 @@
 </aside>
 <main>
 <div class="nu-admin-toolbar"><button type="button" class="btn soft" id="nu-admin-toggle" aria-controls="nu-admin-nav" aria-expanded="false" aria-label="Abrir menu administrativo">☰ Menu</button><a class="nu-admin-logo" href="#dashboard">NowUp<span> Brasil</span></a><strong id="nu-admin-title">Visão geral</strong><a class="btn soft" href="/">Ver site</a><form action="/sair" method="post"><button class="btn danger">Sair</button></form></div>
-<section class="panel" id="dashboard"><h1>Painel administrativo</h1><a class="btn soft" href="#backups">🛡 Backups</a><a class="btn primary v66-add-category" href="#nova-categoria">＋ Adicionar categoria</a><p class="muted">Gerencie o NowUp Brasil de forma simples e rápida.</p><div class="nu-shortcuts"><a class="nu-shortcut blue" href="#profissionais"><span class="nu-icon" aria-hidden="true">👥</span><span><b>Perfis</b><small>Gerencie lojas e profissionais</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut green" href="#clientes"><span class="nu-icon" aria-hidden="true">👤</span><span><b>Clientes</b><small>Acompanhe os cadastros</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut purple" href="#categorias"><span class="nu-icon" aria-hidden="true">▣</span><span><b>Categorias</b><small>Adicionar e editar categorias</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut yellow" href="#publicidade"><span class="nu-icon" aria-hidden="true">📣</span><span><b>Publicidade</b><small>Gerencie banners e anúncios</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut pink" href="#relatorio-geral"><span class="nu-icon" aria-hidden="true">▥</span><span><b>Relatórios</b><small>Consulte pedidos e desempenho</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut cyan" href="#cadastro-rapido"><span class="nu-icon" aria-hidden="true">＋</span><span><b>Criar perfil fictício</b><small>Cadastre perfis de demonstração</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut purple" href="#aparencia"><span class="nu-icon" aria-hidden="true">◉</span><span><b>Aparência</b><small>Personalize cores e capa</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut pink" href="#denuncias"><span class="nu-icon" aria-hidden="true">⚠</span><span><b>Denúncias</b><small>Consulte denúncias recebidas</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut blue" href="#configuracoes"><span class="nu-icon" aria-hidden="true">⚙</span><span><b>Configurações</b><small>Dados administrativos e portal</small></span><span aria-hidden="true">›</span></a></div><a class="btn soft" href="#financeiro">Financeiro — mensalidades</a><div class="nu-summary">
+<section class="panel" id="dashboard"><h1>Painel administrativo</h1><a class="btn soft" href="#backups">🛡 Backups</a><a class="btn primary v66-add-category" href="#nova-categoria">＋ Adicionar categoria</a><p class="muted">Gerencie o NowUp Brasil de forma simples e rápida.</p><div class="nu-shortcuts"><a class="nu-shortcut blue" href="#profissionais"><span class="nu-icon" aria-hidden="true">👥</span><span><b>Perfis</b><small>Gerencie lojas e profissionais</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut green" href="#clientes"><span class="nu-icon" aria-hidden="true">👤</span><span><b>Clientes</b><small>Acompanhe os cadastros</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut purple" href="#categorias"><span class="nu-icon" aria-hidden="true">▣</span><span><b>Categorias</b><small>Adicionar e editar categorias</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut yellow" href="#publicidade"><span class="nu-icon" aria-hidden="true">📣</span><span><b>Publicidade</b><small>Gerencie banners e anúncios</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut pink" href="#relatorio-geral"><span class="nu-icon" aria-hidden="true">▥</span><span><b>Relatórios</b><small>Consulte pedidos e desempenho</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut cyan" href="#cadastro-rapido"><span class="nu-icon" aria-hidden="true">＋</span><span><b>Criar perfil fictício</b><small>Cadastre perfis de demonstração</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut pink" href="#denuncias"><span class="nu-icon" aria-hidden="true">⚠</span><span><b>Denúncias</b><small>Consulte denúncias recebidas</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut blue" href="#configuracoes"><span class="nu-icon" aria-hidden="true">⚙</span><span><b>Configurações</b><small>Dados administrativos e portal</small></span><span aria-hidden="true">›</span></a></div><a class="btn soft" href="#financeiro">Financeiro — mensalidades</a><div class="nu-summary">
 <a href="#profissionais"><b>{{stats.professionals}}</b><span>Perfis cadastrados</span><small>Ver todos →</small></a>
 <a href="#clientes"><b>{{stats.customers}}</b><span>Clientes cadastrados</span><small>Ver todos →</small></a>
 <a href="#categorias"><b>{{admin_categories|length}}</b><span>Categorias</span><small>Ver todas →</small></a>
@@ -50,127 +50,6 @@
 <input class="input" value="{{user.email}}" disabled>
 </div>
 <button class="btn primary">Salvar perfil</button>
-</form>
-</section>
-<section class="panel" id="aparencia">
-<div class="section-title">
-<h2>Aparência e dados do site</h2>{% if email_service_ready %}<span class="status-pill ok">✓ E-mail configurado</span>{% else %}<span class="status-pill warn">E-mail pendente</span>{% endif %}</div>
-<form action="/admin/aparencia" method="post">
-<h3>Escolha um dos 20 temas</h3>
-<p class="muted">Toque em uma combinação para visualizar. Depois toque em <b>Salvar aparência</b>. Você pode mudar quantas vezes quiser.</p>
-<div class="theme-picker" data-theme-picker>
-{% set themes = [
-('oceanico','Oceânico','#075BD8','#FF6A00'),('royal','Azul Royal','#243BFF','#8B5CF6'),('turquesa','Turquesa','#007F8B','#20C997'),('esmeralda','Esmeralda','#087F5B','#F59F00'),('floresta','Floresta','#245C3A','#A3E635'),
-('por-do-sol','Pôr do sol','#C2410C','#FBBF24'),('coral','Coral','#E84855','#FF8A5B'),('rubi','Rubi','#B42318','#F04438'),('vinho','Vinho','#7F1D3F','#D946EF'),('uva','Uva','#6D28D9','#EC4899'),
-('lavanda','Lavanda','#7C3AED','#A78BFA'),('noturno','Noturno NowUp','#08131F','#08BCEB'),('grafite','Grafite','#263238','#00B8A9'),('preto-dourado','Preto e dourado','#171717','#D4A017'),('cafe','Café','#6F4E37','#D97706'),
-('areia','Areia dourada','#9A6700','#F2C14E'),('azul-petroleo','Azul petróleo','#164E63','#06B6D4'),('ceu','Azul céu','#0284C7','#22D3EE'),('brasil','Brasil','#08783E','#F7C600'),('neon','Neon','#312E81','#22C55E')
-] %}
-{% for id,nome,cor1,cor2 in themes %}
-<label class="theme-option" style="--theme-a:{{cor1}};--theme-b:{{cor2}}">
-<input type="radio" name="theme_name" value="{{id}}" data-primary="{{cor1}}" data-accent="{{cor2}}" {% if settings.theme_name==id %}checked{% endif %}>
-<span class="theme-swatch"></span><b>{{nome}}</b><small>{{cor1}} · {{cor2}}</small>
-</label>
-{% endfor %}
-<label class="theme-option custom-theme">
-<input type="radio" name="theme_name" value="personalizado" {% if not settings.theme_name or settings.theme_name=='personalizado' %}checked{% endif %}>
-<span class="theme-swatch"></span><b>Personalizado</b><small>Escolha abaixo</small>
-</label>
-</div>
-<div class="settings-grid">
-<div>
-<label>Nome da marca</label>
-<input class="input" name="brand_name" value="{{settings.brand_name}}">
-</div>
-<div>
-<label>Fonte</label>
-<select name="font_family">
-<option>Inter</option>
-<option>Arial</option>
-<option>Georgia</option>
-<option>Trebuchet MS</option>
-<option>Verdana</option>
-</select>
-</div>
-<div>
-<label>Cor principal do NowUp</label>
-<input class="input color-input" id="primary-color" type="color" name="primary_color" value="{{settings.primary_color}}">
-</div>
-<div>
-<label>Segunda cor (botões e detalhes)</label>
-<input class="input color-input" id="accent-color" type="color" name="accent_color" value="{{settings.accent_color}}">
-</div>
-<div style="grid-column:1/-1">
-<label>Título inicial</label>
-<input class="input" name="hero_title" value="{{settings.hero_title}}">
-</div>
-<div style="grid-column:1/-1">
-<label>Texto inicial</label>
-<textarea name="hero_subtitle">{{settings.hero_subtitle}}</textarea>
-</div>
-<div>
-<label>E-mail público</label>
-<input class="input" type="email" name="public_email" value="{{settings.public_email}}">
-</div>
-<div>
-<label>WhatsApp</label>
-<input class="input" name="support_whatsapp" value="{{settings.support_whatsapp}}">
-</div>
-<div style="grid-column:1/-1">
-<label>Cidades disponíveis</label>
-<input class="input" name="active_cities" value="{{settings.active_cities or 'Ubatuba'}}" placeholder="Ubatuba">
-<small class="muted">No início deixe somente Ubatuba. Para liberar outras cidades depois, separe por vírgulas.</small>
-</div>
-</div>
-<button class="btn primary">Salvar aparência</button>
-</form>
-<hr>
-<div id="faixa-slides">
-<h3>Faixa de avisos e velocidade dos slides</h3>
-<p class="muted">Este bloco tem salvamento próprio para garantir que a faixa seja ativada corretamente.</p>
-{% if request.query_params.get('ok')=='faixa' %}<div class="alert success">Faixa e tempo dos slides salvos com sucesso.</div>{% endif %}
-<form action="/admin/faixa-e-slides" method="post" class="banner-control-panel">
-<label>Texto que ficará passando<input class="input" name="ticker_text" maxlength="300" value="{{settings.ticker_text}}" placeholder="Ex.: Cadastre sua empresa grátis no NowUp • Confira os destaques de Ubatuba"></label>
-<div class="settings-grid">
-<div><label>Cor da faixa<input class="input color-input" type="color" name="ticker_color" value="{{settings.ticker_color or '#e30613'}}"></label></div>
-<div><label>Tempo de cada slide<select name="slide_interval_seconds">{% for s in range(1,16) %}<option value="{{s}}" {% if (settings.slide_interval_seconds or 3)|int==s %}selected{% endif %}>{{s}} segundo{% if s>1 %}s{% endif %}</option>{% endfor %}</select></label></div>
-<div><label>Animação da faixa<select name="ticker_animation"><option value="continuous" {% if (settings.ticker_animation or 'continuous')=='continuous' %}selected{% endif %}>Passando continuamente</option><option value="blink" {% if settings.ticker_animation=='blink' %}selected{% endif %}>Piscando suavemente</option><option value="inside-out" {% if settings.ticker_animation=='inside-out' %}selected{% endif %}>Do centro para fora</option><option value="outside-in" {% if settings.ticker_animation=='outside-in' %}selected{% endif %}>Das pontas para o centro</option></select></label></div>
-</div>
-<label class="row"><input type="checkbox" name="ticker_enabled" value="1" {% if settings.ticker_enabled=='1' %}checked{% endif %}> Exibir a faixa no topo do site</label>
-<button class="btn primary">Salvar faixa e tempo dos slides</button>
-</form>
-</div>
-<hr>
-<h3>Trocar capa principal</h3>
-<p class="muted">Crie a montagem no GPT e envie aqui. Recomendação: imagem horizontal 1600 × 700.</p>
-<form action="/admin/capa" method="post" enctype="multipart/form-data" class="banner-control-panel" data-hero-editor>
-<label>Escolher uma nova capa<input class="input" type="file" name="image" accept="image/*" {% if not settings.hero_image_filename %}required{% endif %}>
-</label>
-<div class="preview-toolbar">
-<b>Pré-visualização da capa</b>
-<div class="preview-switch">
-<button type="button" class="active" data-preview-mode="desktop">Computador</button>
-<button type="button" data-preview-mode="mobile">Celular</button>
-</div>
-</div>
-<div class="banner-live-preview hero-live-preview {% if settings.hero_image_filename %}has-image{% endif %}">
-<img {% if settings.hero_image_filename %}src="/uploads/{{settings.hero_image_filename}}"{% endif %} alt="Prévia da capa">
-<span>Escolha uma imagem para visualizar</span>
-</div>
-<div class="banner-sliders">
-<label>Brilho: <b data-value-for="brightness">{{settings.hero_brightness or 100}}</b>%<input type="range" name="brightness" min="40" max="160" value="{{settings.hero_brightness or 100}}">
-</label>
-<label>Zoom: <b data-value-for="zoom">{{settings.hero_zoom or 100}}</b>%<input type="range" name="zoom" min="100" max="200" value="{{settings.hero_zoom or 100}}">
-</label>
-<label>Posição horizontal: <b data-value-for="position_x">{{settings.hero_position_x or 50}}</b>%<input type="range" name="position_x" min="0" max="100" value="{{settings.hero_position_x or 50}}">
-</label>
-<label>Posição vertical: <b data-value-for="position_y">{{settings.hero_position_y or 50}}</b>%<input type="range" name="position_y" min="0" max="100" value="{{settings.hero_position_y or 50}}">
-</label>
-<label>Altura no computador<select name="desktop_height">{% for h in [480,540,620,700] %}<option value="{{h}}" {% if (settings.hero_desktop_height or 540)|int==h %}selected{% endif %}>{{h}} px</option>{% endfor %}</select>
-</label>
-<label>Altura no celular<select name="mobile_height">{% for h in [520,600,680,760] %}<option value="{{h}}" {% if (settings.hero_mobile_height or 540)|int==h %}selected{% endif %}>{{h}} px</option>{% endfor %}</select>
-</label>
-</div>
-<button class="btn primary">Salvar capa e ajustes</button>
 </form>
 </section>
 <section class="panel" id="categorias">
@@ -201,7 +80,7 @@
 <div class="section-title">
 <div>
 <h2>Slides e publicidade</h2>
-<p class="muted">Até 10 slides ativos, mudando automaticamente a cada {{settings.slide_interval_seconds or 3}} segundos. Você altera esse tempo em “Aparência e dados do site”. No celular, também é possível arrastar para o lado.</p>
+<p class="muted">Até 10 slides ativos, mudando automaticamente a cada {{settings.slide_interval_seconds or 3}} segundos. No celular, também é possível arrastar para o lado.</p>
 </div>
 <span class="status-pill">10 espaços disponíveis</span>
 </div>
