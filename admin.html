@@ -1,46 +1,36 @@
 {% extends 'base.html' %}{% block title %}Admin NowUp{% endblock %}{% block body_class %}social-admin{% endblock %}{% block content %}
-<div class="container dashboard">
-<aside class="sidebar">
+<link rel="stylesheet" href="/static/admin-categories.css?v=66">
+<link rel="stylesheet" href="/static/admin-profiles.css?v=72">
+<link rel="stylesheet" href="/static/admin-sales.css?v=74">
+
+<div class="container dashboard nu-admin" id="nu-admin">
+<aside class="sidebar" id="nu-admin-nav" aria-label="Áreas administrativas">
 <div class="admin-brand"><span>NU</span><div><h3>Admin NowUp</h3><small>Central de controle</small></div></div>
-<a href="#dashboard">Dashboard</a>
+<a href="#dashboard">Visão geral</a>
+<a href="#relatorio-geral">Relatório geral</a>
 <a href="/admin/cms">Gestão completa do portal</a>
-<a href="#perfil">Meu perfil</a>
-<a href="#aparencia">Aparência</a>
+<a href="#configuracoes">Configurações</a><a href="#perfil">Meu perfil</a>
+
 <a href="#categorias">Categorias</a>
 <a href="#publicidade">Publicidade</a>
 <a href="#cadastro-rapido">Criar perfil fictício</a>
 <a href="#profissionais">Perfis</a>
+<a href="#financeiro">Financeiro</a>
 <a href="#clientes">Clientes</a>
 <a href="#denuncias">Denúncias</a>
 <a href="#sugestoes">Sugestões</a>
+<a href="#backups">🛡 Backups</a>
 </aside>
 <main>
-<section class="panel" id="dashboard">
-<h1>Painel Administrativo</h1>
-<p><a class="btn primary" href="/admin/cms">⚙️ Configurações, páginas, SEO, blog e contatos</a></p>
-<div class="stats">
-<div class="stat">
-<span class="muted tiny">Perfis</span>
-<b>{{stats.professionals}}</b>
-</div>
-<div class="stat">
-<span class="muted tiny">Clientes</span>
-<b>{{stats.customers}}</b>
-</div>
-<div class="stat">
-<span class="muted tiny">Denúncias</span>
-<b>{{stats.reports}}</b>
-</div>
-<div class="stat">
-<span class="muted tiny">Visualizações</span>
-<b>{{stats.views}}</b>
-</div>
-<div class="stat">
-<span class="muted tiny">Cliques WhatsApp</span>
-<b>{{stats.wa}}</b>
-</div>
-</div>
-</section>
+<div class="nu-admin-toolbar"><button type="button" class="btn soft" id="nu-admin-toggle" aria-controls="nu-admin-nav" aria-expanded="false" aria-label="Abrir menu administrativo">☰ Menu</button><a class="nu-admin-logo" href="#dashboard">NowUp<span> Brasil</span></a><strong id="nu-admin-title">Visão geral</strong>{% include 'admin_sales_bell.html' %}<a class="btn soft" href="/">Ver site</a><form action="/sair" method="post"><button class="btn danger">Sair</button></form></div>
+<section class="panel" id="dashboard"><h1>Painel administrativo</h1><a class="btn soft" href="#backups">🛡 Backups</a><a class="btn primary v66-add-category" href="#nova-categoria">＋ Adicionar categoria</a><p class="muted">Gerencie o NowUp Brasil de forma simples e rápida.</p><div class="nu-shortcuts"><a class="nu-shortcut blue" href="#profissionais"><span class="nu-icon" aria-hidden="true">👥</span><span><b>Perfis</b><small>Gerencie lojas e profissionais</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut green" href="#clientes"><span class="nu-icon" aria-hidden="true">👤</span><span><b>Clientes</b><small>Acompanhe os cadastros</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut purple" href="#categorias"><span class="nu-icon" aria-hidden="true">▣</span><span><b>Categorias</b><small>Adicionar e editar categorias</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut yellow" href="#publicidade"><span class="nu-icon" aria-hidden="true">📣</span><span><b>Publicidade</b><small>Gerencie banners e anúncios</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut pink" href="#relatorio-geral"><span class="nu-icon" aria-hidden="true">▥</span><span><b>Relatórios</b><small>Vendas e desempenho das lojas</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut cyan" href="#cadastro-rapido"><span class="nu-icon" aria-hidden="true">＋</span><span><b>Criar perfil fictício</b><small>Cadastre perfis de demonstração</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut pink" href="#denuncias"><span class="nu-icon" aria-hidden="true">⚠</span><span><b>Denúncias</b><small>Consulte denúncias recebidas</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut blue" href="#configuracoes"><span class="nu-icon" aria-hidden="true">⚙</span><span><b>Configurações</b><small>Dados administrativos e portal</small></span><span aria-hidden="true">›</span></a></div><a class="btn soft" href="#financeiro">Financeiro — mensalidades</a><div class="nu-summary">
+<a href="#profissionais"><b>{{stats.professionals}}</b><span>Perfis cadastrados</span><small>Ver todos →</small></a>
+<a href="#clientes"><b>{{stats.customers}}</b><span>Clientes cadastrados</span><small>Ver todos →</small></a>
+<a href="#categorias"><b>{{admin_categories|length}}</b><span>Categorias</span><small>Ver todas →</small></a>
+<a href="#publicidade"><b>{{admin_banners|length}}</b><span>Banners cadastrados</span><small>Ver todos →</small></a>
+</div><div class="nu-overview"><article><h2>Resumo da plataforma</h2><p>Visualizações: <b>{{stats.views}}</b></p><p>Cliques no WhatsApp: <b>{{stats.wa}}</b></p><p>Denúncias: <b>{{stats.reports}}</b></p><a href="#relatorio-geral">Abrir relatório geral →</a></article><article><h2>Perfis cadastrados</h2>{% for p in pros[:4] %}<a class="nu-profile-row" href="/p/{{p.slug}}"><span><b>{{p.display_name}}</b><small>{{p.city}}</small></span><span class="status-pill">{{'Bloqueado' if p.blocked else 'Ativo'}}</span></a>{% else %}<p class="muted">Nenhum perfil cadastrado.</p>{% endfor %}<a href="#profissionais">Gerenciar todos os perfis →</a></article></div></section>
+<section class="panel" id="configuracoes"><h2>Configurações</h2><p class="muted">Acesse os ajustes administrativos e a gestão do portal.</p><div class="nu-shortcuts"><a class="nu-shortcut blue" href="#perfil">Meu perfil administrativo ›</a><a class="nu-shortcut purple" href="/admin/cms">Configurações do portal ›</a><a class="nu-shortcut cyan" href="#sugestoes">Sugestões recebidas ›</a></div></section>
+<section class="panel admin-report" id="relatorio-geral"><h2>Relatórios das lojas</h2><p>Vendas no NowUp, médias, rankings, lojas sem vendas e horários de pico.</p><a class="btn primary" href="/admin/vendas">Abrir relatório de vendas das lojas</a></section>
 <section class="panel" id="perfil">
 <div class="section-title">
 <h2>Meu perfil administrativo</h2>
@@ -58,184 +48,40 @@
 <button class="btn primary">Salvar perfil</button>
 </form>
 </section>
-<section class="panel" id="aparencia">
-<div class="section-title">
-<h2>Aparência e dados do site</h2>{% if email_service_ready %}<span class="status-pill ok">✓ E-mail configurado</span>{% else %}<span class="status-pill warn">E-mail pendente</span>{% endif %}</div>
-<form action="/admin/aparencia" method="post">
-<h3>Escolha um dos 20 temas</h3>
-<p class="muted">Toque em uma combinação para visualizar. Depois toque em <b>Salvar aparência</b>. Você pode mudar quantas vezes quiser.</p>
-<div class="theme-picker" data-theme-picker>
-{% set themes = [
-('oceanico','Oceânico','#075BD8','#FF6A00'),('royal','Azul Royal','#243BFF','#8B5CF6'),('turquesa','Turquesa','#007F8B','#20C997'),('esmeralda','Esmeralda','#087F5B','#F59F00'),('floresta','Floresta','#245C3A','#A3E635'),
-('por-do-sol','Pôr do sol','#C2410C','#FBBF24'),('coral','Coral','#E84855','#FF8A5B'),('rubi','Rubi','#B42318','#F04438'),('vinho','Vinho','#7F1D3F','#D946EF'),('uva','Uva','#6D28D9','#EC4899'),
-('lavanda','Lavanda','#7C3AED','#A78BFA'),('noturno','Noturno NowUp','#08131F','#08BCEB'),('grafite','Grafite','#263238','#00B8A9'),('preto-dourado','Preto e dourado','#171717','#D4A017'),('cafe','Café','#6F4E37','#D97706'),
-('areia','Areia dourada','#9A6700','#F2C14E'),('azul-petroleo','Azul petróleo','#164E63','#06B6D4'),('ceu','Azul céu','#0284C7','#22D3EE'),('brasil','Brasil','#08783E','#F7C600'),('neon','Neon','#312E81','#22C55E')
-] %}
-{% for id,nome,cor1,cor2 in themes %}
-<label class="theme-option" style="--theme-a:{{cor1}};--theme-b:{{cor2}}">
-<input type="radio" name="theme_name" value="{{id}}" data-primary="{{cor1}}" data-accent="{{cor2}}" {% if settings.theme_name==id %}checked{% endif %}>
-<span class="theme-swatch"></span><b>{{nome}}</b><small>{{cor1}} · {{cor2}}</small>
-</label>
-{% endfor %}
-<label class="theme-option custom-theme">
-<input type="radio" name="theme_name" value="personalizado" {% if not settings.theme_name or settings.theme_name=='personalizado' %}checked{% endif %}>
-<span class="theme-swatch"></span><b>Personalizado</b><small>Escolha abaixo</small>
-</label>
-</div>
-<div class="settings-grid">
-<div>
-<label>Nome da marca</label>
-<input class="input" name="brand_name" value="{{settings.brand_name}}">
-</div>
-<div>
-<label>Fonte</label>
-<select name="font_family">
-<option>Inter</option>
-<option>Arial</option>
-<option>Georgia</option>
-<option>Trebuchet MS</option>
-<option>Verdana</option>
-</select>
-</div>
-<div>
-<label>Cor principal do NowUp</label>
-<input class="input color-input" id="primary-color" type="color" name="primary_color" value="{{settings.primary_color}}">
-</div>
-<div>
-<label>Segunda cor (botões e detalhes)</label>
-<input class="input color-input" id="accent-color" type="color" name="accent_color" value="{{settings.accent_color}}">
-</div>
-<div style="grid-column:1/-1">
-<label>Título inicial</label>
-<input class="input" name="hero_title" value="{{settings.hero_title}}">
-</div>
-<div style="grid-column:1/-1">
-<label>Texto inicial</label>
-<textarea name="hero_subtitle">{{settings.hero_subtitle}}</textarea>
-</div>
-<div>
-<label>E-mail público</label>
-<input class="input" type="email" name="public_email" value="{{settings.public_email}}">
-</div>
-<div>
-<label>WhatsApp</label>
-<input class="input" name="support_whatsapp" value="{{settings.support_whatsapp}}">
-</div>
-<div style="grid-column:1/-1">
-<label>Cidades disponíveis</label>
-<input class="input" name="active_cities" value="{{settings.active_cities or 'Ubatuba'}}" placeholder="Ubatuba">
-<small class="muted">No início deixe somente Ubatuba. Para liberar outras cidades depois, separe por vírgulas.</small>
-</div>
-</div>
-<button class="btn primary">Salvar aparência</button>
-</form>
-<hr>
-<div id="faixa-slides">
-<h3>Faixa de avisos e velocidade dos slides</h3>
-<p class="muted">Este bloco tem salvamento próprio para garantir que a faixa seja ativada corretamente.</p>
-{% if request.query_params.get('ok')=='faixa' %}<div class="alert success">Faixa e tempo dos slides salvos com sucesso.</div>{% endif %}
-<form action="/admin/faixa-e-slides" method="post" class="banner-control-panel">
-<label>Texto que ficará passando<input class="input" name="ticker_text" maxlength="300" value="{{settings.ticker_text}}" placeholder="Ex.: Cadastre sua empresa grátis no NowUp • Confira os destaques de Ubatuba"></label>
-<div class="settings-grid">
-<div><label>Cor da faixa<input class="input color-input" type="color" name="ticker_color" value="{{settings.ticker_color or '#e30613'}}"></label></div>
-<div><label>Tempo de cada slide<select name="slide_interval_seconds">{% for s in range(1,16) %}<option value="{{s}}" {% if (settings.slide_interval_seconds or 3)|int==s %}selected{% endif %}>{{s}} segundo{% if s>1 %}s{% endif %}</option>{% endfor %}</select></label></div>
-<div><label>Animação da faixa<select name="ticker_animation"><option value="continuous" {% if (settings.ticker_animation or 'continuous')=='continuous' %}selected{% endif %}>Passando continuamente</option><option value="blink" {% if settings.ticker_animation=='blink' %}selected{% endif %}>Piscando suavemente</option><option value="inside-out" {% if settings.ticker_animation=='inside-out' %}selected{% endif %}>Do centro para fora</option><option value="outside-in" {% if settings.ticker_animation=='outside-in' %}selected{% endif %}>Das pontas para o centro</option></select></label></div>
-</div>
-<label class="row"><input type="checkbox" name="ticker_enabled" value="1" {% if settings.ticker_enabled=='1' %}checked{% endif %}> Exibir a faixa no topo do site</label>
-<button class="btn primary">Salvar faixa e tempo dos slides</button>
-</form>
-</div>
-<hr>
-<h3>Trocar capa principal</h3>
-<p class="muted">Crie a montagem no GPT e envie aqui. Recomendação: imagem horizontal 1600 × 700.</p>
-<form action="/admin/capa" method="post" enctype="multipart/form-data" class="banner-control-panel" data-hero-editor>
-<label>Escolher uma nova capa<input class="input" type="file" name="image" accept="image/*" {% if not settings.hero_image_filename %}required{% endif %}>
-</label>
-<div class="preview-toolbar">
-<b>Pré-visualização da capa</b>
-<div class="preview-switch">
-<button type="button" class="active" data-preview-mode="desktop">Computador</button>
-<button type="button" data-preview-mode="mobile">Celular</button>
-</div>
-</div>
-<div class="banner-live-preview hero-live-preview {% if settings.hero_image_filename %}has-image{% endif %}">
-<img {% if settings.hero_image_filename %}src="/uploads/{{settings.hero_image_filename}}"{% endif %} alt="Prévia da capa">
-<span>Escolha uma imagem para visualizar</span>
-</div>
-<div class="banner-sliders">
-<label>Brilho: <b data-value-for="brightness">{{settings.hero_brightness or 100}}</b>%<input type="range" name="brightness" min="40" max="160" value="{{settings.hero_brightness or 100}}">
-</label>
-<label>Zoom: <b data-value-for="zoom">{{settings.hero_zoom or 100}}</b>%<input type="range" name="zoom" min="100" max="200" value="{{settings.hero_zoom or 100}}">
-</label>
-<label>Posição horizontal: <b data-value-for="position_x">{{settings.hero_position_x or 50}}</b>%<input type="range" name="position_x" min="0" max="100" value="{{settings.hero_position_x or 50}}">
-</label>
-<label>Posição vertical: <b data-value-for="position_y">{{settings.hero_position_y or 50}}</b>%<input type="range" name="position_y" min="0" max="100" value="{{settings.hero_position_y or 50}}">
-</label>
-<label>Altura no computador<select name="desktop_height">{% for h in [480,540,620,700] %}<option value="{{h}}" {% if (settings.hero_desktop_height or 540)|int==h %}selected{% endif %}>{{h}} px</option>{% endfor %}</select>
-</label>
-<label>Altura no celular<select name="mobile_height">{% for h in [520,600,680,760] %}<option value="{{h}}" {% if (settings.hero_mobile_height or 540)|int==h %}selected{% endif %}>{{h}} px</option>{% endfor %}</select>
-</label>
-</div>
-<button class="btn primary">Salvar capa e ajustes</button>
-</form>
-</section>
 <section class="panel" id="categorias">
-<h2>Categorias</h2>
-<p class="muted">Adicione, edite e mude a ordem exibida no início.</p>
-<form action="/admin/categorias" method="post" class="grid3">
-<input class="input" name="name" placeholder="Nova categoria" required>
-<input class="input" name="icon" placeholder="Ícone" value="🛠️">
-<button class="btn primary">Adicionar</button>
+{% if request.query_params.get('ok')=='categoria' %}<p role="status">Categoria adicionada. Ela já está disponível na página principal.</p>{% elif request.query_params.get('erro')=='categoria-existente' %}<p role="alert">Já existe uma categoria com esse nome. Edite ou ative a categoria existente.</p>{% elif request.query_params.get('erro')=='categoria-nome' %}<p role="alert">Digite um nome para a categoria, com até 120 caracteres.</p>{% endif %}
+<div class="section-title"><div><h2>📂 Categorias da página principal</h2><p class="muted">Crie uma categoria e escolha o ícone que aparecerá para os clientes.</p></div><span class="status-pill">{{admin_categories|length}} cadastradas</span></div>
+<form action="/admin/categorias" method="post" class="admin-create-box" id="nova-categoria">
+<label>Nome da nova categoria<input class="input" name="name" placeholder="Ex.: Carrinho de lanche" maxlength="120" required></label>
+<label>Ícone da categoria<input class="input category-icon-input" name="icon" placeholder="🍔" value="🍔" maxlength="12"></label>
+<button class="btn primary">＋ Adicionar categoria</button>
 </form>
-<div class="tablewrap">
-<table class="table">
-<tr>
-<th>Ordem</th>
-<th>Ícone e nome</th>
-<th>Status</th>
-<th>Ações</th>
-</tr>{% for c in admin_categories %}<tr>
-<td>
-<div class="row">
-<form action="/admin/categorias/{{c.id}}/mover/up" method="post">
-<button class="btn soft">↑</button>
-</form>
-<form action="/admin/categorias/{{c.id}}/mover/down" method="post">
-<button class="btn soft">↓</button>
-</form>
-</div>
-</td>
-<td>
-<form action="/admin/categorias/{{c.id}}/editar" method="post" class="row">
-<input class="input mini-input" name="icon" value="{{c.icon}}">
-<input class="input" name="name" value="{{c.name}}" required>
-<button class="btn soft">Salvar</button>
-</form>
-</td>
-<td>{{'Ativa' if c.active else 'Inativa'}}</td>
-<td>
-<div class="row">
-<form action="/admin/categorias/{{c.id}}/alternar" method="post">
-<button class="btn soft">Ativar/desativar</button>
-</form>
-<form action="/admin/categorias/{{c.id}}/excluir" method="post">
-<button class="btn danger">Excluir</button>
-</form>
-</div>
-</td>
-</tr>{% endfor %}</table>
+<p class="admin-help">Sugestões de ícones: 🍔 Restaurantes · 🛒 Mercados · 💊 Farmácias · 🐾 Pet shop · 🥖 Padarias · 🍻 Adegas · 🌭 Carrinho de lanche</p>
+<div class="v66-category-list">
+{% for c in admin_categories %}<article class="v66-category-card">
+<header><span class="v66-category-icon" aria-hidden="true">{{c.icon}}</span><h3>{{c.name}}</h3><span class="status-pill">{{'Ativa' if c.active else 'Inativa'}}</span></header>
+<form action="/admin/categorias/{{c.id}}/editar" method="post" class="v66-category-edit">
+<label>Nome da categoria<textarea class="input" name="name" rows="2" maxlength="120" required>{{c.name}}</textarea></label>
+<label>Ícone<input class="input" name="icon" value="{{c.icon}}" maxlength="12"></label>
+<button class="btn soft" type="submit">Salvar alterações</button></form>
+<div class="v66-category-actions">
+<form action="/admin/categorias/{{c.id}}/mover/up" method="post"><button class="btn soft" type="submit" aria-label="Mover {{c.name}} para cima">↑ Subir</button></form>
+<form action="/admin/categorias/{{c.id}}/mover/down" method="post"><button class="btn soft" type="submit" aria-label="Mover {{c.name}} para baixo">↓ Descer</button></form>
+<form action="/admin/categorias/{{c.id}}/alternar" method="post"><button class="btn soft" type="submit">{{'Desativar' if c.active else 'Ativar'}}</button></form>
+<form action="/admin/categorias/{{c.id}}/excluir" method="post" onsubmit="return confirm('Excluir esta categoria? As lojas cadastradas não serão excluídas, mas poderão precisar de outra categoria.')"><button class="btn danger" type="submit">Excluir</button></form>
+</div></article>{% else %}<p>Nenhuma categoria cadastrada. Use o formulário acima para adicionar.</p>{% endfor %}
 </div>
 </section>
 <section class="panel" id="publicidade">
 <div class="section-title">
 <div>
 <h2>Slides e publicidade</h2>
-<p class="muted">Até 10 slides ativos, mudando automaticamente a cada {{settings.slide_interval_seconds or 3}} segundos. Você altera esse tempo em “Aparência e dados do site”. No celular, também é possível arrastar para o lado.</p>
+<p class="muted">Até 10 slides ativos, mudando automaticamente a cada {{settings.slide_interval_seconds or 3}} segundos. No celular, também é possível arrastar para o lado.</p>
 </div>
 <span class="status-pill">10 espaços disponíveis</span>
 </div>
-<h3>Criar novo slide</h3>
-<p class="muted">Envie uma arte quadrada de 1080 × 1080. A prévia mostra o enquadramento real antes de salvar.</p>
+<h3>＋ Criar novo banner</h3>
+<p class="muted">Escolha a imagem e depois selecione um tamanho pronto. A opção <b>Recomendado</b> funciona melhor no computador e no celular.</p>
 <form action="/admin/banners" method="post" enctype="multipart/form-data" class="banner-control-panel" data-banner-editor>
 <div class="banner-upload-row">
 <label>Arte do banner (recomendado: 1080 × 1080)<input class="input" type="file" name="image" accept="image/*" required>
@@ -253,6 +99,11 @@
 <div class="banner-live-preview">
 <img alt="Prévia do banner">
 <span>Escolha uma imagem para visualizar</span>
+</div>
+<div class="banner-size-presets" data-banner-presets>
+<b>Escolha o tamanho</b>
+<div><button type="button" class="btn soft" data-banner-size="compact">Compacto</button><button type="button" class="btn primary" data-banner-size="recommended">✓ Recomendado</button><button type="button" class="btn soft" data-banner-size="large">Grande</button><button type="button" class="btn soft" data-banner-size="featured">Destaque</button></div>
+<small data-size-description>Equilibrado para computador e celular.</small>
 </div>
 <div class="banner-sliders">
 <label>Brilho: <b data-value-for="brightness">100</b>%<input type="range" name="brightness" min="40" max="160" value="100">
@@ -279,11 +130,11 @@
 </label>
 </div>
 <button class="btn primary">Salvar novo banner</button>
-</form>{% if request.query_params.get('erro')=='limite-slides' %}<div class="alert danger">O limite é de 10 slides ativos. Desative um antes de ativar outro.</div>{% endif %}<div class="banner-admin-list">{% for b in admin_banners %}<details class="banner-editor-card">
+</form>{% if request.query_params.get('erro')=='limite-slides' %}<div class="alert danger">O limite é de 10 slides ativos. Desative um antes de ativar outro.</div>{% elif request.query_params.get('erro')=='imagem-banner' %}<div class="alert danger">Escolha uma imagem antes de salvar o banner.</div>{% endif %}<div class="banner-admin-list">{% for b in admin_banners %}<details class="banner-editor-card">
 <summary>
-<b>Banner {{loop.index}}</b>
-<span>{{'Ativo' if b.active else 'Inativo'}} · {{b.clicks}} cliques</span>
+<img class="banner-admin-thumb" src="/uploads/{{b.image_filename}}" alt="Banner {{loop.index}}"><span><b>Banner {{loop.index}}</b><small>{{'Ativo' if b.active else 'Inativo'}} · {{b.clicks}} cliques</small></span><strong>Editar ▾</strong>
 </summary>
+<div class="banner-quick-actions"><form action="/admin/banners/{{b.id}}/alternar" method="post"><button class="btn soft">{{'⏸ Desativar' if b.active else '▶ Ativar'}}</button></form><form action="/admin/banners/{{b.id}}/excluir" method="post"><button class="btn danger">🗑 Excluir banner</button></form></div>
 <form action="/admin/banners/{{b.id}}/editar" method="post" enctype="multipart/form-data" class="banner-control-panel" data-banner-editor>
 <div class="banner-upload-row">
 <label>Trocar arte<input class="input" type="file" name="image" accept="image/*">
@@ -301,6 +152,7 @@
 <div class="banner-live-preview has-image">
 <img src="/uploads/{{b.image_filename}}" alt="Prévia do banner">
 </div>
+<div class="banner-size-presets" data-banner-presets><b>Tamanho pronto</b><div><button type="button" class="btn soft" data-banner-size="compact">Compacto</button><button type="button" class="btn soft" data-banner-size="recommended">Recomendado</button><button type="button" class="btn soft" data-banner-size="large">Grande</button><button type="button" class="btn soft" data-banner-size="featured">Destaque</button></div><small data-size-description>Toque em uma opção para ajustar automaticamente.</small></div>
 <div class="banner-sliders">
 <label>Brilho: <b data-value-for="brightness">{{b.brightness}}</b>%<input type="range" name="brightness" min="40" max="160" value="{{b.brightness}}">
 </label>
@@ -324,36 +176,43 @@
 <form action="/admin/banners/{{b.id}}/mover/down" method="post">
 <button class="btn soft">↓ Descer</button>
 </form>
-<form action="/admin/banners/{{b.id}}/alternar" method="post">
-<button class="btn soft">Ativar/desativar</button>
-</form>
-<form action="/admin/banners/{{b.id}}/excluir" method="post">
-<button class="btn danger">Excluir</button>
-</form>
 </div>
 </details>{% endfor %}</div>
 </section>
 <section class="panel" id="cadastro-rapido">
-<h2>Cadastrar profissional fictício</h2>
-<p class="muted">Crie perfis de demonstração para preencher e testar o NowUp. Não precisa informar e-mail nem confirmar cadastro.</p>
-<form action="/admin/perfis/demonstracao" method="post" enctype="multipart/form-data" class="grid-form">
-<label>Nome do profissional ou empresa
-<input class="input" name="display_name" placeholder="Ex.: João Eletricista" required>
-</label>
-<label>WhatsApp
-<input class="input" name="whatsapp" placeholder="Ex.: (12) 99999-9999" required>
-</label>
-<label>Endereço
-<input class="input" name="address" placeholder="Ex.: Estufa II, Ubatuba - SP" required>
-</label>
-<label>Foto do perfil
-<input class="input" type="file" name="photo" accept="image/*" required>
-</label>
-<button class="btn primary" type="submit">Criar perfil fictício</button>
+<h2>Criar loja fictícia</h2>
+<p class="muted">Escolha uma foto, coloque o nome e clique em criar. O WhatsApp genérico já vem preenchido.</p>
+{% if request.query_params.get('ok')=='perfil-demo' %}<div class="alert success">Loja fictícia criada! <a href="/" target="_blank" rel="noopener">Ver tela principal →</a> Você já pode cadastrar outra.</div>{% endif %}
+{% if request.query_params.get('erro','').startswith('perfil-demo') %}<div class="alert danger">{% if request.query_params.get('erro')=='perfil-demo-foto' %}Selecione uma foto JPG, PNG ou WebP válida, de até 5 MB.{% elif request.query_params.get('erro')=='perfil-demo-dados' %}Confira o nome e o WhatsApp (10 ou 11 números).{% else %}Não foi possível criar. Confira se existe uma categoria ativa da tela principal e tente novamente.{% endif %}</div>{% endif %}
+<form action="/admin/perfis/demonstracao" method="post" enctype="multipart/form-data" class="grid-form" id="demo-simple-form">
+<label>Foto da loja<input class="input" type="file" name="avatar" accept="image/jpeg,image/png,image/webp" data-simple-upload required><img data-demo-preview="avatar" alt="Prévia da foto da loja" hidden style="width:100px;height:100px;object-fit:cover;border-radius:16px;margin-top:10px"><small>Uma foto só: ela também será usada como capa.</small></label>
+<label>Nome da loja<input class="input" name="display_name" placeholder="Ex.: Quiosque Brisa do Mar" maxlength="120" required></label>
+<label>WhatsApp genérico<input class="input" name="whatsapp" type="tel" inputmode="tel" value="00000000000"><small>Pode deixar assim para demonstração ou trocar pelo seu número.</small></label>
+<details style="grid-column:1/-1"><summary style="cursor:pointer;padding:12px 0;font-weight:700">Mais opções (opcional)</summary><div class="grid-form">
+<label>Categoria<select class="input" name="category_id"><option value="0">Automática — primeira categoria da home</option>{% for cat in admin_categories %}{% if cat.active %}<option value="{{cat.id}}">{{cat.icon}} {{cat.name}}</option>{% endif %}{% endfor %}</select></label>
+<label>Cidade<input class="input" name="city" placeholder="Automática — cidade principal do site"></label>
+<label>Endereço<input class="input" name="address" placeholder="Opcional"></label>
+<label>Bairro<input class="input" name="neighborhood" placeholder="Opcional"></label>
+<label>Descrição<textarea class="input" name="description" rows="2" placeholder="Opcional"></textarea></label>
+<label>Serviços ou produtos<textarea class="input" name="services" rows="2" placeholder="Opcional"></textarea></label>
+<label>Outra foto para capa<input class="input" type="file" name="cover" accept="image/jpeg,image/png,image/webp" data-simple-upload><img data-demo-preview="cover" alt="Prévia da capa" hidden style="width:160px;height:90px;object-fit:cover;margin-top:10px"></label>
+</div></details>
+<p id="demo-photo-error" role="alert" hidden style="color:#a52239;grid-column:1/-1"></p>
+<button class="btn primary" type="submit">Criar loja fictícia</button>
 </form>
+<script src="/static/v56-demo-simple.js?v=56" defer></script>
 </section>
-<section class="panel" id="profissionais">
+<section class="panel" id="profissionais">{% if request.query_params.get('aviso')=='email-enviando' %}<p role="status">O e-mail da análise anterior ainda está sendo enviado. Aguarde antes de mudar a decisão.</p>{% endif %}{% if request.query_params.get('ok')=='analise' %}<p role="status">Análise salva.</p>{% endif %}{% if request.query_params.get('aviso')=='email-falhou' %}<p role="alert">A decisão foi salva, mas não foi possível enviar o e-mail. Confira a configuração de e-mail e use “Reenviar e-mail”.</p>{% endif %}{% if request.query_params.get('erro')=='email-pendente' %}<p role="alert">O profissional precisa confirmar o e-mail antes de aprovar a loja.</p>{% elif request.query_params.get('erro')=='aprovar-cadastro' %}<p role="alert">Use “Aprovar e ativar” para liberar esse cadastro.</p>{% endif %}
 <h2>Profissionais e empresas</h2>
+<p>Gerencie a situação dos cadastros. Pagamentos ficam na área <a href="#financeiro">Financeiro</a>.</p>
+<div class="v72-filters" data-filter-group="profiles">
+{% for value,label in [('all','Todos'),('pending','Aguardando aprovação'),('active','Ativos'),('paused','Pausados / bloqueados'),('rejected','Recusados'),('demo','Fictícios')] %}
+<button type="button" class="btn soft tiny" data-filter="{{value}}" aria-pressed="{{'true' if value=='all' else 'false'}}">{{label}} <span data-count="{{value}}"></span></button>{% endfor %}</div>
+<label>Buscar loja ou profissional<input class="input" type="search" data-search="profiles" placeholder="Nome ou cidade"></label>
+<p data-result="profiles" role="status"></p>
+{% if request.query_params.get('ok')=='perfil-editado' %}<div class="alert success">Alterações salvas.</div>{% elif request.query_params.get('ok')=='perfil-excluido' %}<div class="alert success">Perfil fictício excluído.</div>{% endif %}
+{% if request.query_params.get('erro')=='editar-perfil' %}<div class="alert danger">Não foi possível salvar. Confira os dados e a foto e tente novamente.</div>{% endif %}
+{% if pros|selectattr('is_demo')|list|length %}<form action="/admin/perfis/demonstracao/excluir-todos" method="post" onsubmit="return confirm('Excluir TODOS os perfis fictícios? Os perfis reais não serão apagados.')"><button class="btn danger" type="submit">Excluir todos os perfis fictícios</button></form>{% endif %}
 <div class="tablewrap">
 <table class="table">
 <tr>
@@ -361,42 +220,68 @@
 <th>Confirmado</th>
 <th>Status</th>
 <th>Ações</th>
-</tr>{% for p in pros %}<tr>
+</tr>{% for p in pros %}<tr data-v72-row="profiles" data-status="{{p.profile_status}}" data-demo="{{1 if p.is_demo else 0}}" data-search-text="{{p.display_name}} {{p.city}}">
 <td>
-<form action="/admin/profissionais/{{p.id}}/editar" method="post" class="admin-inline-edit">
+<div class="v72-identity">{% if p.avatar_filename %}<img src="/uploads/{{p.avatar_filename}}" alt="" loading="lazy">{% endif %}<div><strong>{{p.display_name}}</strong><small>{{p.city}}</small><small>Cadastro: {{p.joined_label}}</small><small>{{'Fictício' if p.is_demo else 'Perfil real'}}</small></div></div>
+<details><summary class="btn soft tiny" style="cursor:pointer">Editar perfil</summary><form action="/admin/profissionais/{{p.id}}/editar" method="post" enctype="multipart/form-data" class="admin-inline-edit {% if p.is_demo %}demo-profile-edit{% endif %}">
 <input class="input" name="display_name" value="{{p.display_name}}" required>
 <input class="input" name="city" value="{{p.city}}" placeholder="Cidade">
 {% if p.is_demo %}
 <input type="hidden" name="email" value="{{p.email}}">
 <span class="tiny">Perfil fictício — sem e-mail</span>
+<input class="input" name="whatsapp" value="{{p.whatsapp}}" placeholder="WhatsApp" required>
+<input class="input" name="address" value="{{p.address}}" placeholder="Endereço (opcional)">
+<input class="input" name="neighborhood" value="{{p.neighborhood}}" placeholder="Bairro">
+<select class="input" name="category_id" required>{% for cat in admin_categories %}{% if cat.active %}<option value="{{cat.id}}" {% if p.category_id == cat.id %}selected{% endif %}>{{cat.icon}} {{cat.name}}</option>{% endif %}{% endfor %}</select>
+<textarea class="input" name="description" rows="2" placeholder="Descrição">{{p.description}}</textarea>
+<textarea class="input" name="services" rows="2" placeholder="Serviços ou produtos">{{p.services}}</textarea>
+<label class="demo-photo-field">Foto do perfil<input class="input" type="file" name="avatar" accept="image/jpeg,image/png,image/webp" data-simple-upload></label>
+<label class="demo-photo-field">Foto de capa<input class="input" type="file" name="cover" accept="image/jpeg,image/png,image/webp" data-simple-upload></label>
 {% else %}
 <input class="input" type="email" name="email" value="{{p.email}}" required>
+<input type="hidden" name="whatsapp" value="{{p.whatsapp}}"><input type="hidden" name="address" value="{{p.address}}"><input type="hidden" name="neighborhood" value="{{p.neighborhood}}"><input type="hidden" name="description" value="{{p.description}}"><input type="hidden" name="services" value="{{p.services}}">
 {% endif %}
-<button class="btn primary tiny">Salvar</button>
-</form>
+<button class="btn primary tiny">Salvar alterações</button>
+</form></details>
 <a class="tiny" href="/p/{{p.slug}}">Ver perfil público</a>
 </td>
 <td>{{'Sim' if p.email_verified else 'Pendente'}}</td>
-<td>Verificado: {{'Sim' if p.verified else 'Não'}}<br>Destaque: {{'Sim' if p.featured else 'Não'}}<br>No slide: {{'Sim' if p.in_slider else 'Não'}}<br>Bloqueado: {{'Sim' if p.blocked else 'Não'}}</td>
+<td><b>Cadastro: {{ {'pending':'Aguardando análise','approved':'Aprovado','rejected':'Recusado'}.get(p.admission_status,p.admission_status) }}</b>{% if p.admission_reason %}<p>{{p.admission_reason}}</p>{% endif %}{% if admission_mail_states.get(p.id) %}<p>E-mail: {{ {'sent':'Enviado','failed':'Falhou','pending':'Aguardando envio','sending':'Envio em andamento'}.get(admission_mail_states.get(p.id),admission_mail_states.get(p.id)) }}</p>{% endif %}<br>Plano: <b>{{'Premium' if p.is_premium else 'Gratuito'}}</b><br>Financeiro: <b>{{p.billing_label}}</b><br>Verificado: {{'Sim' if p.verified else 'Não'}}<br>Destaque: {{'Sim' if p.featured else 'Não'}}<br>No slide: {{'Sim' if p.in_slider else 'Não'}}<br>Bloqueado: {{'Sim' if p.blocked else 'Não'}}</td>
 <td>
 <div class="row">
-<form action="/admin/profissionais/{{p.id}}/acao/verificar" method="post">
+{% if not p.is_demo %}{% if p.admission_status!='approved' %}<form action="/admin/profissionais/{{p.id}}/analise/approved" method="post"><button class="btn primary tiny" type="submit">Aprovar e ativar</button></form>{% endif %}{% if p.admission_status!='rejected' %}<details><summary class="btn danger tiny">Recusar cadastro</summary><form action="/admin/profissionais/{{p.id}}/analise/rejected" method="post"><label>Motivo (opcional)<textarea class="input" name="reason" maxlength="500" placeholder="Explique o motivo ao profissional"></textarea></label><button class="btn danger tiny" type="submit">Confirmar recusa</button></form></details>{% endif %}{% if admission_mail_states.get(p.id) in ['failed','pending'] %}<form action="/admin/profissionais/{{p.id}}/analise/reenviar-email" method="post"><button class="btn soft tiny" type="submit">Reenviar e-mail</button></form>{% endif %}{% endif %}
+<details class="v72-more"><summary class="btn soft tiny">Mais opções</summary><div class="row"><form action="/admin/profissionais/{{p.id}}/acao/verificar" method="post">
 <button class="btn soft tiny">Verificar</button>
 </form>
 <form action="/admin/profissionais/{{p.id}}/acao/destaque" method="post">
 <button class="btn orange tiny">Destaque</button>
 </form>
+<form action="/admin/profissionais/{{p.id}}/acao/premium" method="post">
+<button class="btn {% if p.is_premium %}orange{% else %}soft{% endif %} tiny">{{'Remover Premium' if p.is_premium else 'Ativar Premium'}}</button>
+</form>
 <form action="/admin/profissionais/{{p.id}}/acao/slide" method="post">
 <button class="btn soft tiny">Slide</button>
 </form>
-<form action="/admin/profissionais/{{p.id}}/acao/bloquear" method="post">
+{% if p.admission_status=='approved' %}<form action="/admin/profissionais/{{p.id}}/acao/bloquear" method="post">
 <button class="btn {% if p.blocked %}soft{% else %}danger{% endif %} tiny">{{'Reativar' if p.blocked else 'Pausar/bloquear'}}</button>
-</form>
+</form>{% endif %}
+{% if p.is_demo %}<form action="/admin/profissionais/{{p.id}}/excluir" method="post" onsubmit="return confirm('Excluir definitivamente este perfil fictício?')"><button class="btn danger tiny" type="submit">Excluir perfil</button></form>{% endif %}
+</div></details>
 </div>
 </td>
 </tr>{% endfor %}</table>
 </div>
 </section>
+
+<section class="panel" id="financeiro"><h2>Financeiro — mensalidades</h2>
+<p>Controle manual dos planos Premium. “A vencer” significa vencimento nos próximos 7 dias. Gratuitos e fictícios não têm cobrança. O vencimento não bloqueia a loja automaticamente.</p>
+{% if request.query_params.get('ok')=='financeiro' %}<p role="status">Dados financeiros salvos.</p>{% endif %}
+{% if request.query_params.get('erro') in ['financeiro','financeiro-plano'] %}<p role="alert">Confira as datas. Somente perfis reais com Premium ativo podem receber dados de mensalidade; pagamento não pode estar no futuro e o próximo vencimento deve ser posterior ao pagamento.</p>{% endif %}
+<div class="v72-filters" data-filter-group="billing">{% for value,label in [('all','Todos'),('current','Em dia'),('soon','A vencer'),('overdue','Inadimplentes'),('unconfigured','Sem vencimento'),('free','Gratuitos'),('demo','Fictícios')] %}<button type="button" class="btn soft tiny" data-filter="{{value}}" aria-pressed="{{'true' if value=='all' else 'false'}}">{{label}} <span data-count="{{value}}"></span></button>{% endfor %}</div>
+<label>Buscar perfil<input class="input" type="search" data-search="billing" placeholder="Nome ou cidade"></label><p data-result="billing" role="status"></p>
+<div class="tablewrap"><table class="table"><thead><tr><th>Perfil</th><th>Situação</th><th>Pagamento e vencimento</th><th>Atualizar mensalidade</th></tr></thead><tbody>
+{% for p in pros %}<tr data-v72-row="billing" data-status="{{p.billing_status}}" data-search-text="{{p.display_name}} {{p.city}}"><td><strong>{{p.display_name}}</strong><br>{{p.city}}<br>Cadastro: {{p.joined_label}}<br>Plano: {{'Premium' if p.is_premium else 'Gratuito'}}</td><td>{{p.billing_label}}</td><td>Último pagamento: {{p.paid_label}}<br>Próximo vencimento: {{p.due_label}}</td><td>{% if p.is_premium and not p.is_demo %}<details><summary class="btn soft tiny">Registrar / corrigir</summary><form action="/admin/profissionais/{{p.id}}/financeiro" method="post" class="v72-billing-form"><label>Último pagamento confirmado<input class="input" type="date" name="last_paid" value="{{p.billing_last_paid}}"></label><label>Próximo vencimento<input class="input" type="date" name="due_date" value="{{p.billing_due_date}}"></label><small>Registre após conferir o pagamento. Deixe vazio para remover uma data incorreta.</small><button class="btn primary tiny" type="submit">Salvar mensalidade</button></form></details>{% else %}Sem cobrança{% endif %}</td></tr>{% endfor %}
+</tbody></table></div></section>
 <section class="panel" id="clientes">
 <h2>Clientes</h2>
 <div class="tablewrap">
@@ -414,7 +299,7 @@
 <input class="input" name="name" value="{{c.name}}" required>
 <input class="input" type="email" name="email" value="{{c.email}}" required>
 <input class="input" name="phone" value="{{c.phone}}">
-<button class="btn primary tiny">Salvar</button>
+<button class="btn primary tiny">Salvar alterações</button>
 </form>
 </td>
 <td>{{'Sim' if c.email_verified else 'Pendente'}}</td>
@@ -444,5 +329,30 @@
 <b>{{s.name or s.email or 'Usuário'}}</b>
 <p>{{s.message}}</p>
 </div>{% else %}<p class="muted">Nenhuma sugestão.</p>{% endfor %}</section>
-</main>
-</div>{% endblock %}
+<section class="panel" id="backups" data-backup-panel>
+<h2>🛡 Backups do NowUp</h2>
+<p>Cópia do banco de dados e das fotos. O download manual é separado do backup externo automático.</p>
+<p data-backup-status role="status" aria-live="polite">Consultando o último backup…</p>
+<div class="row"><form method="post" action="/admin/backups/baixar"><button class="btn primary" type="submit">Baixar backup completo</button></form><button class="btn soft" type="button" data-backup-send disabled>Enviar backup externo agora</button><button class="btn soft" type="button" data-backup-refresh>Atualizar status</button></div>
+<p class="muted">A rotina externa roda diariamente após 03h, horário de Brasília, enquanto o serviço estiver ativo. Guarda 7 cópias diárias e 4 semanais. Não fica ativada até a configuração no Render. Guarde o download em local privado; ele contém dados pessoais.</p>
+</section></main>
+</div>
+<style>
+.nu-admin{display:grid!important;grid-template-columns:240px minmax(0,1fr);gap:20px;position:relative}.nu-admin main{min-width:0}.nu-admin .sidebar{display:flex!important;flex-direction:column;align-self:start;position:sticky;top:85px;max-height:calc(100dvh - 100px);overflow:auto}.nu-admin .sidebar a[aria-current="page"]{background:var(--primary,#075bd8);color:white;border-radius:10px}.nu-admin-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}.nu-admin-toolbar strong{flex:1}.nu-admin-toolbar form{margin:0}.nu-admin .panel[hidden]{display:none!important}.nu-admin .tablewrap{overflow-x:auto}.nu-admin input,.nu-admin textarea,.nu-admin select{max-width:100%}.nu-admin #nu-admin-toggle{display:none}.nu-admin .panel{scroll-margin-top:90px}
+@media(max-width:800px){.nu-admin{grid-template-columns:minmax(0,1fr)!important}.nu-admin #nu-admin-toggle{display:inline-flex}.nu-admin .sidebar{display:none!important;position:relative;top:auto;max-height:65dvh;grid-row:2}.nu-admin.nav-open .sidebar{display:flex!important}.nu-admin main{grid-row:1}.nu-admin.nav-open main{grid-row:3}.nu-admin.nav-open .sidebar{grid-row:1}.nu-admin .stats,.nu-admin .admin-report-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.nu-admin .settings-grid,.nu-admin .grid2{grid-template-columns:minmax(0,1fr)}}
+</style>
+<script src="{{ url_for('static', path='admin-panel.js') }}?v=64" defer></script>
+
+<style>
+body.social-admin{background:#f5f8fc;color:#102344}.nu-admin{display:block!important;max-width:1240px}.nu-admin main{width:100%}.nu-admin .sidebar{display:none!important}.nu-admin.nav-open .sidebar{display:flex!important;position:relative;top:0;margin-bottom:16px;max-height:65dvh}.nu-admin #nu-admin-toggle{display:inline-flex!important}.nu-admin-toolbar{padding:16px;background:white;border:1px solid #e4ebf4;border-radius:16px}.nu-admin-logo{font-size:24px;font-weight:900;color:#102344;text-decoration:none}.nu-admin-logo span{color:#00a6d6}.nu-admin-toolbar #nu-admin-title{font-size:12px;color:#526782}.nu-admin #dashboard{background:transparent;border:0;padding:4px}.nu-admin h1{font-size:32px;margin:12px 0 6px}.nu-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:24px 0}.nu-shortcut{display:flex;align-items:center;gap:14px;min-height:112px;padding:20px;border-radius:16px;text-decoration:none;color:#102344;border:1px solid transparent;transition:transform .15s}.nu-shortcut:hover{transform:translateY(-2px);border-color:#aac5e5}.nu-shortcut:focus-visible{outline:3px solid #075bd8;outline-offset:3px}.nu-shortcut>span:nth-child(2){flex:1}.nu-shortcut b{display:block;font-size:19px}.nu-shortcut small{display:block;line-height:1.4;color:#4f6380;margin-top:6px}.nu-icon{display:grid;place-items:center;width:58px;height:58px;flex-shrink:0;border-radius:50%;font-size:29px;background:#ffffff80}.blue{background:#e4f2ff}.green{background:#e5faef}.purple{background:#f1e9fd}.yellow{background:#fff6df}.pink{background:#fde7f0}.cyan{background:#e0f6fc}.nu-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}.nu-summary>a,.nu-overview>article{background:white;border:1px solid #e4ebf4;border-radius:16px;padding:20px;color:#102344;text-decoration:none}.nu-summary b{display:block;font-size:28px}.nu-summary span,.nu-summary small{display:block;margin-top:6px}.nu-summary small{color:#075bd8}.nu-overview{display:grid;grid-template-columns:1fr 1fr;gap:18px}.nu-overview h2{font-size:18px}.nu-profile-row{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid #edf1f7;text-decoration:none;color:#102344}.nu-profile-row small{display:block;color:#526782}.nu-admin .panel:not(#dashboard){background:white;border:1px solid #e4ebf4;border-radius:16px}
+@media(max-width:800px){.nu-admin{padding:10px!important}.nu-admin h1{font-size:25px}.nu-admin-toolbar{gap:8px;padding:12px}.nu-admin-logo{font-size:19px;flex:1}.nu-admin-toolbar #nu-admin-title{display:none}.nu-admin-toolbar>.btn{display:none}.nu-admin.nav-open main{grid-row:auto}.nu-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0}.nu-shortcut{min-height:130px;padding:14px;flex-wrap:wrap;gap:8px}.nu-icon{width:40px;height:40px;font-size:22px}.nu-shortcut>span:nth-child(2){flex-basis:100%;order:3}.nu-shortcut>span:last-child{margin-left:auto}.nu-shortcut b{font-size:16px}.nu-shortcut small{font-size:12px}.nu-shortcuts>.nu-shortcut:last-child:nth-child(odd){grid-column:1/-1}.nu-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.nu-summary>a{padding:14px}.nu-overview{grid-template-columns:1fr}}
+</style>
+
+<link rel="stylesheet" href="/static/panel-back-top.css?v=70">
+<footer class="nowup-panel-bottom"><button type="button" class="nowup-back-top" data-panel-back-top aria-label="Voltar ao topo do painel">↑ Voltar ao topo</button></footer>
+<script src="/static/panel-back-top.js?v=70" defer></script>
+
+<script src="/static/admin-backups.js?v=71" defer></script>
+<script src="/static/admin-profiles.js?v=72" defer></script>
+<script src="/static/admin-sales-alerts.js?v=74" defer></script>
+{% endblock %}
