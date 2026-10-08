@@ -1,20 +1,20 @@
-{% extends 'base.html' %}{% block title %}Painel do profissional | NowUp{% endblock %}{% block body_class %}professional-area{% endblock %}{% block content %}{% set status_labels = status_labels|default({'new':'Pedido recebido','confirmed':'Pedido aceito','preparing':'Em preparo','ready':'Pronto','out_for_delivery':'Saiu para entrega','completed':'Concluído','cancelled':'Cancelado','rejected':'Recusado'}, true) %}<link rel="stylesheet" href="/static/pro-panel-navigation.css?v=60">
+{% extends 'base.html' %}{% block title %}Painel do profissional | NowUp{% endblock %}{% block body_class %}professional-area{% endblock %}{% block content %}<link rel="stylesheet" href="/static/pro-compact.css?v=67">{% set status_labels = status_labels|default({'new':'Pedido recebido','confirmed':'Pedido aceito','preparing':'Em preparo','ready':'Pronto','out_for_delivery':'Saiu para entrega','completed':'Concluído','cancelled':'Cancelado','rejected':'Recusado'}, true) %}<link rel="stylesheet" href="/static/pro-panel-navigation.css?v=60">
 <style>
 body.professional-area .pro-dashboard .order-alert-control{display:flex!important}
 body.professional-area .pro-dashboard .new-order-alert:not([hidden]){display:flex!important}
 body.professional-area .pro-dashboard .new-order-alert[hidden]{display:none!important}
-body.professional-area .pro-dashboard #pedidos-ativos{display:block!important}
-body.professional-area .pro-dashboard.show-full-dashboard #pedidos{display:block!important}
+body.professional-area .pro-dashboard #pedidos-ativos[hidden]{display:none!important}
+body.professional-area .pro-dashboard #pedidos[hidden]{display:none!important}
 body.professional-area .pro-dashboard #pedidos-ativos h2,body.professional-area .pro-dashboard .active-order-main strong{color:#12314a!important}
 body.professional-area .pro-dashboard .active-order-main small{color:#526678!important}
 body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!important}
 </style>
 
-<div class="container dashboard pro-dashboard">
+<div class="container dashboard pro-dashboard" data-panel-day="{{today_day}}">
 <header class="v60-top"><button class="btn" type="button" data-pro-menu-toggle aria-expanded="false" aria-controls="pro-edit-menu" aria-label="Abrir menu">☰</button><div><b>{{pro.display_name}}</b><small>{{shop_status.label}}</small></div><a class="btn v61-bell" href="#notificacoes" aria-label="Notificações">🔔<span class="v61-badge" data-notification-badge hidden>0</span></a></header>
 <button class="v60-shade" type="button" data-close-pro-menu aria-label="Fechar menu" hidden></button>
 <aside class="sidebar pro-sidebar" id="pro-edit-menu"><h2>Menu da loja</h2>
-<a href="#resumo">📊 Visão geral</a><a href="#pedidos">🧾 Pedidos</a><a href="#cardapio">🛍 Produtos e cardápio</a><a href="#clientes">👥 Clientes</a><a href="#relatorios">📈 Relatórios</a><a href="#perfil">🏪 Perfil da loja</a><a href="#horarios">⚙️ Configurações</a><a href="#publicar">➕ Publicações</a><a href="/p/{{pro.slug}}">↗ Ver perfil público</a>
+<a href="#hoje">📅 Pedidos de hoje</a><a href="#resumo">📊 Visão geral</a><a href="#pedidos">🧾 Pedidos</a><a href="#cardapio">🛍 Produtos e cardápio</a><a href="#adicionais">➕ Adicionais</a><a href="#clientes">👥 Clientes</a><a href="#relatorios">📈 Relatórios</a><a href="#perfil">🏪 Perfil da loja</a><a href="#horarios">⚙️ Configurações</a><a href="#publicar">➕ Publicações</a><a href="/p/{{pro.slug}}">↗ Ver perfil público</a>
 <form action="/sair" method="post"><button class="btn danger">Sair</button></form></aside>
 <main>
 {% if request.query_params.get('ok') %}<div class="alert success">Alterações salvas com sucesso.</div>{% endif %}
@@ -28,13 +28,12 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 <div><b>🔔 Novo pedido recebido!</b><span data-new-order-message>Abra a central de pedidos para conferir.</span></div>
 <button class="btn" type="button" data-open-new-order>Ver pedido</button>
 </div>
-{% set active_statuses=['new','confirmed','preparing','ready','out_for_delivery'] %}{% set ns=namespace(count=0) %}{% for order in orders %}{% if order.status in active_statuses %}{% set ns.count=ns.count+1 %}{% endif %}{% endfor %}
-{% if ns.count %}<section class="panel active-orders-inbox" id="pedidos-ativos">
-<div class="active-orders-title"><div><span class="kicker">Pedidos em andamento</span><h2>Caixa de pedidos</h2><p>Os pedidos permanecem aqui até serem finalizados, cancelados ou recusados.</p></div><span class="active-orders-count">{{ns.count}}</span></div>
-<div class="active-orders-list">{% for order in orders if order.status in active_statuses %}<article class="active-order-row status-{{order.status}}">
-<a class="active-order-main" href="#pedido-{{order.id}}" data-open-order="{{order.id}}"><span class="active-order-avatar">{{(order.customer_name or 'C')[:1]|upper}}</span><span><b>{{order.customer_name or 'Cliente'}}</b><small>{{order.order_code or ('Pedido #' ~ order.id)}} · {{order.created_at[11:16]}} · {{order.item_count}} item(ns)</small><em>{% if order.status=='new' %}Aguardando confirmação{% elif order.status=='confirmed' %}Pedido aceito{% elif order.status=='preparing' %}Em preparo{% elif order.status=='ready' %}Pronto{% else %}Saiu para entrega{% endif %}</em></span><strong>R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</strong></a>
-<div class="active-order-actions">{% if order.status=='new' %}<form action="/painel/pedidos/{{order.id}}/status" method="post"><input type="hidden" name="status" value="confirmed"><button class="btn primary">✓ Aceitar pedido</button></form><form action="/painel/pedidos/{{order.id}}/status" method="post" data-cancel-form><input type="hidden" name="status" value="rejected"><input type="hidden" name="reason"><button class="btn danger">Recusar</button></form>{% else %}<a class="btn soft" href="#pedido-{{order.id}}" data-open-order="{{order.id}}">Ver e atualizar</a>{% endif %}{% if false %}<a class="btn whatsapp" href="https://wa.me/55{{order.customer_phone|replace(' ','')|replace('(','')|replace(')','')|replace('-','')}}" target="_blank" rel="noopener">WhatsApp</a>{% endif %}</div>
-</article>{% endfor %}</div></section>{% endif %}
+<section class="panel active-orders-inbox" id="pedidos-ativos">
+<div class="active-orders-title"><div><span class="kicker">{{today_day[8:10]}}/{{today_day[5:7]}}/{{today_day[:4]}}</span><h2>Pedidos de hoje</h2><p>Pedidos de outros dias ficam em Menu ☰ → Pedidos.</p></div><span class="active-orders-count">{{today_orders|length}}</span></div>
+<div class="active-orders-list">{% for order in today_orders %}<article class="active-order-row status-{{order.status}}">
+<a class="active-order-main" href="/painel?abrir_pedido={{order.id}}#pedido-{{order.id}}" data-open-order="{{order.id}}"><span class="active-order-avatar">{{(order.customer_name or 'C')[:1]|upper}}</span><span><b>{{order.customer_name or 'Cliente'}}</b><small>{{order.order_code}} · {{order.created_at[11:16]}} · {{order.item_count}} item(ns)</small><em>{{status_labels.get(order.status,order.status)}}</em></span><strong>R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</strong></a>
+<div class="active-order-actions">{% if order.status=='new' %}<form action="/painel/pedidos/{{order.id}}/status" method="post"><input type="hidden" name="status" value="confirmed"><button class="btn primary">✓ Aceitar pedido</button></form><form action="/painel/pedidos/{{order.id}}/status" method="post" data-cancel-form><input type="hidden" name="status" value="rejected"><input type="hidden" name="reason"><button class="btn danger">Recusar</button></form>{% else %}<a class="btn soft" href="/painel?abrir_pedido={{order.id}}#pedido-{{order.id}}" data-open-order="{{order.id}}">Ver pedido</a>{% endif %}</div>
+</article>{% else %}<p class="muted">Nenhum pedido recebido hoje.</p>{% endfor %}</div></section>
 <section class="panel pro-welcome" id="resumo">
 <div>
 <span class="kicker">Central do profissional</span>
@@ -146,8 +145,9 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 <b>{{product.name}}</b>
 <small>{{product.category}} · R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</small>
 </div>
-<span class="status-pill {% if product.available %}ok{% endif %}">{% if product.available %}Disponível{% else %}Esgotado/pausado{% endif %}</span>
+<span class="status-pill {% if product.available %}ok{% endif %}">{% if product.available %}Disponível{% else %}Indisponível{% endif %}</span>
 </summary>
+<form action="/painel/cardapio/produtos/{{product.id}}/disponibilidade" method="post" class="v67-availability"><input type="hidden" name="available" value="{{0 if product.available else 1}}"><button class="btn soft" type="submit">{{'Marcar indisponível' if product.available else 'Marcar disponível'}}</button></form>
 <form action="/painel/cardapio/produtos/{{product.id}}" method="post" enctype="multipart/form-data" class="product-form">
 <label>Nome<input class="input" name="name" value="{{product.name}}" required>
 </label>
@@ -177,6 +177,12 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 </div>{% endfor %}</div>
 {% endif %}
 </section>
+<section class="panel" id="adicionais"><h2>Adicionais</h2><p>Escolha o produto e cadastre extras, como bacon, queijo ou molhos. O cliente seleciona os adicionais no próprio produto.</p>
+{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}
+<form action="/painel/cardapio/adicionais" method="post" class="product-form"><label>Produto<select name="product_id" required>{% for product in products %}<option value="{{product.id}}">{{product.name}}</option>{% endfor %}</select></label><label>Tipo<select name="option_kind"><option value="add">Adicionar ingrediente</option><option value="remove">Retirar ingrediente sem custo</option></select></label><label>Nome<input class="input" name="option_name" placeholder="Ex.: Bacon extra" maxlength="100" required></label><label>Preço adicional<input class="input" name="option_price" value="0,00" inputmode="decimal" required></label><button class="btn primary" type="submit" {% if not products %}disabled{% endif %}>Cadastrar adicional</button></form>
+{% for product in products %}{% if product_options.get(product.id) %}<details class="v67-extra-group"><summary>{{product.name}} · {{product_options.get(product.id)|length}} adicional(is)</summary>{% for option in product_options.get(product.id,[]) %}<article><b>{{option.name}}</b><span>R$ {{'%.2f'|format(option.price_cents/100)|replace('.',',')}} · {{'Disponível' if option.available else 'Indisponível'}}</span><form action="/painel/cardapio/adicionais/{{option.id}}/disponibilidade" method="post"><input type="hidden" name="available" value="{{0 if option.available else 1}}"><button class="btn soft" type="submit">{{'Indisponibilizar' if option.available else 'Disponibilizar'}}</button></form><form action="/painel/cardapio/adicionais/{{option.id}}/excluir" method="post" data-confirm-delete><button class="btn danger" type="submit">Excluir</button></form></article>{% endfor %}</details>{% endif %}{% endfor %}
+{% if not products %}<p>Cadastre um produto antes de adicionar extras.</p>{% endif %}
+{% else %}<p>Adicionais disponíveis para cardápio ou catálogo Premium.</p>{% endif %}</section>
 <section class="panel analytics-panel" id="relatorios">
 <div class="section-title">
 <div>
@@ -245,17 +251,12 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 <div class="section-title">
 <div>
 <span class="kicker">Central de pedidos</span>
-<h2>Histórico de pedidos</h2>
+<h2>Pedidos por dia</h2><p>Selecione uma data para ver os pedidos daquele dia.</p>
 </div>
 <span class="status-pill ok">Atualização automática</span>
 </div>
 <form method="get" action="/painel#pedidos" class="analytics-filter">
-<label>Mês<input class="input" type="month" name="mes" value="{{filter_month}}">
-</label>
-<label>De<input class="input" type="date" name="inicio" value="{{filter_start}}">
-</label>
-<label>Até<input class="input" type="date" name="fim" value="{{filter_end}}">
-</label>
+<label>Dia dos pedidos<input class="input" type="date" name="pedido_dia" value="{{order_day}}" required></label>
 <label>Status<select name="pedido_status">
 <option value="todos" {% if order_status=='todos' %}selected{% endif %}>Todos</option>
 <option value="new" {% if order_status=='new' %}selected{% endif %}>Novo</option>
@@ -273,19 +274,19 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 <div class="order-metrics">
 <article>
 <span>Pedidos</span>
-<b>{{order_summary.total or 0}}</b>
+<b>{{day_order_summary.total or 0}}</b>
 </article>
 <article>
 <span>Valor estimado</span>
-<b>R$ {{'%.2f'|format((order_summary.revenue_cents or 0)/100)|replace('.',',')}}</b>
+<b>R$ {{'%.2f'|format((day_order_summary.revenue_cents or 0)/100)|replace('.',',')}}</b>
 </article>
 <article>
 <span>Ticket médio</span>
-<b>R$ {{'%.2f'|format((order_summary.avg_ticket_cents or 0)/100)|replace('.',',')}}</b>
+<b>R$ {{'%.2f'|format((day_order_summary.avg_ticket_cents or 0)/100)|replace('.',',')}}</b>
 </article>
 <article>
 <span>Finalizados</span>
-<b>{{order_summary.completed or 0}}</b>
+<b>{{day_order_summary.completed or 0}}</b>
 </article>
 </div>
 <div class="orders-list">{% for order in orders %}<article id="pedido-{{order.id}}" class="order-card {% if order.status in ['new','confirmed','preparing','ready','out_for_delivery'] %}active-order-card{% endif %}" data-order-status="{{order.status}}">
@@ -557,5 +558,5 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 </section>{% endif %}
 </main>
 </div>
-<script src="/static/order-chat.js?v=61"></script><script src="/static/pro-panel-menu.js?v=61"></script><script src="/static/order-alerts.js?v=61"></script>
+<script src="/static/order-chat.js?v=61"></script><script src="/static/pro-panel-menu.js?v=67"></script><script src="/static/order-alerts.js?v=61"></script>
 {% endblock %}
