@@ -1,0 +1,16 @@
+NOWUP V72 — PERFIS E FINANCEIRO
+
+Aplicar os três ZIPs juntos, sobre a V71 atual.
+RAIZ: app.py e nowup_admin72.py na raiz do GitHub.
+TEMPLATES: admin.html dentro de templates.
+STATIC: admin-profiles.js e admin-profiles.css dentro de static.
+Depois, aguardar o deploy do Render. Não alterar nenhuma chave ou variável do backup.
+
+A migração adiciona duas colunas financeiras sem apagar cadastros.
+Perfis: filtros de aprovação, ativos, pausados/bloqueados, recusados e fictícios, busca, nome, foto, cidade e data de cadastro.
+Financeiro: controle MANUAL de pagamentos de perfis Premium reais. Registrar último pagamento e próximo vencimento após conferir o recebimento. A vencer = próximos 7 dias; inadimplente = vencimento anterior ao dia atual em Brasília. Sem vencimento definido não significa inadimplência. Gratuitos e fictícios não têm cobrança.
+A data exibida é a data de cadastro existente; não é uma data inventada de início do Premium.
+Não existe cobrança automática, integração bancária ou bloqueio por atraso nesta versão. Ativar Premium não confirma pagamento.
+As áreas continuam exclusivas do ADM. Permissões individuais para funcionários AINDA NÃO implementadas; não compartilhar a conta ADM para simular acesso limitado.
+
+Conferência após deploy: abrir Perfis, testar filtros e busca; abrir Financeiro; cadastrar datas em um perfil Premium real; conferir situação; abrir Backups e conferir que automático permanece ativado.
