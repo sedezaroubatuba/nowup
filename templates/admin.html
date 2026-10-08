@@ -1,5 +1,6 @@
 {% extends 'base.html' %}{% block title %}Admin NowUp{% endblock %}{% block body_class %}social-admin{% endblock %}{% block content %}
 <link rel="stylesheet" href="/static/admin-categories.css?v=66">
+<link rel="stylesheet" href="/static/admin-profiles.css?v=72">
 
 <div class="container dashboard nu-admin" id="nu-admin">
 <aside class="sidebar" id="nu-admin-nav" aria-label="Áreas administrativas">
@@ -13,6 +14,7 @@
 <a href="#publicidade">Publicidade</a>
 <a href="#cadastro-rapido">Criar perfil fictício</a>
 <a href="#profissionais">Perfis</a>
+<a href="#financeiro">Financeiro</a>
 <a href="#clientes">Clientes</a>
 <a href="#denuncias">Denúncias</a>
 <a href="#sugestoes">Sugestões</a>
@@ -20,7 +22,7 @@
 </aside>
 <main>
 <div class="nu-admin-toolbar"><button type="button" class="btn soft" id="nu-admin-toggle" aria-controls="nu-admin-nav" aria-expanded="false" aria-label="Abrir menu administrativo">☰ Menu</button><a class="nu-admin-logo" href="#dashboard">NowUp<span> Brasil</span></a><strong id="nu-admin-title">Visão geral</strong><a class="btn soft" href="/">Ver site</a><form action="/sair" method="post"><button class="btn danger">Sair</button></form></div>
-<section class="panel" id="dashboard"><h1>Painel administrativo</h1><a class="btn soft" href="#backups">🛡 Backups</a><a class="btn primary v66-add-category" href="#nova-categoria">＋ Adicionar categoria</a><p class="muted">Gerencie o NowUp Brasil de forma simples e rápida.</p><div class="nu-shortcuts"><a class="nu-shortcut blue" href="#profissionais"><span class="nu-icon" aria-hidden="true">👥</span><span><b>Perfis</b><small>Gerencie lojas e profissionais</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut green" href="#clientes"><span class="nu-icon" aria-hidden="true">👤</span><span><b>Clientes</b><small>Acompanhe os cadastros</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut purple" href="#categorias"><span class="nu-icon" aria-hidden="true">▣</span><span><b>Categorias</b><small>Adicionar e editar categorias</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut yellow" href="#publicidade"><span class="nu-icon" aria-hidden="true">📣</span><span><b>Publicidade</b><small>Gerencie banners e anúncios</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut pink" href="#relatorio-geral"><span class="nu-icon" aria-hidden="true">▥</span><span><b>Relatórios</b><small>Consulte pedidos e desempenho</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut cyan" href="#cadastro-rapido"><span class="nu-icon" aria-hidden="true">＋</span><span><b>Criar perfil fictício</b><small>Cadastre perfis de demonstração</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut purple" href="#aparencia"><span class="nu-icon" aria-hidden="true">◉</span><span><b>Aparência</b><small>Personalize cores e capa</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut pink" href="#denuncias"><span class="nu-icon" aria-hidden="true">⚠</span><span><b>Denúncias</b><small>Consulte denúncias recebidas</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut blue" href="#configuracoes"><span class="nu-icon" aria-hidden="true">⚙</span><span><b>Configurações</b><small>Dados administrativos e portal</small></span><span aria-hidden="true">›</span></a></div><div class="nu-summary">
+<section class="panel" id="dashboard"><h1>Painel administrativo</h1><a class="btn soft" href="#backups">🛡 Backups</a><a class="btn primary v66-add-category" href="#nova-categoria">＋ Adicionar categoria</a><p class="muted">Gerencie o NowUp Brasil de forma simples e rápida.</p><div class="nu-shortcuts"><a class="nu-shortcut blue" href="#profissionais"><span class="nu-icon" aria-hidden="true">👥</span><span><b>Perfis</b><small>Gerencie lojas e profissionais</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut green" href="#clientes"><span class="nu-icon" aria-hidden="true">👤</span><span><b>Clientes</b><small>Acompanhe os cadastros</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut purple" href="#categorias"><span class="nu-icon" aria-hidden="true">▣</span><span><b>Categorias</b><small>Adicionar e editar categorias</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut yellow" href="#publicidade"><span class="nu-icon" aria-hidden="true">📣</span><span><b>Publicidade</b><small>Gerencie banners e anúncios</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut pink" href="#relatorio-geral"><span class="nu-icon" aria-hidden="true">▥</span><span><b>Relatórios</b><small>Consulte pedidos e desempenho</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut cyan" href="#cadastro-rapido"><span class="nu-icon" aria-hidden="true">＋</span><span><b>Criar perfil fictício</b><small>Cadastre perfis de demonstração</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut purple" href="#aparencia"><span class="nu-icon" aria-hidden="true">◉</span><span><b>Aparência</b><small>Personalize cores e capa</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut pink" href="#denuncias"><span class="nu-icon" aria-hidden="true">⚠</span><span><b>Denúncias</b><small>Consulte denúncias recebidas</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut blue" href="#configuracoes"><span class="nu-icon" aria-hidden="true">⚙</span><span><b>Configurações</b><small>Dados administrativos e portal</small></span><span aria-hidden="true">›</span></a></div><a class="btn soft" href="#financeiro">Financeiro — mensalidades</a><div class="nu-summary">
 <a href="#profissionais"><b>{{stats.professionals}}</b><span>Perfis cadastrados</span><small>Ver todos →</small></a>
 <a href="#clientes"><b>{{stats.customers}}</b><span>Clientes cadastrados</span><small>Ver todos →</small></a>
 <a href="#categorias"><b>{{admin_categories|length}}</b><span>Categorias</span><small>Ver todas →</small></a>
@@ -327,6 +329,12 @@
 </section>
 <section class="panel" id="profissionais">{% if request.query_params.get('aviso')=='email-enviando' %}<p role="status">O e-mail da análise anterior ainda está sendo enviado. Aguarde antes de mudar a decisão.</p>{% endif %}{% if request.query_params.get('ok')=='analise' %}<p role="status">Análise salva.</p>{% endif %}{% if request.query_params.get('aviso')=='email-falhou' %}<p role="alert">A decisão foi salva, mas não foi possível enviar o e-mail. Confira a configuração de e-mail e use “Reenviar e-mail”.</p>{% endif %}{% if request.query_params.get('erro')=='email-pendente' %}<p role="alert">O profissional precisa confirmar o e-mail antes de aprovar a loja.</p>{% elif request.query_params.get('erro')=='aprovar-cadastro' %}<p role="alert">Use “Aprovar e ativar” para liberar esse cadastro.</p>{% endif %}
 <h2>Profissionais e empresas</h2>
+<p>Gerencie a situação dos cadastros. Pagamentos ficam na área <a href="#financeiro">Financeiro</a>.</p>
+<div class="v72-filters" data-filter-group="profiles">
+{% for value,label in [('all','Todos'),('pending','Aguardando aprovação'),('active','Ativos'),('paused','Pausados / bloqueados'),('rejected','Recusados'),('demo','Fictícios')] %}
+<button type="button" class="btn soft tiny" data-filter="{{value}}" aria-pressed="{{'true' if value=='all' else 'false'}}">{{label}} <span data-count="{{value}}"></span></button>{% endfor %}</div>
+<label>Buscar loja ou profissional<input class="input" type="search" data-search="profiles" placeholder="Nome ou cidade"></label>
+<p data-result="profiles" role="status"></p>
 {% if request.query_params.get('ok')=='perfil-editado' %}<div class="alert success">Alterações salvas.</div>{% elif request.query_params.get('ok')=='perfil-excluido' %}<div class="alert success">Perfil fictício excluído.</div>{% endif %}
 {% if request.query_params.get('erro')=='editar-perfil' %}<div class="alert danger">Não foi possível salvar. Confira os dados e a foto e tente novamente.</div>{% endif %}
 {% if pros|selectattr('is_demo')|list|length %}<form action="/admin/perfis/demonstracao/excluir-todos" method="post" onsubmit="return confirm('Excluir TODOS os perfis fictícios? Os perfis reais não serão apagados.')"><button class="btn danger" type="submit">Excluir todos os perfis fictícios</button></form>{% endif %}
@@ -337,8 +345,9 @@
 <th>Confirmado</th>
 <th>Status</th>
 <th>Ações</th>
-</tr>{% for p in pros %}<tr>
+</tr>{% for p in pros %}<tr data-v72-row="profiles" data-status="{{p.profile_status}}" data-demo="{{1 if p.is_demo else 0}}" data-search-text="{{p.display_name}} {{p.city}}">
 <td>
+<div class="v72-identity">{% if p.avatar_filename %}<img src="/uploads/{{p.avatar_filename}}" alt="" loading="lazy">{% endif %}<div><strong>{{p.display_name}}</strong><small>{{p.city}}</small><small>Cadastro: {{p.joined_label}}</small><small>{{'Fictício' if p.is_demo else 'Perfil real'}}</small></div></div>
 <details><summary class="btn soft tiny" style="cursor:pointer">Editar perfil</summary><form action="/admin/profissionais/{{p.id}}/editar" method="post" enctype="multipart/form-data" class="admin-inline-edit {% if p.is_demo %}demo-profile-edit{% endif %}">
 <input class="input" name="display_name" value="{{p.display_name}}" required>
 <input class="input" name="city" value="{{p.city}}" placeholder="Cidade">
@@ -362,11 +371,11 @@
 <a class="tiny" href="/p/{{p.slug}}">Ver perfil público</a>
 </td>
 <td>{{'Sim' if p.email_verified else 'Pendente'}}</td>
-<td><b>Cadastro: {{ {'pending':'Aguardando análise','approved':'Aprovado','rejected':'Recusado'}.get(p.admission_status,p.admission_status) }}</b>{% if p.admission_reason %}<p>{{p.admission_reason}}</p>{% endif %}{% if admission_mail_states.get(p.id) %}<p>E-mail: {{ {'sent':'Enviado','failed':'Falhou','pending':'Aguardando envio','sending':'Envio em andamento'}.get(admission_mail_states.get(p.id),admission_mail_states.get(p.id)) }}</p>{% endif %}<br>Plano: <b>{{'Premium' if p.is_premium else 'Gratuito'}}</b><br>Verificado: {{'Sim' if p.verified else 'Não'}}<br>Destaque: {{'Sim' if p.featured else 'Não'}}<br>No slide: {{'Sim' if p.in_slider else 'Não'}}<br>Bloqueado: {{'Sim' if p.blocked else 'Não'}}</td>
+<td><b>Cadastro: {{ {'pending':'Aguardando análise','approved':'Aprovado','rejected':'Recusado'}.get(p.admission_status,p.admission_status) }}</b>{% if p.admission_reason %}<p>{{p.admission_reason}}</p>{% endif %}{% if admission_mail_states.get(p.id) %}<p>E-mail: {{ {'sent':'Enviado','failed':'Falhou','pending':'Aguardando envio','sending':'Envio em andamento'}.get(admission_mail_states.get(p.id),admission_mail_states.get(p.id)) }}</p>{% endif %}<br>Plano: <b>{{'Premium' if p.is_premium else 'Gratuito'}}</b><br>Financeiro: <b>{{p.billing_label}}</b><br>Verificado: {{'Sim' if p.verified else 'Não'}}<br>Destaque: {{'Sim' if p.featured else 'Não'}}<br>No slide: {{'Sim' if p.in_slider else 'Não'}}<br>Bloqueado: {{'Sim' if p.blocked else 'Não'}}</td>
 <td>
 <div class="row">
 {% if not p.is_demo %}{% if p.admission_status!='approved' %}<form action="/admin/profissionais/{{p.id}}/analise/approved" method="post"><button class="btn primary tiny" type="submit">Aprovar e ativar</button></form>{% endif %}{% if p.admission_status!='rejected' %}<details><summary class="btn danger tiny">Recusar cadastro</summary><form action="/admin/profissionais/{{p.id}}/analise/rejected" method="post"><label>Motivo (opcional)<textarea class="input" name="reason" maxlength="500" placeholder="Explique o motivo ao profissional"></textarea></label><button class="btn danger tiny" type="submit">Confirmar recusa</button></form></details>{% endif %}{% if admission_mail_states.get(p.id) in ['failed','pending'] %}<form action="/admin/profissionais/{{p.id}}/analise/reenviar-email" method="post"><button class="btn soft tiny" type="submit">Reenviar e-mail</button></form>{% endif %}{% endif %}
-<form action="/admin/profissionais/{{p.id}}/acao/verificar" method="post">
+<details class="v72-more"><summary class="btn soft tiny">Mais opções</summary><div class="row"><form action="/admin/profissionais/{{p.id}}/acao/verificar" method="post">
 <button class="btn soft tiny">Verificar</button>
 </form>
 <form action="/admin/profissionais/{{p.id}}/acao/destaque" method="post">
@@ -382,11 +391,22 @@
 <button class="btn {% if p.blocked %}soft{% else %}danger{% endif %} tiny">{{'Reativar' if p.blocked else 'Pausar/bloquear'}}</button>
 </form>{% endif %}
 {% if p.is_demo %}<form action="/admin/profissionais/{{p.id}}/excluir" method="post" onsubmit="return confirm('Excluir definitivamente este perfil fictício?')"><button class="btn danger tiny" type="submit">Excluir perfil</button></form>{% endif %}
+</div></details>
 </div>
 </td>
 </tr>{% endfor %}</table>
 </div>
 </section>
+
+<section class="panel" id="financeiro"><h2>Financeiro — mensalidades</h2>
+<p>Controle manual dos planos Premium. “A vencer” significa vencimento nos próximos 7 dias. Gratuitos e fictícios não têm cobrança. O vencimento não bloqueia a loja automaticamente.</p>
+{% if request.query_params.get('ok')=='financeiro' %}<p role="status">Dados financeiros salvos.</p>{% endif %}
+{% if request.query_params.get('erro') in ['financeiro','financeiro-plano'] %}<p role="alert">Confira as datas. Somente perfis reais com Premium ativo podem receber dados de mensalidade; pagamento não pode estar no futuro e o próximo vencimento deve ser posterior ao pagamento.</p>{% endif %}
+<div class="v72-filters" data-filter-group="billing">{% for value,label in [('all','Todos'),('current','Em dia'),('soon','A vencer'),('overdue','Inadimplentes'),('unconfigured','Sem vencimento'),('free','Gratuitos'),('demo','Fictícios')] %}<button type="button" class="btn soft tiny" data-filter="{{value}}" aria-pressed="{{'true' if value=='all' else 'false'}}">{{label}} <span data-count="{{value}}"></span></button>{% endfor %}</div>
+<label>Buscar perfil<input class="input" type="search" data-search="billing" placeholder="Nome ou cidade"></label><p data-result="billing" role="status"></p>
+<div class="tablewrap"><table class="table"><thead><tr><th>Perfil</th><th>Situação</th><th>Pagamento e vencimento</th><th>Atualizar mensalidade</th></tr></thead><tbody>
+{% for p in pros %}<tr data-v72-row="billing" data-status="{{p.billing_status}}" data-search-text="{{p.display_name}} {{p.city}}"><td><strong>{{p.display_name}}</strong><br>{{p.city}}<br>Cadastro: {{p.joined_label}}<br>Plano: {{'Premium' if p.is_premium else 'Gratuito'}}</td><td>{{p.billing_label}}</td><td>Último pagamento: {{p.paid_label}}<br>Próximo vencimento: {{p.due_label}}</td><td>{% if p.is_premium and not p.is_demo %}<details><summary class="btn soft tiny">Registrar / corrigir</summary><form action="/admin/profissionais/{{p.id}}/financeiro" method="post" class="v72-billing-form"><label>Último pagamento confirmado<input class="input" type="date" name="last_paid" value="{{p.billing_last_paid}}"></label><label>Próximo vencimento<input class="input" type="date" name="due_date" value="{{p.billing_due_date}}"></label><small>Registre após conferir o pagamento. Deixe vazio para remover uma data incorreta.</small><button class="btn primary tiny" type="submit">Salvar mensalidade</button></form></details>{% else %}Sem cobrança{% endif %}</td></tr>{% endfor %}
+</tbody></table></div></section>
 <section class="panel" id="clientes">
 <h2>Clientes</h2>
 <div class="tablewrap">
@@ -458,4 +478,5 @@ body.social-admin{background:#f5f8fc;color:#102344}.nu-admin{display:block!impor
 <script src="/static/panel-back-top.js?v=70" defer></script>
 
 <script src="/static/admin-backups.js?v=71" defer></script>
+<script src="/static/admin-profiles.js?v=72" defer></script>
 {% endblock %}
