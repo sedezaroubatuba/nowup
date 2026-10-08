@@ -94,9 +94,16 @@
     dashboard.querySelectorAll('[data-print-order]').forEach(button => button.addEventListener('click', () => {
       const card = button.closest('.order-card');
       if (card) {
-        card.classList.add('print-order-target');
-        window.print();
-        card.classList.remove('print-order-target');
+        const receipt = card.querySelector('.v69-receipt');
+        if (!receipt) return;
+        const popup = window.open('', '_blank', 'width=450,height=650');
+        if (!popup) { window.alert('Permita abrir a janela de impressão para imprimir o pedido.'); return; }
+        popup.opener = null;
+        popup.document.write('<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Pedido NowUp</title><style>body{font:14px Arial,sans-serif;margin:18px;color:#000}h1{font-size:20px}h2{font-size:17px}p{line-height:1.5}hr{border:0;border-top:1px dashed #777}@page{margin:10mm}</style></head><body>'+receipt.innerHTML+'</body></html>');
+        popup.document.close();
+        popup.addEventListener('afterprint', () => popup.close(), {once:true});
+        popup.focus();
+        popup.setTimeout(() => popup.print(), 150);
       }
     }));
 
