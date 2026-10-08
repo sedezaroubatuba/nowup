@@ -62,9 +62,11 @@
     const links=[...dashboard.querySelectorAll('.pro-sidebar a[href^="#"]')];
     const sections=[...dashboard.querySelectorAll('main > section')];
     const groups={
+      hoje:['pedidos-ativos'],
       resumo:['resumo','estatisticas'],
-      pedidos:['pedidos-ativos','pedidos'],
+      pedidos:['pedidos'],
       cardapio:['cardapio'],
+      adicionais:['adicionais'],
       clientes:['clientes'],
       relatorios:['relatorios','mais-pedidos'],
       perfil:['perfil','identidade','fotos','publicidade'],
@@ -73,10 +75,18 @@
       notificacoes:['notificacoes']
     };
 
+    function localDay(){
+      const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+      const value=type=>parts.find(part=>part.type===type).value;
+      return `${value('year')}-${value('month')}-${value('day')}`;
+    }
+    function dayChanged(){ return dashboard.dataset.panelDay && dashboard.dataset.panelDay!==localDay(); }
+    window.setInterval(()=>{ const hash=location.hash.slice(1); if(!document.hidden && (!hash || hash==='hoje') && dayChanged()) location.replace('/painel'); },30000);
     function navigate(){
       const hash=location.hash.slice(1);
-      let group=Object.keys(groups).find(key=>groups[key].includes(hash))||'pedidos';
+      let group=Object.keys(groups).find(key=>groups[key].includes(hash))||'hoje';
       if(/^pedido-\d+$/.test(hash))group='pedidos';
+      if(group==='hoje' && dayChanged()){ location.replace('/painel'); return; }
 
       dashboard.classList.add('show-full-dashboard');
       sections.forEach(section=>{
