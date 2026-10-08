@@ -40,8 +40,7 @@ def verify(token: str=""):
     if valid_until < datetime.now(timezone.utc):
         conn.close(); return RedirectResponse("/entrar?erro=expirado",303)
     conn.execute("UPDATE users SET email_verified=1,verification_token='',verification_expires_at='' WHERE id=?",(u["id"],))
-    if u["role"]=="professional":
-        conn.execute("UPDATE professionals SET blocked=0 WHERE user_id=?",(u["id"],))
+    # Confirmar e-mail não publica a loja. A aprovação é exclusiva do ADM.
     conn.commit(); conn.close()
     return RedirectResponse("/entrar?verificado=1",303)
 

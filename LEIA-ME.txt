@@ -1,11 +1,46 @@
-NOWUP V59 — CORREÇÃO DOS BOTÕES E ALERTAS
-Faça backup. Esta atualização pressupõe que a V58 já foi instalada.
-RAIZ: substituir app.py.
-TEMPLATES: substituir pro_panel.html dentro de templates.
-STATIC: substituir pro-panel-menu.js e order-alerts.js dentro de static.
-Não enviar este LEIA-ME nem alterar data/uploads.
-Após o deploy, recarregue o painel e toque em Ativar alertas de pedidos.
-O painel deve permanecer aberto para consultar pedidos e tocar o alarme.
-Ver e atualizar agora revela a seção de detalhes. Novos pedidos são registrados também no sininho da loja; o sininho pode exigir recarregar a página para atualizar sua contagem.
-Teste: faça um pedido em uma conta de cliente e confira o aviso no painel da loja. Aceite o pedido e confira que o alarme para quando não há outros pendentes. Toque em Ver e atualizar e confira os detalhes e a conversa.
-Validado localmente: resposta do servidor para pedidos pendentes e aceitos, sintaxe JS e template. Falta validação no Render/celular.
+NOWUP V69 — IMPRESSÃO, ENDEREÇO E ANÁLISE DE LOJAS
+
+Instalar OS TRÊS pacotes juntos:
+RAIZ: substituir app.py E email_verification.py na raiz.
+IMPORTANTE: email_verification.py também precisa ser substituído para impedir
+que confirmar o e-mail ative a loja automaticamente.
+TEMPLATES: substituir pro_panel.html, menu.html, admin.html e customer_panel.html
+nas respectivas pastas templates.
+STATIC: substituir pro-panel-menu.js e adicionar customer-address.js e
+customer-address.css dentro de static.
+Aguardar o deploy e recarregar as telas.
+
+Impressão: o botão Imprimir abre um comprovante separado, sem a conversa.
+Inclui cliente, telefone, endereço/bairro/referência, itens, adicionais,
+observações, pagamento, entrega, subtotal, total e informação de troco.
+
+Conta do cliente: endereço em seção própria, botão Adicionar/Trocar endereço.
+Salvar nome e telefone não apaga o endereço salvo.
+No pedido, endereço preenchido automaticamente e opção Trocar endereço.
+Salvar este endereço para próximos pedidos atualiza o cadastro ao enviar
+um pedido de entrega válido. Sem marcar essa opção, não altera o endereço salvo.
+
+Novas lojas cadastradas pelo profissional: aguardam análise, não aparecem
+na home/perfil público/cardápio e não podem receber pedidos até aprovação.
+Profissional pode confirmar e-mail, entrar e preparar seu painel.
+ADM > Perfis: conferir cadastro, Aprovar e ativar ou Recusar cadastro.
+É necessário confirmar o e-mail antes da aprovação.
+Aprovar envia boas-vindas; recusar envia aviso cordial com motivo opcional.
+Falha no e-mail fica visível no ADM, com botão Reenviar e-mail.
+Usa a configuração Brevo existente. A decisão fica salva mesmo se o envio falhar.
+A aprovação/recusa só pode ser feita pelo ADM; repetição da mesma decisão
+não envia outro e-mail automaticamente.
+
+Lojas existentes e perfis fictícios mantêm seu estado anterior; não são
+recusados nem apagados por esta atualização.
+Preserva login, categorias, pedidos por dia, disponibilidade e filtros da V68.
+Mantenha base.html/logout-confirm.js da V65 e demais arquivos das versões anteriores.
+Não substituir data, uploads ou banco. Os pacotes não contêm esses dados.
+Atualização adiciona colunas e tabela de acompanhamento de envio no banco
+existente automaticamente, sem apagar cadastros.
+
+Base de arquivos: app.py V67, pro_panel/navigation V68, ADM V66, menu V67,
+customer_panel/email_verification do pacote completo V51.
+Verificações locais passaram com banco temporário e e-mail simulado.
+Não aplicado/testado no site publicado. Conferir impressão, cadastro novo,
+endereço e envio real após a instalação.

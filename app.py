@@ -1,4 +1,5 @@
 from __future__ import annotations
+import html
 import os, re, io, hmac, hashlib, secrets, sqlite3, unicodedata, json
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -250,7 +251,7 @@ def context(request: Request, **kwargs):
     conn = db()
     cats = conn.execute("SELECT * FROM categories WHERE active=1 ORDER BY sort_order,name").fetchall()
     banners = conn.execute("SELECT * FROM banners WHERE active=1 AND image_filename!='' ORDER BY sort_order,id LIMIT 3").fetchall()
-    business_slides = conn.execute("SELECT id,slug,display_name,slide_image_filename FROM professionals WHERE blocked=0 AND in_slider=1 AND slide_image_filename!='' ORDER BY id DESC LIMIT 10").fetchall()
+    business_slides = conn.execute("SELECT id,slug,display_name,slide_image_filename FROM professionals WHERE blocked=0 AND admission_status='approved' AND in_slider=1 AND slide_image_filename!='' ORDER BY id DESC LIMIT 10").fetchall()
     settings = get_settings(conn)
     conn.close()
     return {
@@ -503,6 +504,14 @@ def init_db():
     ensure_column(conn, "users", "verification_token", "TEXT DEFAULT ''")
     ensure_column(conn, "users", "verification_expires_at", "TEXT DEFAULT ''")
     ensure_column(conn, "users", "address", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "users", "address_reference", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "professionals", "admission_status", "TEXT NOT NULL DEFAULT 'approved'")
+    ensure_column(conn, "professionals", "admission_reason", "TEXT NOT NULL DEFAULT ''")
+    conn.execute("""CREATE TABLE IF NOT EXISTS admission_mail(
+        professional_id INTEGER PRIMARY KEY REFERENCES professionals(id) ON DELETE CASCADE,
+        decision TEXT NOT NULL, state TEXT NOT NULL DEFAULT 'pending', updated_at TEXT NOT NULL
+    )""")
+
     ensure_column(conn, "users", "neighborhood", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "users", "preferred_payment", "TEXT NOT NULL DEFAULT 'pix'")
     ensure_column(conn, "professionals", "business_type", "TEXT NOT NULL DEFAULT 'professional'")
@@ -666,7 +675,7 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
     settings = get_settings(conn)
     cities = active_cities(settings)
     city = city.strip() or cities[0]
-    params=[]; where=["p.blocked=0", public_business_scope()]
+    params=[]; where=["p.blocked=0 AND p.admission_status='approved'", public_business_scope()]
     if q:
         where.append("(p.display_name LIKE ? OR p.services LIKE ? OR p.description LIKE ? OR EXISTS(SELECT 1 FROM professional_categories pcq JOIN categories cq ON cq.id=pcq.category_id WHERE pcq.professional_id=p.id AND cq.name LIKE ?) OR EXISTS(SELECT 1 FROM products pr WHERE pr.professional_id=p.id AND pr.available=1 AND (pr.name LIKE ? OR pr.description LIKE ? OR pr.category LIKE ?)))")
         like=f"%{q.strip()}%"; params += [like,like,like,like,like,like,like]
@@ -703,7 +712,7 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
       SELECT po.*,p.display_name,p.slug,p.city,
       COALESCE(NULLIF(p.avatar_filename,''),NULLIF(p.cover_filename,''),(SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1)) avatar
       FROM posts po JOIN professionals p ON p.id=po.professional_id
-      WHERE p.blocked=0 AND po.post_type!='status' ORDER BY po.id DESC LIMIT 12
+      WHERE p.blocked=0 AND p.admission_status='approved' AND po.post_type!='status' ORDER BY po.id DESC LIMIT 12
     """).fetchall()
     user=current_user(request); favorite_ids=set()
     if user and user["role"]=="customer":
@@ -719,7 +728,7 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
 
 @app.get("/profissionais", response_class=HTMLResponse)
 def professionals(request: Request, category: str="", city: str="", neighborhood: str="", cep: str="", q: str="", business_type: str=""):
-    conn=db(); where=["p.blocked=0", public_business_scope()]; params=[]; cities=active_cities(get_settings(conn)); city=city.strip() or cities[0]
+    conn=db(); where=["p.blocked=0 AND p.admission_status='approved'", public_business_scope()]; params=[]; cities=active_cities(get_settings(conn)); city=city.strip() or cities[0]
     for field,val in [("p.city",city),("p.neighborhood",neighborhood),("p.cep",cep)]:
         if val: where.append(f"{field} LIKE ?"); params.append(f"%{val}%")
     if q:
@@ -745,7 +754,7 @@ def profile(request: Request, slug: str):
       SELECT p.*,
        COALESCE((SELECT ROUND(AVG(stars),1) FROM reviews r WHERE r.professional_id=p.id),0) rating,
        (SELECT COUNT(*) FROM reviews r WHERE r.professional_id=p.id) review_count
-      FROM professionals p WHERE p.slug=? AND p.blocked=0
+      FROM professionals p WHERE p.slug=? AND p.blocked=0 AND p.admission_status='approved'
     """,(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404,"Profissional não encontrado")
     conn.execute("UPDATE professionals SET views=views+1 WHERE id=?",(p["id"],))
@@ -765,7 +774,7 @@ def profile(request: Request, slug: str):
 
 @app.get("/p/{slug}/menu", response_class=HTMLResponse)
 def native_menu(request: Request, slug: str):
-    conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
+    conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved'",(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404,"Empresa não encontrada")
     if not p["is_premium"] or p["offer_mode"] not in ("menu","catalog"):
         conn.close(); return RedirectResponse(f"/p/{slug}?recurso=premium",303)
@@ -788,10 +797,10 @@ def native_menu(request: Request, slug: str):
     return templates.TemplateResponse("menu.html", context(request, pro=p, products=products, product_options=product_options, menu_categories=menu_categories, shop_status=status))
 
 @app.post("/p/{slug}/menu/pedido")
-def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...)):
+def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...), save_address: Optional[str]=Form(None)):
     logged=current_user(request)
     if not logged or logged["role"]!="customer": return RedirectResponse("/entrar?erro=pedido-login",303)
-    conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
+    conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved'",(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404)
     if not p["is_premium"] or p["offer_mode"] not in ("menu","catalog"):
         conn.close(); raise HTTPException(403,"Cardápio ou catálogo disponível somente no plano Premium")
@@ -818,6 +827,8 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
             clean_items.append((product,qty,item_notes,chosen,unit)); subtotal += unit*qty
     if not clean_items: conn.close(); raise HTTPException(400,"Nenhum produto disponível no carrinho")
     fulfillment_type="delivery" if fulfillment_type=="delivery" else "pickup"
+    if fulfillment_type=="delivery" and not address.strip():
+        conn.close(); raise HTTPException(400,"Informe o endereço para entrega")
     if fulfillment_type=="delivery" and not p["allows_delivery"]: conn.close(); raise HTTPException(400,"Esta loja não realiza entregas")
     if fulfillment_type=="pickup" and not p["allows_pickup"]: conn.close(); raise HTTPException(400,"Esta loja não permite retirada")
     if subtotal < (p["minimum_order_cents"] or 0): conn.close(); raise HTTPException(400,"O pedido não atingiu o valor mínimo")
@@ -835,6 +846,9 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
     for product,qty,item_notes,chosen,unit in clean_items:
         item_cur=conn.execute("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes) VALUES(?,?,?,?,?,?)",(order_id,product["id"],product["name"],qty,unit,item_notes))
         for option in chosen: conn.execute("INSERT INTO order_item_options(order_item_id,option_id,option_name,price_cents) VALUES(?,?,?,?)",(item_cur.lastrowid,option["id"],option["name"],option["price_cents"]))
+    if fulfillment_type=="delivery" and save_address:
+        conn.execute("UPDATE users SET address=?,neighborhood=?,address_reference=? WHERE id=? AND role='customer'",
+                     (address.strip()[:300],neighborhood.strip()[:120],address_reference.strip()[:220],logged["id"]))
     conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(p["user_id"],"Novo pedido no NowUp",f"{order_code} — {customer_name.strip()[:120]}",f"/painel#pedido-{order_id}",created))
     conn.commit(); conn.close()
     return RedirectResponse(f"/pedido/{tracking_token}",303)
@@ -885,7 +899,7 @@ def order_tracking_whatsapp(token: str):
 
 @app.post("/p/{slug}/whatsapp")
 def whatsapp_click(slug: str):
-    conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
+    conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved'",(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404)
     conn.execute("UPDATE professionals SET whatsapp_clicks=whatsapp_clicks+1 WHERE id=?",(p["id"],))
     conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"whatsapp_click",now_iso())); conn.commit(); conn.close()
@@ -893,7 +907,7 @@ def whatsapp_click(slug: str):
 
 @app.get("/p/{slug}/cardapio")
 def menu_click(slug: str):
-    conn=db(); p=conn.execute("SELECT id,menu_url,is_premium FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
+    conn=db(); p=conn.execute("SELECT id,menu_url,is_premium FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved'",(slug,)).fetchone()
     if not p or not p["is_premium"] or not clean_link(p["menu_url"]): conn.close(); raise HTTPException(404)
     conn.execute("UPDATE professionals SET menu_clicks=menu_clicks+1 WHERE id=?",(p["id"],))
     conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"menu_click",now_iso())); conn.commit(); target=p["menu_url"]; conn.close()
@@ -901,7 +915,7 @@ def menu_click(slug: str):
 
 @app.get("/p/{slug}/link")
 def external_click(slug: str):
-    conn=db(); p=conn.execute("SELECT id,external_url FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
+    conn=db(); p=conn.execute("SELECT id,external_url FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved'",(slug,)).fetchone()
     if not p or not clean_link(p["external_url"]): conn.close(); raise HTTPException(404)
     conn.execute("UPDATE professionals SET external_clicks=external_clicks+1 WHERE id=?",(p["id"],))
     conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"external_click",now_iso())); conn.commit(); target=p["external_url"]; conn.close()
@@ -912,7 +926,7 @@ def social_click(slug: str, network: str):
     columns={"instagram":"instagram_url","facebook":"facebook_url","site":"website_url"}
     column=columns.get(network)
     if not column: raise HTTPException(404)
-    conn=db(); p=conn.execute(f"SELECT id,{column} target FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
+    conn=db(); p=conn.execute(f"SELECT id,{column} target FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved'",(slug,)).fetchone()
     if not p or not clean_link(p["target"]): conn.close(); raise HTTPException(404)
     conn.execute("UPDATE professionals SET external_clicks=external_clicks+1 WHERE id=?",(p["id"],))
     conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"external_click",now_iso())); conn.commit(); target=p["target"]; conn.close()
@@ -993,7 +1007,7 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
                          (uid,slug,name.strip(),doc_type,document.strip(),phone.strip(),city.strip(),neighborhood.strip(),cep.strip(),description.strip(),services.strip(),business_type,offer_mode,now_iso())); pid=cur.lastrowid
         for cid in category_ids[:1]:
             conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(pid,cid))
-        conn.execute("UPDATE professionals SET blocked=1 WHERE id=?",(pid,))
+        conn.execute("UPDATE professionals SET blocked=1,admission_status='pending' WHERE id=?",(pid,))
         conn.commit()
     except sqlite3.IntegrityError:
         conn.rollback(); conn.close(); return RedirectResponse("/cadastro/profissional?erro=email",303)
@@ -1434,7 +1448,7 @@ def customer_panel(request: Request):
     favorites=conn.execute("""SELECT p.*,
       COALESCE(NULLIF(p.cover_filename,''),NULLIF(p.avatar_filename,''),(SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1)) cover
       FROM favorites f JOIN professionals p ON p.id=f.professional_id
-      WHERE f.customer_id=? AND p.blocked=0 ORDER BY f.created_at DESC""",(u["id"],)).fetchall()
+      WHERE f.customer_id=? AND p.blocked=0 AND p.admission_status='approved' ORDER BY f.created_at DESC""",(u["id"],)).fetchall()
     orders=conn.execute("""SELECT o.*,p.display_name,p.slug FROM orders o
       JOIN professionals p ON p.id=o.professional_id
       WHERE o.customer_id=? OR (o.customer_id IS NULL AND replace(replace(replace(replace(o.customer_phone,' ',''),'-',''),'(',''),')','')=?)
@@ -1445,13 +1459,23 @@ def customer_panel(request: Request):
     return templates.TemplateResponse("customer_panel.html", context(request, reviews=reviews, favorites=favorites, orders=orders, notifications=notifications, unread_notifications=unread_notifications, status_labels=ORDER_STATUS_LABELS))
 
 @app.post("/cliente/conta")
-def customer_account_update(request: Request, name: str=Form(...), phone: str=Form(""), address: str=Form(""), neighborhood: str=Form(""), preferred_payment: str=Form("pix")):
+def customer_account_update(request: Request, name: str=Form(...), phone: str=Form(""), address: str=Form(""), neighborhood: str=Form(""), preferred_payment: str=Form("pix"), address_reference: str=Form("")):
     u=require_user(request,"customer"); clean_name=name.strip()[:120]; clean_phone=phone.strip()[:30]
     if not clean_name or (clean_phone and not normalize_phone(clean_phone)):
         return RedirectResponse("/cliente?erro=conta#conta",303)
     if preferred_payment not in {"pix","cash","credit","debit","on_delivery"}: preferred_payment="pix"
-    conn=db(); conn.execute("UPDATE users SET name=?,phone=?,address=?,neighborhood=?,preferred_payment=? WHERE id=?",(clean_name,clean_phone,address.strip()[:300],neighborhood.strip()[:120],preferred_payment,u["id"])); conn.commit(); conn.close()
+    conn=db(); conn.execute("UPDATE users SET name=?,phone=?,preferred_payment=? WHERE id=?",(clean_name,clean_phone,preferred_payment,u["id"])); conn.commit(); conn.close()
     return RedirectResponse("/cliente?ok=conta#conta",303)
+
+@app.post("/cliente/endereco")
+def customer_address_update(request: Request, address: str=Form(...), neighborhood: str=Form(""), address_reference: str=Form("")):
+    u=require_user(request,"customer")
+    if not address.strip(): return RedirectResponse("/cliente?erro=endereco#conta",303)
+    conn=db()
+    conn.execute("UPDATE users SET address=?,neighborhood=?,address_reference=? WHERE id=? AND role='customer'",
+                 (address.strip()[:300],neighborhood.strip()[:120],address_reference.strip()[:220],u["id"]))
+    conn.commit(); conn.close()
+    return RedirectResponse("/cliente?ok=endereco#conta",303)
 
 @app.post("/cliente/notificacoes/ler")
 def customer_notifications_read(request: Request):
@@ -1464,7 +1488,7 @@ def toggle_favorite(request: Request, professional_id: int, next: str=Form("/cli
     exists=conn.execute("SELECT 1 FROM favorites WHERE customer_id=? AND professional_id=?",(u["id"],professional_id)).fetchone()
     if exists: conn.execute("DELETE FROM favorites WHERE customer_id=? AND professional_id=?",(u["id"],professional_id))
     else:
-        valid=conn.execute("SELECT 1 FROM professionals WHERE id=? AND blocked=0",(professional_id,)).fetchone()
+        valid=conn.execute("SELECT 1 FROM professionals WHERE id=? AND blocked=0 AND admission_status='approved'",(professional_id,)).fetchone()
         if valid: conn.execute("INSERT INTO favorites(customer_id,professional_id,created_at) VALUES(?,?,?)",(u["id"],professional_id,now_iso()))
     conn.commit(); conn.close()
     safe_next=next if next.startswith("/") and not next.startswith("//") else "/cliente"
@@ -1577,7 +1601,7 @@ def publish_post(request: Request, text: str=Form(...), post_type: str=Form("pos
 
 @app.post("/p/{slug}/avaliar")
 def review(request: Request, slug:str, stars:int=Form(...), comment:str=Form("")):
-    u=require_user(request,"customer"); stars=max(1,min(5,stars)); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE slug=? AND blocked=0",(slug,)).fetchone()
+    u=require_user(request,"customer"); stars=max(1,min(5,stars)); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved'",(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404)
     completed=conn.execute("SELECT 1 FROM orders WHERE customer_id=? AND professional_id=? AND status='completed' LIMIT 1",(u["id"],p["id"])).fetchone()
     if not completed: conn.close(); return RedirectResponse(f"/p/{slug}?erro=avaliacao-sem-pedido#avaliacoes",303)
@@ -1636,10 +1660,11 @@ def admin(request: Request, inicio: str="", fim: str=""):
       (SELECT category_id FROM professional_categories pc WHERE pc.professional_id=p.id LIMIT 1) category_id
       FROM professionals p JOIN users u ON u.id=p.user_id ORDER BY p.id DESC LIMIT 100""").fetchall()
     clients=conn.execute("SELECT id,name,email,phone,is_active,email_verified,created_at FROM users WHERE role='customer' ORDER BY id DESC LIMIT 100").fetchall()
+    admission_mail_states={row["professional_id"]:row["state"] for row in conn.execute("SELECT professional_id,state FROM admission_mail").fetchall()}
     admin_categories=conn.execute("SELECT * FROM categories ORDER BY sort_order,name").fetchall()
     reports=conn.execute("SELECT r.*,u.name customer,p.display_name professional FROM reports r JOIN users u ON u.id=r.customer_id JOIN professionals p ON p.id=r.professional_id ORDER BY r.id DESC LIMIT 50").fetchall()
     suggestions=conn.execute("SELECT * FROM suggestions ORDER BY id DESC LIMIT 30").fetchall(); banners=conn.execute("SELECT * FROM banners ORDER BY sort_order,id").fetchall(); conn.close()
-    return templates.TemplateResponse("admin.html", context(request, stats=stats, pros=pros, clients=clients, admin_categories=admin_categories, reports=reports, suggestions=suggestions, admin_banners=banners, report_orders=report_orders, report_top=report_top, report_start=report_start.isoformat(), report_end=report_end.isoformat()))
+    return templates.TemplateResponse("admin.html", context(request, stats=stats, pros=pros, clients=clients, admission_mail_states=admission_mail_states, admin_categories=admin_categories, reports=reports, suggestions=suggestions, admin_banners=banners, report_orders=report_orders, report_top=report_top, report_start=report_start.isoformat(), report_end=report_end.isoformat()))
 
 NOWUP_THEMES = {
     "oceanico": ("#075BD8", "#FF6A00"),
@@ -1767,6 +1792,67 @@ def admin_delete_client(request: Request, uid:int):
 def admin_delete_category(request: Request, cid:int):
     require_user(request,"admin"); conn=db(); conn.execute("DELETE FROM categories WHERE id=?",(cid,)); conn.commit(); conn.close(); return RedirectResponse("/admin#categorias",303)
 
+def send_admission_notice(pid):
+    # Reservar o envio para evitar duplicações de cliques concorrentes.
+    conn=db()
+    conn.execute("BEGIN IMMEDIATE")
+    pro=conn.execute("""SELECT p.*,u.email,u.name FROM professionals p JOIN users u ON u.id=p.user_id
+                         WHERE p.id=?""",(pid,)).fetchone()
+    mail=conn.execute("SELECT * FROM admission_mail WHERE professional_id=?",(pid,)).fetchone()
+    if not pro or not mail or mail["state"] not in ('pending','failed') or mail["decision"]!=pro["admission_status"]:
+        conn.rollback(); conn.close(); return False
+    conn.execute("UPDATE admission_mail SET state='sending',updated_at=? WHERE professional_id=?",(now_iso(),pid))
+    conn.commit(); conn.close()
+    name=html.escape(pro["name"] or pro["display_name"]); business=html.escape(pro["display_name"])
+    if mail["decision"]=='approved':
+        subject="Bem-vindo ao NowUp! Sua loja foi aprovada"
+        body=f"<h2>Bem-vindo ao NowUp Brasil!</h2><p>Olá, {name}!</p><p>O cadastro da loja <b>{business}</b> foi conferido e aprovado. Sua loja já está liberada no NowUp.</p><p>Acesse seu painel para revisar as informações, horários e produtos antes de começar a receber pedidos.</p><p>Desejamos boas vendas e estamos felizes por ter você conosco!</p>"
+    else:
+        subject="Atualização sobre o cadastro da sua loja no NowUp"
+        reason=html.escape(pro["admission_reason"] or '')
+        body=f"<h2>Sobre seu cadastro no NowUp</h2><p>Olá, {name}.</p><p>Agradecemos seu interesse em cadastrar <b>{business}</b>. Lamentamos, mas neste momento o cadastro não se enquadra no perfil do NowUp e não foi aprovado.</p>"
+        if reason: body+=f"<p>Motivo informado pela equipe: {reason}</p>"
+        body+="<p>Se desejar esclarecer alguma informação, entre em contato com nossa equipe. Obrigado pela compreensão.</p>"
+    base=os.getenv("NOWUP_BASE_URL","").strip().rstrip('/')
+    if base: body+=f'<p><a href="{html.escape(base,quote=True)}/painel">Acessar meu painel</a></p>'
+    try: sent=bool(send_email(pro["email"],pro["name"],subject,'<div style="font-family:Arial,sans-serif">'+body+'</div>'))
+    except Exception: sent=False
+    conn=db()
+    conn.execute("UPDATE admission_mail SET state=?,updated_at=? WHERE professional_id=? AND decision=? AND state='sending'",
+                 ('sent' if sent else 'failed',now_iso(),pid,mail["decision"]))
+    conn.commit(); conn.close()
+    return sent
+
+@app.post("/admin/profissionais/{pid}/analise/reenviar-email")
+def admin_resend_admission_email(request: Request, pid:int):
+    require_user(request,"admin")
+    sent=send_admission_notice(pid)
+    return RedirectResponse('/admin?ok=analise'+('' if sent else '&aviso=email-falhou')+'#profissionais',303)
+
+
+@app.post("/admin/profissionais/{pid}/analise/{decision}")
+def admin_review_professional(request: Request, pid:int, decision:str, reason:str=Form("")):
+    require_user(request,"admin")
+    if decision not in ('approved','rejected'): raise HTTPException(400,"Decisão inválida")
+    conn=db(); conn.execute("BEGIN IMMEDIATE")
+    pro=conn.execute("SELECT p.*,u.email_verified FROM professionals p JOIN users u ON u.id=p.user_id WHERE p.id=?",(pid,)).fetchone()
+    if not pro: conn.rollback(); conn.close(); raise HTTPException(404,"Loja não encontrada")
+    if pro["is_demo"]: conn.rollback(); conn.close(); return RedirectResponse("/admin?erro=perfil-demo#profissionais",303)
+    if decision=='approved' and not pro["email_verified"]:
+        conn.rollback(); conn.close(); return RedirectResponse("/admin?erro=email-pendente#profissionais",303)
+    ongoing=conn.execute("SELECT state FROM admission_mail WHERE professional_id=?",(pid,)).fetchone()
+    if ongoing and ongoing["state"]=='sending':
+        conn.rollback(); conn.close(); return RedirectResponse("/admin?aviso=email-enviando#profissionais",303)
+    if pro["admission_status"]==decision:
+        conn.rollback(); conn.close(); return RedirectResponse("/admin?ok=analise#profissionais",303)
+    conn.execute("UPDATE professionals SET admission_status=?,admission_reason=?,blocked=? WHERE id=?",
+                 (decision,reason.strip()[:500] if decision=='rejected' else '',0 if decision=='approved' else 1,pid))
+    if decision=='approved': conn.execute("UPDATE users SET is_active=1 WHERE id=?",(pro["user_id"],))
+    conn.execute("INSERT INTO admission_mail(professional_id,decision,state,updated_at) VALUES(?,?,'pending',?) ON CONFLICT(professional_id) DO UPDATE SET decision=excluded.decision,state='pending',updated_at=excluded.updated_at",(pid,decision,now_iso()))
+    conn.commit(); conn.close()
+    sent=send_admission_notice(pid)
+    return RedirectResponse('/admin?ok=analise'+('' if sent else '&aviso=email-falhou')+'#profissionais',303)
+
 @app.post("/admin/profissionais/{pid}/acao/{action}")
 def admin_pro_action(request: Request, pid:int, action:str):
     require_user(request,"admin"); conn=db()
@@ -1775,8 +1861,10 @@ def admin_pro_action(request: Request, pid:int, action:str):
     elif action=="premium": conn.execute("UPDATE professionals SET is_premium=CASE is_premium WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(pid,))
     elif action=="slide": conn.execute("UPDATE professionals SET in_slider=CASE in_slider WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(pid,))
     elif action=="bloquear":
-        pro=conn.execute("SELECT user_id,blocked FROM professionals WHERE id=?",(pid,)).fetchone()
+        pro=conn.execute("SELECT user_id,blocked,admission_status FROM professionals WHERE id=?",(pid,)).fetchone()
         if pro:
+            if pro["admission_status"]!='approved':
+                conn.close(); return RedirectResponse("/admin?erro=aprovar-cadastro#profissionais",303)
             new_blocked=0 if pro["blocked"] else 1
             conn.execute("UPDATE professionals SET blocked=? WHERE id=?",(new_blocked,pid))
             conn.execute("UPDATE users SET is_active=? WHERE id=?",(0 if new_blocked else 1,pro["user_id"]))
