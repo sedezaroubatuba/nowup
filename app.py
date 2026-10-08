@@ -533,6 +533,8 @@ def init_db():
     ensure_column(conn, "professionals", "whatsapp_message", "TEXT DEFAULT 'Olá! Encontrei você pelo NowUp e gostaria de saber mais.'")
     ensure_column(conn, "professionals", "is_demo", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "professionals", "is_premium", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "professionals", "billing_due_date", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "professionals", "billing_last_paid", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "professionals", "offer_mode", "TEXT NOT NULL DEFAULT 'services'")
     ensure_column(conn, "professionals", "in_slider", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "professionals", "featured_image_filename", "TEXT DEFAULT ''")
@@ -1637,13 +1639,37 @@ def admin(request: Request, inicio: str="", fim: str=""):
       GROUP BY p.id ORDER BY orders_count DESC,revenue_cents DESC LIMIT 10""",(report_start.isoformat(),report_end.isoformat())).fetchall()
     pros=conn.execute("""SELECT p.*,u.email,u.email_verified,
       (SELECT category_id FROM professional_categories pc WHERE pc.professional_id=p.id LIMIT 1) category_id
-      FROM professionals p JOIN users u ON u.id=p.user_id ORDER BY p.id DESC LIMIT 100""").fetchall()
+      FROM professionals p JOIN users u ON u.id=p.user_id ORDER BY p.id DESC""").fetchall()
+    from nowup_admin72 import enrich_profiles
+    pros=enrich_profiles(pros)
     clients=conn.execute("SELECT id,name,email,phone,is_active,email_verified,created_at FROM users WHERE role='customer' ORDER BY id DESC LIMIT 100").fetchall()
     admission_mail_states={row["professional_id"]:row["state"] for row in conn.execute("SELECT professional_id,state FROM admission_mail").fetchall()}
     admin_categories=conn.execute("SELECT * FROM categories ORDER BY sort_order,name").fetchall()
     reports=conn.execute("SELECT r.*,u.name customer,p.display_name professional FROM reports r JOIN users u ON u.id=r.customer_id JOIN professionals p ON p.id=r.professional_id ORDER BY r.id DESC LIMIT 50").fetchall()
     suggestions=conn.execute("SELECT * FROM suggestions ORDER BY id DESC LIMIT 30").fetchall(); banners=conn.execute("SELECT * FROM banners ORDER BY sort_order,id").fetchall(); conn.close()
     return templates.TemplateResponse("admin.html", context(request, stats=stats, pros=pros, clients=clients, admission_mail_states=admission_mail_states, admin_categories=admin_categories, reports=reports, suggestions=suggestions, admin_banners=banners, report_orders=report_orders, report_top=report_top, report_start=report_start.isoformat(), report_end=report_end.isoformat()))
+
+
+@app.post("/admin/profissionais/{pid}/financeiro")
+def admin_save_billing(request: Request, pid:int, due_date:str=Form(""), last_paid:str=Form("")):
+    require_user(request,"admin")
+    from urllib.parse import urlsplit
+    from nowup_admin72 import valid_billing_dates
+    source=request.headers.get("origin") or request.headers.get("referer")
+    if not source or urlsplit(source).netloc != request.url.netloc:
+        raise HTTPException(403,"Origem inválida")
+    try: due_date,last_paid=valid_billing_dates(due_date,last_paid)
+    except ValueError: return RedirectResponse("/admin?erro=financeiro#financeiro",303)
+    conn=db()
+    try:
+        pro=conn.execute("SELECT is_demo,is_premium FROM professionals WHERE id=?",(pid,)).fetchone()
+        if not pro: raise HTTPException(404)
+        if pro["is_demo"] or not pro["is_premium"]:
+            return RedirectResponse("/admin?erro=financeiro-plano#financeiro",303)
+        conn.execute("UPDATE professionals SET billing_due_date=?,billing_last_paid=? WHERE id=?",(due_date,last_paid,pid))
+        conn.commit()
+    finally: conn.close()
+    return RedirectResponse("/admin?ok=financeiro#financeiro",303)
 
 NOWUP_THEMES = {
     "oceanico": ("#075BD8", "#FF6A00"),
