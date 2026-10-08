@@ -1,7 +1,48 @@
 (function () {
+  function initProductFilters(dashboard) {
+    const grid = dashboard.querySelector('[data-pro-products]');
+    const nav = dashboard.querySelector('.pro-product-filters');
+    if (!grid || !nav) return;
+    const buttons = Array.from(nav.querySelectorAll('[data-pro-category]'));
+    const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/\s+/g, ' ').toLowerCase();
+    const empty = document.createElement('p');
+    empty.className = 'muted full';
+    empty.setAttribute('role', 'status');
+    empty.textContent = 'Nenhum produto nesta categoria.';
+    empty.style.gridColumn = '1 / -1';
+    empty.hidden = true;
+    grid.append(empty);
+    function filter(button) {
+      const selected = normalize(button.dataset.proCategory);
+      let visibleCount = 0;
+      grid.querySelectorAll('[data-pro-product]').forEach(card => {
+        const visible = selected === 'all' || (selected === 'promocoes' ? card.dataset.featured === '1' : normalize(card.dataset.category) === selected);
+        card.hidden = !visible;
+        card.style.setProperty('display', visible ? 'block' : 'none', 'important');
+        if (visible) visibleCount++;
+      });
+      buttons.forEach(item => {
+        const active = item === button;
+        item.classList.toggle('active', active);
+        item.setAttribute('aria-pressed', String(active));
+      });
+      empty.hidden = visibleCount > 0;
+      empty.style.setProperty('display', visibleCount ? 'none' : 'block', 'important');
+    }
+    dashboard.addEventListener('click', event => {
+      const button = event.target.closest('[data-pro-category]');
+      if (!button || !nav.contains(button)) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      filter(button);
+    }, true);
+    if (buttons.length) filter(buttons.find(button => button.classList.contains('active')) || buttons[0]);
+  }
+
   function initPanelMenu() {
     const dashboard = document.querySelector('.pro-dashboard');
     if (!dashboard) return;
+    initProductFilters(dashboard);
 
     const menuToggle = dashboard.querySelector('[data-pro-menu-toggle]');
     const sidebar = dashboard.querySelector('.pro-sidebar');
