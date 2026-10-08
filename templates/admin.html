@@ -1,4 +1,6 @@
 {% extends 'base.html' %}{% block title %}Admin NowUp{% endblock %}{% block body_class %}social-admin{% endblock %}{% block content %}
+<link rel="stylesheet" href="/static/admin-categories.css?v=66">
+
 <div class="container dashboard nu-admin" id="nu-admin">
 <aside class="sidebar" id="nu-admin-nav" aria-label="Áreas administrativas">
 <div class="admin-brand"><span>NU</span><div><h3>Admin NowUp</h3><small>Central de controle</small></div></div>
@@ -17,7 +19,7 @@
 </aside>
 <main>
 <div class="nu-admin-toolbar"><button type="button" class="btn soft" id="nu-admin-toggle" aria-controls="nu-admin-nav" aria-expanded="false" aria-label="Abrir menu administrativo">☰ Menu</button><a class="nu-admin-logo" href="#dashboard">NowUp<span> Brasil</span></a><strong id="nu-admin-title">Visão geral</strong><a class="btn soft" href="/">Ver site</a><form action="/sair" method="post"><button class="btn danger">Sair</button></form></div>
-<section class="panel" id="dashboard"><h1>Painel administrativo</h1><p class="muted">Gerencie o NowUp Brasil de forma simples e rápida.</p><div class="nu-shortcuts"><a class="nu-shortcut blue" href="#profissionais"><span class="nu-icon" aria-hidden="true">👥</span><span><b>Perfis</b><small>Gerencie lojas e profissionais</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut green" href="#clientes"><span class="nu-icon" aria-hidden="true">👤</span><span><b>Clientes</b><small>Acompanhe os cadastros</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut purple" href="#categorias"><span class="nu-icon" aria-hidden="true">▣</span><span><b>Categorias</b><small>Organize as categorias</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut yellow" href="#publicidade"><span class="nu-icon" aria-hidden="true">📣</span><span><b>Publicidade</b><small>Gerencie banners e anúncios</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut pink" href="#relatorio-geral"><span class="nu-icon" aria-hidden="true">▥</span><span><b>Relatórios</b><small>Consulte pedidos e desempenho</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut cyan" href="#cadastro-rapido"><span class="nu-icon" aria-hidden="true">＋</span><span><b>Criar perfil fictício</b><small>Cadastre perfis de demonstração</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut purple" href="#aparencia"><span class="nu-icon" aria-hidden="true">◉</span><span><b>Aparência</b><small>Personalize cores e capa</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut pink" href="#denuncias"><span class="nu-icon" aria-hidden="true">⚠</span><span><b>Denúncias</b><small>Consulte denúncias recebidas</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut blue" href="#configuracoes"><span class="nu-icon" aria-hidden="true">⚙</span><span><b>Configurações</b><small>Dados administrativos e portal</small></span><span aria-hidden="true">›</span></a></div><div class="nu-summary">
+<section class="panel" id="dashboard"><h1>Painel administrativo</h1><a class="btn primary v66-add-category" href="#nova-categoria">＋ Adicionar categoria</a><p class="muted">Gerencie o NowUp Brasil de forma simples e rápida.</p><div class="nu-shortcuts"><a class="nu-shortcut blue" href="#profissionais"><span class="nu-icon" aria-hidden="true">👥</span><span><b>Perfis</b><small>Gerencie lojas e profissionais</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut green" href="#clientes"><span class="nu-icon" aria-hidden="true">👤</span><span><b>Clientes</b><small>Acompanhe os cadastros</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut purple" href="#categorias"><span class="nu-icon" aria-hidden="true">▣</span><span><b>Categorias</b><small>Adicionar e editar categorias</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut yellow" href="#publicidade"><span class="nu-icon" aria-hidden="true">📣</span><span><b>Publicidade</b><small>Gerencie banners e anúncios</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut pink" href="#relatorio-geral"><span class="nu-icon" aria-hidden="true">▥</span><span><b>Relatórios</b><small>Consulte pedidos e desempenho</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut cyan" href="#cadastro-rapido"><span class="nu-icon" aria-hidden="true">＋</span><span><b>Criar perfil fictício</b><small>Cadastre perfis de demonstração</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut purple" href="#aparencia"><span class="nu-icon" aria-hidden="true">◉</span><span><b>Aparência</b><small>Personalize cores e capa</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut pink" href="#denuncias"><span class="nu-icon" aria-hidden="true">⚠</span><span><b>Denúncias</b><small>Consulte denúncias recebidas</small></span><span aria-hidden="true">›</span></a><a class="nu-shortcut blue" href="#configuracoes"><span class="nu-icon" aria-hidden="true">⚙</span><span><b>Configurações</b><small>Dados administrativos e portal</small></span><span aria-hidden="true">›</span></a></div><div class="nu-summary">
 <a href="#profissionais"><b>{{stats.professionals}}</b><span>Perfis cadastrados</span><small>Ver todos →</small></a>
 <a href="#clientes"><b>{{stats.customers}}</b><span>Clientes cadastrados</span><small>Ver todos →</small></a>
 <a href="#categorias"><b>{{admin_categories|length}}</b><span>Categorias</span><small>Ver todas →</small></a>
@@ -169,50 +171,27 @@
 </form>
 </section>
 <section class="panel" id="categorias">
+{% if request.query_params.get('ok')=='categoria' %}<p role="status">Categoria adicionada. Ela já está disponível na página principal.</p>{% elif request.query_params.get('erro')=='categoria-existente' %}<p role="alert">Já existe uma categoria com esse nome. Edite ou ative a categoria existente.</p>{% elif request.query_params.get('erro')=='categoria-nome' %}<p role="alert">Digite um nome para a categoria, com até 120 caracteres.</p>{% endif %}
 <div class="section-title"><div><h2>📂 Categorias da página principal</h2><p class="muted">Crie uma categoria e escolha o ícone que aparecerá para os clientes.</p></div><span class="status-pill">{{admin_categories|length}} cadastradas</span></div>
-<form action="/admin/categorias" method="post" class="admin-create-box">
-<label>Nome da nova categoria<input class="input" name="name" placeholder="Ex.: Restaurantes" required></label>
-<label>Ícone da categoria<input class="input category-icon-input" name="icon" placeholder="🍔" value="🛠️" maxlength="8"></label>
+<form action="/admin/categorias" method="post" class="admin-create-box" id="nova-categoria">
+<label>Nome da nova categoria<input class="input" name="name" placeholder="Ex.: Carrinho de lanche" maxlength="120" required></label>
+<label>Ícone da categoria<input class="input category-icon-input" name="icon" placeholder="🍔" value="🍔" maxlength="12"></label>
 <button class="btn primary">＋ Adicionar categoria</button>
 </form>
-<p class="admin-help">Sugestões de ícones: 🍔 Restaurantes · 🛒 Mercados · 💊 Farmácias · 🐾 Pet shop · 🔧 Serviços · 🚗 Mecânico · 🏖️ Turismo</p>
-<div class="tablewrap">
-<table class="table">
-<tr>
-<th>Ordem</th>
-<th>Ícone e nome</th>
-<th>Status</th>
-<th>Ações</th>
-</tr>{% for c in admin_categories %}<tr>
-<td>
-<div class="row">
-<form action="/admin/categorias/{{c.id}}/mover/up" method="post">
-<button class="btn soft">↑</button>
-</form>
-<form action="/admin/categorias/{{c.id}}/mover/down" method="post">
-<button class="btn soft">↓</button>
-</form>
-</div>
-</td>
-<td>
-<form action="/admin/categorias/{{c.id}}/editar" method="post" class="row">
-<input class="input mini-input" name="icon" value="{{c.icon}}">
-<input class="input" name="name" value="{{c.name}}" required>
-<button class="btn soft">Salvar</button>
-</form>
-</td>
-<td>{{'Ativa' if c.active else 'Inativa'}}</td>
-<td>
-<div class="row">
-<form action="/admin/categorias/{{c.id}}/alternar" method="post">
-<button class="btn soft">Ativar/desativar</button>
-</form>
-<form action="/admin/categorias/{{c.id}}/excluir" method="post">
-<button class="btn danger">Excluir</button>
-</form>
-</div>
-</td>
-</tr>{% endfor %}</table>
+<p class="admin-help">Sugestões de ícones: 🍔 Restaurantes · 🛒 Mercados · 💊 Farmácias · 🐾 Pet shop · 🥖 Padarias · 🍻 Adegas · 🌭 Carrinho de lanche</p>
+<div class="v66-category-list">
+{% for c in admin_categories %}<article class="v66-category-card">
+<header><span class="v66-category-icon" aria-hidden="true">{{c.icon}}</span><h3>{{c.name}}</h3><span class="status-pill">{{'Ativa' if c.active else 'Inativa'}}</span></header>
+<form action="/admin/categorias/{{c.id}}/editar" method="post" class="v66-category-edit">
+<label>Nome da categoria<textarea class="input" name="name" rows="2" maxlength="120" required>{{c.name}}</textarea></label>
+<label>Ícone<input class="input" name="icon" value="{{c.icon}}" maxlength="12"></label>
+<button class="btn soft" type="submit">Salvar alterações</button></form>
+<div class="v66-category-actions">
+<form action="/admin/categorias/{{c.id}}/mover/up" method="post"><button class="btn soft" type="submit" aria-label="Mover {{c.name}} para cima">↑ Subir</button></form>
+<form action="/admin/categorias/{{c.id}}/mover/down" method="post"><button class="btn soft" type="submit" aria-label="Mover {{c.name}} para baixo">↓ Descer</button></form>
+<form action="/admin/categorias/{{c.id}}/alternar" method="post"><button class="btn soft" type="submit">{{'Desativar' if c.active else 'Ativar'}}</button></form>
+<form action="/admin/categorias/{{c.id}}/excluir" method="post" onsubmit="return confirm('Excluir esta categoria? As lojas cadastradas não serão excluídas, mas poderão precisar de outra categoria.')"><button class="btn danger" type="submit">Excluir</button></form>
+</div></article>{% else %}<p>Nenhuma categoria cadastrada. Use o formulário acima para adicionar.</p>{% endfor %}
 </div>
 </section>
 <section class="panel" id="publicidade">
@@ -332,7 +311,7 @@
 <label>Nome da loja<input class="input" name="display_name" placeholder="Ex.: Quiosque Brisa do Mar" maxlength="120" required></label>
 <label>WhatsApp genérico<input class="input" name="whatsapp" type="tel" inputmode="tel" value="00000000000"><small>Pode deixar assim para demonstração ou trocar pelo seu número.</small></label>
 <details style="grid-column:1/-1"><summary style="cursor:pointer;padding:12px 0;font-weight:700">Mais opções (opcional)</summary><div class="grid-form">
-<label>Categoria<select class="input" name="category_id"><option value="0">Automática — primeira categoria da home</option>{% for cat in admin_categories %}{% if cat.active and cat.slug in ['restaurantes-e-lanchonetes','lanches-e-pizzarias','padarias-e-cafeterias','doces-e-sorveterias','mercados-e-mercearias','conveniencias-e-adegas','pet-shops-e-veterinarios'] %}<option value="{{cat.id}}">{{cat.icon}} {{cat.name}}</option>{% endif %}{% endfor %}</select></label>
+<label>Categoria<select class="input" name="category_id"><option value="0">Automática — primeira categoria da home</option>{% for cat in admin_categories %}{% if cat.active %}<option value="{{cat.id}}">{{cat.icon}} {{cat.name}}</option>{% endif %}{% endfor %}</select></label>
 <label>Cidade<input class="input" name="city" placeholder="Automática — cidade principal do site"></label>
 <label>Endereço<input class="input" name="address" placeholder="Opcional"></label>
 <label>Bairro<input class="input" name="neighborhood" placeholder="Opcional"></label>
