@@ -1,0 +1,16 @@
+/* V76: white public search and menu only. */
+body:is(.public-search-area,.public-menu-area){--brand:#14365d;--brand2:#087db5;background:#fff!important;background-image:none!important;color:#14365d!important;color-scheme:light}
+body:is(.public-search-area,.public-menu-area) :is(main,.section,.native-menu,.menu-hero,.top,.footer,.mobile-bottom-nav,.cookie,.panel,.card,.menu-product,.menu-cart,.checkout-dialog,.menu-category-nav){background:#fff!important;background-image:none!important;color:#14365d!important;border-color:#dce4ed!important}
+body:is(.public-search-area,.public-menu-area) :is(h1,h2,h3,h4,p,label,strong,b,small,.brand,.brand span,.hello,.kicker,.menu-product-info,.cart-total,.pad){color:#14365d!important;text-shadow:none!important}
+body:is(.public-search-area,.public-menu-area) :is(.muted,.tiny,.copyright,.brand small){color:#586b80!important}
+body:is(.public-search-area,.public-menu-area) :is(input:not([type=checkbox]):not([type=radio]),select,textarea,.input,.product-quantity-input){background:#fff!important;background-image:none!important;color:#14365d!important;border:1px solid #c8d4e2!important}
+body:is(.public-search-area,.public-menu-area) ::placeholder{color:#65758a!important;opacity:1}
+body:is(.public-search-area,.public-menu-area) select option{background:#fff;color:#14365d}
+body:is(.public-search-area,.public-menu-area) :is(.mobile-menu,.dialog-close,.btn.soft,.btn.ghost,.menu-category-nav button,.product-buy button:not(.primary)){background:#f0f5fa!important;background-image:none!important;color:#14365d!important;border-color:#c8d4e2!important}
+body:is(.public-search-area,.public-menu-area) :is(.btn.primary,.btn.orange,.btn.dark,.menu-category-nav button.active){background:#087db5!important;background-image:none!important;color:#fff!important;border-color:#087db5!important}
+body:is(.public-search-area,.public-menu-area) :is(a,.mobile-bottom-nav a,.footer a,.menu-hero>a){color:#14365d!important}
+body:is(.public-search-area,.public-menu-area) .brand b{color:#087db5!important}
+body:is(.public-search-area,.public-menu-area) :is(.top,.mobile-bottom-nav){box-shadow:0 2px 12px #14365d0c!important}
+body:is(.public-search-area,.public-menu-area) .cookie{box-shadow:0 4px 22px #14365d20!important}
+body:is(.public-search-area,.public-menu-area) :is(input,select,textarea,button,a):focus-visible{outline:3px solid #08a5d0!important;outline-offset:3px}
+body.public-menu-area .checkout-dialog::backdrop{background:#07172c66}
