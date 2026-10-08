@@ -1,0 +1,17 @@
+NOWUP V74 — VENDAS DAS LOJAS E AVISOS NO ADM
+
+Aplicar sobre V72/V73. Arquivos separados por destino.
+RAIZ: app.py e nowup_reports74.py na raiz. Manter nowup_admin72.py da V72 e todos os arquivos do backup.
+TEMPLATES: admin.html, admin_sales.html, admin_sales_bell.html dentro de templates.
+STATIC: admin-sales.css e admin-sales-alerts.js dentro de static.
+Usar os três pacotes juntos e aguardar deploy. Depois recarregar Ctrl+Shift+R.
+
+ADM > Relatório geral > Abrir relatório de vendas das lojas.
+Filtros: datas, mês ou loja. Vendas = pedidos finalizados pela data da finalização; antigos sem histórico usam updated_at. Todos os horários em Brasília. Cancelados e em andamento não entram no valor vendido. Perfis fictícios excluídos.
+Ranking por valor e por pedidos, visitas por perfil no período, sem vendas, comparação com período anterior de mesmo tamanho, média diária, média mensal por loja e média por loja ativa. Dias sem vendas entram na média. Média mensal considera meses abrangidos, sem projetar mês incompleto.
+Picos de movimento usam horário de CRIAÇÃO dos pedidos finalizados no período. Visitas não são pessoas únicas.
+Sininho no ADM e no relatório: atualiza a cada 60 segundos enquanto a página estiver aberta. Não são e-mails, notificações no celular ou alertas com site fechado.
+Avisos somente lojas ativas com cadastro há 14 dias: sem vendas nos últimos 7 dias; queda >=30% ou crescimento >=50% sobre 7 dias anteriores. Base anterior mínima R$100 e, para crescimento, pelo menos 3 pedidos atuais. Critérios exibidos na tela.
+Continua acesso restrito ao ADM. Permissões para funcionários não incluídas. Mantém a remoção de Aparência/capa/faixa da V73. Não altera chaves do Render ou backup.
+
+Verificações locais: seis testes de períodos, limites de Brasília, finalização, cancelamento, exclusão de fictícios, médias, filtros por loja, avisos, autenticação e templates. JavaScript verificado. Conferir funcionamento visual após deploy.

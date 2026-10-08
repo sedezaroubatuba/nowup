@@ -2100,3 +2100,7 @@ nowup_backup.configure(require_user, DB_PATH, UPLOAD_DIR)
 app.include_router(nowup_backup.router)
 app.add_event_handler("startup", nowup_backup.start)
 app.add_event_handler("shutdown", nowup_backup.stop)
+
+import nowup_reports74
+nowup_reports74.configure(db, require_user, templates, context)
+app.include_router(nowup_reports74.router)
