@@ -14,7 +14,7 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 <header class="v60-top"><button class="btn" type="button" data-pro-menu-toggle aria-expanded="false" aria-controls="pro-edit-menu" aria-label="Abrir menu">☰</button><div><b>{{pro.display_name}}</b><small>{{shop_status.label}}</small></div><a class="btn v61-bell" href="#notificacoes" aria-label="Notificações">🔔<span class="v61-badge" data-notification-badge hidden>0</span></a></header>
 <button class="v60-shade" type="button" data-close-pro-menu aria-label="Fechar menu" hidden></button>
 <aside class="sidebar pro-sidebar" id="pro-edit-menu"><h2>Menu da loja</h2>
-<a href="#hoje">📅 Pedidos de hoje</a><a href="#resumo">📊 Visão geral</a><a href="#pedidos">🧾 Pedidos</a><a href="#cardapio">🛍 Produtos e cardápio</a><a href="#adicionais">➕ Adicionais</a><a href="#clientes">👥 Clientes</a><a href="#relatorios">📈 Relatórios</a><a href="#perfil">🏪 Perfil da loja</a><a href="#horarios">⚙️ Configurações</a><a href="#publicar">➕ Publicações</a><a href="/p/{{pro.slug}}">↗ Ver perfil público</a>
+<a href="#hoje">📅 Pedidos de hoje</a><a href="#resumo">📊 Visão geral</a><a href="#pedidos">🧾 Pedidos</a><a href="#cardapio">🛍 {{'Catálogo de produtos' if pro.offer_mode=='catalog' else 'Cardápio'}}</a><a href="#adicionais">➕ Adicionais</a><a href="#clientes">👥 Clientes</a><a href="#relatorios">📈 Relatórios</a><a href="#perfil">🏪 Perfil da loja</a><a href="#horarios">⚙️ Configurações</a><a href="#publicar">➕ Publicações</a><a href="/p/{{pro.slug}}">↗ Ver perfil público</a>
 <form action="/sair" method="post"><button class="btn danger">Sair</button></form></aside>
 <main>
 {% if pro.admission_status=='pending' %}<div class="alert">Seu cadastro está em análise pelo ADM. Você pode preparar seu painel, mas a loja ainda não aparece aos clientes.</div>{% elif pro.admission_status=='rejected' %}<div class="alert danger">Seu cadastro não foi aprovado.{% if pro.admission_reason %} {{pro.admission_reason}}{% endif %} Entre em contato com o NowUp para esclarecer informações.</div>{% endif %}
@@ -64,14 +64,14 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 <small>Desde a criação do perfil</small>
 </div>
 <div class="stat">
-<span>💬 WhatsApp total</span>
+<span>💬 Contatos anteriores</span>
 <b>{{pro.whatsapp_clicks}}</b>
 <small>Cliques de contato</small>
 </div>
 <div class="stat">
-<span>🔗 Outros links</span>
+<span>🔗 Cliques anteriores</span>
 <b>{{pro.menu_clicks + pro.external_clicks}}</b>
-<small>Cardápio, site ou rede</small>
+<small>Histórico de cliques</small>
 </div>
 <div class="stat">
 <span>🖼 Galeria</span>
@@ -90,7 +90,7 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 </section>
 <section class="panel menu-manager" id="cardapio">
 {% if not pro.is_premium %}
-<div class="empty-state full"><span>🔒</span><h2>Cardápio e catálogo são recursos Premium</h2><p class="muted">Seu perfil gratuito continua público com descrição, serviços, fotos, localização e botão do WhatsApp. Assine o Premium para cadastrar produtos, preços, categorias e receber pedidos.</p>{% if support_link!='#' %}<a class="btn primary" href="{{support_link}}" target="_blank" rel="noopener">Quero ativar o Premium</a>{% endif %}</div>
+<div class="empty-state full"><span>🔒</span><h2>Cardápio e catálogo são recursos Premium</h2><p class="muted">Seu perfil gratuito continua público com descrição, serviços, fotos e localização. Assine o Premium para cadastrar produtos, preços, categorias e receber pedidos.</p>{% if support_link!='#' %}<a class="btn primary" href="{{support_link}}" target="_blank" rel="noopener">Quero ativar o Premium</a>{% endif %}</div>
 {% elif pro.offer_mode not in ['menu','catalog'] %}
 <h2>Ative seu cardápio ou catálogo</h2><p>Em Meu perfil, escolha “Cardápio com produtos” ou “Catálogo de produtos” e salve para começar a cadastrar seus itens.</p><a class="btn primary" href="#perfil">Configurar meu perfil</a>
 {% else %}
@@ -104,7 +104,7 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 <p class="muted">Cadastre categorias e produtos. O cliente monta o carrinho e envia o pedido pelo NowUp.</p>
 <details class="menu-settings" open><summary><b>⚙️ Entrega, retirada e pagamento</b></summary><form action="/painel/cardapio/configuracoes" method="post" class="product-form"><label>Taxa de entrega<input class="input" name="delivery_fee" value="{{'%.2f'|format(pro.delivery_fee_cents/100)|replace('.',',')}}" inputmode="decimal"></label><label>Pedido mínimo<input class="input" name="minimum_order" value="{{'%.2f'|format(pro.minimum_order_cents/100)|replace('.',',')}}" inputmode="decimal"></label><label>Tempo médio de preparo (minutos)<input class="input" type="number" min="5" max="240" name="prep_minutes" value="{{pro.prep_minutes}}"></label><label>Chave Pix<input class="input" name="pix_key" value="{{pro.pix_key}}" placeholder="Telefone, e-mail, CPF/CNPJ ou aleatória"></label><label class="check"><input type="checkbox" name="allows_delivery" value="1" {% if pro.allows_delivery %}checked{% endif %}> Aceitar entrega</label><label class="check"><input type="checkbox" name="allows_pickup" value="1" {% if pro.allows_pickup %}checked{% endif %}> Aceitar retirada</label><button class="btn primary">Salvar configurações</button></form></details>
 <div class="menu-category-manager">
-<h3>Categorias do cardápio</h3>
+<h3>Categorias do {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}</h3>
 <form action="/painel/cardapio/categorias" method="post" class="category-add-form">
 <label>Nova categoria<input class="input" name="name" maxlength="80" placeholder="Ex.: Lanches, Bebidas, Porções" required></label>
 <button class="btn primary">Adicionar categoria</button>
@@ -173,7 +173,7 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 </form>
 </details>{% else %}<div class="empty-state full">
 <span>🍽</span>
-<h3>Seu cardápio está vazio</h3>
+<h3>Seu {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}} está vazio</h3>
 <p class="muted">Use o botão “Adicionar produto” para começar.</p>
 </div>{% endfor %}</div>
 {% endif %}
@@ -328,7 +328,7 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 </article>{% else %}<div class="empty-state">
 <span>🧾</span>
 <h3>Nenhum pedido neste período</h3>
-<p class="muted">Quando o cardápio NowUp começar a receber pedidos, o histórico aparecerá aqui.</p>
+<p class="muted">Quando o {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}} NowUp começar a receber pedidos, o histórico aparecerá aqui.</p>
 </div>{% endfor %}</div>
 </section>
 <section class="panel" id="notificacoes" data-live-notifications><div class="section-title"><div><span class="kicker">Atualização automática</span><h2>Notificações da loja</h2></div><span class="edit-chip">Ao vivo</span></div><div data-notification-list>{% for notification in store_notifications %}<article data-notification-id="{{notification.id}}"><b>{{notification.title}}</b><p>{{notification.message}}</p><a class="btn soft" href="{{notification.link}}" data-notification-link>Abrir pedido</a></article>{% else %}<p data-empty-notifications>Nenhuma notificação por enquanto.</p>{% endfor %}</div></section>
@@ -410,7 +410,7 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 <div class="grid2">
 <label>Nome da empresa<input class="input" name="display_name" value="{{pro.display_name}}" required>
 </label>
-<label>Telefone / WhatsApp<input class="input" name="whatsapp" value="{{pro.whatsapp}}" required>
+<label>Telefone de contato<input class="input" name="whatsapp" value="{{pro.whatsapp}}" required>
 </label>
 <label>Endereço completo<input class="input" name="address" value="{{pro.address}}" placeholder="Rua, número e complemento">
 </label>
@@ -438,18 +438,17 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 <option value="other" {% if pro.business_type=='other' %}selected{% endif %}>Outro</option>
 </select>
 </label>
-<label>O que deseja oferecer?<select name="offer_mode">
-<option value="services" {% if pro.offer_mode=='services' %}selected{% endif %}>Somente serviços e contato pelo WhatsApp</option>
-<option value="menu" {% if pro.offer_mode=='menu' %}selected{% endif %}>Cardápio com produtos (Premium)</option>
-<option value="catalog" {% if pro.offer_mode=='catalog' %}selected{% endif %}>Catálogo de produtos (Premium)</option>
+<label>Como deseja apresentar seus produtos?<select name="offer_mode">
+<option value="services" {% if pro.offer_mode=='services' %}selected{% endif %}>Somente apresentação da loja e serviços</option>
+<option value="menu" {% if pro.offer_mode=='menu' %}selected{% endif %}>Cardápio — comidas e bebidas (Premium)</option>
+<option value="catalog" {% if pro.offer_mode=='catalog' %}selected{% endif %}>Catálogo — produtos da loja (Premium)</option>
 </select></label>
 <label class="check privacy-check">
 <input type="checkbox" name="hide_address" value="1" {% if pro.hide_address %}checked{% endif %}> Ocultar meu endereço exato no perfil público</label>
 </div>
 <label>Observação sobre os horários<textarea name="opening_hours" placeholder="Ex.: Não abrimos em feriados">{{pro.opening_hours}}</textarea>
 </label>
-<label>Mensagem automática do WhatsApp<textarea name="whatsapp_message" placeholder="Olá! Encontrei você pelo NowUp...">{{pro.whatsapp_message}}</textarea>
-</label>
+
 <h3>Categoria principal</h3>
 <p class="muted">Escolha uma categoria ampla. Escreva sua profissão e especialidades em “Serviços prestados”.</p>
 <div class="checkgrid">{% for c in categories %}<label class="check">
@@ -464,56 +463,7 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 </div>
 </form>
 </section>
-<section class="panel contact-hub" id="links">
-<div class="section-title">
-<div>
-<span class="kicker">Seus canais</span>
-<h2>Links e contatos</h2>
-</div>
-<span class="status-pill ok">Cliques contabilizados</span>
-</div>
-<form action="/painel/links" method="post">
-<div class="link-options">
-<label>
-<span class="link-icon">💬</span>
-<b>WhatsApp</b>
-<small>Receba pedidos e orçamentos.</small>
-<input class="input" name="whatsapp" value="{{pro.whatsapp}}" required>
-</label>
-<label>
-<span class="link-icon">🍽</span>
-<b>Cardápio ou catálogo externo {% if not pro.is_premium %}🔒{% endif %}</b>
-<small>{{'Link liberado no plano Premium.' if not pro.is_premium else 'Link completo do cardápio ou catálogo.'}}</small>
-<input class="input" type="url" name="menu_url" value="{{pro.menu_url if pro.is_premium else ''}}" placeholder="https://..." {% if not pro.is_premium %}disabled{% endif %}>
-</label>
-<label>
-<span class="link-icon">📸</span>
-<b>Instagram</b>
-<small>Link completo do perfil.</small>
-<input class="input" type="url" name="instagram_url" value="{{pro.instagram_url}}" placeholder="https://instagram.com/...">
-</label>
-<label>
-<span class="link-icon">🔵</span>
-<b>Facebook</b>
-<small>Link completo da página.</small>
-<input class="input" type="url" name="facebook_url" value="{{pro.facebook_url}}" placeholder="https://facebook.com/...">
-</label>
-<label>
-<span class="link-icon">🌐</span>
-<b>Site</b>
-<small>Site oficial da empresa.</small>
-<input class="input" type="url" name="website_url" value="{{pro.website_url}}" placeholder="https://...">
-</label>
-<label>
-<span class="link-icon">🔗</span>
-<b>Outro link</b>
-<small>Catálogo ou outra rede.</small>
-<input class="input" type="url" name="external_url" value="{{pro.external_url}}" placeholder="https://...">
-</label>
-</div>
-<button class="btn primary">Salvar contatos</button>
-</form>
-</section>
+
 <section class="panel" id="publicar">
 <h2>Publicar trabalho</h2>
 <form action="/painel/publicar" method="post" enctype="multipart/form-data">
@@ -562,4 +512,9 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 </main>
 </div>
 <script src="/static/order-chat.js?v=61"></script><script src="/static/pro-panel-menu.js?v=69"></script><script src="/static/order-alerts.js?v=61"></script>
+
+<link rel="stylesheet" href="/static/panel-back-top.css?v=70">
+<footer class="nowup-panel-bottom"><button type="button" class="nowup-back-top" data-panel-back-top aria-label="Voltar ao topo do painel">↑ Voltar ao topo</button></footer>
+<script src="/static/panel-back-top.js?v=70" defer></script>
+
 {% endblock %}

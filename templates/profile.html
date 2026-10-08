@@ -13,11 +13,11 @@
 </div>
 <div class="profile-cta profile-primary-actions">
 {% if pro.address and not pro.hide_address %}<a class="btn soft" href="https://www.google.com/maps/search/?api=1&query={{pro.address|urlencode}}" target="_blank" rel="noopener">📍 Como chegar</a>{% else %}<span class="btn soft disabled">📍 Como chegar</span>{% endif %}
-<form action="/p/{{pro.slug}}/whatsapp" method="post"><button class="btn orange">💬 WhatsApp</button></form>
-<span class="btn primary disabled">Contato protegido pela NowUp</span>
+
+
 </div>
-<div class="profile-extra-actions">{% if pro.instagram_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/instagram" target="_blank" rel="noopener">Instagram</a>{% endif %}{% if pro.facebook_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/facebook" target="_blank" rel="noopener">Facebook</a>{% endif %}{% if pro.website_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/site" target="_blank" rel="noopener">Site</a>{% endif %}{% if pro.external_url %}<a class="btn soft" href="/p/{{pro.slug}}/link" target="_blank" rel="noopener">Outro link</a>{% endif %}</div>
-{% if pro.is_premium and pro.menu_url %}<div class="profile-extra-actions"><a class="btn primary" href="/p/{{pro.slug}}/cardapio" target="_blank" rel="noopener">🍽 Ver cardápio</a></div>{% elif pro.is_premium and pro.offer_mode in ['menu','catalog'] %}<div class="profile-extra-actions"><a class="btn primary" href="/p/{{pro.slug}}/menu">{{'🛍 Ver catálogo' if pro.offer_mode=='catalog' else '🍽 Ver cardápio'}}</a></div>{% endif %}
+
+{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}<div class="profile-extra-actions"><a class="btn primary" href="/p/{{pro.slug}}/menu">{{'🛍 Ver catálogo' if pro.offer_mode=='catalog' else '🍽 Ver cardápio'}}</a></div>{% endif %}
 </div>
 </section>
 <section class="section">
@@ -62,15 +62,13 @@
 <aside>
 <div class="panel">
 <h3>Serviços</h3>
-<p>{{pro.services or 'Consulte diretamente pelo WhatsApp.'}}</p>{% if pro.service_area %}<p>
+<p>{{pro.services or 'Esta loja ainda não descreveu seus serviços.'}}</p>{% if pro.service_area %}<p>
 <b>Área atendida:</b>
 <br>{{pro.service_area}}</p>{% endif %}{% if hours_lines %}<p>
 <b>Horários:</b>
 {% for line in hours_lines %}<br>{{line}}{% endfor %}</p>{% elif pro.opening_hours %}<p><b>Horários:</b><br>{{pro.opening_hours}}</p>{% endif %}{% if pro.address and not pro.hide_address %}<p>
 <b>Endereço:</b>
-<br>{{pro.address}}{% if pro.cep %} · CEP {{pro.cep}}{% endif %}</p>{% endif %}<form action="/p/{{pro.slug}}/whatsapp" method="post">
-<button class="btn orange full-btn">WhatsApp</button>
-</form></div>
+<br>{{pro.address}}{% if pro.cep %} · CEP {{pro.cep}}{% endif %}</p>{% endif %}</div>
 <div class="panel">
 <h3>Números do perfil</h3>
 <p>

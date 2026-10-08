@@ -1,16 +1,16 @@
-{% extends 'base.html' %}{% block title %}Cardápio de {{pro.display_name}} | NowUp{% endblock %}{% block body_class %}public-menu-area{% endblock %}{% block content %}<link rel="stylesheet" href="/static/pro-compact.css?v=67">
+{% extends 'base.html' %}{% block title %}{{'Catálogo' if pro.offer_mode=='catalog' else 'Cardápio'}} de {{pro.display_name}} | NowUp{% endblock %}{% block body_class %}public-menu-area{% endblock %}{% block content %}<link rel="stylesheet" href="/static/pro-compact.css?v=67">
 <section class="native-menu" data-native-menu>
 <div class="container">
 <header class="menu-hero">
 <a href="/p/{{pro.slug}}">← Voltar ao perfil</a>
 <div>{% if pro.avatar_filename %}<img src="/uploads/{{pro.avatar_filename}}" alt="">{% else %}<span>🍽</span>{% endif %}<div>
-<small>Cardápio NowUp</small>
+<small>{{'Catálogo' if pro.offer_mode=='catalog' else 'Cardápio'}} NowUp</small>
 <h1>{{pro.display_name}}</h1>
 <p>⏱ {{pro.prep_minutes}} min · Pedido mínimo R$ {{'%.2f'|format(pro.minimum_order_cents/100)|replace('.',',')}} · Entrega R$ {{'%.2f'|format(pro.delivery_fee_cents/100)|replace('.',',')}}</p>
 </div>
 </div>
 </header>
-<div class="store-status {% if shop_status.open %}open{% else %}closed{% endif %}"><b>{{shop_status.label}}</b><span>{{shop_status.detail}}</span>{% if not shop_status.open %}<small>Você pode consultar o cardápio, mas os pedidos estão pausados neste momento.</small>{% endif %}</div>
+<div class="store-status {% if shop_status.open %}open{% else %}closed{% endif %}"><b>{{shop_status.label}}</b><span>{{shop_status.detail}}</span>{% if not shop_status.open %}<small>Você pode consultar o {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}, mas os pedidos estão pausados neste momento.</small>{% endif %}</div>
 {% if menu_categories %}<nav class="menu-category-nav" aria-label="Categorias">
 <button type="button" class="active" data-category-filter="all">Todos</button>{% for category in menu_categories %}<button type="button" data-category-filter="{{category|lower}}">{{category}}</button>{% endfor %}</nav>{% endif %}
 <div class="menu-layout">
@@ -22,12 +22,12 @@
 <div>
 <strong>{% if product.promo_price_cents > 0 %}<del>R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</del> R$ {{'%.2f'|format(product.promo_price_cents/100)|replace('.',',')}}{% else %}R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}{% endif %}</strong>
 {% if product_options.get(product.id) %}<div class="product-options"><small>Adicionais e opções</small>{% for option in product_options.get(product.id,[]) %}<label><input type="checkbox" data-product-option {% if not product.available %}disabled{% endif %} value="{{option.id}}" data-option-name="{{option.name}}" data-option-price="{{option.price_cents}}"> {{option.name}}{% if option.price_cents %} + R$ {{'%.2f'|format(option.price_cents/100)|replace('.',',')}}{% endif %}</label>{% endfor %}</div>{% endif %}
-<label>Observações deste item<textarea data-product-notes maxlength="300" placeholder="Ex.: bem passado, sem cebola"></textarea></label><div class="product-buy"><label>Qtd.<input class="product-quantity-input" type="number" min="1" max="99" step="1" value="1" inputmode="numeric" data-product-quantity aria-label="Digite a quantidade" {% if not shop_status.open or not product.available %}disabled{% endif %}></label><button class="btn primary" type="button" data-add {% if not shop_status.open or not product.available %}disabled{% endif %}>{% if not product.available %}Indisponível{% elif shop_status.open %}Adicionar{% else %}Fechado{% endif %}</button></div>
+<label>Observações deste item<textarea data-product-notes maxlength="300" placeholder="{{'Ex.: cor, tamanho ou modelo' if pro.offer_mode=='catalog' else 'Ex.: bem passado, sem cebola'}}"></textarea></label><div class="product-buy"><label>Qtd.<input class="product-quantity-input" type="number" min="1" max="99" step="1" value="1" inputmode="numeric" data-product-quantity aria-label="Digite a quantidade" {% if not shop_status.open or not product.available %}disabled{% endif %}></label><button class="btn primary" type="button" data-add {% if not shop_status.open or not product.available %}disabled{% endif %}>{% if not product.available %}Indisponível{% elif shop_status.open %}Adicionar{% else %}Fechado{% endif %}</button></div>
 </div>
 </div>
 </article>{% else %}<div class="panel empty-state">
 <span>🍽</span>
-<h2>Cardápio em preparação</h2>
+<h2>{{'Catálogo' if pro.offer_mode=='catalog' else 'Cardápio'}} em preparação</h2>
 <p class="muted">Esta empresa ainda não publicou produtos.</p>
 </div>{% endfor %}</div>
 </main>
