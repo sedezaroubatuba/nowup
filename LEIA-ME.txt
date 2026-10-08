@@ -1,46 +1,15 @@
-NOWUP V69 — IMPRESSÃO, ENDEREÇO E ANÁLISE DE LOJAS
-
-Instalar OS TRÊS pacotes juntos:
-RAIZ: substituir app.py E email_verification.py na raiz.
-IMPORTANTE: email_verification.py também precisa ser substituído para impedir
-que confirmar o e-mail ative a loja automaticamente.
-TEMPLATES: substituir pro_panel.html, menu.html, admin.html e customer_panel.html
-nas respectivas pastas templates.
-STATIC: substituir pro-panel-menu.js e adicionar customer-address.js e
-customer-address.css dentro de static.
-Aguardar o deploy e recarregar as telas.
-
-Impressão: o botão Imprimir abre um comprovante separado, sem a conversa.
-Inclui cliente, telefone, endereço/bairro/referência, itens, adicionais,
-observações, pagamento, entrega, subtotal, total e informação de troco.
-
-Conta do cliente: endereço em seção própria, botão Adicionar/Trocar endereço.
-Salvar nome e telefone não apaga o endereço salvo.
-No pedido, endereço preenchido automaticamente e opção Trocar endereço.
-Salvar este endereço para próximos pedidos atualiza o cadastro ao enviar
-um pedido de entrega válido. Sem marcar essa opção, não altera o endereço salvo.
-
-Novas lojas cadastradas pelo profissional: aguardam análise, não aparecem
-na home/perfil público/cardápio e não podem receber pedidos até aprovação.
-Profissional pode confirmar e-mail, entrar e preparar seu painel.
-ADM > Perfis: conferir cadastro, Aprovar e ativar ou Recusar cadastro.
-É necessário confirmar o e-mail antes da aprovação.
-Aprovar envia boas-vindas; recusar envia aviso cordial com motivo opcional.
-Falha no e-mail fica visível no ADM, com botão Reenviar e-mail.
-Usa a configuração Brevo existente. A decisão fica salva mesmo se o envio falhar.
-A aprovação/recusa só pode ser feita pelo ADM; repetição da mesma decisão
-não envia outro e-mail automaticamente.
-
-Lojas existentes e perfis fictícios mantêm seu estado anterior; não são
-recusados nem apagados por esta atualização.
-Preserva login, categorias, pedidos por dia, disponibilidade e filtros da V68.
-Mantenha base.html/logout-confirm.js da V65 e demais arquivos das versões anteriores.
-Não substituir data, uploads ou banco. Os pacotes não contêm esses dados.
-Atualização adiciona colunas e tabela de acompanhamento de envio no banco
-existente automaticamente, sem apagar cadastros.
-
-Base de arquivos: app.py V67, pro_panel/navigation V68, ADM V66, menu V67,
-customer_panel/email_verification do pacote completo V51.
-Verificações locais passaram com banco temporário e e-mail simulado.
-Não aplicado/testado no site publicado. Conferir impressão, cadastro novo,
-endereço e envio real após a instalação.
+NOWUP V75 — AVISOS DE PEDIDOS NO APARELHO
+Atualização sobre V74. Instale os três pacotes juntos.
+RAIZ: app.py, nowup_push75.py e requirements.txt na raiz do repositório.
+TEMPLATES: pro_panel.html dentro de templates.
+STATIC: todos os arquivos dentro de static.
+Não apague nem substitua o banco de dados, uploads, módulos anteriores ou variáveis do Render.
+Faça o deploy no Render e aguarde concluir.
+No celular: entre como lojista, abra Painel profissional, toque Ativar avisos neste aparelho, permita notificações e toque Testar aviso.
+Depois feche o painel e crie um pedido por outra conta para confirmar o recebimento real.
+No iPhone: adicione o site à Tela de Início e abra pelo ícone antes de ativar.
+Os avisos dependem do navegador, permissões, conexão e restrições do aparelho. Som do painel é separado.
+Sair da conta desativa os avisos vinculados àquela sessão; uma sessão expirada pode precisar de novo login ao abrir o pedido.
+A chave VAPID é gerada automaticamente e preservada no banco de dados. Não é necessário gerar outra chave no Render.
+Testes locais: chave persistente e carregável, validação de endpoint/chaves, isolamento entre contas/sessões, fila transacional e nova tentativa, sintaxe Python/JS e template.
+Recebimento real no dispositivo precisa ser conferido após o deploy. Esta atualização não integra WhatsApp.

@@ -852,6 +852,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
         conn.execute("UPDATE users SET address=?,neighborhood=?,address_reference=? WHERE id=? AND role='customer'",
                      (address.strip()[:300],neighborhood.strip()[:120],address_reference.strip()[:220],logged["id"]))
     conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(p["user_id"],"Novo pedido no NowUp",f"{order_code} — {customer_name.strip()[:120]}",f"/painel#pedido-{order_id}",created))
+    nowup_push75.enqueue_on_connection(conn,p["user_id"],order_id)
     conn.commit(); conn.close()
     return RedirectResponse(f"/pedido/{tracking_token}",303)
 
@@ -1067,6 +1068,7 @@ def login(email: str=Form(...), password: str=Form(...)):
 def logout(request: Request):
     token=request.cookies.get("nowup_session")
     if token:
+        nowup_push75.disable_session(token)
         conn=db(); conn.execute("DELETE FROM sessions WHERE token=?",(token,)); conn.commit(); conn.close()
     resp=RedirectResponse("/",303); resp.delete_cookie("nowup_session"); return resp
 
@@ -2104,3 +2106,9 @@ app.add_event_handler("shutdown", nowup_backup.stop)
 import nowup_reports74
 nowup_reports74.configure(db, require_user, templates, context)
 app.include_router(nowup_reports74.router)
+
+import nowup_push75
+nowup_push75.configure(db, require_user)
+app.include_router(nowup_push75.router)
+app.add_event_handler("startup", nowup_push75.start)
+app.add_event_handler("shutdown", nowup_push75.stop)
