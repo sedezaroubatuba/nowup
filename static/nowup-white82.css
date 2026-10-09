@@ -1,0 +1,16 @@
+/* NowUp V82: shared light theme, including admin and footer. */
+:root,body{color-scheme:light;--bg:#fff;--surface:#fff;--card:#fff;--text:#172b45;--muted:#536477;--line:#dce4ed}
+html body{background:#fff!important;background-image:none!important;color:#172b45!important}
+html body :is(main,.section,.top,.footer,.footergrid,.copyright,.mobile-bottom-nav,.cookie,.panel,.card,.sidebar,.nowup-panel-bottom,.nowup-back-top,.native-menu,.menu-hero,.menu-product,.menu-cart,.checkout-dialog,.menu-category-nav,.nu-admin-toolbar,.nu-overview>article,.nu-summary>a){background:#fff!important;background-image:none!important;color:#172b45!important;border-color:#dce4ed!important}
+html body :is(h1,h2,h3,h4,h5,p,label,small,.muted,.tiny,.copyright,.brand,.brand span,.hello,.kicker,.menu-product-info,.cart-total,.pad,.footer a,.footer b,.footer strong,.sidebar a){color:#172b45!important;text-shadow:none!important}
+html body :is(input:not([type=checkbox]):not([type=radio]),select,textarea,.input,.product-quantity-input){background:#fff!important;color:#172b45!important;border-color:#c8d4e2!important}
+html body ::placeholder{color:#65758a!important;opacity:1}
+html body :is(.btn,.mobile-menu,.nowup-back-top,.menu-category-nav button,.product-buy button){background:#fff!important;background-image:none!important;color:#172b45!important;border:1px solid #c8d4e2!important}
+html body :is(.btn.primary,.btn.orange,.btn.dark,.menu-category-nav button.active,.sidebar a[aria-current=page]){background:#f1f5f9!important;color:#172b45!important;border-color:#8295aa!important}
+html body .btn.danger{background:#fff5f5!important;color:#a52239!important;border-color:#efc9ce!important}
+html body :is(.brand b,.nu-admin-logo span){color:#087db5!important}
+html body :is(.blue,.green,.purple,.yellow,.pink,.cyan).nu-shortcut{background:#fff!important;border-color:#dce4ed!important}
+html body :is(button,a,input,select,textarea):focus-visible{outline:3px solid #087db5;outline-offset:3px}
+html body .nu-admin.nav-open #nu-admin-nav{display:flex!important;position:relative!important;top:0!important;max-height:65dvh;overflow:auto}
+html body .nu-admin .panel[hidden]{display:none!important}
+
