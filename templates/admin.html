@@ -181,15 +181,16 @@
 </section>
 <section class="panel" id="cadastro-rapido">
 <h2>Criar loja fictícia</h2>
-<p class="muted">Escolha uma foto, coloque o nome e clique em criar. O WhatsApp genérico já vem preenchido.</p>
+<p class="muted">Escolha uma foto, coloque o nome, selecione a categoria e clique em criar. O WhatsApp genérico já vem preenchido.</p>
 {% if request.query_params.get('ok')=='perfil-demo' %}<div class="alert success">Loja fictícia criada! <a href="/" target="_blank" rel="noopener">Ver tela principal →</a> Você já pode cadastrar outra.</div>{% endif %}
 {% if request.query_params.get('erro','').startswith('perfil-demo') %}<div class="alert danger">{% if request.query_params.get('erro')=='perfil-demo-foto' %}Selecione uma foto JPG, PNG ou WebP válida, de até 5 MB.{% elif request.query_params.get('erro')=='perfil-demo-dados' %}Confira o nome e o WhatsApp (10 ou 11 números).{% else %}Não foi possível criar. Confira se existe uma categoria ativa da tela principal e tente novamente.{% endif %}</div>{% endif %}
 <form action="/admin/perfis/demonstracao" method="post" enctype="multipart/form-data" class="grid-form" id="demo-simple-form">
 <label>Foto da loja<input class="input" type="file" name="avatar" accept="image/jpeg,image/png,image/webp" data-simple-upload required><img data-demo-preview="avatar" alt="Prévia da foto da loja" hidden style="width:100px;height:100px;object-fit:cover;border-radius:16px;margin-top:10px"><small>Uma foto só: ela também será usada como capa.</small></label>
 <label>Nome da loja<input class="input" name="display_name" placeholder="Ex.: Quiosque Brisa do Mar" maxlength="120" required></label>
+<label>Categoria<select class="input" name="category_id" required><option value="" disabled selected>Selecione a categoria</option>{% for cat in admin_categories %}{% if cat.active %}<option value="{{cat.id}}">{{cat.icon}} {{cat.name}}</option>{% endif %}{% endfor %}</select></label>
 <label>WhatsApp genérico<input class="input" name="whatsapp" type="tel" inputmode="tel" value="00000000000"><small>Pode deixar assim para demonstração ou trocar pelo seu número.</small></label>
 <details style="grid-column:1/-1"><summary style="cursor:pointer;padding:12px 0;font-weight:700">Mais opções (opcional)</summary><div class="grid-form">
-<label>Categoria<select class="input" name="category_id"><option value="0">Automática — primeira categoria da home</option>{% for cat in admin_categories %}{% if cat.active %}<option value="{{cat.id}}">{{cat.icon}} {{cat.name}}</option>{% endif %}{% endfor %}</select></label>
+
 <label>Cidade<input class="input" name="city" placeholder="Automática — cidade principal do site"></label>
 <label>Endereço<input class="input" name="address" placeholder="Opcional"></label>
 <label>Bairro<input class="input" name="neighborhood" placeholder="Opcional"></label>
