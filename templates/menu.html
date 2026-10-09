@@ -1,4 +1,37 @@
-{% extends 'base.html' %}{% block title %}{{'Catálogo' if pro.offer_mode=='catalog' else 'Cardápio'}} de {{pro.display_name}} | NowUp{% endblock %}{% block body_class %}public-menu-area{% endblock %}{% block content %}<link rel="stylesheet" href="/static/public-white76.css?v=76"><link rel="stylesheet" href="/static/pro-compact.css?v=67">
+{% extends 'base.html' %}{% block title %}{{'Catálogo' if pro.offer_mode=='catalog' else 'Cardápio'}} de {{pro.display_name}} | NowUp{% endblock %}{% block body_class %}public-menu-area{% endblock %}{% block content %}<link rel="stylesheet" href="/static/public-white76.css?v=76"><link rel="stylesheet" href="/static/pro-compact.css?v=67"><style>
+/* Compact public products; cart and order hooks stay unchanged. */
+body.public-menu-area .menu-product {
+  display:grid!important; grid-template-columns:96px minmax(0,1fr)!important;
+  gap:14px!important; padding:16px!important; align-items:start!important;
+  min-height:0!important; height:auto!important; border-radius:18px!important;
+}
+body.public-menu-area .menu-product > :is(img,.menu-product-placeholder) {
+  width:96px!important; height:96px!important; min-height:0!important;
+  object-fit:contain!important; border-radius:12px; background:#f6f8fb;
+}
+body.public-menu-area .menu-product-info {padding:0!important; min-width:0;}
+body.public-menu-area .menu-product-info h3 {font-size:17px!important; line-height:1.3; margin:4px 0 6px!important;}
+body.public-menu-area .menu-product-info > small {font-size:12px;}
+body.public-menu-area .menu-product-info p {font-size:14px; line-height:1.4; margin:0 0 8px!important;}
+body.public-menu-area .menu-product-info strong {display:block; font-size:19px!important; margin:8px 0!important;}
+body.public-menu-area .v67-product-status {display:inline-block!important; width:auto!important; font-size:12px!important; padding:3px 8px!important; border-radius:8px;}
+body.public-menu-area .product-notes-disclosure {margin:10px 0; font-size:14px;}
+body.public-menu-area .product-notes-disclosure summary {cursor:pointer; padding:8px 0; min-height:36px;}
+body.public-menu-area .product-notes-disclosure summary small {font-size:12px;}
+body.public-menu-area .product-notes-disclosure label {display:block; font-size:13px;}
+body.public-menu-area .product-notes-disclosure textarea {display:block; width:100%!important; box-sizing:border-box; height:auto!important; min-height:76px!important; padding:10px!important; font-size:15px!important; margin-top:6px;}
+body.public-menu-area .product-buy {display:flex!important; gap:10px!important; align-items:end!important; margin-top:8px!important;}
+body.public-menu-area .product-buy label {font-size:12px!important; width:70px; flex:0 0 70px;}
+body.public-menu-area .product-quantity-input {width:100%!important; box-sizing:border-box; min-height:44px!important; height:44px!important; padding:8px!important; font-size:16px!important;}
+body.public-menu-area .product-buy button {flex:1; min-width:0; min-height:44px!important; padding:10px 12px!important; font-size:15px!important;}
+body.public-menu-area .menu-products {gap:12px!important;}
+body.public-menu-area .menu-product[hidden] {display:none!important;}
+@media(max-width:360px) {
+  body.public-menu-area .menu-product {grid-template-columns:72px minmax(0,1fr)!important; padding:12px!important; gap:10px!important;}
+  body.public-menu-area .menu-product > :is(img,.menu-product-placeholder) {width:72px!important; height:72px!important;}
+}
+
+</style>
 <section class="native-menu" data-native-menu>
 <div class="container">
 <header class="menu-hero">
@@ -18,11 +51,11 @@
 <div class="menu-products">{% for product in products %}<article class="menu-product" data-product data-category="{{product.category|lower}}" data-id="{{product.id}}" data-name="{{product.name}}" data-price="{{product.promo_price_cents if product.promo_price_cents > 0 else product.price_cents}}" data-max="{{product.max_quantity}}">{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" onerror="this.onerror=null;this.src='/static/product-placeholder.svg'" alt="{{product.name}}">{% else %}<div class="menu-product-placeholder">🍽</div>{% endif %}<div class="menu-product-info">
 <small>{{product.category}}</small>
 <h3>{{product.name}}</h3>
-<p>{{product.description}}</p><span class="v67-product-status">{{'Disponível' if product.available else 'Indisponível'}}</span>
+{% if product.description %}<p>{{product.description}}</p>{% endif %}<span class="v67-product-status">{{'Disponível' if product.available else 'Indisponível'}}</span>
 <div>
 <strong>{% if product.promo_price_cents > 0 %}<del>R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</del> R$ {{'%.2f'|format(product.promo_price_cents/100)|replace('.',',')}}{% else %}R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}{% endif %}</strong>
 {% if product_options.get(product.id) %}<div class="product-options"><small>Adicionais e opções</small>{% for option in product_options.get(product.id,[]) %}<label><input type="checkbox" data-product-option {% if not product.available %}disabled{% endif %} value="{{option.id}}" data-option-name="{{option.name}}" data-option-price="{{option.price_cents}}"> {{option.name}}{% if option.price_cents %} + R$ {{'%.2f'|format(option.price_cents/100)|replace('.',',')}}{% endif %}</label>{% endfor %}</div>{% endif %}
-<label>Observações deste item<textarea data-product-notes maxlength="300" placeholder="{{'Ex.: cor, tamanho ou modelo' if pro.offer_mode=='catalog' else 'Ex.: bem passado, sem cebola'}}"></textarea></label><div class="product-buy"><label>Qtd.<input class="product-quantity-input" type="number" min="1" max="99" step="1" value="1" inputmode="numeric" data-product-quantity aria-label="Digite a quantidade" {% if not shop_status.open or not product.available %}disabled{% endif %}></label><button class="btn primary" type="button" data-add {% if not shop_status.open or not product.available %}disabled{% endif %}>{% if not product.available %}Indisponível{% elif shop_status.open %}Adicionar{% else %}Fechado{% endif %}</button></div>
+<details class="product-notes-disclosure"><summary>Adicionar observação <small>(opcional)</small></summary><label>Observação deste item<textarea data-product-notes maxlength="300" rows="2" placeholder="Alguma observação sobre este item?"></textarea></label></details><div class="product-buy"><label>Qtd.<input class="product-quantity-input" type="number" min="1" max="99" step="1" value="1" inputmode="numeric" data-product-quantity aria-label="Digite a quantidade" {% if not shop_status.open or not product.available %}disabled{% endif %}></label><button class="btn primary" type="button" data-add {% if not shop_status.open or not product.available %}disabled{% endif %}>{% if not product.available %}Indisponível{% elif shop_status.open %}Adicionar{% else %}Fechado{% endif %}</button></div>
 </div>
 </div>
 </article>{% else %}<div class="panel empty-state">
