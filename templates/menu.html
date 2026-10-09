@@ -31,6 +31,12 @@ body.public-menu-area .menu-product[hidden] {display:none!important;}
   body.public-menu-area .menu-product > :is(img,.menu-product-placeholder) {width:72px!important; height:72px!important;}
 }
 
+
+
+
+.store-product-search {display:block;margin:18px 0 14px;font-weight:600;}
+.store-product-search input {display:block;width:100%;box-sizing:border-box;min-height:48px;border-radius:14px;padding:12px 14px;margin-top:8px;font-size:16px;}
+.store-search-empty {padding:20px;text-align:center;}
 </style>
 <section class="native-menu" data-native-menu>
 <div class="container">
@@ -44,11 +50,12 @@ body.public-menu-area .menu-product[hidden] {display:none!important;}
 </div>
 </header>
 <div class="store-status {% if shop_status.open %}open{% else %}closed{% endif %}"><b>{{shop_status.label}}</b><span>{{shop_status.detail}}</span>{% if not shop_status.open %}<small>Você pode consultar o {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}, mas os pedidos estão pausados neste momento.</small>{% endif %}</div>
+<label class="store-product-search" for="store-product-search">Buscar produtos nesta loja<input id="store-product-search" type="search" placeholder="Digite o produto: X-bacon, cheeseburger…" autocomplete="off" aria-controls="store-products" data-store-search></label>
 {% if menu_categories %}<nav class="menu-category-nav" aria-label="Categorias">
 <button type="button" class="active" data-category-filter="all">Todos</button>{% for category in menu_categories %}<button type="button" data-category-filter="{{category|lower}}">{{category}}</button>{% endfor %}</nav>{% endif %}
 <div class="menu-layout">
 <main>
-<div class="menu-products">{% for product in products %}<article class="menu-product" data-product data-category="{{product.category|lower}}" data-id="{{product.id}}" data-name="{{product.name}}" data-price="{{product.promo_price_cents if product.promo_price_cents > 0 else product.price_cents}}" data-max="{{product.max_quantity}}">{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" onerror="this.onerror=null;this.src='/static/product-placeholder.svg'" alt="{{product.name}}">{% else %}<div class="menu-product-placeholder">🍽</div>{% endif %}<div class="menu-product-info">
+<div class="menu-products" id="store-products">{% for product in products %}<article class="menu-product" data-product data-category="{{product.category|lower}}" data-id="{{product.id}}" data-name="{{product.name}}" data-description="{{product.description or ''}}" data-price="{{product.promo_price_cents if product.promo_price_cents > 0 else product.price_cents}}" data-max="{{product.max_quantity}}">{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" onerror="this.onerror=null;this.src='/static/product-placeholder.svg'" alt="{{product.name}}">{% else %}<div class="menu-product-placeholder">🍽</div>{% endif %}<div class="menu-product-info">
 <small>{{product.category}}</small>
 <h3>{{product.name}}</h3>
 {% if product.description %}<p>{{product.description}}</p>{% endif %}<span class="v67-product-status">{{'Disponível' if product.available else 'Indisponível'}}</span>
@@ -63,6 +70,7 @@ body.public-menu-area .menu-product[hidden] {display:none!important;}
 <h2>{{'Catálogo' if pro.offer_mode=='catalog' else 'Cardápio'}} em preparação</h2>
 <p class="muted">Esta empresa ainda não publicou produtos.</p>
 </div>{% endfor %}</div>
+<p class="store-search-empty" data-store-search-empty role="status" hidden>Nenhum produto encontrado nesta loja. Tente outro nome ou categoria.</p>
 </main>
 <aside class="menu-cart">
 <div class="panel">
@@ -110,4 +118,46 @@ body.public-menu-area .menu-product[hidden] {display:none!important;}
 <script>window.NOWUP_MENU={{ {'deliveryFee':pro.delivery_fee_cents,'minimumOrder':pro.minimum_order_cents}|tojson }};</script>
 <script src="/static/menu.js?v=58">
 </script>
-<script src="/static/customer-address.js?v=69" defer></script>{% endblock %}
+<script src="/static/customer-address.js?v=69" defer></script><script>(() => {
+  const root = document.querySelector('[data-native-menu]');
+  if (!root) return;
+  const search = root.querySelector('[data-store-search]');
+  const products = [...root.querySelectorAll('[data-product]')];
+  const empty = root.querySelector('[data-store-search-empty]');
+  const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  let category = root.querySelector('[data-category-filter].active')?.dataset.categoryFilter || 'all';
+  const filter = () => {
+    const words = normalize(search.value).split(/\s+/).filter(Boolean);
+    let count = 0;
+    products.forEach(product => {
+      const text = normalize([product.dataset.name, product.dataset.description, product.dataset.category].join(' '));
+      const matches = (category === 'all' || normalize(product.dataset.category) === normalize(category)) && words.every(word => text.includes(word));
+      product.hidden = !matches;
+      if (matches) { product.style.removeProperty('display'); count++; }
+      else product.style.setProperty('display', 'none');
+    });
+    empty.hidden = count > 0 || products.length === 0;
+  };
+  search.addEventListener('input', filter);
+  root.querySelector('.menu-category-nav')?.addEventListener('click', event => {
+    const button = event.target.closest('[data-category-filter]');
+    if (!button) return;
+    category = button.dataset.categoryFilter;
+    filter();
+  });
+  const connectNavigation = () => {
+    const explore = document.querySelector('.mobile-bottom-nav a[href="/profissionais"]');
+    if (!explore) return;
+    explore.href = '#store-product-search';
+    explore.setAttribute('aria-label', 'Explorar produtos desta loja');
+    explore.addEventListener('click', event => {
+      event.preventDefault();
+      search.scrollIntoView({behavior:'smooth', block:'center'});
+      search.focus({preventScroll:true});
+    });
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', connectNavigation, {once:true});
+  else connectNavigation();
+  filter();
+})();
+</script>{% endblock %}
