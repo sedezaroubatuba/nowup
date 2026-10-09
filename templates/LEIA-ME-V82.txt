@@ -1,14 +1,12 @@
-NOWUP V82 — VITRINE E CONTATO
-Instale os três ZIPs juntos, substituindo apenas os arquivos indicados:
-TEMPLATES: home.html e admin.html dentro de templates.
-STATIC: home-discovery82.js e home-discovery82.css dentro de static.
-RAIZ: app.py na raiz.
-A categoria dos fictícios da V81 já está incluída.
-No celular, 3 lojas por linha e 12 inicialmente. Ver todas expande a lista na mesma tela. Conheça também tem rolagem horizontal e ordem aleatória a cada entrada; cardápios seguem o mesmo rodízio. Não é uma recomendação por preferências: é um sorteio independente por visita.
-Cardápios: somente lojas Premium com menu/catálogo e ao menos um produto disponível, respeitando cidade e filtros.
-Busca, categorias e o atalho Explorar da vitrine continuam na home. Ao abrir uma loja ou cardápio, seu perfil/cardápio continua abrindo normalmente.
-Últimos pedidos: os cinco mais recentes vinculados ao ID da conta do cliente, na home. Pedidos antigos sem vínculo de conta não são exibidos nessa faixa.
-Contato: abre WhatsApp com número brasileiro e mensagem cadastrada, registrando o clique. Para testar fictícios, troque 00000000000 por um número real.
-Verificações locais: sintaxe Python/JS/templates, renderização com 20 lojas e visibilidade dos pedidos; contato com número válido, fictício e empresa bloqueada.
-Após o deploy, confira busca, rodízio, últimos pedidos e contato no celular. O projeto completo e o banco do Render não estão disponíveis neste ambiente, portanto a integração real não foi executada.
-Preserve os demais módulos do projeto, inclusive backups/notificações, banco, uploads e configuração do Render. Nenhuma nova dependência foi adicionada.
+NOWUP V82 — MENU E TEMA BRANCO
+
+1. Descompacte o ZIP TEMPLATES e substitua base.html e admin.html dentro de templates.
+2. Descompacte o ZIP STATIC e coloque os dois arquivos dentro de static.
+3. Publique a alteração no Render e recarregue a página.
+
+Instale OS DOIS ZIPs. Não há arquivo de raiz/app.py para trocar.
+O menu administrativo abre e fecha, e troca as seções sem sair do painel.
+O tema compartilhado deixa fundos, rodapé e botões claros com letras escuras. Fotos e logo preservam as cores.
+
+Base: arquivos base.html de 08/10 e admin(2).html de 09/10 enviados.
+Verificação: sintaxe JavaScript e abertura/fechamento/navegação do menu em teste simulado. Não foi testado no Render autenticado.
