@@ -1,0 +1,21 @@
+NOWUP V88 — PACOTE DA TELA DO CLIENTE
+
+INSTALAR OS TRÊS ZIPs, substituindo os arquivos com o mesmo nome:
+TEMPLATES: base.html, home.html, profile.html e menu.html dentro de templates.
+STATIC: menu88.js, resume-cart88.js e customer88.css dentro de static.
+RAIZ: app.py na raiz do projeto.
+Manter os demais arquivos static atuais, incluindo profile-catalog83.css e nowup-white82.css. Publicar no Render e recarregar.
+
+Inclui:
+- 12 lojas iniciais, três por linha no celular; Ver todas revela as demais na mesma página.
+- Filtro Abertos agora; busca continua na home.
+- Faixa Destaques preservada, mais lojas para rolar lateralmente e seção de cardápios/catálogos premium com produtos, em ordem variada por acesso.
+- Últimos quatro pedidos do cliente conectado, com acompanhamento e acesso à loja para novo pedido.
+- Aviso de carrinhos no topo quando o cliente sai da loja. Continuar retorna ao resumo.
+- Itens e observações preservados no mesmo navegador/aparelho; lojas não se misturam.
+- Carrinho apagado só após confirmação de criação do pedido, não em tentativas que falham.
+- Padrão branco, catálogo na frente e observação compacta da V85 preservados.
+
+O carrinho não sincroniza entre aparelhos e pode ser perdido ao limpar dados do navegador. Valores mostrados são dos itens salvos; entrega e preços atuais são validados no pedido pelo sistema.
+
+Validação: templates renderizados, sintaxe Python/JS, consultas privadas conferidas e teste de DOM com inclusão, observações, retorno, duas lojas, busca, checkout e limpeza após sucesso. Ainda é necessário conferir no Render com pedidos reais de teste. Nenhum pedido de teste foi enviado a uma loja.
