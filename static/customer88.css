@@ -1,0 +1,17 @@
+/* Customer additions; preserve white theme, shop pages and admin panels. */
+html body .nu88-resume[hidden]{display:none!important}
+html body .nu88-resume{position:sticky;top:var(--nu88-header-height,0px);z-index:60;margin:10px auto;padding:12px 16px;background:#fff!important;color:#172b45!important;border:1px solid #cad8e7;border-radius:14px;box-sizing:border-box;box-shadow:0 3px 12px #172b4510;max-height:28dvh;overflow:auto}
+.nu88-resume>strong{display:block;font-size:13px;margin-bottom:8px}
+html body .nu88-cart-link{display:flex;justify-content:space-between;gap:12px;padding:10px 0;color:#172b45!important;text-decoration:none;border-top:1px solid #edf1f5;font-size:13px;align-items:center}.nu88-cart-link span{min-width:0;overflow-wrap:anywhere}.nu88-cart-link b{flex:none}.nu88-cart-link:focus-visible{outline:3px solid #087db5}
+html body.v50-directory-home :is(.nu88-orders,.nu88-stores,.nu88-catalogs){margin-top:24px;margin-bottom:24px;min-width:0;color:#172b45}
+:is(.nu88-orders,.nu88-stores,.nu88-catalogs)>header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+:is(.nu88-orders,.nu88-stores,.nu88-catalogs) h2{font-size:21px;margin:0}
+.nu88-row{display:flex;overflow-x:auto;gap:12px;padding-bottom:12px;overscroll-behavior-x:contain}
+.nu88-order{flex:0 0 230px;background:#fff;border:1px solid #dce4ed;border-radius:14px;padding:14px;display:grid;gap:8px}
+.nu88-order a{color:#172b45;border:1px solid #cad8e7;border-radius:8px;padding:8px;text-decoration:none;text-align:center;font-size:13px}
+.nu88-all{margin:16px 0}.nu88-all>summary{padding:12px 16px;border:1px solid #cad8e7;border-radius:12px;color:#172b45;cursor:pointer;font-weight:700;min-height:44px;box-sizing:border-box}.nu88-all .v50-grid{margin-top:16px}
+html body.v50-directory-home :is(.nu88-stores,.nu88-catalogs) .v50-highlight-row{display:flex!important;flex-wrap:nowrap!important;gap:12px;overflow-x:auto!important;overflow-y:hidden;max-width:100%;padding:8px 2px 16px;scroll-snap-type:x proximity;overscroll-behavior-x:contain}
+html body.v50-directory-home :is(.nu88-stores,.nu88-catalogs) .v50-card{flex:0 0 190px!important;min-width:190px!important;width:190px!important;max-width:190px!important;display:flex!important;flex-direction:column!important;scroll-snap-align:start;box-sizing:border-box}
+html body.v50-directory-home :is(.nu88-stores,.nu88-catalogs) .v50-photo{height:130px!important;min-height:130px!important;display:block;overflow:hidden}.nu88-stores img,.nu88-catalogs img{width:100%;height:100%;object-fit:cover}
+html body.v50-directory-home :is(.nu88-stores,.nu88-catalogs) .v50-card>div{padding:12px;display:flex;flex-direction:column;flex:1;min-width:0}.nu88-stores .v86-view-store,.nu88-catalogs .v86-view-store{margin-top:auto!important}
+@media(max-width:480px){.nu88-cart-link{flex-wrap:wrap}.nu88-resume>strong{font-size:12px}}
