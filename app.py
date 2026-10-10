@@ -706,7 +706,7 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
        ) cover
       FROM professionals p JOIN users u ON u.id=p.user_id
       WHERE {' AND '.join(where)}
-      ORDER BY p.featured DESC,p.verified DESC,rating DESC,p.id DESC
+      ORDER BY p.featured DESC,p.verified DESC,rating DESC,p.id DESC LIMIT 12
     """, params).fetchall()
     rows=[dict(r) for r in rows]
     for row in rows: row["shop_status"]=shop_status(row)
@@ -722,14 +722,8 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
     restaurants=[r for r in rows if r["business_type"]=="restaurant"]
     offers=[r for r in rows if r["featured"]]
     recommended=[r for r in rows if r["business_type"]!="restaurant"]
-    menu_shops=[r for r in rows if r["is_premium"] and r["offer_mode"] in ("menu","catalog") and r["product_count"]>0]
-    recent_orders=[]
-    if user and user["role"]=="customer":
-        recent_orders=conn.execute("""SELECT o.*,p.display_name,p.slug FROM orders o
-          JOIN professionals p ON p.id=o.professional_id
-          WHERE o.customer_id=? ORDER BY o.id DESC LIMIT 5""",(user["id"],)).fetchall()
     conn.close()
-    response=templates.TemplateResponse("home.html", context(request, professionals=rows, menu_shops=menu_shops, recent_orders=recent_orders, status_labels=ORDER_STATUS_LABELS, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today, has_home_filter=bool(q or category or business_type)))
+    response=templates.TemplateResponse("home.html", context(request, professionals=rows, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today, has_home_filter=bool(q or category or business_type)))
     if not request.cookies.get("nowup_visitor"):
         response.set_cookie("nowup_visitor",visitor_key,max_age=31536000,httponly=True,samesite="lax",secure=request.url.scheme=="https")
     return response
@@ -772,13 +766,28 @@ def profile(request: Request, slug: str):
     reviews=conn.execute("SELECT r.*,u.name FROM reviews r JOIN users u ON u.id=r.customer_id WHERE r.professional_id=? ORDER BY r.id DESC",(p["id"],)).fetchall()
     cats=conn.execute("SELECT c.* FROM categories c JOIN professional_categories pc ON pc.category_id=c.id WHERE pc.professional_id=?",(p["id"],)).fetchall()
     product_count=conn.execute("SELECT COUNT(*) FROM products WHERE professional_id=? AND available=1",(p["id"],)).fetchone()[0] if p["is_premium"] and p["offer_mode"] in ("menu","catalog") else 0
+    products=[]; menu_categories=[]; product_options={}
+    if p["is_premium"] and p["offer_mode"] in ("menu","catalog"):
+        products=conn.execute("""SELECT pr.* FROM products pr
+          WHERE pr.professional_id=?
+          AND (NOT EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category))
+            OR EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) AND pc.active=1))
+          ORDER BY pr.category,pr.sort_order,pr.id DESC""",(p["id"],)).fetchall()
+        menu_categories=[]
+        for product in products:
+            category=(product["category"] or "Geral").strip() or "Geral"
+            if category not in menu_categories: menu_categories.append(category)
+        product_options={}
+        for row in conn.execute("""SELECT po.* FROM product_options po JOIN products pr ON pr.id=po.product_id
+          WHERE pr.professional_id=? AND po.available=1 ORDER BY po.sort_order,po.id""",(p["id"],)).fetchall():
+            product_options.setdefault(row["product_id"],[]).append(row)
     current=current_user(request); can_review=False
     if current and current["role"]=="customer":
         can_review=bool(conn.execute("SELECT 1 FROM orders WHERE customer_id=? AND professional_id=? AND status='completed' LIMIT 1",(current["id"],p["id"])).fetchone())
     conn.close()
     pub=dict(p); pub.update(menu_url="",external_url="",instagram_url="",facebook_url="",website_url=""); pub["document_masked"]=mask_doc(pub["document"]); pub["wa_link"]="/p/"+quote(pub["slug"],safe="")
     status=shop_status(p)
-    return templates.TemplateResponse("profile.html", context(request, pro=pub, photos=photos, posts=posts, reviews=reviews, pro_categories=cats, product_count=product_count, shop_status=status, hours_lines=business_hours_lines(p), can_review=can_review))
+    return templates.TemplateResponse("profile.html", context(request, pro=pub, products=products, product_options=product_options, menu_categories=menu_categories, photos=photos, posts=posts, reviews=reviews, pro_categories=cats, product_count=product_count, shop_status=status, hours_lines=business_hours_lines(p), can_review=can_review))
 
 @app.get("/p/{slug}/menu", response_class=HTMLResponse)
 def native_menu(request: Request, slug: str):
@@ -858,6 +867,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
         conn.execute("UPDATE users SET address=?,neighborhood=?,address_reference=? WHERE id=? AND role='customer'",
                      (address.strip()[:300],neighborhood.strip()[:120],address_reference.strip()[:220],logged["id"]))
     conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(p["user_id"],"Novo pedido no NowUp",f"{order_code} — {customer_name.strip()[:120]}",f"/painel#pedido-{order_id}",created))
+    nowup_push75.enqueue_on_connection(conn,p["user_id"],order_id)
     conn.commit(); conn.close()
     return RedirectResponse(f"/pedido/{tracking_token}",303)
 
@@ -907,19 +917,7 @@ def order_tracking_whatsapp(token: str):
 
 @app.post("/p/{slug}/whatsapp")
 def whatsapp_click(slug: str):
-    conn=db()
-    p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved'",(slug,)).fetchone()
-    if not p:
-        conn.close(); raise HTTPException(404,"Empresa não encontrada")
-    digits=re.sub(r"\D","",p["whatsapp"] or "")
-    if len(digits) in (10,11): digits="55"+digits
-    if len(digits) not in (12,13) or not digits.startswith("55") or set(digits[2:])=={"0"}:
-        conn.close(); raise HTTPException(400,"Esta empresa ainda não cadastrou um WhatsApp válido. Perfis fictícios precisam de um número real para testar o contato.")
-    message=p["whatsapp_message"] or "Olá! Encontrei você pelo NowUp e gostaria de saber mais."
-    conn.execute("UPDATE professionals SET whatsapp_clicks=whatsapp_clicks+1 WHERE id=?",(p["id"],))
-    conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"whatsapp_click",now_iso()))
-    conn.commit(); conn.close()
-    return RedirectResponse("https://wa.me/"+digits+"?text="+quote(message,safe=""),303)
+    return RedirectResponse("/p/"+quote(slug,safe=""),303)
 
 @app.get("/p/{slug}/cardapio")
 def menu_click(slug: str):
@@ -1085,6 +1083,7 @@ def login(email: str=Form(...), password: str=Form(...)):
 def logout(request: Request):
     token=request.cookies.get("nowup_session")
     if token:
+        nowup_push75.disable_session(token)
         conn=db(); conn.execute("DELETE FROM sessions WHERE token=?",(token,)); conn.commit(); conn.close()
     resp=RedirectResponse("/",303); resp.delete_cookie("nowup_session"); return resp
 
@@ -2118,3 +2117,13 @@ nowup_backup.configure(require_user, DB_PATH, UPLOAD_DIR)
 app.include_router(nowup_backup.router)
 app.add_event_handler("startup", nowup_backup.start)
 app.add_event_handler("shutdown", nowup_backup.stop)
+
+import nowup_reports74
+nowup_reports74.configure(db, require_user, templates, context)
+app.include_router(nowup_reports74.router)
+
+import nowup_push75
+nowup_push75.configure(db, require_user)
+app.include_router(nowup_push75.router)
+app.add_event_handler("startup", nowup_push75.start)
+app.add_event_handler("shutdown", nowup_push75.stop)
