@@ -1,0 +1,7 @@
+CORREÇÃO V84
+Substitua profile.html e menu.html na pasta templates.
+Mantenha os arquivos STATIC e RAIZ da V83 já instalados.
+Publique no Render e recarregue a página.
+Corrige a seção de catálogo que ficou vazia na V83.
+Verificado: perfil premium com produtos renderiza catálogo, carrinho e formulário de pedido antes da seção Sobre.
+Não altera banco, plano ou produtos cadastrados.
