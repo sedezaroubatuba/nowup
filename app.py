@@ -672,7 +672,7 @@ def startup():
     for old in sorted(backup_dir.glob("nowup-*.db"),reverse=True)[7:]: old.unlink(missing_ok=True)
 
 @app.get("/", response_class=HTMLResponse)
-def home(request: Request, q: str="", city: str="", category: str="", business_type: str=""):
+def home(request: Request, q: str="", city: str="", category: str="", business_type: str="", open_now: str=""):
     conn = db()
     settings = get_settings(conn)
     cities = active_cities(settings)
@@ -706,10 +706,11 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
        ) cover
       FROM professionals p JOIN users u ON u.id=p.user_id
       WHERE {' AND '.join(where)}
-      ORDER BY p.featured DESC,p.verified DESC,rating DESC,p.id DESC LIMIT 12
+      ORDER BY p.featured DESC,p.verified DESC,rating DESC,p.id DESC
     """, params).fetchall()
     rows=[dict(r) for r in rows]
     for row in rows: row["shop_status"]=shop_status(row)
+    if open_now=="1": rows=[r for r in rows if r["shop_status"]["open"]]
     posts = conn.execute("""
       SELECT po.*,p.display_name,p.slug,p.city,
       COALESCE(NULLIF(p.avatar_filename,''),NULLIF(p.cover_filename,''),(SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1)) avatar
@@ -719,11 +720,19 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
     user=current_user(request); favorite_ids=set()
     if user and user["role"]=="customer":
         favorite_ids={r[0] for r in conn.execute("SELECT professional_id FROM favorites WHERE customer_id=?",(user["id"],)).fetchall()}
+    recent_orders=[]
+    if user and user["role"]=="customer":
+        recent_orders=conn.execute("""SELECT o.id,o.order_code,o.status,o.total_cents,o.created_at,o.tracking_token,p.display_name,p.slug
+            FROM orders o JOIN professionals p ON p.id=o.professional_id
+            WHERE o.customer_id=? ORDER BY o.id DESC LIMIT 4""",(user["id"],)).fetchall()
+    rotating_stores=list(rows)
+    secrets.SystemRandom().shuffle(rotating_stores)
+    catalog_stores=[r for r in rotating_stores if r["is_premium"] and r["offer_mode"] in ("menu","catalog") and r["product_count"]>0]
     restaurants=[r for r in rows if r["business_type"]=="restaurant"]
     offers=[r for r in rows if r["featured"]]
     recommended=[r for r in rows if r["business_type"]!="restaurant"]
     conn.close()
-    response=templates.TemplateResponse("home.html", context(request, professionals=rows, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today, has_home_filter=bool(q or category or business_type)))
+    response=templates.TemplateResponse("home.html", context(request, professionals=rows, rotating_stores=rotating_stores[:12], catalog_stores=catalog_stores[:12], recent_orders=recent_orders, status_labels=ORDER_STATUS_LABELS, open_now=open_now, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today, has_home_filter=bool(q or category or business_type)))
     if not request.cookies.get("nowup_visitor"):
         response.set_cookie("nowup_visitor",visitor_key,max_age=31536000,httponly=True,samesite="lax",secure=request.url.scheme=="https")
     return response
@@ -869,7 +878,9 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
     conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(p["user_id"],"Novo pedido no NowUp",f"{order_code} — {customer_name.strip()[:120]}",f"/painel#pedido-{order_id}",created))
     nowup_push75.enqueue_on_connection(conn,p["user_id"],order_id)
     conn.commit(); conn.close()
-    return RedirectResponse(f"/pedido/{tracking_token}",303)
+    response=RedirectResponse(f"/pedido/{tracking_token}",303)
+    response.set_cookie("nowup_cart_completed",slug,max_age=120,samesite="lax",secure=request.url.scheme=="https")
+    return response
 
 ORDER_STATUS_LABELS={
   "new":"Pedido recebido", "confirmed":"Pedido aceito", "preparing":"Em preparo",
