@@ -29,4 +29,15 @@ html body.v50-directory-home .v86-view-store{display:flex;align-items:center;jus
 html body.v50-directory-home .v50-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px}
 .v86-view-store:focus-visible{outline:3px solid #087db5;outline-offset:2px}
 @media(min-width:900px){html body.v50-directory-home .v50-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+</style><style>
+/* V87: preserve upright store cards in a horizontal scrolling strip. */
+html body.v50-directory-home .v50-highlights{display:block!important;overflow:hidden;min-width:0;margin-top:28px;margin-bottom:28px}
+html body.v50-directory-home .v50-highlight-row{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;gap:12px!important;overflow-x:auto!important;overflow-y:hidden!important;max-width:100%;padding:8px 2px 16px;scroll-snap-type:x proximity;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+html body.v50-directory-home .v50-highlight-row>.v50-card{display:flex!important;flex-direction:column!important;flex:0 0 190px!important;width:190px!important;min-width:190px!important;max-width:190px!important;scroll-snap-align:start;box-sizing:border-box}
+html body.v50-directory-home .v50-highlight-row .v50-photo{display:block;width:100%;height:130px!important;min-height:130px!important;overflow:hidden}
+html body.v50-directory-home .v50-highlight-row .v50-photo img{width:100%;height:100%;object-fit:cover}
+html body.v50-directory-home .v50-highlight-row .v50-card>div{display:flex;flex:1;flex-direction:column;padding:12px;min-width:0}
+html body.v50-directory-home .v50-highlight-row .v86-view-store{margin-top:auto}
+html body.v50-directory-home .v50-highlights>header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
+@media(min-width:900px){html body.v50-directory-home .v50-highlight-row>.v50-card{flex-basis:230px!important;width:230px!important;min-width:230px!important;max-width:230px!important}}
 </style>{% endblock %}

@@ -1,0 +1,5 @@
+V87 — FAIXA DE LOJAS
+Substitua apenas home.html dentro de templates e publique no Render.
+Restaura a faixa Destaques com cartões verticais e rolagem para o lado.
+Mantém os ajustes da V86, a grade principal, o catálogo e o carrinho.
+Nenhum arquivo static ou raiz para trocar.
