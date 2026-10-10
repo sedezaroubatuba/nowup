@@ -1,0 +1,6 @@
+V86 — AJUSTES DA TELA PRINCIPAL
+Substituir base.html e home.html dentro de templates.
+Manter demais arquivos das V83/V84/V85. Não trocar app.py ou static.
+Cabeçalho único, Ver loja abrindo o perfil, categorias com nomes em mais de uma linha, três lojas por linha no celular.
+Tema claro declarado no site. Modo escuro forçado pelo navegador pode exigir ajuste no próprio Chrome.
+Verificado: renderização com uma loja e categoria, cabeçalho/menu único, links e formulários da busca. Não testado no site publicado.
