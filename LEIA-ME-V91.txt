@@ -1,0 +1,31 @@
+NOWUP V91 — EXPERIMENTE HOJE
+Base: app.py da V90 (rodízio inteligente das lojas).
+
+COMO INSTALAR
+1. Guarde uma cópia do app.py atual antes de substituir.
+2. Abra NOWUP-V91-RAIZ-EXPERIMENTE-HOJE.zip e coloque app.py e nowup_food91.py na raiz do projeto, ao lado dos outros módulos existentes.
+3. Abra NOWUP-V91-STATIC-EXPERIMENTE-HOJE.zip e coloque nowup-food91.css e nowup-food91.js dentro de static.
+4. Envie os dois grupos juntos para o GitHub e aguarde o deploy do Render. Depois atualize a página.
+Não precisa alterar templates nem banco de dados. Os demais módulos existentes continuam necessários.
+Se você já usa um app.py posterior à V90, não substitua por este sem integrar as alterações da versão mais nova.
+
+COMPORTAMENTO
+- Seção Experimente hoje no final do conteúdo principal, antes do rodapé.
+- Páginas com até seis produtos, duas linhas de três; swipe horizontal, setas e teclado.
+- Até 180 produtos reais, com última página parcial quando necessário.
+- Mistura produtos de lojas diferentes sem filtros por tipo de prato.
+- Ordem muda diariamente no fuso de São Paulo, sem tarefa agendada; calculada a cada consulta.
+- A posição inicial das lojas e dos produtos avança a cada dia. A disponibilidade pode mudar a seleção durante o dia.
+- Atualiza também enquanto a página permanece aberta (a cada cinco minutos).
+- Usa a cidade escolhida na página, sem herdar filtro de categoria de loja.
+- Somente lojas aprovadas, desbloqueadas, premium, em modo cardápio (menu), com categoria pública ativa e abertas conforme o controle de horário já existente.
+- Catálogos gerais não entram: evita misturar tabaco, roupas ou outros itens com refeições.
+- Somente produtos disponíveis, com foto, quantidade máxima positiva e categoria não desativada.
+- Usa preço promocional quando informado. Ver produto abre o cardápio da respectiva loja.
+- O script tenta destacar e rolar até o produto pelo identificador ou título da tela. A compatibilidade desse destaque depende dos elementos do menu.html instalado; o link para o cardápio funciona independentemente dele.
+- Nenhum produto fictício é cadastrado. Se não houver produtos elegíveis, a seção fica oculta.
+- Preserva logo, navegação e rodízio V90 das lojas. CSS limitado à seção nova.
+
+VALIDAÇÃO
+Sintaxe Python e JavaScript verificada. Testes isolados cobriram rodízio diário, intercalamento, limite, bloqueio, aprovação, loja fechada, cidade, produto indisponível, sem foto, categoria desativada, preço promocional e links.
+Não foi executado o projeto completo nem verificado o layout no Render: faltam os demais módulos/templates atuais no pacote disponibilizado.

@@ -408,6 +408,15 @@ def init_db():
       ON analytics_events(professional_id,created_at);
     CREATE INDEX IF NOT EXISTS idx_analytics_type
       ON analytics_events(event_type);
+    CREATE TABLE IF NOT EXISTS home_store_exposure90(
+      visit_date TEXT NOT NULL,
+      visitor_key TEXT NOT NULL,
+      professional_id INTEGER NOT NULL REFERENCES professionals(id) ON DELETE CASCADE,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY(visit_date,visitor_key,professional_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_home_exposure90_store_date
+      ON home_store_exposure90(professional_id,visit_date);
     CREATE TABLE IF NOT EXISTS daily_home_visits(
       visit_date TEXT NOT NULL,
       visitor_key TEXT NOT NULL,
@@ -454,6 +463,23 @@ def init_db():
       available INTEGER NOT NULL DEFAULT 1,
       sort_order INTEGER NOT NULL DEFAULT 100
     );
+    CREATE TABLE IF NOT EXISTS product_option_groups(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      min_choices INTEGER NOT NULL DEFAULT 0,
+      max_choices INTEGER NOT NULL DEFAULT 1
+    );
+    CREATE TABLE IF NOT EXISTS professional_delivery_zones(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      professional_id INTEGER NOT NULL REFERENCES professionals(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      name_key TEXT NOT NULL,
+      fee_cents INTEGER NOT NULL DEFAULT 0,
+      eta_minutes INTEGER NOT NULL DEFAULT 40,
+      active INTEGER NOT NULL DEFAULT 1,
+      UNIQUE(professional_id,name_key)
+    );
     CREATE TABLE IF NOT EXISTS order_item_options(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_item_id INTEGER NOT NULL REFERENCES order_items(id) ON DELETE CASCADE,
@@ -471,6 +497,8 @@ def init_db():
       ON orders(professional_id,created_at);
     CREATE INDEX IF NOT EXISTS idx_orders_professional_status
       ON orders(professional_id,status);
+    CREATE INDEX IF NOT EXISTS idx_home_orders90_status_date
+      ON orders(status,created_at,professional_id);
     CREATE INDEX IF NOT EXISTS idx_order_items_order
       ON order_items(order_id);
     CREATE TABLE IF NOT EXISTS products(
@@ -532,6 +560,7 @@ def init_db():
     ensure_column(conn, "professionals", "website_url", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "whatsapp_message", "TEXT DEFAULT 'Olá! Encontrei você pelo NowUp e gostaria de saber mais.'")
     ensure_column(conn, "professionals", "is_demo", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "product_options", "group_id", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "professionals", "is_premium", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "professionals", "billing_due_date", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "professionals", "billing_last_paid", "TEXT NOT NULL DEFAULT ''")
@@ -671,6 +700,57 @@ def startup():
     finally: target.close(); source.close()
     for old in sorted(backup_dir.glob("nowup-*.db"),reverse=True)[7:]: old.unlink(missing_ok=True)
 
+def select_home_stores90(conn, rows, visitor_key, visit_date):
+    """Keep existing sections; rank eligible stores by completed orders and fair rotation.
+
+    Exposure is a server selection in a leading slot, not a verified screen view.
+    Count each browser/store once per local day, never count hidden 'Ver todas'.
+    """
+    today=datetime.strptime(visit_date,"%Y-%m-%d").date()
+    cutoff=(today-timedelta(days=6)).isoformat()
+    lower,upper=order_day_bounds(today-timedelta(days=6))[0],order_day_bounds(today)[1]
+    sales={r["professional_id"]:r["total"] for r in conn.execute(
+        "SELECT professional_id,COUNT(*) total FROM orders WHERE status='completed' AND created_at>=? AND created_at<? GROUP BY professional_id",(lower,upper))}
+    exposures={r["professional_id"]:(r["total"],r["last_at"]) for r in conn.execute(
+        "SELECT professional_id,COUNT(*) total,MAX(created_at) last_at FROM home_store_exposure90 WHERE visit_date>=? GROUP BY professional_id",(cutoff,))}
+    rng=secrets.SystemRandom()
+    tie={r["id"]:rng.random() for r in rows}
+    def discovery_key(row):
+        count,last=exposures.get(row["id"],(0,""))
+        return (count,sales.get(row["id"],0),last,tie[row["id"]])
+    def popular_key(row):
+        return (-sales.get(row["id"],0),-float(row.get("rating") or 0),tie[row["id"]])
+    ordered=[]
+    # Closed stores stay available, after open ones. Existing featured priority remains.
+    for opened in (True,False):
+        pool=[r for r in rows if bool(r["shop_status"]["open"])==opened]
+        featured=sorted([r for r in pool if r["featured"]],key=popular_key)
+        others=[r for r in pool if not r["featured"]]
+        popular=sorted(others,key=popular_key)
+        discovery=sorted(others,key=discovery_key)
+        chosen={r["id"] for r in featured}; section=list(featured)
+        any_sales=any(sales.get(r["id"],0)>0 for r in others)
+        slot=0
+        while len(chosen)<len(pool):
+            queue=discovery if not any_sales or slot%3==2 else popular
+            row=next(r for r in queue if r["id"] not in chosen)
+            chosen.add(row["id"]);section.append(row);slot+=1
+        ordered.extend(section)
+    def rotation(pool):
+        return sorted(pool,key=lambda r:(not r["shop_status"]["open"],)+discovery_key(r))[:12]
+    rotating=rotation(rows)
+    catalogs=rotation([r for r in rows if r["is_premium"] and r["offer_mode"] in ('menu','catalog') and r["product_count"]>0])
+    # The templates render five recommended highlights; include only their leading slots.
+    recommended=[r for r in ordered if r["business_type"]!='restaurant']
+    leading=ordered[:12]+rotating[:3]+catalogs[:3]+(recommended or ordered)[:5]
+    selected={r["id"] for r in leading}
+    stamp=now_iso()
+    conn.executemany("INSERT OR IGNORE INTO home_store_exposure90(visit_date,visitor_key,professional_id,created_at) VALUES(?,?,?,?)",
+                     [(visit_date,visitor_key,pid,stamp) for pid in selected])
+    # Bounded retention for rotation counts, with no order/customer data in this table.
+    conn.execute("DELETE FROM home_store_exposure90 WHERE visit_date<?",((today-timedelta(days=30)).isoformat(),))
+    return ordered,rotating,catalogs
+
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request, q: str="", city: str="", category: str="", business_type: str="", open_now: str=""):
     conn = db()
@@ -725,14 +805,14 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
         recent_orders=conn.execute("""SELECT o.id,o.order_code,o.status,o.total_cents,o.created_at,o.tracking_token,p.display_name,p.slug
             FROM orders o JOIN professionals p ON p.id=o.professional_id
             WHERE o.customer_id=? ORDER BY o.id DESC LIMIT 4""",(user["id"],)).fetchall()
-    rotating_stores=list(rows)
-    secrets.SystemRandom().shuffle(rotating_stores)
-    catalog_stores=[r for r in rotating_stores if r["is_premium"] and r["offer_mode"] in ("menu","catalog") and r["product_count"]>0]
+    rows,rotating_stores,catalog_stores=select_home_stores90(conn,rows,visitor_key,visit_date)
+    conn.commit()
     restaurants=[r for r in rows if r["business_type"]=="restaurant"]
     offers=[r for r in rows if r["featured"]]
     recommended=[r for r in rows if r["business_type"]!="restaurant"]
     conn.close()
     response=templates.TemplateResponse("home.html", context(request, professionals=rows, rotating_stores=rotating_stores[:12], catalog_stores=catalog_stores[:12], recent_orders=recent_orders, status_labels=ORDER_STATUS_LABELS, open_now=open_now, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today, has_home_filter=bool(q or category or business_type)))
+    response = attach_food_assets(response)
     if not request.cookies.get("nowup_visitor"):
         response.set_cookie("nowup_visitor",visitor_key,max_age=31536000,httponly=True,samesite="lax",secure=request.url.scheme=="https")
     return response
@@ -757,6 +837,126 @@ def professionals(request: Request, category: str="", city: str="", neighborhood
       ORDER BY p.featured DESC,p.verified DESC,rating DESC,p.id DESC LIMIT 100
     """,params).fetchall(); conn.close()
     return templates.TemplateResponse("professionals.html", context(request, professionals=rows, active_cities=cities, filters={"category":category,"city":city,"neighborhood":neighborhood,"cep":cep,"q":q,"business_type":business_type}))
+
+
+def menu_rules89(conn, professional_id):
+    groups={}
+    for row in conn.execute("SELECT g.* FROM product_option_groups g JOIN products p ON p.id=g.product_id WHERE p.professional_id=? ORDER BY g.id",(professional_id,)):
+        groups.setdefault(row["product_id"],[]).append(dict(row))
+    zones=[dict(row) for row in conn.execute("SELECT * FROM professional_delivery_zones WHERE professional_id=? ORDER BY name",(professional_id,))]
+    return groups,zones
+
+def zone_key89(name):
+    return " ".join("".join(c for c in unicodedata.normalize("NFD",name.strip()) if not unicodedata.combining(c)).casefold().split())
+
+def validate_choices89(conn, product_id, chosen):
+    for group in conn.execute("SELECT * FROM product_option_groups WHERE product_id=?",(product_id,)):
+        count=sum(option["group_id"]==group["id"] for option in chosen)
+        if count<group["min_choices"] or count>group["max_choices"]:
+            raise HTTPException(400,f"{group['name']}: escolha de {group['min_choices']} a {group['max_choices']} opção(ões). Atualize o produto no carrinho.")
+
+def delivery_quote89(conn, pro, neighborhood):
+    zones=conn.execute("SELECT * FROM professional_delivery_zones WHERE professional_id=?",(pro["id"],)).fetchall()
+    if not zones: return (pro["delivery_fee_cents"] or 0),neighborhood.strip()[:120]
+    zone=next((z for z in zones if z["active"] and z["name_key"]==zone_key89(neighborhood)),None)
+    if not zone: raise HTTPException(400,"Selecione um bairro atendido pela loja para entrega.")
+    return zone["fee_cents"],zone["name"]
+
+def merchant_overview89(conn, pro):
+    lower,upper=order_day_bounds(datetime.now(SAO_PAULO_TZ).date())
+    today=conn.execute("SELECT status,total_cents FROM orders WHERE professional_id=? AND created_at>=? AND created_at<?",(pro["id"],lower,upper)).fetchall()
+    active=[dict(row) for row in conn.execute("SELECT id,order_code,customer_name,status,created_at,fulfillment_type FROM orders WHERE professional_id=? AND status IN ('new','confirmed','preparing','ready','out_for_delivery') ORDER BY id",(pro["id"],))]
+    now=datetime.now(timezone.utc)
+    for order in active:
+        try: age=max(0,int((now-datetime.fromisoformat(order["created_at"])).total_seconds()/60))
+        except ValueError: age=0
+        order["age_minutes"]=age
+        order["late"]=age>5 if order["status"]=='new' else (age>int(pro["prep_minutes"] or 40) and order["status"] in ('confirmed','preparing'))
+    return {"today_count":len(today),"completed_cents":sum(r["total_cents"] for r in today if r["status"]=='completed'),"pending":sum(o["status"]=='new' for o in active),"active_count":len(active),"late_count":sum(o["late"] for o in active),"active_orders":active,"shop_status":shop_status(pro)}
+
+@app.get("/painel/resumo89")
+def pro_overview89(request: Request):
+    u=require_user(request,"professional"); conn=db()
+    try:
+        p=conn.execute("SELECT * FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+        if not p: raise HTTPException(404)
+        return JSONResponse(merchant_overview89(conn,p),headers={"Cache-Control":"no-store"})
+    finally: conn.close()
+
+@app.post("/painel/situacao89")
+def pro_quick_status89(request: Request, business_status: str=Form(...)):
+    u=require_user(request,"professional")
+    if business_status not in ('open','paused'): raise HTTPException(400,"Situação inválida")
+    conn=db()
+    try:
+        conn.execute("UPDATE professionals SET business_status=? WHERE user_id=?",(business_status,u["id"])); conn.commit()
+    finally: conn.close()
+    return RedirectResponse("/painel?ok=situacao#hoje",303)
+
+@app.post("/painel/cardapio/grupos89")
+def pro_group_save89(request: Request, product_id: int=Form(...), name: str=Form(...), min_choices: int=Form(0), max_choices: int=Form(1), group_id: int=Form(0)):
+    u=require_user(request,"professional"); conn=db()
+    try:
+        p=require_premium_catalog(conn,u["id"])
+        if not conn.execute("SELECT id FROM products WHERE id=? AND professional_id=?",(product_id,p["id"])).fetchone(): raise HTTPException(404)
+        if not name.strip() or not 0<=min_choices<=max_choices<=20 or max_choices<1: raise HTTPException(400,"Informe um nome e limites entre 0 e 20; máximo deve ser maior ou igual ao mínimo e pelo menos 1.")
+        if group_id:
+            if not conn.execute("UPDATE product_option_groups SET name=?,min_choices=?,max_choices=? WHERE id=? AND product_id=?",(name.strip()[:80],min_choices,max_choices,group_id,product_id)).rowcount: raise HTTPException(404)
+        else: conn.execute("INSERT INTO product_option_groups(product_id,name,min_choices,max_choices) VALUES(?,?,?,?)",(product_id,name.strip()[:80],min_choices,max_choices))
+        conn.commit()
+    finally: conn.close()
+    return RedirectResponse("/painel?ok=grupo#adicionais",303)
+
+@app.post("/painel/cardapio/grupos89/{group_id}/excluir")
+def pro_group_delete89(request: Request, group_id: int):
+    u=require_user(request,"professional"); conn=db()
+    try:
+        p=require_premium_catalog(conn,u["id"])
+        group=conn.execute("SELECT g.* FROM product_option_groups g JOIN products p ON p.id=g.product_id WHERE g.id=? AND p.professional_id=?",(group_id,p["id"])).fetchone()
+        if not group: raise HTTPException(404)
+        conn.execute("UPDATE product_options SET group_id=0 WHERE group_id=? AND product_id=?",(group_id,group["product_id"]))
+        conn.execute("DELETE FROM product_option_groups WHERE id=?",(group_id,)); conn.commit()
+    finally: conn.close()
+    return RedirectResponse("/painel?ok=grupo#adicionais",303)
+
+@app.post("/painel/cardapio/adicionais/{option_id}/grupo89")
+def pro_assign_group89(request: Request, option_id: int, group_id: int=Form(0)):
+    u=require_user(request,"professional"); conn=db()
+    try:
+        p=require_premium_catalog(conn,u["id"])
+        option=conn.execute("SELECT po.* FROM product_options po JOIN products pr ON pr.id=po.product_id WHERE po.id=? AND pr.professional_id=?",(option_id,p["id"])).fetchone()
+        if not option: raise HTTPException(404)
+        if group_id and not conn.execute("SELECT id FROM product_option_groups WHERE id=? AND product_id=?",(group_id,option["product_id"])).fetchone(): raise HTTPException(400,"Grupo de outro produto")
+        conn.execute("UPDATE product_options SET group_id=? WHERE id=?",(group_id,option_id)); conn.commit()
+    finally: conn.close()
+    return RedirectResponse("/painel?ok=grupo#adicionais",303)
+
+@app.post("/painel/cardapio/entregas89")
+def pro_zone_save89(request: Request, name: str=Form(...), fee: str=Form("0"), eta_minutes: int=Form(40), active: Optional[str]=Form(None), zone_id: int=Form(0)):
+    u=require_user(request,"professional"); conn=db()
+    try:
+        p=require_premium_catalog(conn,u["id"])
+        clean=name.strip()[:120]; key=zone_key89(clean)
+        if not key or not 5<=eta_minutes<=240: raise HTTPException(400,"Informe bairro e prazo entre 5 e 240 minutos")
+        cents=price_to_cents(fee)
+        try:
+            if zone_id:
+                if not conn.execute("UPDATE professional_delivery_zones SET name=?,name_key=?,fee_cents=?,eta_minutes=?,active=? WHERE id=? AND professional_id=?",(clean,key,cents,eta_minutes,1 if active else 0,zone_id,p["id"])).rowcount: raise HTTPException(404)
+            else: conn.execute("INSERT INTO professional_delivery_zones(professional_id,name,name_key,fee_cents,eta_minutes,active) VALUES(?,?,?,?,?,?)",(p["id"],clean,key,cents,eta_minutes,1 if active else 0))
+            conn.commit()
+        except sqlite3.IntegrityError: raise HTTPException(400,"Este bairro já está cadastrado")
+    finally: conn.close()
+    return RedirectResponse("/painel?ok=entrega#cardapio",303)
+
+@app.post("/painel/cardapio/entregas89/{zone_id}/excluir")
+def pro_zone_delete89(request: Request, zone_id: int):
+    u=require_user(request,"professional"); conn=db()
+    try:
+        p=require_premium_catalog(conn,u["id"])
+        if not conn.execute("DELETE FROM professional_delivery_zones WHERE id=? AND professional_id=?",(zone_id,p["id"])).rowcount: raise HTTPException(404)
+        conn.commit()
+    finally: conn.close()
+    return RedirectResponse("/painel?ok=entrega#cardapio",303)
 
 @app.get("/p/{slug}", response_class=HTMLResponse)
 def profile(request: Request, slug: str):
@@ -790,13 +990,14 @@ def profile(request: Request, slug: str):
         for row in conn.execute("""SELECT po.* FROM product_options po JOIN products pr ON pr.id=po.product_id
           WHERE pr.professional_id=? AND po.available=1 ORDER BY po.sort_order,po.id""",(p["id"],)).fetchall():
             product_options.setdefault(row["product_id"],[]).append(row)
+    product_groups,delivery_zones=menu_rules89(conn,p["id"])
     current=current_user(request); can_review=False
     if current and current["role"]=="customer":
         can_review=bool(conn.execute("SELECT 1 FROM orders WHERE customer_id=? AND professional_id=? AND status='completed' LIMIT 1",(current["id"],p["id"])).fetchone())
     conn.close()
     pub=dict(p); pub.update(menu_url="",external_url="",instagram_url="",facebook_url="",website_url=""); pub["document_masked"]=mask_doc(pub["document"]); pub["wa_link"]="/p/"+quote(pub["slug"],safe="")
     status=shop_status(p)
-    return templates.TemplateResponse("profile.html", context(request, pro=pub, products=products, product_options=product_options, menu_categories=menu_categories, photos=photos, posts=posts, reviews=reviews, pro_categories=cats, product_count=product_count, shop_status=status, hours_lines=business_hours_lines(p), can_review=can_review))
+    return templates.TemplateResponse("profile.html", context(request, pro=pub, products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, photos=photos, posts=posts, reviews=reviews, pro_categories=cats, product_count=product_count, shop_status=status, hours_lines=business_hours_lines(p), can_review=can_review))
 
 @app.get("/p/{slug}/menu", response_class=HTMLResponse)
 def native_menu(request: Request, slug: str):
@@ -818,9 +1019,10 @@ def native_menu(request: Request, slug: str):
       WHERE pr.professional_id=? AND po.available=1 ORDER BY po.sort_order,po.id""",(p["id"],)).fetchall():
         product_options.setdefault(row["product_id"],[]).append(row)
     conn.execute("UPDATE professionals SET menu_clicks=menu_clicks+1 WHERE id=?",(p["id"],))
-    conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"menu_click",now_iso())); conn.commit(); conn.close()
+    conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"menu_click",now_iso())); conn.commit()
+    product_groups,delivery_zones=menu_rules89(conn,p["id"]); conn.close()
     status=shop_status(p)
-    return templates.TemplateResponse("menu.html", context(request, pro=p, products=products, product_options=product_options, menu_categories=menu_categories, shop_status=status))
+    return attach_food_assets(templates.TemplateResponse("menu.html", context(request, pro=p, products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, shop_status=status)))
 
 @app.post("/p/{slug}/menu/pedido")
 def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...), save_address: Optional[str]=Form(None)):
@@ -845,10 +1047,12 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
             qty=min(qty,max(1,product["max_quantity"] or 99)); chosen=[]; extras=0
             option_ids=raw.get("options",[]) if isinstance(raw,dict) else []
             if isinstance(option_ids,list):
-                for oid in dict.fromkeys(str(x) for x in option_ids[:20]):
+                for oid in dict.fromkeys(str(x) for x in option_ids[:200]):
                     try: option=conn.execute("SELECT * FROM product_options WHERE id=? AND product_id=? AND available=1",(int(oid),pid)).fetchone()
                     except (TypeError,ValueError): option=None
                     if option: chosen.append(option); extras += option["price_cents"]
+            try: validate_choices89(conn,pid,chosen)
+            except HTTPException: conn.close(); raise
             unit=(product["promo_price_cents"] if product["promo_price_cents"]>0 else product["price_cents"])+extras
             clean_items.append((product,qty,item_notes,chosen,unit)); subtotal += unit*qty
     if not clean_items: conn.close(); raise HTTPException(400,"Nenhum produto disponível no carrinho")
@@ -858,7 +1062,11 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
     if fulfillment_type=="delivery" and not p["allows_delivery"]: conn.close(); raise HTTPException(400,"Esta loja não realiza entregas")
     if fulfillment_type=="pickup" and not p["allows_pickup"]: conn.close(); raise HTTPException(400,"Esta loja não permite retirada")
     if subtotal < (p["minimum_order_cents"] or 0): conn.close(); raise HTTPException(400,"O pedido não atingiu o valor mínimo")
-    delivery_fee=(p["delivery_fee_cents"] or 0) if fulfillment_type=="delivery" else 0; total=subtotal+delivery_fee
+    delivery_fee=0
+    if fulfillment_type=="delivery":
+        try: delivery_fee,neighborhood=delivery_quote89(conn,p,neighborhood)
+        except HTTPException: conn.close(); raise
+    total=subtotal+delivery_fee
     payment_labels={"pix":"Pix","cash":"Dinheiro","credit":"Cartão de crédito","debit":"Cartão de débito","on_delivery":"Combinar no atendimento"}
     payment_method=payment_method if payment_method in payment_labels else "pix"
     change_for_cents=price_to_cents(change_for) if payment_method=="cash" and change_for.strip() else 0
@@ -1227,9 +1435,11 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
       FROM orders WHERE professional_id=? AND customer_id IS NOT NULL
       GROUP BY customer_id ORDER BY last_order DESC""",(p["id"],)).fetchall()
     latest_order_id=conn.execute("SELECT COALESCE(MAX(id),0) FROM orders WHERE professional_id=?",(p["id"],)).fetchone()[0]
+    product_groups,delivery_zones=menu_rules89(conn,p["id"])
+    merchant_overview=merchant_overview89(conn,p)
     conn.close()
     status=shop_status(p); business_hours=parse_business_hours(p["business_hours"])
-    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, products=products, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, today_orders=today_orders, day_order_summary=day_order_summary, order_day=order_day.isoformat(), today_day=today.isoformat(), order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
+    return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, products=products, product_groups=product_groups, delivery_zones=delivery_zones, merchant_overview=merchant_overview, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, today_orders=today_orders, day_order_summary=day_order_summary, order_day=order_day.isoformat(), today_day=today.isoformat(), order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
 
 @app.get("/painel/pedidos/novos")
 def pro_new_orders(request: Request, after: int=0):
@@ -2138,3 +2348,8 @@ nowup_push75.configure(db, require_user)
 app.include_router(nowup_push75.router)
 app.add_event_handler("startup", nowup_push75.start)
 app.add_event_handler("shutdown", nowup_push75.stop)
+
+
+# V91: vitrine de refeições, sem alterar o rodízio V90 das lojas.
+from nowup_food91 import attach_food_assets, register_food_feed
+register_food_feed(app, db, get_settings, active_cities, shop_status, public_business_scope)
