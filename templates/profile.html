@@ -31,7 +31,7 @@ body.public-profile-area .tabs a {color:#14365d!important;text-decoration:none;f
 body.public-profile-area :is(input,textarea,select) {background:#fff!important;color:#14365d!important;border-color:#cad8e7!important;}
 body.public-profile-area :focus-visible {outline:3px solid #08a5d0;outline-offset:3px;}
 @media(min-width:900px) {body.public-profile-area .profile-primary-actions {flex-direction:row!important;max-width:720px;} body.public-profile-area .profile-primary-actions > * {flex:1;}}
-</style>
+</style><link rel="stylesheet" href="/static/profile-catalog83.css?v=83">
 <section class="public-profile-hero">
 <div class="profile-cover" {% if pro.cover_filename %}style="background-image:url('/uploads/{{pro.cover_filename}}')"{% endif %}>
 </div>
@@ -44,36 +44,25 @@ body.public-profile-area :focus-visible {outline:3px solid #08a5d0;outline-offse
 <div class="stars">{% if pro.review_count %}★ {{pro.rating}} <span class="muted">({{pro.review_count}} {{'avaliação' if pro.review_count == 1 else 'avaliações'}})</span>{% else %}<span class="muted">☆ Sem avaliações</span>{% endif %}</div>
 </div>
 <div class="profile-cta profile-primary-actions">
-{% if pro.is_premium and pro.menu_url %}<a class="btn primary" href="/p/{{pro.slug}}/cardapio" target="_blank" rel="noopener">🍽 Ver cardápio</a>{% elif pro.is_premium and pro.offer_mode in ['menu','catalog'] %}<a class="btn primary" href="/p/{{pro.slug}}/menu">{{'🛍 Ver catálogo' if pro.offer_mode=='catalog' else '🍽 Ver cardápio'}}</a>{% endif %}
+
 {% if pro.address and not pro.hide_address %}<a class="btn soft" href="https://www.google.com/maps/search/?api=1&query={{pro.address|urlencode}}" target="_blank" rel="noopener">📍 Como chegar</a>{% else %}<span class="btn soft disabled">📍 Como chegar</span>{% endif %}
-<form action="/p/{{pro.slug}}/whatsapp" method="post"><button class="btn orange">💬 WhatsApp</button></form>
+
 
 </div>
 <div class="profile-extra-actions">{% if pro.instagram_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/instagram" target="_blank" rel="noopener">Instagram</a>{% endif %}{% if pro.facebook_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/facebook" target="_blank" rel="noopener">Facebook</a>{% endif %}{% if pro.website_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/site" target="_blank" rel="noopener">Site</a>{% endif %}{% if pro.external_url %}<a class="btn soft" href="/p/{{pro.slug}}/link" target="_blank" rel="noopener">Outro link</a>{% endif %}</div>
 
 </div>
 </section>
+{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}{% endif %}
 <section class="section">
 <div class="container profileGrid">
 <main>
-<div class="tabs">
-<a href="#sobre">Sobre</a>
-<a href="#fotos">Fotos</a>
-<a href="#publicacoes">Publicações</a>
-<a href="#avaliacoes">Elogios e avaliações</a>
-</div>
+
 <div class="panel" id="sobre">
 <h3>Sobre</h3>
 <p>{{pro.description or 'Este perfil ainda não adicionou uma descrição.'}}</p>
 <div>{% for c in pro_categories %}<span class="badge">{{c.icon}} {{c.name}}</span> {% endfor %}</div>
 </div>
-<div class="panel" id="fotos">
-<h3>Fotos</h3>
-<div class="gallery">{% for ph in photos %}<img src="/uploads/{{ph.filename}}" alt="{{ph.caption}}">{% endfor %}{% for i in range(3 - photos|length) %}<div class="photo-placeholder">Foto em breve</div>{% endfor %}</div>
-</div>
-<div class="panel" id="publicacoes">
-<h3>Publicações</h3>{% for po in posts %}<article class="post">
-<p>{{po.text}}</p>{% if po.photo_filename %}<img class="postimg" src="/uploads/{{po.photo_filename}}">{% endif %}</article>{% else %}<p class="muted">Ainda sem publicações.</p>{% endfor %}</div>
 <div class="panel" id="avaliacoes">
 <h3>Elogios e avaliações <span class="rating-trust">★ {{pro.rating}} · {{pro.review_count}} {{'avaliação' if pro.review_count == 1 else 'avaliações'}}</span></h3>{% if user and user.role=='customer' and can_review %}<form action="/p/{{pro.slug}}/avaliar" method="post" class="grid2">
 <select name="stars">
@@ -95,22 +84,14 @@ body.public-profile-area :focus-visible {outline:3px solid #08a5d0;outline-offse
 <aside>
 <div class="panel">
 <h3>Serviços</h3>
-<p>{{pro.services or 'Consulte diretamente pelo WhatsApp.'}}</p>{% if pro.service_area %}<p>
+<p>{{pro.services or 'Consulte os serviços oferecidos pela empresa.'}}</p>{% if pro.service_area %}<p>
 <b>Área atendida:</b>
 <br>{{pro.service_area}}</p>{% endif %}{% if hours_lines %}<p>
 <b>Horários:</b>
 {% for line in hours_lines %}<br>{{line}}{% endfor %}</p>{% elif pro.opening_hours %}<p><b>Horários:</b><br>{{pro.opening_hours}}</p>{% endif %}{% if pro.address and not pro.hide_address %}<p>
 <b>Endereço:</b>
-<br>{{pro.address}}{% if pro.cep %} · CEP {{pro.cep}}{% endif %}</p>{% endif %}<form action="/p/{{pro.slug}}/whatsapp" method="post">
-<button class="btn orange full-btn">WhatsApp</button>
-</form></div>
-<div class="panel">
-<h3>Números do perfil</h3>
-<p>
-<b>{{pro.views + 1}}</b> visualizações</p>
-<p>
-<b>{{pro.review_count}}</b> elogios e avaliações</p>
-</div>
+<br>{{pro.address}}{% if pro.cep %} · CEP {{pro.cep}}{% endif %}</p>{% endif %}</div>
+
 <div class="panel">
 <h3>Segurança</h3>
 <p class="tiny muted">A NowUp divulga e conecta. A negociação ocorre diretamente com o anunciante.</p>{% if user and user.role=='customer' %}<details>

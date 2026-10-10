@@ -1,0 +1,14 @@
+NOWUP V83 — PERFIL COM CATÁLOGO NA FRENTE
+
+INSTALAR OS TRÊS ZIPs:
+TEMPLATES: substituir profile.html e menu.html dentro de templates.
+STATIC: adicionar profile-catalog83.css e menu83.js dentro de static.
+RAIZ: substituir app.py na raiz.
+Manter a V82 instalada. Publicar no Render e recarregar a página.
+
+Layout branco e compacto, capa/logo preservados, apenas Como chegar, produtos na própria página, busca, categorias e carrinho fixo no rodapé. Ver pedido leva ao resumo com quantidades, exclusão e botão para continuar.
+Fotos, Publicações e Números do perfil deixam de aparecer publicamente; os dados existentes não são apagados.
+Serviços sem catálogo continuam com descrição e horários. O catálogo interno continua exclusivo para premium.
+
+Base: app(3).py, profile(2).html e menu(5).html enviados. O app.py foi alterado somente para carregar os produtos e opções no perfil.
+Verificações: compilação Python, sintaxe JS, renderização dos templates e consultas de categorias/produtos/adicionais em banco de teste. Não foi verificado no Render ou em navegador autenticado.
