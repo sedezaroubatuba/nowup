@@ -1,0 +1,6 @@
+V85 — OBSERVAÇÃO COMPACTA
+Substitua profile.html e menu.html dentro de templates.
+Mantenha o static e app.py atuais da V83 e publique no Render.
+O campo Observação fica fechado por padrão e abre ao tocar no ícone. A anotação continua vinculada ao produto e ao pedido.
+Não precisa trocar arquivos static ou raiz.
+Verificado: sintaxe dos templates, campo recolhido e compatibilidade com a leitura da observação no carrinho.
