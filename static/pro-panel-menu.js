@@ -120,6 +120,8 @@
       perfil:['perfil','identidade','fotos','publicidade'],
       horarios:['horarios','links'],
       publicar:['publicar'],
+      plano:['plano'],
+      configuracoes:['configuracoes'],
       notificacoes:['notificacoes']
     };
 
@@ -132,7 +134,7 @@
     window.setInterval(()=>{ const hash=location.hash.slice(1); if(!document.hidden && (!hash || hash==='hoje') && dayChanged()) location.replace('/painel'); },30000);
     function navigate(){
       const hash=location.hash.slice(1);
-      let group=Object.keys(groups).find(key=>groups[key].includes(hash))||'hoje';
+      let group=Object.keys(groups).find(key=>key===hash || groups[key].includes(hash))||'hoje';
       if(/^pedido-\d+$/.test(hash))group='pedidos';
       if(group==='hoje' && dayChanged()){ location.replace('/painel'); return; }
 
@@ -154,12 +156,12 @@
         if(/^pedido-\d+$/.test(hash)){
           const target=document.getElementById(hash);
           if(target){
-            target.scrollIntoView({block:'start',behavior:'smooth'});
+            target.scrollIntoView({block:'start',behavior:'instant'});
             target.classList.add('v61-order-focus');
             setTimeout(()=>target.classList.remove('v61-order-focus'),1800);
           }
         }else{
-          window.scrollTo({top:0,behavior:'smooth'});
+          window.scrollTo({top:0,behavior:'instant'});
         }
       });
     }
@@ -191,7 +193,7 @@
       }
     });
 
-    links.forEach(link=>link.addEventListener('click',()=>{
+    dashboard.querySelectorAll('a[href^="#"]').forEach(link=>link.addEventListener('click',()=>{
       if(location.hash===link.hash)navigate();
     }));
     window.addEventListener('hashchange',navigate);

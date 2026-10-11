@@ -1,0 +1,31 @@
+NOWUP V99 — TEMA BRANCO E NAVEGAÇÃO DO LOJISTA
+Instale após V96, V97 e V98.
+TEMPLATES: substitua templates/base.html e templates/pro_panel.html.
+STATIC: substitua static/pro-panel-menu.js e adicione static/nowup-white99.css.
+Não há mudança na raiz ou no banco de dados.
+
+CORREÇÕES
+Plano e Configurações foram incluídos no mapa das seções do painel.
+Cliques repetidos no sininho e atalhos reabrem a seção e voltam ao topo instantaneamente.
+Menu lateral tem visibilidade, camada de sobreposição e fechamento reforçados.
+Tema branco cobre os gerenciadores de categorias, produtos, adicionais, horários, pedidos
+ e outras superfícies internas que ainda tinham fundo azul. Mensagens de perigo preservam
+identificação vermelha. Imagens e logos enviados pelas lojas não são recoloridos.
+Mantém a navegação instantânea V98 e os relatórios V97.
+
+VALIDAÇÃO
+Sintaxe dos templates e JavaScript conferida. Simulação DOM testou abrir/fechar menu,
+sininho repetido, Plano, Configurações, Perfil, Relatórios, Clientes e Cardápio.
+Os 33 formulários do lojista e 5 do cliente apontam para rotas existentes na raiz V97.
+Não houve teste visual em navegador real nem acesso à conta do lojista no Render.
+
+APLICATIVO GOOGLE
+A página /entrar respondeu HTTP 200 a requisições com identificação de Chrome e Google app.
+Isso não reproduz o navegador interno nem comprova correção no celular.
+Como o usuário relatou que a página não abre, é necessário o print da mensagem exata para
+investigar essa falha. Não foi feita mudança no login nem enfraquecida a segurança.
+
+APÓS O DEPLOY
+Atualize a página e confira menu, sininho, Plano, Configurações e categorias.
+Se continuar aparecendo tela azul, feche e reabra o site para carregar a versão nova.
+Se uma tela mostrar erro, registre o nome do botão, URL e mensagem exibida.
