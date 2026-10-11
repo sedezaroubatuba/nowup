@@ -1,0 +1,58 @@
+NOWUP V98 — RELATÓRIOS DO LOJISTA E PREPARAÇÃO PARA MESAS
+Base: V96 + preparação financeira V97. Contém os arquivos necessários da V97
+para que os novos imports de app.py funcionem mesmo sem instalar a V97 antes.
+
+INSTALAÇÃO
+Faça backup dos arquivos e banco. Extraia cada ZIP no destino indicado:
+RAIZ: junto ao app.py; TEMPLATES: pasta templates; STATIC: pasta static.
+Preserve todos os demais arquivos e módulos do projeto. Reinicie o Render.
+Não apague dados, fotos ou pedidos. Novas colunas são adicionadas sem recriar tabelas.
+
+ACESSO
+Lojista: menu Relatórios de vendas ou /painel/relatorios.
+O relatório anterior de visualizações e cliques continua no painel.
+
+RELATÓRIOS
+- Vendas e quantidade de pedidos finalizados, ticket médio.
+- Comparação com período anterior de mesma duração.
+- Produtos mais vendidos, menos vendidos e sem vendas.
+- Situação atual do produto: disponível, indisponível ou removido.
+- Vendas por dia, dia da semana e horário de entrada dos pedidos finalizados.
+- Unidades e valor dos itens por categoria.
+- Vendas por forma de pagamento informada no pedido.
+- Cancelamentos/recusas, valor separado e motivos.
+- Pedidos em andamento separados das vendas finalizadas.
+- Filtros: hoje, 7 dias, mês, 30 dias, período personalizado até 366 dias.
+- Filtro de origem: todas, online e mesas (módulo futuro).
+
+DEFINIÇÕES
+Datas e horários no fuso de Brasília. O período é pela criação do pedido,
+não pela data da finalização ou da liquidação financeira.
+Somente status completed compõe as vendas. Não é relatório de lucro nem
+confirmação bancária. Vendas externas ao NowUp não entram.
+Categorias e produtos somam preços dos itens incluindo adicionais registrados;
+o total dos pedidos também pode incluir frete e por isso ser diferente.
+Para novos pedidos, a categoria é salva no item, preservando o histórico.
+Pedidos antigos sem snapshot usam a categoria atual do produto; se ele foi
+removido, aparecem como categoria não registrada. Não se inventa histórico.
+Produtos atuais sem vendas no período entram no ranking de menos vendidos.
+Cancelados e recusados são contados pela data de criação do pedido.
+
+MESAS — PREPARAÇÃO, NÃO UM MÓDULO ATIVO
+Foi adicionado orders.sales_channel com padrão online para pedidos existentes
+e novos pedidos online. O módulo futuro deverá registrar table nos pedidos
+feitos em mesas e usar o mesmo cadastro de produtos/categorias.
+Não há controle de mesas, comandas, upgrade comercial ou cobrança adicional
+implementados nesta versão. Mesas não recebe pedidos até esse módulo existir.
+Não houve migração dos pedidos online para outra estrutura.
+
+PAGAMENTOS
+Mantida a V97: simulações no ADM e inbox Sandbox, sem cobrar valores reais.
+Consulte o LEIA-ME-V97.txt incluído no ZIP RAIZ.
+
+TESTES
+Compilação Python; Jinja renderizado com dados de teste; isolamento por loja;
+limite do dia no fuso brasileiro; cancelados excluídos; comparação anterior;
+produtos sem vendas; categorias históricas; migração repetida; filtro de origem.
+O projeto inteiro não foi executado: módulos externos referenciados no pacote
+original não estavam incluídos. Não foi instalado ou testado no Render.
