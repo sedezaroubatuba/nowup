@@ -8,15 +8,20 @@ body.professional-area .pro-dashboard #pedidos[hidden]{display:none!important}
 body.professional-area .pro-dashboard #pedidos-ativos h2,body.professional-area .pro-dashboard .active-order-main strong{color:#12314a!important}
 body.professional-area .pro-dashboard .active-order-main small{color:#526678!important}
 body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!important}
+body.professional-area .pro-dashboard .merchant-shortcuts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+body.professional-area .pro-dashboard .merchant-shortcuts .btn{min-height:42px;display:inline-flex;align-items:center;justify-content:center}
+body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-space:nowrap;font-size:13px;padding:9px 11px}
+@media(max-width:600px){body.professional-area .pro-dashboard .v60-top .merchant-profile-link{font-size:12px;padding:8px}body.professional-area .pro-dashboard .merchant-shortcuts .btn{flex:1 1 145px}}
 </style>
 
 <div class="container dashboard pro-dashboard" data-panel-day="{{today_day}}">
-<header class="v60-top"><button class="btn" type="button" data-pro-menu-toggle aria-expanded="false" aria-controls="pro-edit-menu" aria-label="Abrir menu">☰</button><div><b>{{pro.display_name}}</b><small>{{shop_status.label}}</small></div><a class="btn v61-bell" href="#notificacoes" aria-label="Notificações">🔔<span class="v61-badge" data-notification-badge hidden>0</span></a></header>
+<header class="v60-top"><button class="btn" type="button" data-pro-menu-toggle aria-expanded="false" aria-controls="pro-edit-menu" aria-label="Abrir menu">☰</button><div><b>{{pro.display_name}}</b><small>{{shop_status.label}}</small></div><a class="btn soft merchant-profile-link" href="/p/{{pro.slug}}" target="_blank" rel="noopener" aria-label="Ver meu perfil público na NowUp">↗ Meu perfil</a><a class="btn v61-bell" href="#notificacoes" aria-label="Notificações">🔔<span class="v61-badge" data-notification-badge hidden>0</span></a></header>
 <button class="v60-shade" type="button" data-close-pro-menu aria-label="Fechar menu" hidden></button>
 <aside class="sidebar pro-sidebar" id="pro-edit-menu"><h2>Menu da loja</h2>
-<a href="#hoje">📅 Pedidos de hoje</a><a href="#resumo">📊 Visão geral</a><a href="#pedidos">🧾 Pedidos</a><a href="#cardapio">🛍 {{'Catálogo de produtos' if pro.offer_mode=='catalog' else 'Cardápio'}}</a><a href="#adicionais">➕ Adicionais</a><a href="#clientes">👥 Clientes</a><a href="#relatorios">📈 Relatórios</a><a href="#perfil">🏪 Perfil da loja</a><a href="#horarios">⚙️ Configurações</a><a href="#publicar">➕ Publicações</a><a href="/p/{{pro.slug}}">↗ Ver perfil público</a>
+<a href="#hoje">📅 Pedidos de hoje</a><a href="#resumo">📊 Visão geral</a><a href="#pedidos">🧾 Pedidos</a><a href="#cardapio">🛍 {{'Catálogo de produtos' if pro.offer_mode=='catalog' else 'Cardápio'}}</a><a href="#adicionais">➕ Adicionais</a><a href="#clientes">👥 Clientes</a><a href="#relatorios">📈 Relatórios</a><a href="#plano">💳 Meu plano</a><a href="#perfil">🏪 Perfil da loja</a><a href="#configuracoes">⚙️ Configurações</a><a href="#publicar">➕ Publicações</a><a href="/p/{{pro.slug}}" target="_blank" rel="noopener">↗ Ver perfil público</a>
 <form action="/sair" method="post"><button class="btn danger">Sair</button></form></aside>
 <main>
+<nav class="merchant-shortcuts" aria-label="Acesso rápido da loja"><a class="btn soft" href="/p/{{pro.slug}}" target="_blank" rel="noopener">↗ Ver minha loja</a><a class="btn soft" href="#relatorios">📈 Ver relatórios</a><a class="btn soft" href="#configuracoes">⚙️ Configurações</a></nav>
 {% if pro.admission_status=='pending' %}<div class="alert">Seu cadastro está em análise pelo ADM. Você pode preparar seu painel, mas a loja ainda não aparece aos clientes.</div>{% elif pro.admission_status=='rejected' %}<div class="alert danger">Seu cadastro não foi aprovado.{% if pro.admission_reason %} {{pro.admission_reason}}{% endif %} Entre em contato com o NowUp para esclarecer informações.</div>{% endif %}
 {% if request.query_params.get('ok') %}<div class="alert success">Alterações salvas com sucesso.</div>{% endif %}
 {% if request.query_params.get('erro')=='limite-promocoes' %}<div class="alert">Você já atingiu o limite de 3 produtos em promoção. Retire um destaque antes de adicionar outro.</div>{% endif %}
@@ -49,7 +54,7 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 <span class="kicker">Central do profissional</span>
 <h1>Olá, {{pro.display_name}}</h1>
 <p>Gerencie sua vitrine e acompanhe o interesse dos clientes.</p>
-<p><span class="status-pill {% if pro.is_premium %}ok{% endif %}">{{'Plano Premium' if pro.is_premium else 'Plano gratuito'}}</span></p>
+<p><span class="status-pill {% if pro.is_premium %}ok{% endif %}">{{{'cardapio':'Só cardápio/catálogo','vitrine':'Só vitrine','ambos':'Vitrine + cardápio','none':'Aguardando plano'}.get(pro.plan_active,'Plano pendente')}}</span></p>
 <p><span class="status-pill {% if shop_status.open %}ok{% endif %}">{{shop_status.label}}</span> <small>{{shop_status.detail}}</small></p>
 <div class="completion">
 <span>
@@ -88,6 +93,8 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 <small>Fotos publicadas</small>
 </div>
 </section>
+<section class="panel" id="plano"><h2>Meu plano</h2><p>Atual: <b>{{{'cardapio':'Só cardápio/catálogo · R$ 49,90','vitrine':'Só vitrine · R$ 49,90','ambos':'Vitrine + cardápio/catálogo · R$ 99,90','none':'Aguardando liberação'}.get(pro.plan_active,'Aguardando liberação')}}</b></p>{% if pro.plan_requested %}<p role="status">Mudança solicitada: {{pro.plan_requested}}. Aguardando aprovação do ADM.</p>{% endif %}<p>Na troca de plano, os produtos e pedidos permanecem salvos. A vitrine é publicada ou retirada após aprovação.</p><form action="/painel/plano" method="post"><label>Solicitar plano<select name="plan" required><option value="cardapio">Só cardápio/catálogo — R$ 49,90/mês</option><option value="vitrine">Só vitrine — R$ 49,90/mês</option><option value="ambos">Vitrine + cardápio/catálogo — R$ 99,90/mês</option></select></label><label>Tipo de conteúdo<select name="offer_mode" required><option value="services">Somente vitrine sem produtos</option><option value="menu">Cardápio</option><option value="catalog">Catálogo</option></select></label><button class="btn primary">Solicitar mudança</button></form>{% if pro.plan_active == 'vitrine' and pro.whatsapp %}<label>Link de contato pelo WhatsApp<input class="input" value="{{request.url_for('public_store_contact',slug=pro.slug)}}" readonly onclick="this.select()"></label><p>Este link só funciona enquanto o plano ativo for Só vitrine.</p>{% elif pro.plan_active in ['cardapio','ambos'] %}<label>Link próprio do {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}<input class="input" value="{{request.url_for('native_menu',slug=pro.slug)}}" readonly onclick="this.select()"></label><p><a class="btn soft" href="/p/{{pro.slug}}/menu" target="_blank" rel="noopener">Abrir link do meu {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}</a></p>{% endif %}</section>
+<section class="panel" id="configuracoes"><div class="section-title"><div><span class="kicker">Ajustes da loja</span><h2>Configurações</h2></div></div><p>Escolha o que deseja alterar:</p><nav class="merchant-shortcuts" aria-label="Configurações da loja"><a class="btn soft" href="#horarios">Horários e situação</a><a class="btn soft" href="#perfil">Dados e WhatsApp</a>{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}<a class="btn soft" href="#cardapio">Entrega, retirada e pagamento</a>{% endif %}<a class="btn soft" href="#identidade">Fotos e capa</a></nav></section>
 <section class="panel hours-panel" id="horarios">
 <div class="section-title"><div><span class="kicker">Relógio real de São Paulo</span><h2>Horários e situação da loja</h2></div><span class="status-pill {% if shop_status.open %}ok{% endif %}">{{shop_status.label}}</span></div>
 <p class="muted">O NowUp abre e fecha a loja automaticamente. Horários que passam da meia-noite, como 09:00–00:00, também são reconhecidos.</p>
@@ -99,7 +106,7 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 </section>
 <section class="panel menu-manager" id="cardapio">
 {% if not pro.is_premium %}
-<div class="empty-state full"><span>🔒</span><h2>Cardápio e catálogo são recursos Premium</h2><p class="muted">Seu perfil gratuito continua público com descrição, serviços, fotos e localização. Assine o Premium para cadastrar produtos, preços, categorias e receber pedidos.</p>{% if support_link!='#' %}<a class="btn primary" href="{{support_link}}" target="_blank" rel="noopener">Quero ativar o Premium</a>{% endif %}</div>
+<div class="empty-state full"><span>🔒</span><h2>Cardápio e catálogo exigem plano com cardápio</h2><p class="muted">Seu perfil gratuito continua público com descrição, serviços, fotos e localização. Solicite um plano com cardápio para cadastrar produtos, preços, categorias e receber pedidos.</p>{% if support_link!='#' %}<a class="btn primary" href="{{support_link}}" target="_blank" rel="noopener">Solicitar plano com cardápio</a>{% endif %}</div>
 {% elif pro.offer_mode not in ['menu','catalog'] %}
 <h2>Ative seu cardápio ou catálogo</h2><p>Em Meu perfil, escolha “Cardápio com produtos” ou “Catálogo de produtos” e salve para começar a cadastrar seus itens.</p><a class="btn primary" href="#perfil">Configurar meu perfil</a>
 {% else %}
@@ -201,6 +208,8 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 </div>
 <span class="status-pill ok">Dados reais da NowUp</span>
 </div>
+<p class="muted">Acompanhe a procura pelo perfil e as vendas registradas. Os valores dos pedidos não confirmam recebimento de pagamento.</p>
+<nav class="merchant-shortcuts" aria-label="Seções dos relatórios"><a class="btn soft" href="#mais-pedidos">Produtos mais pedidos</a><a class="btn soft" href="#pedidos">Pedidos por dia</a><a class="btn soft" href="#clientes">Clientes da loja</a></nav>
 <form method="get" action="/painel#relatorios" class="analytics-filter">
 <label>Mês<input class="input" type="month" name="mes" value="{{filter_month}}">
 </label>
@@ -419,7 +428,7 @@ body.professional-area .pro-dashboard .active-order-main em{color:#075bd8!import
 <div class="grid2">
 <label>Nome da empresa<input class="input" name="display_name" value="{{pro.display_name}}" required>
 </label>
-<label>Telefone de contato<input class="input" name="whatsapp" value="{{pro.whatsapp}}" required>
+<label>WhatsApp cadastrado<input class="input" value="{{pro.whatsapp}}" readonly><small>Para alterar o número, solicite a conferência ao ADM.</small>
 </label>
 <label>Endereço completo<input class="input" name="address" value="{{pro.address}}" placeholder="Rua, número e complemento">
 </label>
