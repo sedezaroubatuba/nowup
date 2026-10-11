@@ -1099,7 +1099,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
     order_code=f"NU-{order_id:06d}"; conn.execute("UPDATE orders SET payment_method=?,order_code=? WHERE id=?",(payment_method,order_code,order_id))
     conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)",(order_id,"new",created))
     for product,qty,item_notes,chosen,unit in clean_items:
-        item_cur=conn.execute("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes,category_snapshot) VALUES(?,?,?,?,?,?,?)",(order_id,product["id"],product["name"],qty,unit,item_notes,product["category"] or "Geral"))
+        item_cur=conn.execute("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes) VALUES(?,?,?,?,?,?)",(order_id,product["id"],product["name"],qty,unit,item_notes))
         for option in chosen: conn.execute("INSERT INTO order_item_options(order_item_id,option_id,option_name,price_cents) VALUES(?,?,?,?)",(item_cur.lastrowid,option["id"],option["name"],option["price_cents"]))
     if customer_id and fulfillment_type=="delivery" and save_address:
         conn.execute("UPDATE users SET address=?,neighborhood=?,address_reference=? WHERE id=? AND role='customer'",
@@ -2450,10 +2450,9 @@ app.add_event_handler("shutdown", nowup_push75.stop)
 from nowup_food91 import attach_food_assets, register_food_feed
 register_food_feed(app, db, get_settings, active_cities, shop_status, public_business_scope)
 
-# V97: preparação isolada de pagamentos
-from nowup_billing97 import install as install_billing97
-install_billing97(app, db, require_user, templates, context)
 
-# V98: relatórios comerciais e origem futura de pedidos
-from nowup_reports98 import install as install_reports98
-install_reports98(app, db, require_user, templates, context)
+# V97: central administrativa, sem alterar telas de cliente e lojista.
+import nowup_admin97
+nowup_admin97.configure(db, require_user, templates, context)
+app.include_router(nowup_admin97.router)
+app.add_event_handler("startup", nowup_admin97.init_support)

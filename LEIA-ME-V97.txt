@@ -1,58 +1,52 @@
-NOWUP V97 — PREPARAÇÃO DOS PAGAMENTOS (ETAPA 1)
-Base utilizada: NOWUP-V96-PLANOS-LINK-PROPRIO.zip.
+NOWUP V97 — CENTRAL ADMINISTRATIVA
+
+BASE: atualização aplicada sobre NOWUP V96 — planos e links próprios.
+Instale sobre um projeto que já tenha a V96. Este pacote não contém o projeto inteiro.
 
 INSTALAÇÃO
-1. Faça backup dos arquivos atuais e do banco antes de substituir.
-2. ZIP RAIZ: coloque app.py e nowup_billing97.py na raiz, junto aos módulos existentes.
-3. ZIP TEMPLATES: coloque os quatro HTML na pasta templates.
-4. ZIP STATIC: coloque billing97.css na pasta static.
-5. Reinicie o serviço no Render. As tabelas de teste são criadas no banco existente.
-Não apague outros arquivos, módulos, fotos ou o banco de dados.
+1. Faça um backup pelo painel ADM antes de atualizar.
+2. ZIP RAIZ: coloque app.py e nowup_admin97.py na raiz, junto aos módulos já existentes.
+3. ZIP TEMPLATES: coloque admin.html, admin_gestao97.html e admin_cliente97.html dentro de templates.
+4. ZIP STATIC: coloque admin-gestao97.css dentro de static.
+5. Faça o deploy de todos os arquivos juntos. O banco existente será mantido.
+6. Entre no ADM e clique em “Central de gestão — relatórios e suporte”.
+   Endereço: /admin/gestao, protegido pela sessão administrativa existente.
 
-COMO USAR
-Lojista: menu Pagamentos ou /painel/pagamentos.
-ADM: Assinaturas de teste ou /admin/assinaturas.
-No ADM, escolha uma loja e um plano, clique Iniciar teste, simule pagamento,
-recusa ou atraso. Depois de pago, Próximo mês abre o próximo ciclo de teste.
-Cancelar renovação preserva o histórico. Reiniciar teste cria uma nova situação
-simulada sem apagar o histórico anterior.
+CONTEÚDO
+- Filtros por datas, loja, cidade/bairro DA LOJA, categoria da loja, pagamento e status.
+- Vendas diárias, horários de pico, pedidos cancelados/recusados e motivo.
+- Ticket médio dos pedidos concluídos; cancelados e pedidos em andamento não somam vendas.
+- Evolução de vendas e ticket nos últimos 12 meses; crescimento percentual.
+- Mês parcial comparado com os mesmos dias do anterior; base zero aparece sem base anterior.
+- Estimativa de fechamento pela média diária (mínimo 7 dias e 10 pedidos concluídos).
+- Rankings de lojas por valor e pedidos; produtos por valor e unidades.
+- Valores por categorias atuais dos produtos.
+- Lojas por cidade/bairro e clientes por bairro cadastrado.
+- Cadastros totais, novos clientes e clientes compradores com histórico privado ao ADM.
+- Chamados: registro pelo ADM, vínculo opcional com pedido, responsável, status e histórico.
 
-O QUE ESTA ETAPA FAZ
-- Exibe os três planos de R$ 49,90 / R$ 49,90 / R$ 99,90.
-- Histórico financeiro SIMULADO exclusivo de cada loja.
-- Simulações restritas ao ADM com proteção CSRF.
-- Caixa de eventos Sandbox autenticada, sem armazenar dados de cartão/pessoais.
-- Eventos repetidos com mesmo ID não duplicam o registro.
-- Não modifica planos reais, produtos, pedidos ou aprovação de loja.
+LIMITES E DEFINIÇÕES
+Somente pedidos internos; vendas externas não entram. Perfis fictícios não entram.
+Vendas das lojas não são receita do NowUp. Financeiro manual dos planos V96 é preservado;
+receita efetivamente recebida via Asaas será tratada quando a integração existir.
+Forma de pagamento escolhida não comprova pagamento recebido.
+Totais e ticket incluem entrega registrada. Ranking de produtos/categorias usa preço unitário
+vezes quantidade; não inclui entrega nem adicionais. Categoria é a atual, não um registro histórico.
+Ranking e categorias mostram até 50 posições. Pedidos/cancelamentos exibem os 100 mais recentes;
+os totais usam todos os pedidos filtrados. Histórico do cliente mostra os últimos 100 pedidos.
+Clientes compradores só podem ser identificados quando o pedido possui customer_id;
+pedidos internos de visitantes continuam nos totais, mas não viram clientes cadastrados.
+Bairro de cliente usa o cadastro. Cidade do cliente não é inferida da loja: o cadastro atual
+não possui cidade estruturada do cliente. Clientes sem bairro aparecem como “Não informado”.
+O quadro mensal usa últimos 12 meses, independente das datas selecionadas, mas mantém os demais filtros.
+Projeção é extrapolação simples, não previsão com sazonalidade.
+Suporte mostra até 100 chamados e os últimos 300 eventos de histórico. Não envia mensagens
+nem abre uma nova tela de atendimento no painel cliente/lojista nesta etapa.
+Mensagens automáticas, termos, restrição de fumo, privacidade e aceite de WhatsApp ficam para a próxima.
 
-ASAAS SANDBOX — OPCIONAL NESTA ETAPA
-Não exige conta Asaas para usar as simulações locais.
-Para testar somente a recepção de avisos: configure no Render a variável secreta
-ASAAS_SANDBOX_WEBHOOK_TOKEN com um token aleatório de pelo menos 32 caracteres.
-No painel SANDBOX do Asaas, configure o webhook com esse mesmo authToken e URL:
-https://SEU-DOMINIO/integracoes/asaas/webhook
-Use entrega sequencial e habilite os eventos de pagamentos/assinaturas/checkout
-que deseja observar. Use exclusivamente Sandbox nesta versão.
-NÃO use sua chave de API como token de webhook. Não envie chaves pelo chat.
-Eventos ficam no ADM para revisão, sem ativação automática de planos.
-
-O QUE AINDA NÃO ESTÁ IMPLEMENTADO
-- Checkout / cobrança real ou checkout externo Sandbox.
-- Associação automática de assinatura Asaas à loja.
-- Ativação, suspensão ou cancelamento real por confirmação financeira.
-- Reconciliação periódica dos pagamentos com a API Asaas.
-- Alertas financeiros por e-mail/sininho e troca de cartão.
-- Migração dos assinantes atuais e regras finais de prazo de tolerância.
-Esses fluxos precisam ser implementados e validados na próxima etapa, após
-configuração da conta de teste. Não anuncie pagamentos reais como disponíveis.
-O processo manual da V96 continua operando normalmente.
-
-VERIFICAÇÃO REALIZADA
-Compilação Python, parsing Jinja, testes de ciclo mensal e ano bissexto,
-recusa, cancelamento, duplicidade, autenticação ADM, CSRF e autenticação webhook.
-O pacote V96 contém referências a outros módulos/arquivos não incluídos nele;
-por isso não foi possível executar o projeto inteiro ou validar no Render.
-
-Documentação oficial consultada em 11/10/2026:
-https://docs.asaas.com/docs/checkout-com-assinatura-recorrente
-https://docs.asaas.com/docs/receba-eventos-do-asaas-no-seu-endpoint-de-webhook
+VALIDAÇÃO LOCAL
+Sintaxe de app.py e módulo novo verificada. Testes com banco SQLite criado a partir do schema V96:
+cálculos, fuso de Brasília, filtros, SQL parametrizado, exclusão de demonstrações, produtos,
+bairros, renderização dos templates, bloqueio para clientes/lojistas, chamados e histórico.
+Não foi feito deploy nem teste com o banco real do Render. O projeto completo e seus módulos
+anteriores devem permanecer instalados. Após instalar, confira um pedido real e um cancelado.
