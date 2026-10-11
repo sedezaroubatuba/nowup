@@ -67,7 +67,10 @@ html body.public-profile-area .nu85-note textarea{height:66px!important;min-heig
 <dialog class="checkout-dialog" data-checkout-dialog>
 <form action="/p/{{pro.slug}}/menu/pedido" method="post" data-order-form>
 <button class="dialog-close" type="button" data-dialog-close>×</button>
-<h2>Finalizar pedido</h2>{% if not user %}<p class="muted">Compra rápida sem cadastro. Informe seu nome e WhatsApp; guarde o link de acompanhamento após enviar.</p>{% endif %}
+<h2>Finalizar pedido</h2>{% if request.query_params.get("conta") %}<p role="alert">Para continuar, use uma conta de cliente ou marque a opção de compra rápida abaixo. Seu carrinho foi mantido.</p>{% endif %}{% if not user %}<p class="muted">Compra rápida sem cadastro. Informe seu nome e WhatsApp; guarde o link de acompanhamento após enviar.</p>{% endif %}
+{% if user and user.role!='customer' %}
+<div class="nowup-guest101" role="note"><p>Você está usando uma conta de {% if user.role=='admin' %}administrador{% else %}lojista{% endif %}. Para pedir sem sair desta conta, marque abaixo e informe os dados do comprador.</p><label class="check"><input type="checkbox" name="purchase_as_guest" value="1" required> Fazer compra rápida sem vincular este pedido à minha conta</label><small>Guarde o link de acompanhamento após enviar. O pedido não aparecerá no histórico de uma conta de cliente.</small></div>
+{% endif %}
 <input type="hidden" name="cart_json" data-cart-json>
 <label>Seu nome<input class="input" name="customer_name" value="{% if user and user.role=='customer' %}{{user.name}}{% endif %}" required>
 </label>
@@ -95,4 +98,5 @@ html body.public-profile-area .nu85-note textarea{height:66px!important;min-heig
 <script>window.NOWUP_MENU={{ {'deliveryFee':pro.delivery_fee_cents,'minimumOrder':pro.minimum_order_cents,'open':shop_status.open,'storeName':pro.display_name,'customerId':user.id if user and user.role=='customer' else none}|tojson }};</script>
 <script src="/static/menu88.js?v=89">
 </script>
-<script src="/static/customer-address.js?v=69" defer></script>{% endblock %}
+<script src="/static/customer-address.js?v=69" defer></script><link rel="stylesheet" href="/static/checkout-white101.css?v=101">
+{% endblock %}
