@@ -41,7 +41,7 @@ dialog.nowup-navigation:not([open]){display:none!important}
 <button type="submit">Ver negócios nesta cidade</button></form>
 {% if user %}<form action="/sair" method="post" class="nowup-navigation-logout"><button type="submit">Sair da conta</button></form>{% endif %}
 </dialog>
-{% if not user or user.role=='customer' %}<aside class="nu88-resume container" data-resume-carts aria-label="Carrinhos salvos" hidden></aside>{% endif %}
+{% if user and user.role=='customer' %}<aside class="nu88-resume container" data-resume-carts data-cart-user-id="{{user.id}}" aria-label="Carrinhos salvos" hidden></aside>{% endif %}
 {% block content %}{% endblock %}
 <footer class="footer"><div class="container footergrid"><div><div class="brand footerbrand"><img src="/static/logo-mark.svg" alt=""><span>Now<b>Up</b></span></div><p>Encontre profissionais e empresas na sua região e fale diretamente pelo WhatsApp.</p></div><div><b>Institucional</b><p><a href="/quem-somos">Quem somos</a></p><p><a href="/termos">Termos de uso</a></p><p><a href="/privacidade">Privacidade</a></p></div><div><b>Para profissionais</b><p><a href="/cadastro/profissional">Cadastre-se</a></p><p><a href="/profissionais">Ver profissionais</a></p><p><a href="/contato">Fale conosco</a></p></div><div><b>Atendimento</b><p>A NowUp divulga e conecta. A negociação ocorre diretamente entre cliente e profissional.</p></div></div><div class="container copyright">© 2026 NowUp. Todos os direitos reservados.</div></footer>
 <nav class="mobile-bottom-nav" aria-label="Navegação principal"><a href="/">⌂<span>Início</span></a><a href="/profissionais">⌕<span>Explorar</span></a><a href="{% if user and user.role=='customer' %}/cliente#favoritos{% else %}/entrar{% endif %}">♡<span>Favoritos</span></a><a href="{% if user and user.role=='professional' %}/painel{% elif user and user.role=='customer' %}/cliente#conta{% else %}/entrar{% endif %}">♙<span>Perfil</span></a></nav>
@@ -76,4 +76,4 @@ dialog.nowup-navigation:not([open]){display:none!important}
     if (opener && opener.isConnected) opener.focus();
   });
 })();
-</script><script src="/static/logout-confirm.js?v=65"></script><link rel="stylesheet" href="/static/nowup-white82.css?v=82"><link rel="stylesheet" href="/static/customer88.css?v=88"><script src="/static/resume-cart88.js?v=88" defer></script></body></html>
+</script><script src="/static/logout-confirm.js?v=65"></script><link rel="stylesheet" href="/static/nowup-white82.css?v=82"><link rel="stylesheet" href="/static/customer88.css?v=88"><script src="/static/resume-cart88.js?v=89" defer></script></body></html>
