@@ -245,7 +245,7 @@ def require_user(request: Request, role: Optional[str]=None):
 PUBLIC_CATEGORY_SLUGS = ("restaurantes-e-lanchonetes", "lanches-e-pizzarias", "padarias-e-cafeterias", "doces-e-sorveterias", "mercados-e-mercearias", "conveniencias-e-adegas", "pet-shops-e-veterinarios")
 
 def public_business_scope():
-    return "EXISTS(SELECT 1 FROM professional_categories scope_pc JOIN categories scope_c ON scope_c.id=scope_pc.category_id WHERE scope_pc.professional_id=p.id AND scope_c.active=1)"
+    return "p.plan_active IN ('vitrine','ambos') AND EXISTS(SELECT 1 FROM professional_categories scope_pc JOIN categories scope_c ON scope_c.id=scope_pc.category_id WHERE scope_pc.professional_id=p.id AND scope_c.active=1)"
 
 def context(request: Request, **kwargs):
     conn = db()
@@ -544,6 +544,7 @@ def init_db():
     ensure_column(conn, "users", "preferred_payment", "TEXT NOT NULL DEFAULT 'pix'")
     ensure_column(conn, "professionals", "business_type", "TEXT NOT NULL DEFAULT 'professional'")
     ensure_column(conn, "professionals", "external_url", "TEXT DEFAULT ''")
+    ensure_column(conn, "professionals", "contact_target", "TEXT NOT NULL DEFAULT 'whatsapp'")
     ensure_column(conn, "professionals", "menu_url", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "menu_clicks", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "professionals", "external_clicks", "INTEGER NOT NULL DEFAULT 0")
@@ -562,6 +563,12 @@ def init_db():
     ensure_column(conn, "professionals", "is_demo", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "product_options", "group_id", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "professionals", "is_premium", "INTEGER NOT NULL DEFAULT 0")
+    # O acesso gratuito antigo fica suspenso; demonstrações do ADM continuam visíveis.
+    ensure_column(conn, "professionals", "plan_active", "TEXT NOT NULL DEFAULT 'legacy'")
+    ensure_column(conn, "professionals", "plan_requested", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "professionals", "plan_requested_offer", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "professionals", "plan_granted", "INTEGER NOT NULL DEFAULT 0")
+    conn.execute("UPDATE professionals SET plan_active=CASE WHEN is_demo=1 THEN 'vitrine' WHEN is_premium=1 THEN 'ambos' ELSE 'none' END WHERE plan_active='legacy'")
     ensure_column(conn, "professionals", "billing_due_date", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "professionals", "billing_last_paid", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "professionals", "offer_mode", "TEXT NOT NULL DEFAULT 'services'")
@@ -590,6 +597,8 @@ def init_db():
     ensure_column(conn, "orders", "change_for_cents", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "orders", "customer_id", "INTEGER REFERENCES users(id) ON DELETE SET NULL")
     ensure_column(conn, "orders", "tracking_token", "TEXT NOT NULL DEFAULT ''")
+    conn.execute("CREATE TABLE IF NOT EXISTS guest_order_limits (professional_id INTEGER NOT NULL,phone TEXT NOT NULL,created_at TEXT NOT NULL)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_guest_order_limits ON guest_order_limits(professional_id,phone,created_at)")
     ensure_column(conn, "orders", "cancellation_reason", "TEXT NOT NULL DEFAULT ''")
     conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_tracking_token ON orders(tracking_token) WHERE tracking_token!=''")
     ensure_column(conn, "professionals", "delivery_fee_cents", "INTEGER NOT NULL DEFAULT 0")
@@ -667,7 +676,7 @@ def init_db():
             email=f"v50-demo-{index+1}@nowup.local"; slug=unique_slug(conn,name); asset=demo_assets[index%len(demo_assets)]
             cur=conn.execute("INSERT INTO users(role,name,email,phone,password_hash,is_active,email_verified,created_at) VALUES('professional',?,?,?,?,1,1,?)",(name,email,"12999990000",hash_password(secrets.token_urlsafe(32)),now_iso())); uid=cur.lastrowid
             cur=conn.execute("""INSERT INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,address,description,services,business_type,verified,featured,blocked,avatar_filename,cover_filename,is_demo,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",(uid,slug,name,"CNPJ","","12999990000","Ubatuba",neighborhood,"",f"{neighborhood}, Ubatuba - SP",services,services,"professional",1,1 if index<5 else 0,0,asset,asset,1,now_iso()))
-            pid=cur.lastrowid; cid=cat_ids.get(category,fallback)
+            pid=cur.lastrowid; conn.execute("UPDATE professionals SET plan_active='vitrine' WHERE id=?",(pid,)); cid=cat_ids.get(category,fallback)
             if cid: conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(pid,cid))
         conn.execute("INSERT INTO site_settings(key,value) VALUES(?,?)",(demo_showcase_key,now_iso()))
     admin_email = os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
@@ -795,7 +804,7 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
       SELECT po.*,p.display_name,p.slug,p.city,
       COALESCE(NULLIF(p.avatar_filename,''),NULLIF(p.cover_filename,''),(SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1)) avatar
       FROM posts po JOIN professionals p ON p.id=po.professional_id
-      WHERE p.blocked=0 AND p.admission_status='approved' AND po.post_type!='status' ORDER BY po.id DESC LIMIT 12
+      WHERE p.blocked=0 AND p.admission_status='approved' AND p.plan_active IN ('vitrine','ambos') AND po.post_type!='status' ORDER BY po.id DESC LIMIT 12
     """).fetchall()
     user=current_user(request); favorite_ids=set()
     if user and user["role"]=="customer":
@@ -965,7 +974,7 @@ def profile(request: Request, slug: str):
       SELECT p.*,
        COALESCE((SELECT ROUND(AVG(stars),1) FROM reviews r WHERE r.professional_id=p.id),0) rating,
        (SELECT COUNT(*) FROM reviews r WHERE r.professional_id=p.id) review_count
-      FROM professionals p WHERE p.slug=? AND p.blocked=0 AND p.admission_status='approved'
+      FROM professionals p WHERE p.slug=? AND p.blocked=0 AND p.admission_status='approved' AND p.plan_active!='none'
     """,(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404,"Profissional não encontrado")
     conn.execute("UPDATE professionals SET views=views+1 WHERE id=?",(p["id"],))
@@ -995,13 +1004,15 @@ def profile(request: Request, slug: str):
     if current and current["role"]=="customer":
         can_review=bool(conn.execute("SELECT 1 FROM orders WHERE customer_id=? AND professional_id=? AND status='completed' LIMIT 1",(current["id"],p["id"])).fetchone())
     conn.close()
-    pub=dict(p); pub.update(menu_url="",external_url="",instagram_url="",facebook_url="",website_url=""); pub["document_masked"]=mask_doc(pub["document"]); pub["wa_link"]="/p/"+quote(pub["slug"],safe="")
+    pub=dict(p); pub.update(menu_url="",instagram_url="",facebook_url="",website_url=""); pub["document_masked"]=mask_doc(pub["document"])
+    has_contact=(pub["contact_target"]=="external" and bool(pub["external_url"])) or (pub["contact_target"]!="external" and bool(re.sub(r"\D","",pub["whatsapp"] or "")))
+    pub["contact_link"]="/p/"+quote(pub["slug"],safe="")+"/contato" if pub["plan_active"]=="vitrine" and has_contact else ""
     status=shop_status(p)
     return templates.TemplateResponse("profile.html", context(request, pro=pub, products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, photos=photos, posts=posts, reviews=reviews, pro_categories=cats, product_count=product_count, shop_status=status, hours_lines=business_hours_lines(p), can_review=can_review))
 
 @app.get("/p/{slug}/menu", response_class=HTMLResponse)
 def native_menu(request: Request, slug: str):
-    conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved'",(slug,)).fetchone()
+    conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved' AND plan_active IN ('cardapio','ambos')",(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404,"Empresa não encontrada")
     if not p["is_premium"] or p["offer_mode"] not in ("menu","catalog"):
         conn.close(); return RedirectResponse(f"/p/{slug}?recurso=premium",303)
@@ -1027,9 +1038,16 @@ def native_menu(request: Request, slug: str):
 @app.post("/p/{slug}/menu/pedido")
 def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...), save_address: Optional[str]=Form(None)):
     logged=current_user(request)
-    if not logged or logged["role"]!="customer": return RedirectResponse("/entrar?erro=pedido-login",303)
-    conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved'",(slug,)).fetchone()
+    if logged and logged['role']!='customer': raise HTTPException(403,'Use uma conta de cliente ou saia para compra rápida')
+    if not customer_name.strip() or len(customer_name.strip())<2 or not normalize_phone(customer_phone):
+        raise HTTPException(400,'Informe nome e WhatsApp válidos')
+    conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved' AND plan_active IN ('cardapio','ambos')",(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404)
+    if not logged:
+        window=(datetime.now(timezone.utc)-timedelta(minutes=15)).isoformat()
+        attempts=conn.execute('SELECT COUNT(*) FROM guest_order_limits WHERE professional_id=? AND phone=? AND created_at>?',(p['id'],normalize_phone(customer_phone),window)).fetchone()[0]
+        if attempts>=3:
+            conn.close();raise HTTPException(429,'Aguarde alguns minutos antes de enviar outro pedido')
     if not p["is_premium"] or p["offer_mode"] not in ("menu","catalog"):
         conn.close(); raise HTTPException(403,"Cardápio ou catálogo disponível somente no plano Premium")
     if not shop_status(p)["open"]: conn.close(); return RedirectResponse(f"/p/{slug}/menu?fechado=1",303)
@@ -1070,17 +1088,20 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
     payment_labels={"pix":"Pix","cash":"Dinheiro","credit":"Cartão de crédito","debit":"Cartão de débito","on_delivery":"Combinar no atendimento"}
     payment_method=payment_method if payment_method in payment_labels else "pix"
     change_for_cents=price_to_cents(change_for) if payment_method=="cash" and change_for.strip() else 0
-    customer_id=logged["id"]
+    customer_id=logged['id'] if logged else None
     created=now_iso(); tracking_token=secrets.token_urlsafe(24)
     cur=conn.execute("""INSERT INTO orders(professional_id,customer_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at,subtotal_cents,delivery_fee_cents,neighborhood,address_reference,change_for_cents,tracking_token)
       VALUES(?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?)""",(p["id"],customer_id,customer_name.strip()[:120],customer_phone.strip()[:30],fulfillment_type,address.strip()[:300],notes.strip()[:500],"new",total,created,created,subtotal,delivery_fee,neighborhood.strip()[:120],address_reference.strip()[:220],change_for_cents,tracking_token))
+    if not logged:
+        conn.execute('INSERT INTO guest_order_limits(professional_id,phone,created_at) VALUES(?,?,?)',(p['id'],normalize_phone(customer_phone),created))
+        conn.execute('DELETE FROM guest_order_limits WHERE created_at<?',((datetime.now(timezone.utc)-timedelta(days=2)).isoformat(),))
     order_id=cur.lastrowid
     order_code=f"NU-{order_id:06d}"; conn.execute("UPDATE orders SET payment_method=?,order_code=? WHERE id=?",(payment_method,order_code,order_id))
     conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)",(order_id,"new",created))
     for product,qty,item_notes,chosen,unit in clean_items:
-        item_cur=conn.execute("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes) VALUES(?,?,?,?,?,?)",(order_id,product["id"],product["name"],qty,unit,item_notes))
+        item_cur=conn.execute("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes,category_snapshot) VALUES(?,?,?,?,?,?,?)",(order_id,product["id"],product["name"],qty,unit,item_notes,product["category"] or "Geral"))
         for option in chosen: conn.execute("INSERT INTO order_item_options(order_item_id,option_id,option_name,price_cents) VALUES(?,?,?,?)",(item_cur.lastrowid,option["id"],option["name"],option["price_cents"]))
-    if fulfillment_type=="delivery" and save_address:
+    if customer_id and fulfillment_type=="delivery" and save_address:
         conn.execute("UPDATE users SET address=?,neighborhood=?,address_reference=? WHERE id=? AND role='customer'",
                      (address.strip()[:300],neighborhood.strip()[:120],address_reference.strip()[:220],logged["id"]))
     conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(p["user_id"],"Novo pedido no NowUp",f"{order_code} — {customer_name.strip()[:120]}",f"/painel#pedido-{order_id}",created))
@@ -1134,9 +1155,30 @@ def order_tracking_whatsapp(token: str):
     message=order_whatsapp_message(conn,order); conn.execute("UPDATE orders SET whatsapp_opened=1 WHERE id=?",(order["id"],)); conn.commit(); conn.close()
     return RedirectResponse("/pedido/"+quote(token,safe=""),303)
 
+@app.get("/p/{slug}/contato")
+def public_store_contact(slug: str):
+    conn=db()
+    p=conn.execute("SELECT id,whatsapp,display_name,contact_target,external_url FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved' AND plan_active='vitrine'",(slug,)).fetchone()
+    if not p:
+        conn.close(); raise HTTPException(404,"Contato indisponível neste plano")
+    if p["contact_target"]=="external":
+        destination=p["external_url"] or ""
+        parsed=urlparse(destination)
+        if parsed.scheme!="https" or not parsed.hostname or parsed.username or parsed.password:
+            conn.close(); raise HTTPException(404,"Link indisponível")
+        event="external_click"
+    else:
+        if not re.sub(r"\D","",p["whatsapp"] or ""):
+            conn.close(); raise HTTPException(404,"Contato indisponível")
+        destination=wa_link(p["whatsapp"],f"Olá! Encontrei {p['display_name']} pela NowUp e gostaria de conversar.")
+        event="whatsapp_click"
+    conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],event,now_iso()))
+    conn.commit(); conn.close()
+    return RedirectResponse(destination,302)
+
 @app.post("/p/{slug}/whatsapp")
 def whatsapp_click(slug: str):
-    return RedirectResponse("/p/"+quote(slug,safe=""),303)
+    return public_store_contact(slug)
 
 @app.get("/p/{slug}/cardapio")
 def menu_click(slug: str):
@@ -1191,7 +1233,11 @@ def signup_pro_page(request: Request):
     return templates.TemplateResponse("signup_professional.html", context(request, active_cities=active_cities()))
 
 @app.post("/cadastro/profissional")
-def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Form(...), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), doc_type: str=Form(...), document: str=Form(...), business_type: str=Form("professional"), offer_mode: str=Form("services"), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[])):
+def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Form(...), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), doc_type: str=Form(...), document: str=Form(...), business_type: str=Form("professional"), offer_mode: str=Form("services"), plan: str=Form(...), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[])):
+    if plan not in ('cardapio','vitrine','ambos'):
+        return RedirectResponse('/cadastro/profissional?erro=plano',303)
+    if (plan=='vitrine' and offer_mode!='services') or (plan!='vitrine' and offer_mode not in ('menu','catalog')):
+        return RedirectResponse('/cadastro/profissional?erro=plano',303)
     normalized_email=normalize_email(email)
     admin_email=os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
     if not normalized_email:
@@ -1221,8 +1267,8 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
         ); uid=cur.lastrowid
         slug=unique_slug(conn,name)
         offer_mode=offer_mode if offer_mode in ("services","menu","catalog") else "services"
-        cur=conn.execute("INSERT INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,description,services,business_type,offer_mode,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                         (uid,slug,name.strip(),doc_type,document.strip(),phone.strip(),city.strip(),neighborhood.strip(),cep.strip(),description.strip(),services.strip(),business_type,offer_mode,now_iso())); pid=cur.lastrowid
+        cur=conn.execute("INSERT INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,description,services,business_type,offer_mode,plan_active,plan_requested,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                         (uid,slug,name.strip(),doc_type,document.strip(),phone.strip(),city.strip(),neighborhood.strip(),cep.strip(),description.strip(),services.strip(),business_type,offer_mode,'none',plan,now_iso())); pid=cur.lastrowid
         for cid in category_ids[:1]:
             conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(pid,cid))
         conn.execute("UPDATE professionals SET blocked=1,admission_status='pending' WHERE id=?",(pid,))
@@ -1441,6 +1487,17 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     status=shop_status(p); business_hours=parse_business_hours(p["business_hours"])
     return templates.TemplateResponse("pro_panel.html", context(request, pro=p, photos=photos, posts=posts, products=products, product_groups=product_groups, delivery_zones=delivery_zones, merchant_overview=merchant_overview, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, today_orders=today_orders, day_order_summary=day_order_summary, order_day=order_day.isoformat(), today_day=today.isoformat(), order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
 
+@app.post('/painel/plano')
+def request_store_plan(request: Request, plan: str=Form(...), offer_mode: str=Form('services')):
+    user=require_user(request,'professional')
+    if plan not in ('cardapio','vitrine','ambos') or (plan=='vitrine' and offer_mode!='services') or (plan!='vitrine' and offer_mode not in ('menu','catalog')):
+        return RedirectResponse('/painel?erro=plano#plano',303)
+    conn=db()
+    conn.execute('UPDATE professionals SET plan_requested=?,plan_requested_offer=? WHERE user_id=?',(plan,offer_mode,user['id']))
+    # O conteúdo escolhido só muda quando o ADM aprovar, preservando o plano em operação.
+    conn.commit();conn.close()
+    return RedirectResponse('/painel?ok=plano#plano',303)
+
 @app.get("/painel/pedidos/novos")
 def pro_new_orders(request: Request, after: int=0):
     u=require_user(request,"professional"); conn=db()
@@ -1613,7 +1670,7 @@ def pro_order_status(request: Request, order_id: int, status: str=Form(...), rea
 
 @app.post("/painel/pedidos/{order_id}/editar")
 def pro_order_edit(request: Request, order_id: int, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), notes: str=Form("")):
-    u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+    u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id,plan_active,offer_mode FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
     order=conn.execute("SELECT id FROM orders WHERE id=? AND professional_id=?",(order_id,p["id"])).fetchone()
     if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
     fulfillment_type="delivery" if fulfillment_type=="delivery" else "pickup"
@@ -1647,16 +1704,19 @@ async def pro_business_hours(request: Request):
     return RedirectResponse("/painel?ok=horarios#horarios",303)
 
 @app.post("/painel/perfil")
-def pro_update(request: Request, display_name: str=Form(...), whatsapp: str=Form(...), business_type: str=Form(""), offer_mode: str=Form("services"), city: str=Form(...), neighborhood: str=Form(""), address: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), service_area: str=Form(""), opening_hours: str=Form(""), business_status: str=Form("open"), hide_address: Optional[str]=Form(None), whatsapp_message: str=Form(""), category_ids: list[int]=Form(default=[])):
-    u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+def pro_update(request: Request, display_name: str=Form(...), business_type: str=Form(""), offer_mode: str=Form("services"), city: str=Form(...), neighborhood: str=Form(""), address: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), service_area: str=Form(""), opening_hours: str=Form(""), business_status: str=Form("open"), hide_address: Optional[str]=Form(None), whatsapp_message: str=Form(""), category_ids: list[int]=Form(default=[])):
+    u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id,plan_active,offer_mode FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
     if business_type not in ("professional","restaurant","store","convenience","other"):
         business_type=conn.execute("SELECT business_type FROM professionals WHERE id=?",(p["id"],)).fetchone()[0]
     cities=active_cities(get_settings(conn))
     if city not in cities: city=cities[0]
     if business_status not in ("open","paused","temporarily_closed","vacation","ad_paused"): business_status="open"
     default_message="Olá! Encontrei você pelo NowUp e gostaria de saber mais."
-    offer_mode=offer_mode if offer_mode in ("services","menu","catalog") else "services"
-    conn.execute("UPDATE professionals SET display_name=?,whatsapp=?,business_type=?,offer_mode=?,city=?,neighborhood=?,address=?,cep=?,description=?,services=?,service_area=?,opening_hours=?,business_status=?,hide_address=?,whatsapp_message=? WHERE id=?",(display_name.strip()[:120],whatsapp.strip()[:30],business_type,offer_mode,city,neighborhood.strip()[:120],address.strip()[:220],cep.strip()[:20],description.strip()[:1200],services.strip()[:1200],service_area.strip()[:500],opening_hours.strip()[:500],business_status,1 if hide_address else 0,(whatsapp_message.strip() or default_message)[:300],p["id"]))
+    if p['plan_active']=='vitrine': offer_mode='services'
+    elif p['plan_active'] in ('cardapio','ambos'):
+        offer_mode=offer_mode if offer_mode in ('menu','catalog') else p['offer_mode']
+    else: offer_mode=p['offer_mode']
+    conn.execute("UPDATE professionals SET display_name=?,business_type=?,offer_mode=?,city=?,neighborhood=?,address=?,cep=?,description=?,services=?,service_area=?,opening_hours=?,business_status=?,hide_address=?,whatsapp_message=? WHERE id=?",(display_name.strip()[:120],business_type,offer_mode,city,neighborhood.strip()[:120],address.strip()[:220],cep.strip()[:20],description.strip()[:1200],services.strip()[:1200],service_area.strip()[:500],opening_hours.strip()[:500],business_status,1 if hide_address else 0,(whatsapp_message.strip() or default_message)[:300],p["id"]))
     conn.execute("DELETE FROM professional_categories WHERE professional_id=?",(p["id"],))
     for cid in category_ids[:1]: conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(p["id"],cid))
     conn.commit(); conn.close(); return RedirectResponse("/painel?ok=perfil",303)
@@ -1716,9 +1776,15 @@ def toggle_favorite(request: Request, professional_id: int, next: str=Form("/cli
     return RedirectResponse(safe_next,303)
 
 @app.post("/painel/links")
-def pro_links(request: Request, whatsapp: str=Form(...), external_url: str=Form(""), menu_url: str=Form(""), instagram_url: str=Form(""), facebook_url: str=Form(""), website_url: str=Form("")):
+def pro_links(request: Request, target: str=Form("whatsapp"), external_url: str=Form("")):
     u=require_user(request,"professional"); conn=db()
-    conn.execute("UPDATE professionals SET external_url='',menu_url='',instagram_url='',facebook_url='',website_url='' WHERE user_id=?",(u["id"],))
+    p=conn.execute("SELECT plan_active FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+    if not p or p["plan_active"]!="vitrine": conn.close(); raise HTTPException(403,"Opção disponível apenas no plano Só vitrine")
+    link=(external_url or "").strip()[:500]
+    parsed=urlparse(link)
+    if target not in ("whatsapp","external") or (target=="external" and (parsed.scheme!="https" or not parsed.hostname or parsed.username or parsed.password)):
+        conn.close(); return RedirectResponse("/painel?erro=link-invalido#plano",303)
+    conn.execute("UPDATE professionals SET contact_target=?,external_url=? WHERE user_id=?",(target,link if target=="external" else "",u["id"]))
     conn.commit(); conn.close(); return RedirectResponse("/painel#perfil",303)
 
 @app.post("/painel/identidade")
@@ -1880,6 +1946,17 @@ def admin(request: Request, inicio: str="", fim: str=""):
       FROM professionals p JOIN users u ON u.id=p.user_id ORDER BY p.id DESC""").fetchall()
     from nowup_admin72 import enrich_profiles
     pros=enrich_profiles(pros)
+    pros=[dict(row) for row in pros]
+    for row in pros:
+        if row['plan_granted']:
+            row['billing_label']='Exceção autorizada pelo ADM'
+            row['billing_status']='exempt'
+        elif row['plan_active']=='none':
+            row['billing_label']='Sem plano ativo'
+            row['billing_status']='pending'
+        elif row['plan_active']=='vitrine' and not row['is_demo']:
+            row['billing_label']='Vencimento: '+row['billing_due_date'] if row['billing_due_date'] else 'Pagamento a registrar'
+            row['billing_status']='active' if row['billing_due_date'] else 'pending'
     clients=conn.execute("SELECT id,name,email,phone,is_active,email_verified,created_at FROM users WHERE role='customer' ORDER BY id DESC LIMIT 100").fetchall()
     admission_mail_states={row["professional_id"]:row["state"] for row in conn.execute("SELECT professional_id,state FROM admission_mail").fetchall()}
     admin_categories=conn.execute("SELECT * FROM categories ORDER BY sort_order,name").fetchall()
@@ -1900,9 +1977,9 @@ def admin_save_billing(request: Request, pid:int, due_date:str=Form(""), last_pa
     except ValueError: return RedirectResponse("/admin?erro=financeiro#financeiro",303)
     conn=db()
     try:
-        pro=conn.execute("SELECT is_demo,is_premium FROM professionals WHERE id=?",(pid,)).fetchone()
+        pro=conn.execute("SELECT is_demo,plan_active,plan_granted FROM professionals WHERE id=?",(pid,)).fetchone()
         if not pro: raise HTTPException(404)
-        if pro["is_demo"] or not pro["is_premium"]:
+        if pro["is_demo"] or pro['plan_active']=='none' or pro['plan_granted']:
             return RedirectResponse("/admin?erro=financeiro-plano#financeiro",303)
         conn.execute("UPDATE professionals SET billing_due_date=?,billing_last_paid=? WHERE id=?",(due_date,last_paid,pid))
         conn.commit()
@@ -2074,7 +2151,7 @@ def admin_resend_admission_email(request: Request, pid:int):
 
 
 @app.post("/admin/profissionais/{pid}/analise/{decision}")
-def admin_review_professional(request: Request, pid:int, decision:str, reason:str=Form("")):
+def admin_review_professional(request: Request, pid:int, decision:str, reason:str=Form(""), payment_confirmed: str=Form(''), complimentary: str=Form('')):
     require_user(request,"admin")
     if decision not in ('approved','rejected'): raise HTTPException(400,"Decisão inválida")
     conn=db(); conn.execute("BEGIN IMMEDIATE")
@@ -2083,6 +2160,10 @@ def admin_review_professional(request: Request, pid:int, decision:str, reason:st
     if pro["is_demo"]: conn.rollback(); conn.close(); return RedirectResponse("/admin?erro=perfil-demo#profissionais",303)
     if decision=='approved' and not pro["email_verified"]:
         conn.rollback(); conn.close(); return RedirectResponse("/admin?erro=email-pendente#profissionais",303)
+    if decision=='approved' and pro['plan_requested'] not in ('cardapio','vitrine','ambos'):
+        conn.rollback();conn.close();return RedirectResponse('/admin?erro=plano#profissionais',303)
+    if decision=='approved' and not (payment_confirmed=='1' or complimentary=='1'):
+        conn.rollback();conn.close();return RedirectResponse('/admin?erro=pagamento#profissionais',303)
     ongoing=conn.execute("SELECT state FROM admission_mail WHERE professional_id=?",(pid,)).fetchone()
     if ongoing and ongoing["state"]=='sending':
         conn.rollback(); conn.close(); return RedirectResponse("/admin?aviso=email-enviando#profissionais",303)
@@ -2090,18 +2171,32 @@ def admin_review_professional(request: Request, pid:int, decision:str, reason:st
         conn.rollback(); conn.close(); return RedirectResponse("/admin?ok=analise#profissionais",303)
     conn.execute("UPDATE professionals SET admission_status=?,admission_reason=?,blocked=? WHERE id=?",
                  (decision,reason.strip()[:500] if decision=='rejected' else '',0 if decision=='approved' else 1,pid))
+    if decision=='approved':
+        conn.execute("UPDATE professionals SET plan_active=plan_requested,is_premium=CASE WHEN plan_requested IN ('cardapio','ambos') THEN 1 ELSE 0 END,offer_mode=CASE WHEN plan_requested='vitrine' THEN 'services' WHEN plan_requested_offer IN ('menu','catalog') THEN plan_requested_offer ELSE offer_mode END,plan_requested='',plan_requested_offer='',plan_granted=? WHERE id=?",(1 if complimentary=='1' else 0,pid))
     if decision=='approved': conn.execute("UPDATE users SET is_active=1 WHERE id=?",(pro["user_id"],))
     conn.execute("INSERT INTO admission_mail(professional_id,decision,state,updated_at) VALUES(?,?,'pending',?) ON CONFLICT(professional_id) DO UPDATE SET decision=excluded.decision,state='pending',updated_at=excluded.updated_at",(pid,decision,now_iso()))
     conn.commit(); conn.close()
     sent=send_admission_notice(pid)
     return RedirectResponse('/admin?ok=analise'+('' if sent else '&aviso=email-falhou')+'#profissionais',303)
 
+@app.post('/admin/profissionais/{pid}/plano')
+def admin_approve_store_plan(request: Request,pid:int,payment_confirmed: str=Form(''),complimentary: str=Form('')):
+    require_user(request,'admin')
+    if not (payment_confirmed=='1' or complimentary=='1'):
+        return RedirectResponse('/admin?erro=pagamento#profissionais',303)
+    conn=db();conn.execute('BEGIN IMMEDIATE')
+    p=conn.execute("SELECT * FROM professionals WHERE id=? AND admission_status='approved' AND blocked=0",(pid,)).fetchone()
+    if not p or p['plan_requested'] not in ('cardapio','vitrine','ambos'):
+        conn.rollback();conn.close();return RedirectResponse('/admin?erro=plano#profissionais',303)
+    conn.execute("UPDATE professionals SET plan_active=plan_requested,is_premium=CASE WHEN plan_requested IN ('cardapio','ambos') THEN 1 ELSE 0 END,offer_mode=CASE WHEN plan_requested='vitrine' THEN 'services' WHEN plan_requested_offer IN ('menu','catalog') THEN plan_requested_offer ELSE offer_mode END,plan_granted=?,plan_requested='',plan_requested_offer='' WHERE id=?",(1 if complimentary=='1' else 0,pid))
+    conn.commit();conn.close();return RedirectResponse('/admin?ok=plano#profissionais',303)
+
 @app.post("/admin/profissionais/{pid}/acao/{action}")
 def admin_pro_action(request: Request, pid:int, action:str):
     require_user(request,"admin"); conn=db()
     if action=="verificar": conn.execute("UPDATE professionals SET verified=CASE verified WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(pid,))
     elif action=="destaque": conn.execute("UPDATE professionals SET featured=CASE featured WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(pid,))
-    elif action=="premium": conn.execute("UPDATE professionals SET is_premium=CASE is_premium WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(pid,))
+    elif action=="premium": conn.close(); raise HTTPException(400,"Use a aprovação do plano")
     elif action=="slide": conn.execute("UPDATE professionals SET in_slider=CASE in_slider WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(pid,))
     elif action=="bloquear":
         pro=conn.execute("SELECT user_id,blocked,admission_status FROM professionals WHERE id=?",(pid,)).fetchone()
@@ -2142,6 +2237,7 @@ def admin_add_demo_profile(request: Request, display_name:str=Form(...), whatsap
         cur=conn.execute("""INSERT INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,address,description,services,business_type,verified,featured,blocked,avatar_filename,cover_filename,is_demo,created_at)
                             VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",(uid,slug,name,"CNPJ","",phone,demo_city,neighborhood.strip()[:120],"",address.strip()[:240],description.strip()[:1200],services.strip()[:1200],business_type,0,0,0,avatar_filename,cover_filename,1,now_iso()))
         pid=cur.lastrowid
+        conn.execute("UPDATE professionals SET plan_active='vitrine' WHERE id=?",(pid,))
         conn.execute("INSERT INTO professional_categories(professional_id,category_id) VALUES(?,?)",(pid,category["id"]))
         conn.execute("INSERT INTO photos(professional_id,filename,caption,is_cover,created_at) VALUES(?,?,?,?,?)",(pid,cover_filename,"Capa do perfil",1,now_iso()))
         conn.commit()
@@ -2353,3 +2449,11 @@ app.add_event_handler("shutdown", nowup_push75.stop)
 # V91: vitrine de refeições, sem alterar o rodízio V90 das lojas.
 from nowup_food91 import attach_food_assets, register_food_feed
 register_food_feed(app, db, get_settings, active_cities, shop_status, public_business_scope)
+
+# V97: preparação isolada de pagamentos
+from nowup_billing97 import install as install_billing97
+install_billing97(app, db, require_user, templates, context)
+
+# V98: relatórios comerciais e origem futura de pedidos
+from nowup_reports98 import install as install_reports98
+install_reports98(app, db, require_user, templates, context)

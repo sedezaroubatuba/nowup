@@ -1,0 +1,58 @@
+NOWUP V97 — PREPARAÇÃO DOS PAGAMENTOS (ETAPA 1)
+Base utilizada: NOWUP-V96-PLANOS-LINK-PROPRIO.zip.
+
+INSTALAÇÃO
+1. Faça backup dos arquivos atuais e do banco antes de substituir.
+2. ZIP RAIZ: coloque app.py e nowup_billing97.py na raiz, junto aos módulos existentes.
+3. ZIP TEMPLATES: coloque os quatro HTML na pasta templates.
+4. ZIP STATIC: coloque billing97.css na pasta static.
+5. Reinicie o serviço no Render. As tabelas de teste são criadas no banco existente.
+Não apague outros arquivos, módulos, fotos ou o banco de dados.
+
+COMO USAR
+Lojista: menu Pagamentos ou /painel/pagamentos.
+ADM: Assinaturas de teste ou /admin/assinaturas.
+No ADM, escolha uma loja e um plano, clique Iniciar teste, simule pagamento,
+recusa ou atraso. Depois de pago, Próximo mês abre o próximo ciclo de teste.
+Cancelar renovação preserva o histórico. Reiniciar teste cria uma nova situação
+simulada sem apagar o histórico anterior.
+
+O QUE ESTA ETAPA FAZ
+- Exibe os três planos de R$ 49,90 / R$ 49,90 / R$ 99,90.
+- Histórico financeiro SIMULADO exclusivo de cada loja.
+- Simulações restritas ao ADM com proteção CSRF.
+- Caixa de eventos Sandbox autenticada, sem armazenar dados de cartão/pessoais.
+- Eventos repetidos com mesmo ID não duplicam o registro.
+- Não modifica planos reais, produtos, pedidos ou aprovação de loja.
+
+ASAAS SANDBOX — OPCIONAL NESTA ETAPA
+Não exige conta Asaas para usar as simulações locais.
+Para testar somente a recepção de avisos: configure no Render a variável secreta
+ASAAS_SANDBOX_WEBHOOK_TOKEN com um token aleatório de pelo menos 32 caracteres.
+No painel SANDBOX do Asaas, configure o webhook com esse mesmo authToken e URL:
+https://SEU-DOMINIO/integracoes/asaas/webhook
+Use entrega sequencial e habilite os eventos de pagamentos/assinaturas/checkout
+que deseja observar. Use exclusivamente Sandbox nesta versão.
+NÃO use sua chave de API como token de webhook. Não envie chaves pelo chat.
+Eventos ficam no ADM para revisão, sem ativação automática de planos.
+
+O QUE AINDA NÃO ESTÁ IMPLEMENTADO
+- Checkout / cobrança real ou checkout externo Sandbox.
+- Associação automática de assinatura Asaas à loja.
+- Ativação, suspensão ou cancelamento real por confirmação financeira.
+- Reconciliação periódica dos pagamentos com a API Asaas.
+- Alertas financeiros por e-mail/sininho e troca de cartão.
+- Migração dos assinantes atuais e regras finais de prazo de tolerância.
+Esses fluxos precisam ser implementados e validados na próxima etapa, após
+configuração da conta de teste. Não anuncie pagamentos reais como disponíveis.
+O processo manual da V96 continua operando normalmente.
+
+VERIFICAÇÃO REALIZADA
+Compilação Python, parsing Jinja, testes de ciclo mensal e ano bissexto,
+recusa, cancelamento, duplicidade, autenticação ADM, CSRF e autenticação webhook.
+O pacote V96 contém referências a outros módulos/arquivos não incluídos nele;
+por isso não foi possível executar o projeto inteiro ou validar no Render.
+
+Documentação oficial consultada em 11/10/2026:
+https://docs.asaas.com/docs/checkout-com-assinatura-recorrente
+https://docs.asaas.com/docs/receba-eventos-do-asaas-no-seu-endpoint-de-webhook
