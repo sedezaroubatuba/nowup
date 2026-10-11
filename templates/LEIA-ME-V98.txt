@@ -1,0 +1,16 @@
+NOWUP V98 — NAVEGAÇÃO INSTANTÂNEA
+Instale depois dos pacotes V96/V97.
+TEMPLATES: substitua apenas templates/base.html.
+STATIC: adicione navigation-instant98.js e navigation-instant98.css na pasta static.
+Faça o deploy dos dois pacotes juntos. Não há mudança na raiz nem no banco.
+
+Os botões existentes continuam com seus destinos. A navegação vertical e a volta ao topo
+passam a acontecer sem animação. Não foram adicionados botões Início nos painéis.
+O Início existente na navegação principal continua levando à home do NowUp.
+Os relatórios V97 e os painéis atuais são preservados.
+O ajuste não recarrega a página ao navegar entre seções da mesma tela.
+Links para outras páginas continuam com a navegação normal do navegador.
+Carrosséis que usam deslocamento horizontal explícito mantêm seu comportamento.
+
+Validação: sintaxe JavaScript e chamadas de rolagem testadas localmente.
+Após o deploy, atualize a página e confira Perfil, relatórios e Voltar ao topo no celular.
