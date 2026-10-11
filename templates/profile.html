@@ -50,12 +50,12 @@ body.public-profile-area :focus-visible {outline:3px solid #08a5d0;outline-offse
 <div class="stars">{% if pro.review_count %}★ {{pro.rating}} <span class="muted">({{pro.review_count}} {{'avaliação' if pro.review_count == 1 else 'avaliações'}})</span>{% else %}<span class="muted">☆ Sem avaliações</span>{% endif %}</div>
 </div>
 <div class="profile-cta profile-primary-actions">
-{% if pro.plan_active == 'vitrine' and pro.wa_link %}<a class="btn primary" href="{{pro.wa_link}}" target="_blank" rel="noopener">Conversar pelo WhatsApp</a>{% elif pro.plan_active in ['cardapio','ambos'] %}<a class="btn primary" href="/p/{{pro.slug}}/menu">Ver {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}} e pedir</a>{% endif %}
+{% if pro.plan_active == 'vitrine' and pro.contact_link %}<a class="btn primary" href="{{pro.contact_link}}" target="_blank" rel="noopener">{{'Abrir link da empresa' if pro.contact_target=='external' else 'Conversar pelo WhatsApp'}}</a>{% elif pro.plan_active in ['cardapio','ambos'] %}<a class="btn primary" href="/p/{{pro.slug}}/menu">Ver {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}} e pedir</a>{% endif %}
 {% if pro.address and not pro.hide_address %}<a class="btn soft" href="https://www.google.com/maps/search/?api=1&query={{pro.address|urlencode}}" target="_blank" rel="noopener">📍 Como chegar</a>{% else %}<span class="btn soft disabled">📍 Como chegar</span>{% endif %}
 
 
 </div>
-<div class="profile-extra-actions">{% if pro.instagram_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/instagram" target="_blank" rel="noopener">Instagram</a>{% endif %}{% if pro.facebook_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/facebook" target="_blank" rel="noopener">Facebook</a>{% endif %}{% if pro.website_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/site" target="_blank" rel="noopener">Site</a>{% endif %}{% if pro.external_url %}<a class="btn soft" href="/p/{{pro.slug}}/link" target="_blank" rel="noopener">Outro link</a>{% endif %}</div>
+<div class="profile-extra-actions">{% if pro.instagram_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/instagram" target="_blank" rel="noopener">Instagram</a>{% endif %}{% if pro.facebook_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/facebook" target="_blank" rel="noopener">Facebook</a>{% endif %}{% if pro.website_url %}<a class="btn soft" href="/p/{{pro.slug}}/social/site" target="_blank" rel="noopener">Site</a>{% endif %}</div>
 
 </div>
 </section>
