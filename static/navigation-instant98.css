@@ -1,0 +1,2 @@
+/* Evita também a animação definida pelo CSS nos links e nas seções. */
+html, body, body * { scroll-behavior: auto !important; }
