@@ -1,0 +1,7 @@
+NOWUP V101 — PEDIDO NO LINK E CHECKOUT BRANCO
+Envie estes arquivos à pasta raiz do projeto, substituindo os de mesmo nome. Aplique os três pacotes e faça deploy.
+Mantém V96 planos e V97 ADM; requer os módulos já presentes do projeto.
+Conta de lojista/ADM: marque Fazer compra rápida e preencha nome e WhatsApp. A sessão permanece ativa; pedido fica como visitante, acompanhado pelo link e com o limite normal de compras rápidas.
+Cliente: pedido continua vinculado à própria conta. Visitante: compra rápida permanece igual.
+Carrinho é mantido quando a opção não for marcada. Checkout agora branco.
+Não apaga nem recria dados.

@@ -1036,9 +1036,13 @@ def native_menu(request: Request, slug: str):
     return attach_food_assets(templates.TemplateResponse("menu.html", context(request, pro=p, products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, shop_status=status)))
 
 @app.post("/p/{slug}/menu/pedido")
-def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...), save_address: Optional[str]=Form(None)):
+def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...), save_address: Optional[str]=Form(None), purchase_as_guest: Optional[str]=Form(None)):
     logged=current_user(request)
-    if logged and logged['role']!='customer': raise HTTPException(403,'Use uma conta de cliente ou saia para compra rápida')
+    if logged and logged['role']!='customer':
+        if purchase_as_guest != '1':
+            return RedirectResponse('/p/'+quote(slug,safe='')+'/menu?conta=1',303)
+        # Explicit guest purchase: keep the session, but never attach the order to staff.
+        logged = None
     if not customer_name.strip() or len(customer_name.strip())<2 or not normalize_phone(customer_phone):
         raise HTTPException(400,'Informe nome e WhatsApp válidos')
     conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved' AND plan_active IN ('cardapio','ambos')",(slug,)).fetchone()
