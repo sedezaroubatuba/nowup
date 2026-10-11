@@ -1672,8 +1672,8 @@ def customer_panel(request: Request):
       WHERE f.customer_id=? AND p.blocked=0 AND p.admission_status='approved' ORDER BY f.created_at DESC""",(u["id"],)).fetchall()
     orders=conn.execute("""SELECT o.*,p.display_name,p.slug FROM orders o
       JOIN professionals p ON p.id=o.professional_id
-      WHERE o.customer_id=? OR (o.customer_id IS NULL AND replace(replace(replace(replace(o.customer_phone,' ',''),'-',''),'(',''),')','')=?)
-      ORDER BY o.id DESC LIMIT 30""",(u["id"],normalize_phone(u["phone"] or "") or "__none__")).fetchall()
+      WHERE o.customer_id=?
+      ORDER BY o.id DESC LIMIT 30""",(u["id"],)).fetchall()
     notifications=conn.execute("SELECT * FROM notifications WHERE user_id=? ORDER BY id DESC LIMIT 30",(u["id"],)).fetchall()
     unread_notifications=conn.execute("SELECT COUNT(*) FROM notifications WHERE user_id=? AND read_at=''",(u["id"],)).fetchone()[0]
     conn.close()
