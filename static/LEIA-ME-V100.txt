@@ -1,0 +1,8 @@
+NOWUP V100 — MARCA OFICIAL
+Extraia este ZIP e envie os arquivos para a pasta static do projeto, substituindo os de mesmo nome.
+Envie os dois pacotes (templates e static) e faça o deploy. Não há arquivos de raiz nesta atualização.
+Preserva V97 ADM, V98 navegação e V99 branco/botões.
+Logo completa nos cabeçalhos e rodapé; símbolo compacto no ADM, favicon, notificações e atalho lojista.
+A logo completa mantém o fundo branco original aprovado.
+Se o atalho instalado conservar o ícone antigo, remova e adicione o atalho novamente após o deploy.
+Não modifica banco de dados.
