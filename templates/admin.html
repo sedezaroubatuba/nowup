@@ -15,7 +15,7 @@
 <a href="#publicidade">Publicidade</a>
 <a href="#cadastro-rapido">Criar perfil fictício</a>
 <a href="#profissionais">Perfis</a>
-<a href="#financeiro">Financeiro</a>
+<a href="#financeiro">Financeiro</a><a href="/admin/assinaturas">Assinaturas de teste</a>
 <a href="#clientes">Clientes</a>
 <a href="#denuncias">Denúncias</a>
 <a href="#sugestoes">Sugestões</a>
@@ -204,7 +204,7 @@
 </section>
 <section class="panel" id="profissionais">{% if request.query_params.get('erro')=='pagamento' %}<p role="alert">Confirme o pagamento ou marque a exceção gratuita antes de ativar.</p>{% endif %}{% if request.query_params.get('erro')=='plano' %}<p role="alert">A loja precisa solicitar um plano válido.</p>{% endif %}{% if request.query_params.get('aviso')=='email-enviando' %}<p role="status">O e-mail da análise anterior ainda está sendo enviado. Aguarde antes de mudar a decisão.</p>{% endif %}{% if request.query_params.get('ok')=='analise' %}<p role="status">Análise salva.</p>{% endif %}{% if request.query_params.get('aviso')=='email-falhou' %}<p role="alert">A decisão foi salva, mas não foi possível enviar o e-mail. Confira a configuração de e-mail e use “Reenviar e-mail”.</p>{% endif %}{% if request.query_params.get('erro')=='email-pendente' %}<p role="alert">O profissional precisa confirmar o e-mail antes de aprovar a loja.</p>{% elif request.query_params.get('erro')=='aprovar-cadastro' %}<p role="alert">Use “Aprovar e ativar” para liberar esse cadastro.</p>{% endif %}
 <h2>Profissionais e empresas</h2>
-<p>Gerencie a situação dos cadastros. Pagamentos ficam na área <a href="#financeiro">Financeiro</a>.</p>
+<p>Gerencie a situação dos cadastros. Pagamentos ficam na área <a href="#financeiro">Financeiro</a><a href="/admin/assinaturas">Assinaturas de teste</a>.</p>
 <div class="v72-filters" data-filter-group="profiles">
 {% for value,label in [('all','Todos'),('pending','Aguardando aprovação'),('active','Ativos'),('paused','Pausados / bloqueados'),('rejected','Recusados'),('demo','Fictícios')] %}
 <button type="button" class="btn soft tiny" data-filter="{{value}}" aria-pressed="{{'true' if value=='all' else 'false'}}">{{label}} <span data-count="{{value}}"></span></button>{% endfor %}</div>
