@@ -111,6 +111,8 @@
     const sections=[...dashboard.querySelectorAll('main > section')];
     const groups={
       hoje:['pedidos-ativos'],
+      comandas:['comandas'],
+      whatsapp:['whatsapp'],
       resumo:['resumo','estatisticas'],
       pedidos:['pedidos'],
       cardapio:['cardapio'],
