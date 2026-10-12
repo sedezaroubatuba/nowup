@@ -67,11 +67,11 @@ html body.public-profile-area .nu85-note textarea{height:66px!important;min-heig
 <dialog class="checkout-dialog" data-checkout-dialog>
 <form action="/p/{{pro.slug}}/menu/pedido" method="post" data-order-form>
 <button class="dialog-close" type="button" data-dialog-close>×</button>
-<h2>Finalizar pedido</h2>{% if request.query_params.get("conta") %}<p role="alert">Para continuar, use uma conta de cliente ou marque a opção de compra rápida abaixo. Seu carrinho foi mantido.</p>{% endif %}{% if not user %}<p class="muted">Compra rápida sem cadastro. Informe seu nome e WhatsApp; guarde o link de acompanhamento após enviar.</p>{% endif %}
-{% if user and user.role!='customer' %}
-<div class="nowup-guest101" role="note"><p>Você está usando uma conta de {% if user.role=='admin' %}administrador{% else %}lojista{% endif %}. Para pedir sem sair desta conta, marque abaixo e informe os dados do comprador.</p><label class="check"><input type="checkbox" name="purchase_as_guest" value="1" required> Fazer compra rápida sem vincular este pedido à minha conta</label><small>Guarde o link de acompanhamento após enviar. O pedido não aparecerá no histórico de uma conta de cliente.</small></div>
-{% endif %}
-<input type="hidden" name="cart_json" data-cart-json>
+<h2>Finalizar pedido</h2>{% if request.query_params.get("conta") %}<p role="alert">Para continuar, entre com uma conta de cliente. Seu carrinho foi mantido.</p>{% endif %}{% if not user %}<p class="muted">Crie sua conta de cliente para concluir o pedido.</p>{% endif %}
+{% if not user or user.role!='customer' %}
+<div class="nowup-guest101"><p>Falta pouco para concluir seu pedido! O cadastro é rápido e feito uma única vez. Entre ou crie sua conta para acompanhar os pedidos e receber avisos no NowUp.</p><p><a class="btn" href="/entrar">Entrar como cliente</a> <a class="btn" href="/cadastro/cliente">Criar conta de cliente</a></p>{% if user %}<p>Você está conectado como lojista ou administrador. Saia desta conta pelo menu para entrar como cliente.</p>{% endif %}<p>Seu carrinho fica salvo neste navegador. Após entrar, volte a este cardápio.</p></div>
+{% else %}
+<input type="hidden" name="order_channel" value="{{'external' if request.query_params.get('origem')=='externo' or request.query_params.get('canal')=='whatsapp' or pro.plan_active=='cardapio' else 'internal'}}"><input type="hidden" name="cart_json" data-cart-json>
 <label>Seu nome<input class="input" name="customer_name" value="{% if user and user.role=='customer' %}{{user.name}}{% endif %}" required>
 </label>
 <label>Seu WhatsApp<input class="input" name="customer_phone" value="{% if user and user.role=='customer' %}{{user.phone}}{% endif %}" inputmode="tel" required>
@@ -92,6 +92,7 @@ html body.public-profile-area .nu85-note textarea{height:66px!important;min-heig
 <b data-dialog-total>R$ 0,00</b>
 </div>
 <button class="btn primary full-btn">Enviar pedido pelo NowUp</button>
+{% endif %}
 </form>
 </dialog>
 <footer class="nu83-cart-dock"><button type="button" data-cart-summary><span>🛒 <span data-cart-count>0 itens</span></span><strong>Ver pedido · <span data-dock-total>R$ 0,00</span></strong></button></footer></section>
