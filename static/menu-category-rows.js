@@ -35,6 +35,12 @@
       group = {section, track, cards: []}; groups.set(key, group);
     }
     // Move os mesmos elementos: mantém campos, dados e eventos do carrinho.
+    const description = card.querySelector('.menu-product-info > p');
+    if (description?.textContent.trim()) {
+      const details = document.createElement('details'); details.className = 'nu-product-details';
+      const summary = document.createElement('summary'); summary.textContent = 'Descrição';
+      description.replaceWith(details); details.append(summary, description);
+    }
     group.track.append(card); group.cards.push(card);
   }
   function updateGroups() {
