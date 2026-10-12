@@ -12,7 +12,7 @@
       form.querySelectorAll('[data-payment-method]').forEach(input=>{const value=cents(input.value);if(value===null){invalid=true;return;}if(value>0){total+=value;parts.push({method:input.dataset.paymentMethod,amount:(value/100).toFixed(2)});}});
       const remaining=Number(form.dataset.total)-total;
       form.querySelector('[data-payment-total]').textContent=format.format(total/100);
-      form.querySelector('[data-payment-remaining]').textContent=format.format(remaining/100);
+      form.querySelector('[data-payment-remaining]').textContent=format.format(Math.max(0,remaining)/100);
       form.querySelector('[data-payment-error]').textContent=invalid?'Confira os valores informados.':remaining<0?'Os pagamentos ultrapassam o total.':'';
       form.querySelector('[data-payment-submit]').disabled=invalid||remaining!==0||total<=0;
       form.elements.payments_json.value=JSON.stringify(parts);

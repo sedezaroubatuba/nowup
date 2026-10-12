@@ -1,0 +1,1 @@
+V111 sobre V110: substitua sales109.js na pasta static, faça deploy e atualize o painel. Falta pagar nunca exibe valor negativo; valores acima do total mostram R$ 0,00 e aviso de excesso. Continua bloqueando o fechamento até corrigir as parcelas. Não registra troco automaticamente nem altera valores de pagamentos. Testes locais passaram; confirme no aparelho após deploy.
