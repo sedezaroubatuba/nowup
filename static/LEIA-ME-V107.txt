@@ -1,0 +1,42 @@
+NOWUP V107 — VENDAS MANUAIS, COMANDAS E PAGAMENTO DIVIDIDO
+Instale os três ZIPs juntos. Atualização sobre a V106; inclui seus ajustes de cadastro, pedidos internos, branco e remoção de links de contato.
+RAIZ: arquivos .py na raiz do projeto. Inclui app.py, nowup_sales107.py, nowup_admin97.py e nowup_reports74.py.
+TEMPLATES: arquivos .html na pasta templates.
+STATIC: arquivos .css/.js na pasta static.
+Mantenha os módulos, imagens e arquivos anteriores. Não substitua banco de dados nem a pasta de uploads.
+Não há novas dependências. Tabelas adicionais são criadas automaticamente no mesmo banco persistente durante a inicialização.
+Faça o deploy no Render após enviar todos os arquivos.
+
+COMO USAR
+Painel do lojista → Menu → Vendas manuais e comandas.
+Abra a conta com identificação livre: Mesa 1, Comanda 2, Balcão ou nome.
+Escolha Presencial ou Delivery manual. Origem não muda após abertura.
+Adicione produtos do cadastro disponível, quantidades e observações. Preços ficam salvos no lançamento.
+A conta permanece aberta entre acessos. Não é preciso cadastrar o comprador.
+Registre uma ou várias parcelas: dinheiro, Pix, crédito e débito.
+Exemplo: R$ 100 de total, R$ 50 dinheiro e R$ 50 Pix. A venda é contada uma vez; pagamentos são separados.
+Só fecha com total positivo e pagamento registrado igual ao total.
+Dinheiro: registre somente o valor aplicado à conta, após descontar troco. Não há integração bancária.
+Retire e adicione um item novamente para corrigir quantidade. Se diminuir o total abaixo do valor pago, corrija os pagamentos antes.
+Correção de pagamento exige motivo, registrado no histórico.
+Cancelar exige motivo; quando há pagamentos, confirme que devolveu o valor fora do sistema. Não executa estorno bancário.
+Conta concluída não permite edição de itens ou pagamentos. Pode ser cancelada com motivo e confirmação de devolução.
+
+RELATÓRIOS E PRIVACIDADE
+Vendas consolidadas: pedidos online + contas manuais concluídas, por data de fechamento, horário de Brasília.
+Filtros: Todas / Presenciais / Delivery e pedidos NowUp. Delivery inclui também retirada de pedidos online.
+Cada loja acessa apenas os seus registros. Cliente e ADM não acessam as telas nem rotas de vendas manuais da loja.
+Contas abertas e canceladas não somam faturamento. Contas abertas mostram posição atual, fora do filtro de datas.
+Pedidos NowUp entram automaticamente. Não os lance novamente como vendas manuais.
+As antigas estatísticas do painel da loja continuam online; o novo relatório consolidado soma vendas manuais e online.
+ADM Central de gestão e ADM Vendas: incluem delivery manual, excluem todos os registros presenciais.
+ADM não recebe identificações de compradores/comandas manuais, observações de itens nem motivos livres de cancelamento manual.
+No ADM, quando filtra uma forma de pagamento, os totais de vendas consideram a conta inteira que usou essa forma; o quadro por pagamento mostra só as parcelas da forma filtrada.
+Cadastros e históricos online do ADM já existentes continuam como estavam. A restrição desta atualização é para os novos registros manuais.
+A exclusão de presença se aplica às telas e rotas, não torna esses dados invisíveis a quem administra diretamente o banco ou os backups completos.
+Não integra WhatsApp: delivery de WhatsApp é lançado manualmente pelo lojista.
+Preço dos planos permanece como estava. Sem estoque, custo, margem ou emissão fiscal.
+
+TESTES
+Testado localmente: tabelas adicionais no schema real, preservação de pedidos existentes, soma com online, pagamentos divididos, saldo, cancelamento e devolução registrada, contas abertas, preço salvo, repetição de envio, conflito de edição, acesso por loja, dados presenciais fora do ADM, relatórios ADM e templates.
+Recebimento de pedidos, aparência e uso no celular real precisam ser conferidos após o deploy. Este pacote não corrige o problema de navegador antigo nem muda a integração push.
