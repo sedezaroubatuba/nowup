@@ -68,6 +68,8 @@ def config(request:Request):
 
 @router.post('/painel/push/ativar')
 async def subscribe(request:Request):
+    from nowup_sales107 import check_origin
+    check_origin(request)
     u=_auth(request,'professional')
     try: data=validate(await request.json())
     except (ValueError,TypeError,AttributeError): raise HTTPException(400,'Inscrição inválida.')
@@ -82,10 +84,18 @@ async def subscribe(request:Request):
 
 @router.post('/painel/push/desativar')
 def unsubscribe(request:Request):
+    from nowup_sales107 import check_origin
+    check_origin(request)
     _auth(request,'professional'); disable_session(request.cookies.get('nowup_session','')); return {'ok':True}
 
 def send(row,payload):
     try:
+        # Password reset, logout and account blocking also revoke device alerts.
+        with _db() as c:
+            sessions=c.execute("SELECT s.token FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.user_id=? AND u.is_active=1 AND julianday(s.expires_at)>julianday('now')",(row['user_id'],)).fetchall()
+            valid=any(hashlib.sha256(s['token'].encode()).hexdigest()==row['session_hash'] for s in sessions)
+            if not valid:
+                c.execute('DELETE FROM push_subscriptions WHERE endpoint=?',(row['endpoint'],));return True
         webpush(json.loads(row['subscription']),json.dumps(payload),vapid_private_key=keys()[0],vapid_claims={'sub':'https://nowup-i9n4.onrender.com'},ttl=3600,timeout=10)
         return True
     except WebPushException as exc:
@@ -100,6 +110,8 @@ def send(row,payload):
 
 @router.post('/painel/push/testar')
 def test(request:Request):
+    from nowup_sales107 import check_origin
+    check_origin(request)
     u=_auth(request,'professional')
     with _db() as c: rows=c.execute('SELECT * FROM push_subscriptions WHERE user_id=? AND session_hash=?',(u['id'],session(request))).fetchall()
     if not rows: raise HTTPException(400,'Ative os avisos primeiro.')
@@ -117,6 +129,9 @@ def process():
         c.execute('DELETE FROM push_jobs WHERE created<? OR attempts>=4',(now-3600,))
         job=c.execute('SELECT * FROM push_jobs WHERE next_try<=? ORDER BY id LIMIT 1',(now,)).fetchone()
         if not job:return
+        order=c.execute('SELECT status FROM orders WHERE id=?',(job['order_id'],)).fetchone()
+        if not order or order['status']!='new':
+            c.execute('DELETE FROM push_jobs WHERE id=?',(job['id'],));return
         c.execute('UPDATE push_jobs SET next_try=?,attempts=attempts+1 WHERE id=?',(now+120,job['id']))
         rows=c.execute('SELECT * FROM push_subscriptions WHERE user_id=?',(job['user_id'],)).fetchall()
     payload={'title':'Novo pedido no NowUp','body':'Sua loja recebeu um pedido. Abra o painel para conferir.','url':f"/painel#pedido-{job['order_id']}",'tag':f"nowup-pedido-{job['order_id']}"}

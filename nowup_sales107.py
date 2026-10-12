@@ -4,7 +4,7 @@ from datetime import datetime, timezone, date, timedelta
 from decimal import Decimal, InvalidOperation
 from collections import defaultdict
 from zoneinfo import ZoneInfo
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlencode
 import json, secrets, inspect
 from fastapi import APIRouter, Request, Form, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
@@ -127,7 +127,7 @@ def add_item(c,pid,sid,product_id,quantity,notes):
     p=c.execute('SELECT * FROM products WHERE id=? AND professional_id=? AND available=1',(product_id,pid)).fetchone()
     if not p: raise HTTPException(400,'Produto não disponível no cadastro da sua loja.')
     c.execute('INSERT INTO manual_items107(sale_id,product_id,product_name,category,quantity,unit_price_cents,notes) VALUES(?,?,?,?,?,?,?)',
-      (sid,p['id'],p['name'],p['category'] or 'Sem categoria',quantity,p['price_cents'],notes.strip()[:500]))
+      (sid,p['id'],p['name'],p['category'] or 'Sem categoria',quantity,p['promo_price_cents'] if p['promo_price_cents']>0 else p['price_cents'],notes.strip()[:500]))
     recalc(c,sid)
 
 def history(c,sid,uid,action,detail):
@@ -147,9 +147,15 @@ def page(request:Request,sale:int=0):
     return RedirectResponse(f'/painel?conta={sale}#{tab}',303)
 
 def panel_data(request,sale=0):
+    try: page=max(1,min(100000,int(request.query_params.get('historico','1'))))
+    except ValueError: page=1
+    search=request.query_params.get('busca','').strip()[:120]
     with connection() as c:
         u,p=merchant(c,request)
-        rows=[dict(x) for x in c.execute('SELECT s.*,COALESCE((SELECT SUM(cents) FROM manual_payments107 WHERE sale_id=s.id),0) paid,COALESCE((SELECT SUM(quantity) FROM manual_items107 WHERE sale_id=s.id),0) item_count FROM manual_sales107 s WHERE professional_id=? ORDER BY (status=\'open\') DESC,id DESC LIMIT 200',(p['id'],))]
+        query='SELECT s.*,COALESCE((SELECT SUM(cents) FROM manual_payments107 WHERE sale_id=s.id),0) paid,COALESCE((SELECT SUM(quantity) FROM manual_items107 WHERE sale_id=s.id),0) item_count FROM manual_sales107 s WHERE professional_id=?'
+        rows=[dict(x) for x in c.execute(query+" AND status='open' ORDER BY id DESC",(p['id'],))]
+        old=[dict(x) for x in c.execute(query+" AND status!='open' AND label LIKE ? ORDER BY id DESC LIMIT 51 OFFSET ?",(p['id'],'%'+search+'%',(page-1)*50))]
+        more=len(old)>50;rows+=old[:50]
         current=owned(c,p['id'],sale) if sale else None
         items=payments=events=[]
         if current:
@@ -157,8 +163,8 @@ def panel_data(request,sale=0):
             payments=[dict(x) for x in c.execute('SELECT * FROM manual_payments107 WHERE sale_id=? ORDER BY id',(sale,))]
             events=[dict(x) for x in c.execute('SELECT * FROM manual_history107 WHERE sale_id=? ORDER BY id DESC LIMIT 100',(sale,))]
             current['paid']=sum(x['cents'] for x in payments);current['remaining']=current['total_cents']-current['paid']
-        products=[dict(x) for x in c.execute('SELECT id,name,price_cents FROM products WHERE professional_id=? AND available=1 ORDER BY name',(p['id'],))]
-    return dict(sales=rows,sale=current,items=items,payments=payments,events=events,products=products,token=secrets.token_urlsafe(24),methods=METHODS)
+        products=[dict(x) for x in c.execute('SELECT id,name,CASE WHEN promo_price_cents>0 THEN promo_price_cents ELSE price_cents END price_cents FROM products WHERE professional_id=? AND available=1 ORDER BY name',(p['id'],))]
+    return dict(sales=rows,sale=current,items=items,payments=payments,events=events,products=products,token=secrets.token_urlsafe(24),methods=METHODS,history_page=page,history_search=search,history_previous='/painel?'+urlencode({'historico':page-1,'busca':search}) if page>1 else '',history_next='/painel?'+urlencode({'historico':page+1,'busca':search}) if more else '')
 
 def go(sid,channel):
     return RedirectResponse(f'/painel?conta={sid}#'+('whatsapp' if channel=='delivery' else 'comandas'),303)

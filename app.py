@@ -179,7 +179,7 @@ def slugify(value: str):
     return value or secrets.token_hex(4)
 
 def db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=15)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
@@ -703,7 +703,7 @@ def startup():
     # Cópia SQLite consistente; o disco persistente deve incluir a pasta data.
     backup_dir=DB_PATH.parent/"backups"; backup_dir.mkdir(parents=True,exist_ok=True)
     destination=backup_dir/f"nowup-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}.db"
-    source=sqlite3.connect(DB_PATH); target=sqlite3.connect(destination)
+    source=sqlite3.connect(DB_PATH, timeout=15); target=sqlite3.connect(destination)
     try: source.backup(target)
     finally: target.close(); source.close()
     for old in sorted(backup_dir.glob("nowup-*.db"),reverse=True)[7:]: old.unlink(missing_ok=True)
@@ -1271,7 +1271,7 @@ def create_session_response(uid:int, dest:str, is_admin:bool=False):
     token=secrets.token_urlsafe(32); expires=(datetime.now(timezone.utc)+lifetime).isoformat()
     conn=db(); conn.execute("INSERT INTO sessions(token,user_id,expires_at) VALUES(?,?,?)",(token,uid,expires)); conn.commit(); conn.close()
     resp=RedirectResponse(dest,303)
-    cookie_options={"httponly":True,"samesite":"lax","secure":os.getenv("NOWUP_HTTPS","0")=="1"}
+    cookie_options={"httponly":True,"samesite":"lax","path":"/","secure":os.getenv("NOWUP_HTTPS","0")=="1"}
     if not is_admin:
         cookie_options["max_age"]=SESSION_DAYS*86400
     resp.set_cookie("nowup_session",token,**cookie_options)
@@ -1485,8 +1485,8 @@ def pro_new_orders(request: Request, after: int=0):
     rows=conn.execute("""SELECT id,customer_name,total_cents,created_at FROM orders
       WHERE professional_id=? AND id>? AND created_at>=? AND created_at<? ORDER BY id ASC LIMIT 10""",(p["id"],max(0,after),lower,upper)).fetchall()
     latest=conn.execute("SELECT COALESCE(MAX(id),0) FROM orders WHERE professional_id=?",(p["id"],)).fetchone()[0]
-    pending=conn.execute("SELECT COUNT(*) FROM orders WHERE professional_id=? AND status='new' AND created_at>=? AND created_at<?",(p["id"],lower,upper)).fetchone()[0]
-    pending_order=conn.execute("SELECT id,order_code,customer_name,total_cents,created_at,status FROM orders WHERE professional_id=? AND status='new' AND created_at>=? AND created_at<? ORDER BY id DESC LIMIT 1",(p["id"],lower,upper)).fetchone()
+    pending=conn.execute("SELECT COUNT(*) FROM orders WHERE professional_id=? AND status='new'",(p["id"],)).fetchone()[0]
+    pending_order=conn.execute("SELECT id,order_code,customer_name,total_cents,created_at,status FROM orders WHERE professional_id=? AND status='new' ORDER BY id DESC LIMIT 1",(p["id"],)).fetchone()
     conn.close()
     return JSONResponse({"latest_id":latest,"pending_count":pending,"pending_order":dict(pending_order) if pending_order else None,"orders":[{"id":r["id"],"customer_name":r["customer_name"] or "Cliente","total_cents":r["total_cents"],"created_at":r["created_at"]} for r in rows]})
 
@@ -1632,9 +1632,14 @@ def pro_order_status(request: Request, order_id: int, status: str=Form(...), rea
     u=require_user(request,"professional")
     allowed={"new","confirmed","preparing","ready","out_for_delivery","completed","cancelled","rejected"}
     if status not in allowed: raise HTTPException(400,"Status inválido")
-    conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+    conn=db(); conn.execute("BEGIN IMMEDIATE"); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
     order=conn.execute("SELECT id,status,customer_id,tracking_token FROM orders WHERE id=? AND professional_id=?",(order_id,p["id"])).fetchone()
     if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
+    if status==order["status"]:
+        conn.rollback(); conn.close(); return RedirectResponse(f"/painel?abrir_pedido={order_id}#pedido-{order_id}",303)
+    rank={"new":0,"confirmed":1,"preparing":2,"ready":3,"out_for_delivery":4,"completed":5}
+    if order["status"] in {"completed","cancelled","rejected"} or (status in rank and rank[status]<rank.get(order["status"],0)):
+        conn.rollback(); conn.close(); return RedirectResponse(f"/painel?erro=pedido-encerrado&abrir_pedido={order_id}#pedido-{order_id}",303)
     reason=reason.strip()[:300]
     if status in {"cancelled","rejected"} and not reason:
         conn.close(); return RedirectResponse(f"/painel?erro=motivo-obrigatorio&abrir_pedido={order_id}#pedido-{order_id}",303)
@@ -1643,15 +1648,18 @@ def pro_order_status(request: Request, order_id: int, status: str=Form(...), rea
     if order["customer_id"] and status != order["status"]:
         label=ORDER_STATUS_LABELS.get(status,status); message=f"Seu pedido foi atualizado para: {label}."
         if reason: message += f" Motivo: {reason}"
-        conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(order["customer_id"],"Atualização do pedido",message,f"/pedido/{order['tracking_token']}",now_iso()))
+        notification=conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(order["customer_id"],"Atualização do pedido",message,f"/pedido/{order['tracking_token']}",now_iso()))
+        nowup_alerts112.enqueue(conn,order["customer_id"],notification.lastrowid,{"title":"Atualização do pedido","body":message,"url":f"/pedido/{order['tracking_token']}","tag":f"nowup-status-{order_id}"})
     conn.commit(); conn.close()
     return RedirectResponse(f"/painel?ok=pedido&abrir_pedido={order_id}#pedido-{order_id}",303)
 
 @app.post("/painel/pedidos/{order_id}/editar")
 def pro_order_edit(request: Request, order_id: int, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), notes: str=Form("")):
-    u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id,plan_active,offer_mode FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
-    order=conn.execute("SELECT id FROM orders WHERE id=? AND professional_id=?",(order_id,p["id"])).fetchone()
+    u=require_user(request,"professional"); conn=db(); conn.execute("BEGIN IMMEDIATE"); p=conn.execute("SELECT id,plan_active,offer_mode FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+    order=conn.execute("SELECT id,status FROM orders WHERE id=? AND professional_id=?",(order_id,p["id"])).fetchone()
     if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
+    if order["status"] in {"completed","cancelled","rejected"}:
+        conn.rollback();conn.close();return RedirectResponse(f"/painel?erro=pedido-encerrado&abrir_pedido={order_id}#pedido-{order_id}",303)
     fulfillment_type="delivery" if fulfillment_type=="delivery" else "pickup"
     if payment_method not in {"pix","cash","credit","debit","on_delivery"}: payment_method="pix"
     conn.execute("UPDATE orders SET customer_name=?,customer_phone=?,fulfillment_type=?,payment_method=?,address=?,notes=?,updated_at=? WHERE id=?",(customer_name.strip()[:120],customer_phone.strip()[:30],fulfillment_type,payment_method,address.strip()[:300],notes.strip()[:500],now_iso(),order_id))
@@ -1659,9 +1667,13 @@ def pro_order_edit(request: Request, order_id: int, customer_name: str=Form(...)
 
 @app.post("/painel/pedidos/{order_id}/itens/{item_id}")
 def pro_order_item_edit(request: Request, order_id: int, item_id: int, quantity: int=Form(1), notes: str=Form(""), remove: Optional[str]=Form(None)):
-    u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
-    item=conn.execute("SELECT oi.id FROM order_items oi JOIN orders o ON o.id=oi.order_id WHERE oi.id=? AND oi.order_id=? AND o.professional_id=?",(item_id,order_id,p["id"])).fetchone()
+    u=require_user(request,"professional"); conn=db(); conn.execute("BEGIN IMMEDIATE"); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+    item=conn.execute("SELECT oi.id,o.status FROM order_items oi JOIN orders o ON o.id=oi.order_id WHERE oi.id=? AND oi.order_id=? AND o.professional_id=?",(item_id,order_id,p["id"])).fetchone()
     if not item: conn.close(); raise HTTPException(404,"Item não encontrado")
+    if item["status"] in {"completed","cancelled","rejected"}:
+        conn.rollback();conn.close();return RedirectResponse(f"/painel?erro=pedido-encerrado&abrir_pedido={order_id}#pedido-{order_id}",303)
+    if remove and conn.execute("SELECT COUNT(*) FROM order_items WHERE order_id=?",(order_id,)).fetchone()[0]<=1:
+        conn.rollback();conn.close();return RedirectResponse(f"/painel?erro=ultimo-item&abrir_pedido={order_id}#pedido-{order_id}",303)
     if remove: conn.execute("DELETE FROM order_items WHERE id=?",(item_id,))
     else: conn.execute("UPDATE order_items SET quantity=?,notes=? WHERE id=?",(max(1,min(99,quantity)),notes.strip()[:300],item_id))
     subtotal=conn.execute("SELECT COALESCE(SUM(quantity*unit_price_cents),0) FROM order_items WHERE order_id=?",(order_id,)).fetchone()[0]
@@ -2434,3 +2446,10 @@ import nowup_sales107
 nowup_sales107.configure(db, require_user, templates, context)
 app.include_router(nowup_sales107.router)
 app.add_event_handler("startup", nowup_sales107.initialize)
+
+# V112: customer status alerts and durable push updates.
+import nowup_alerts112
+nowup_alerts112.configure(db, require_user)
+app.include_router(nowup_alerts112.router)
+app.add_event_handler("startup", nowup_alerts112.start)
+app.add_event_handler("shutdown", nowup_alerts112.stop)

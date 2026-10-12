@@ -1,0 +1,50 @@
+NOWUP V112 — REGISTROS PROTEGIDOS, ALERTAS E LOGIN SALVO
+Atualização sobre V109/V110/V111. Instale os três ZIPs V112 juntos.
+RAIZ: app.py, nowup_sales107.py, nowup_push75.py e nowup_alerts112.py na raiz do projeto.
+TEMPLATES: arquivos .html dentro de templates.
+STATIC: arquivos .js/.css dentro de static.
+Mantenha todos os módulos anteriores, banco e uploads. Esta atualização não substitui dados.
+Mantém as dependências já usadas pelo push V75 (pywebpush e cryptography). Não envia chave nem requer credenciais novas.
+Faça deploy depois de enviar todos os arquivos e atualize as páginas do painel.
+
+REGISTROS
+Pedidos online concluídos, cancelados e recusados ficam protegidos contra edição de itens, dados ou reabertura.
+Salvar novamente o mesmo status não duplica histórico nem notificações.
+Status de preparo não volta para uma etapa anterior.
+O último item de um pedido online não pode ser retirado: cancele com motivo quando necessário.
+Adicionais já fazem parte do preço unitário salvo; recálculo foi testado e mantém esse preço, sem cobrar o adicional duas vezes.
+Vendas manuais usam o preço promocional vigente quando o item é lançado. Itens já registrados mantêm seu preço salvo.
+Histórico de contas ganhou busca por identificação e navegação de páginas (50 registros por página). Contas abertas permanecem na lista principal.
+Mantém códigos dos produtos, lançamento sem recarregar, Enter nos pagamentos, saldo não negativo, parcelas divididas e privacidade de registros presenciais.
+
+ALERTAS DO LOJISTA
+Ative som com o painel aberto. Cinco toques repetem enquanto existir pedido aguardando aceite, inclusive pedido pendente de outro dia.
+Ver pedido abre diretamente o pedido aguardando. A rotina não desloca as seções do painel.
+Consultas têm limite de espera; uma falha de conexão libera a próxima tentativa em vez de deixar a verificação presa.
+Avisos com painel fechado continuam por push, após Ativar avisos neste aparelho e permitir notificações.
+Teste o aviso no próprio painel.
+Pedidos que já saíram do estado novo não enviam push antigo da fila.
+
+ALERTAS DO CLIENTE
+Cliente logado tem Ativar avisos de pedidos, Testar aviso e Desativar avisos.
+Ative e permita notificações em cada aparelho/navegador.
+Atualizações de status têm aviso visual e som curto com a página aberta, após liberar o áudio.
+A lista dos últimos pedidos atualiza status sem recarregar. Não toca novamente todos os avisos antigos ao entrar.
+Push de atualização de status é registrado na mesma transação do pedido, com fila persistente e novas tentativas.
+Servidor não envia avisos a sessões encerradas, expiradas, revogadas ou contas inativas.
+Avisos externos dependem de internet, navegador compatível, permissões e configurações do aparelho. Não há como obrigar som em modo silencioso. A página fechada não executa alarme contínuo.
+No iPhone, abra pelo site adicionado à Tela de Início.
+
+LOGIN
+Cliente e lojista mantêm cookie persistente e renovação ao voltar ao site, no mesmo navegador.
+Fechar a aba/site não desloga. Sair da conta desativa a sessão e seus avisos.
+Bloqueio, recuperação de senha e limpeza de cookies podem exigir login novamente. Navegadores diferentes guardam sessões diferentes.
+ADM continua com seu controle de sessão separado.
+
+TESTES LOCAIS
+Foram executadas as funções reais de edição/status/sessão sobre o schema SQLite, testes de preço promocional, adicionais, histórico com mais de 200 contas, privacidade dos avisos, renovação/revogação da sessão e validação de templates.
+JavaScript testado para retorno após falha de conexão, cinco toques de som, preservação das seções e atualizações do cliente sem recarregar.
+Transporte externo de push foi simulado nos testes locais; não foi enviado aviso real ao seu aparelho por nós.
+Após deploy, teste um pedido entre duas contas: receber, aceitar, preparar e concluir. Confira aviso visual, som, notificação no celular e proteção do pedido encerrado.
+Teste também fechar/reabrir navegador e Sair da conta.
+O problema de layout antigo/login dentro do aplicativo Google/WhatsApp não foi diagnosticado nem corrigido por este pacote.
