@@ -17,10 +17,16 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <div class="container dashboard pro-dashboard" data-panel-day="{{today_day}}">
 <header class="v60-top"><button class="btn" type="button" data-pro-menu-toggle aria-expanded="false" aria-controls="pro-edit-menu" aria-label="Abrir menu">☰</button><div><b>{{pro.display_name}}</b><small>{{shop_status.label}}</small></div><a class="btn soft merchant-profile-link" href="/p/{{pro.slug}}" target="_blank" rel="noopener" aria-label="Ver meu perfil público na NowUp">↗ Meu perfil</a><a class="btn v61-bell" href="#notificacoes" aria-label="Notificações">🔔<span class="v61-badge" data-notification-badge hidden>0</span></a></header>
 <button class="v60-shade" type="button" data-close-pro-menu aria-label="Fechar menu" hidden></button>
-<aside class="sidebar pro-sidebar" id="pro-edit-menu"><h2>Menu da loja</h2><a href="/painel/vendas-manuais">🧾 Vendas manuais e comandas</a><a href="/painel/vendas-manuais/relatorios">📊 Vendas consolidadas</a>
+<aside class="sidebar pro-sidebar" id="pro-edit-menu"><h2>Menu da loja</h2><a href="#comandas">🧾 Comandas abertas</a><a href="#whatsapp">✍ Vendas WhatsApp</a><a href="/painel/vendas-manuais/relatorios">📊 Vendas consolidadas</a>
 <a href="#hoje">📅 Pedidos de hoje</a><a href="#resumo">📊 Visão geral</a><a href="#pedidos">🧾 Pedidos</a><a href="#cardapio">🛍 {{'Catálogo de produtos' if pro.offer_mode=='catalog' else 'Cardápio'}}</a><a href="#adicionais">➕ Adicionais</a><a href="#clientes">👥 Clientes</a><a href="#relatorios">📈 Relatórios</a><a href="#plano">💳 Meu plano</a><a href="#perfil">🏪 Perfil da loja</a><a href="#configuracoes">⚙️ Configurações</a><a href="#publicar">➕ Publicações</a><a href="/p/{{pro.slug}}" target="_blank" rel="noopener">↗ Ver perfil público</a>
 <form action="/sair" method="post"><button class="btn danger">Sair</button></form></aside>
 <main>
+<link rel="stylesheet" href="/static/sales109.css?v=109">
+<nav class="sales109-tabs" aria-label="Vendas da loja"><a href="#comandas">Comandas abertas</a><a href="#hoje">Vendas NowUp</a><a href="#whatsapp">Vendas WhatsApp</a></nav>
+<section id="comandas" class="sales109">{% set sale_channel='presential' %}{% include 'sales109.html' %}</section>
+<section id="whatsapp" class="sales109">{% set sale_channel='delivery' %}{% include 'sales109.html' %}</section>
+<script src="/static/sales109.js?v=109" defer></script>
+
 <nav class="merchant-shortcuts" aria-label="Acesso rápido da loja"><a class="btn soft" href="/p/{{pro.slug}}" target="_blank" rel="noopener">↗ Ver minha loja</a><a class="btn soft" href="#relatorios">📈 Ver relatórios</a><a class="btn soft" href="#configuracoes">⚙️ Configurações</a></nav>
 {% if pro.admission_status=='pending' %}<div class="alert">Seu cadastro está em análise pelo ADM. Você pode preparar seu painel, mas a loja ainda não aparece aos clientes.</div>{% elif pro.admission_status=='rejected' %}<div class="alert danger">Seu cadastro não foi aprovado.{% if pro.admission_reason %} {{pro.admission_reason}}{% endif %} Entre em contato com o NowUp para esclarecer informações.</div>{% endif %}
 {% if request.query_params.get('ok') %}<div class="alert success">Alterações salvas com sucesso.</div>{% endif %}

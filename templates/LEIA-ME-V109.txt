@@ -1,0 +1,38 @@
+NOWUP V109 — PAINEL DO LOJISTA SIMPLIFICADO
+Requer os três pacotes V107 já instalados. Inclui a correção V108 de origem; não reinstale o V108 depois deste pacote.
+Instale os três ZIPs V109 juntos, enviando os arquivos para as pastas indicadas.
+RAIZ: app.py e nowup_sales107.py na raiz do projeto.
+TEMPLATES: pro_panel.html e sales109.html dentro de templates.
+STATIC: pro-panel-menu.js, sales109.css e sales109.js dentro de static.
+Mantenha os outros módulos e arquivos existentes. Não substitua banco de dados nem uploads.
+Depois faça o deploy no Render e aguarde concluir.
+
+NOVO FLUXO
+As três abas ficam no topo do próprio painel do lojista:
+Comandas abertas / Vendas NowUp / Vendas WhatsApp.
+Comandas: contas presenciais com identificação livre e status verde.
+Vendas NowUp: pedidos online existentes, com o mesmo fluxo e dados anteriores.
+WhatsApp: lançamento manual opcional, sem integração de mensagens ou envio ao WhatsApp.
+Abrir conta pede somente mesa, comanda ou identificação. Adicionar produtos abre uma janela simples com produto, quantidade e observação.
+Fechar conta abre a janela de pagamentos: dinheiro, Pix, crédito e débito. Preencha uma ou várias formas.
+O sistema mostra Pago e Falta em tempo real. Finalizar e fechar conta só é liberado quando o total é quitado.
+Exemplo R$ 100: dinheiro R$ 50, Pix R$ 30 e crédito R$ 20.
+Ao confirmar, todos os pagamentos e o fechamento são salvos juntos numa única operação. Uma falha não grava metade dos pagamentos.
+Valores de parcelas registrados antes desta atualização são preservados e descontados do saldo.
+Finalizadas aparecem em vermelho no Histórico. Canceladas ficam cinza. Cor sempre acompanha o texto do status.
+Mais opções e histórico guarda edição de nome, correções de parcelas antigas e cancelamento com motivo/devolução informada.
+Somente as contas abertas aparecem na lista principal. O histórico mantém as finalizadas/canceladas. Até 200 registros são carregados, com abertas primeiro.
+Botões principais do painel do lojista em laranja com texto branco; botões auxiliares e status mantêm cores próprias.
+
+DADOS
+Preserva contas e pedidos anteriores, identificação das lojas e permissões por loja.
+Presenciais continuam fora dos relatórios e rotas do ADM; delivery manual segue a integração V107.
+Pedidos online entram automaticamente, não lance novamente como venda WhatsApp.
+Relatório consolidado continua disponível pelo menu Vendas consolidadas.
+Pagamento é registro manual, não confirmação de banco ou gateway. Troco deve ser descontado do valor informado em dinheiro.
+Preço dos planos não muda. Não acrescenta estoque, custo ou margem.
+
+TESTADO LOCALMENTE
+Navegação entre abas, diálogos, divisão e soma de pagamentos, saldo e botão finalizar, proteção de dados por loja, duplicidade, validações, operação atômica e compatibilidade de origem HTTPS no Render.
+Após deploy, teste no celular e no PC: abrir conta, adicionar produtos, fechar com pagamentos divididos e conferir o histórico.
+Não foi feito deploy remoto nem confirmação de aparência no aparelho real.
