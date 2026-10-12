@@ -7,6 +7,7 @@ import sqlite3
 import inspect
 from fastapi import APIRouter, Request, Form, HTTPException
 from fastapi.responses import RedirectResponse
+from nowup_sales107 import admin_delivery_rows, admin_delivery_items
 
 router = APIRouter()
 TZ = ZoneInfo('America/Sao_Paulo')
@@ -73,17 +74,29 @@ def report(c, params, today=None):
     extra=(' AND '+' AND '.join(clauses)) if clauses else ''
     def orders_between(a,b):
         lower,upper=bounds(a,b)
-        return [dict(x) for x in c.execute('''SELECT o.*,p.display_name,p.city,p.neighborhood store_neighborhood
+        online=[dict(x) for x in c.execute('''SELECT o.*,p.display_name,p.city,p.neighborhood store_neighborhood
           FROM orders o JOIN professionals p ON p.id=o.professional_id
           WHERE p.is_demo=0 AND julianday(o.created_at)>=julianday(?) AND julianday(o.created_at)<julianday(?)'''+extra+' ORDER BY o.created_at DESC,o.id DESC', [lower,upper]+args)]
+        return sorted(online+admin_delivery_rows(c,a,b,filters),key=lambda r:r['created_at'],reverse=True)
     orders=orders_between(start,end)
+    origin_rows = {}
+    for o in orders:
+        origin = o.get('order_origin','legacy')
+        label = {'external':'Link externo da loja','nowup':'Vitrine NowUp','manual_delivery':'Delivery lançado pelo lojista'}.get(origin,'Anterior à identificação de origem')
+        key = (o['display_name'], label)
+        entry = origin_rows.setdefault(key, dict(store=o['display_name'],channel=label,count=0,completed=0,cents=0))
+        entry['count'] += 1
+        if o['status']=='completed': entry['completed'] += 1; entry['cents'] += o['total_cents']
     completed=[o for o in orders if o['status']=='completed']
     cancelled=[o for o in orders if o['status'] in ('cancelled','rejected')]
     revenue=sum(o['total_cents'] for o in completed)
     daily=defaultdict(bucket); payments=defaultdict(bucket); stores=defaultdict(bucket); hours=defaultdict(bucket); cats=defaultdict(bucket)
     for o in completed:
         increment(daily,local_day(o['created_at']).isoformat(),o['total_cents'])
-        increment(payments,o['payment_method'],o['total_cents'])
+        if o.get('manual_payments'):
+            for pay in o['manual_payments']:
+                if not filters['pagamento'] or pay['method']==filters['pagamento']: increment(payments,pay['method'],pay['cents'])
+        else: increment(payments,o['payment_method'],o['total_cents'])
         increment(stores,f"{o['display_name']} (#{o['professional_id']})",o['total_cents'])
         hour=datetime.fromisoformat(o['created_at'].replace('Z','+00:00'))
         if hour.tzinfo is None: hour=hour.replace(tzinfo=timezone.utc)
@@ -96,6 +109,7 @@ def report(c, params, today=None):
       LEFT JOIN products pr ON pr.id=i.product_id AND pr.professional_id=o.professional_id
       WHERE p.is_demo=0 AND o.status='completed' AND julianday(o.created_at)>=julianday(?)
       AND julianday(o.created_at)<julianday(?)'''+extra,[lower,upper]+args).fetchall()
+    items=list(items)+admin_delivery_items(c,completed)
     products=defaultdict(bucket)
     for i in items:
         o=by_id.get(i['order_id'])
@@ -146,7 +160,7 @@ def report(c, params, today=None):
     daily_rows=[]; day=start
     while day<=end:
         daily_rows.append(dict(label=day.isoformat(),**daily[day.isoformat()])); day+=timedelta(days=1)
-    return dict(start=start.isoformat(),end=end.isoformat(),filters=filters,orders=orders[:100],cancelled=cancelled[:100],
+    return dict(origin_rows=sorted(origin_rows.values(),key=lambda x:(x["store"],x["channel"])),start=start.isoformat(),end=end.isoformat(),filters=filters,orders=orders[:100],cancelled=cancelled[:100],
       total_orders=len(orders),completed_count=len(completed),cancelled_count=len(cancelled),cents=revenue,
       ticket=round(revenue/len(completed)) if completed else 0,cancel_rate=round(100*len(cancelled)/len(orders),1) if orders else 0,
       daily=daily_rows,payments=ranked(payments),stores=ranked(stores),products=ranked(products),product_categories=ranked(cats),hours=ranked(hours),

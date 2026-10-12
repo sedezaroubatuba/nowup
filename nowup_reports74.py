@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 from urllib.parse import urlencode
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import JSONResponse
+from nowup_sales107 import admin_delivery_rows
 
 TZ = ZoneInfo('America/Sao_Paulo')
 router = APIRouter()
@@ -67,7 +68,7 @@ def sales_report(conn, start, end, store_id=0):
       LEFT JOIN (SELECT order_id,MAX(created_at) finished FROM order_status_history WHERE status='completed' GROUP BY order_id) h ON h.order_id=o.id
       WHERE p.is_demo=0 AND (datetime(o.created_at)>=datetime(?) AND datetime(o.created_at)<datetime(?)
       OR o.status='completed' AND datetime(COALESCE(h.finished,o.updated_at,o.created_at))>=datetime(?) AND datetime(COALESCE(h.finished,o.updated_at,o.created_at))<datetime(?))"""
-    for order in conn.execute(query,(lower,upper,lower,upper)):
+    for order in list(conn.execute(query,(lower,upper,lower,upper)))+admin_delivery_rows(conn,prev_start,end):
         pid=order['professional_id']
         if store_id and pid!=store_id: continue
         item=rows[pid]; created=local_date(order['created_at'])

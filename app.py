@@ -206,10 +206,8 @@ def mask_doc(doc: str):
     return "Documento verificado" if digits else ""
 
 def wa_link(phone: str, text: str):
-    digits = re.sub(r"\D", "", phone or "")
-    if digits and not digits.startswith("55"):
-        digits = "55" + digits
-    return f"https://wa.me/{digits}?text={quote(text)}" if digits else "#"
+    # Contact data remains stored, but WhatsApp is not a site communication channel.
+    return '#'
 
 def clean_link(raw: str):
     value=(raw or "").strip()[:500]
@@ -597,6 +595,7 @@ def init_db():
     ensure_column(conn, "orders", "change_for_cents", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "orders", "customer_id", "INTEGER REFERENCES users(id) ON DELETE SET NULL")
     ensure_column(conn, "orders", "tracking_token", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "orders", "order_origin", "TEXT NOT NULL DEFAULT 'legacy'")
     conn.execute("CREATE TABLE IF NOT EXISTS guest_order_limits (professional_id INTEGER NOT NULL,phone TEXT NOT NULL,created_at TEXT NOT NULL)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_guest_order_limits ON guest_order_limits(professional_id,phone,created_at)")
     ensure_column(conn, "orders", "cancellation_reason", "TEXT NOT NULL DEFAULT ''")
@@ -617,7 +616,7 @@ def init_db():
       "theme_name": "noturno",
       "font_family": "Inter",
       "hero_title": "Encontre quem resolve.",
-      "hero_subtitle": "Busque profissionais por serviço e localização. Veja trabalhos recentes, avaliações e fale direto pelo WhatsApp.",
+      "hero_subtitle": "Busque profissionais por serviço e localização. Veja trabalhos recentes, avaliações e encontre empresas da sua região.",
       "hero_image_filename": "",
       "hero_brightness": "100",
       "hero_zoom": "100",
@@ -1006,7 +1005,7 @@ def profile(request: Request, slug: str):
     conn.close()
     pub=dict(p); pub.update(menu_url="",instagram_url="",facebook_url="",website_url=""); pub["document_masked"]=mask_doc(pub["document"])
     has_contact=(pub["contact_target"]=="external" and bool(pub["external_url"])) or (pub["contact_target"]!="external" and bool(re.sub(r"\D","",pub["whatsapp"] or "")))
-    pub["contact_link"]="/p/"+quote(pub["slug"],safe="")+"/contato" if pub["plan_active"]=="vitrine" and has_contact else ""
+    pub["contact_link"]=""
     status=shop_status(p)
     return templates.TemplateResponse("profile.html", context(request, pro=pub, products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, photos=photos, posts=posts, reviews=reviews, pro_categories=cats, product_count=product_count, shop_status=status, hours_lines=business_hours_lines(p), can_review=can_review))
 
@@ -1036,22 +1035,15 @@ def native_menu(request: Request, slug: str):
     return attach_food_assets(templates.TemplateResponse("menu.html", context(request, pro=p, products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, shop_status=status)))
 
 @app.post("/p/{slug}/menu/pedido")
-def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...), save_address: Optional[str]=Form(None), purchase_as_guest: Optional[str]=Form(None)):
+def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...), save_address: Optional[str]=Form(None), order_channel: str=Form("internal")):
     logged=current_user(request)
-    if logged and logged['role']!='customer':
-        if purchase_as_guest != '1':
-            return RedirectResponse('/p/'+quote(slug,safe='')+'/menu?conta=1',303)
-        # Explicit guest purchase: keep the session, but never attach the order to staff.
-        logged = None
-    if not customer_name.strip() or len(customer_name.strip())<2 or not normalize_phone(customer_phone):
-        raise HTTPException(400,'Informe nome e WhatsApp válidos')
     conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved' AND plan_active IN ('cardapio','ambos')",(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404)
-    if not logged:
-        window=(datetime.now(timezone.utc)-timedelta(minutes=15)).isoformat()
-        attempts=conn.execute('SELECT COUNT(*) FROM guest_order_limits WHERE professional_id=? AND phone=? AND created_at>?',(p['id'],normalize_phone(customer_phone),window)).fetchone()[0]
-        if attempts>=3:
-            conn.close();raise HTTPException(429,'Aguarde alguns minutos antes de enviar outro pedido')
+    if not logged or logged['role'] != 'customer':
+        conn.close()
+        return RedirectResponse('/p/'+quote(slug,safe='')+'/menu?conta=1',303)
+    if not customer_name.strip() or len(customer_name.strip())<2 or not normalize_phone(customer_phone):
+        conn.close(); raise HTTPException(400,'Informe nome e WhatsApp válidos')
     if not p["is_premium"] or p["offer_mode"] not in ("menu","catalog"):
         conn.close(); raise HTTPException(403,"Cardápio ou catálogo disponível somente no plano Premium")
     if not shop_status(p)["open"]: conn.close(); return RedirectResponse(f"/p/{slug}/menu?fechado=1",303)
@@ -1100,7 +1092,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
         conn.execute('INSERT INTO guest_order_limits(professional_id,phone,created_at) VALUES(?,?,?)',(p['id'],normalize_phone(customer_phone),created))
         conn.execute('DELETE FROM guest_order_limits WHERE created_at<?',((datetime.now(timezone.utc)-timedelta(days=2)).isoformat(),))
     order_id=cur.lastrowid
-    order_code=f"NU-{order_id:06d}"; conn.execute("UPDATE orders SET payment_method=?,order_code=? WHERE id=?",(payment_method,order_code,order_id))
+    order_code=f"NU-{order_id:06d}"; conn.execute("UPDATE orders SET payment_method=?,order_code=?,order_origin=? WHERE id=?",(payment_method,order_code,"external" if order_channel=="external" or p["plan_active"]=="cardapio" else "nowup",order_id))
     conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)",(order_id,"new",created))
     for product,qty,item_notes,chosen,unit in clean_items:
         item_cur=conn.execute("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes) VALUES(?,?,?,?,?,?)",(order_id,product["id"],product["name"],qty,unit,item_notes))
@@ -1161,24 +1153,7 @@ def order_tracking_whatsapp(token: str):
 
 @app.get("/p/{slug}/contato")
 def public_store_contact(slug: str):
-    conn=db()
-    p=conn.execute("SELECT id,whatsapp,display_name,contact_target,external_url FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved' AND plan_active='vitrine'",(slug,)).fetchone()
-    if not p:
-        conn.close(); raise HTTPException(404,"Contato indisponível neste plano")
-    if p["contact_target"]=="external":
-        destination=p["external_url"] or ""
-        parsed=urlparse(destination)
-        if parsed.scheme!="https" or not parsed.hostname or parsed.username or parsed.password:
-            conn.close(); raise HTTPException(404,"Link indisponível")
-        event="external_click"
-    else:
-        if not re.sub(r"\D","",p["whatsapp"] or ""):
-            conn.close(); raise HTTPException(404,"Contato indisponível")
-        destination=wa_link(p["whatsapp"],f"Olá! Encontrei {p['display_name']} pela NowUp e gostaria de conversar.")
-        event="whatsapp_click"
-    conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],event,now_iso()))
-    conn.commit(); conn.close()
-    return RedirectResponse(destination,302)
+    return RedirectResponse('/p/'+quote(slug,safe=''),303)
 
 @app.post("/p/{slug}/whatsapp")
 def whatsapp_click(slug: str):
@@ -1781,15 +1756,8 @@ def toggle_favorite(request: Request, professional_id: int, next: str=Form("/cli
 
 @app.post("/painel/links")
 def pro_links(request: Request, target: str=Form("whatsapp"), external_url: str=Form("")):
-    u=require_user(request,"professional"); conn=db()
-    p=conn.execute("SELECT plan_active FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
-    if not p or p["plan_active"]!="vitrine": conn.close(); raise HTTPException(403,"Opção disponível apenas no plano Só vitrine")
-    link=(external_url or "").strip()[:500]
-    parsed=urlparse(link)
-    if target not in ("whatsapp","external") or (target=="external" and (parsed.scheme!="https" or not parsed.hostname or parsed.username or parsed.password)):
-        conn.close(); return RedirectResponse("/painel?erro=link-invalido#plano",303)
-    conn.execute("UPDATE professionals SET contact_target=?,external_url=? WHERE user_id=?",(target,link if target=="external" else "",u["id"]))
-    conn.commit(); conn.close(); return RedirectResponse("/painel#perfil",303)
+    require_user(request,'professional')
+    return RedirectResponse('/painel#plano',303)
 
 @app.post("/painel/identidade")
 def pro_identity(request: Request, avatar: Optional[UploadFile]=File(None), cover: Optional[UploadFile]=File(None)):
@@ -2460,3 +2428,9 @@ import nowup_admin97
 nowup_admin97.configure(db, require_user, templates, context)
 app.include_router(nowup_admin97.router)
 app.add_event_handler("startup", nowup_admin97.init_support)
+
+# V107: optional private merchant ledger and split payment records.
+import nowup_sales107
+nowup_sales107.configure(db, require_user, templates, context)
+app.include_router(nowup_sales107.router)
+app.add_event_handler("startup", nowup_sales107.initialize)
