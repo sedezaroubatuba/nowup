@@ -1,0 +1,23 @@
+html body.public-menu-area .nu-menu-sticky {position:sticky;top:var(--nu-sticky-top,0px);z-index:60;background:#fff!important;padding:8px 0 0;border-bottom:1px solid #e1e8ef;box-shadow:0 5px 12px #172b450b}
+html body.public-menu-area .nu-menu-sticky .nu83-catalog-heading h2 {margin:0 0 6px;font-size:20px}
+html body.public-menu-area .nu-menu-sticky .nu83-search {gap:4px}
+html body.public-menu-area .nu-menu-sticky .menu-category-nav {padding:8px 0;margin:0;scrollbar-width:thin}
+html body.public-menu-area .nu-menu-sticky .menu-category-nav button {min-height:40px;padding:8px 13px}
+html body.public-menu-area .nu-swipe-hint {font-size:12px!important;color:#61758b!important;margin:10px 0}
+html body.public-menu-area .menu-products {touch-action:pan-y pinch-zoom}
+html body.public-menu-area .menu-products :is(input,textarea,select,button,a,label,summary) {touch-action:auto}
+.nu-swipe-announcement {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+/* Celular conserva os cartões originais, inclusive a ordem de exibição. */
+html body.public-menu-area .nu-desktop-category {display:contents}
+html body.public-menu-area .nu-desktop-category-title {display:none}
+html body.public-menu-area .nu-desktop-category[hidden] {display:none!important}
+@media(min-width:1100px){
+ html body.public-menu-area .native-menu>.container {max-width:1440px!important}
+ html body.public-menu-area .menu-products {display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:20px!important;align-items:start}
+ html body.public-menu-area .nu-desktop-category {display:flex;flex-direction:column;gap:12px;min-width:0}
+ html body.public-menu-area .nu-desktop-category-title {display:block;margin:0 0 6px;font-size:23px;color:#172b45}
+ html body.public-menu-area .nu-desktop-category .menu-product {width:100%;box-sizing:border-box;margin:0;min-width:0}
+ html body.public-menu-area .nu-desktop-category .product-buy {flex-wrap:wrap;justify-content:flex-start}
+ html body.public-menu-area .nu-desktop-category .menu-product-info h3 {overflow-wrap:anywhere}
+ html body.public-menu-area .nu-desktop-category .product-options label {overflow-wrap:anywhere}
+}
