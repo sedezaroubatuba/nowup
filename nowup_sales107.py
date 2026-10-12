@@ -140,7 +140,14 @@ def render(request,name,**data):
 def page(request:Request,sale:int=0):
     with connection() as c:
         u,p=merchant(c,request)
-        rows=[dict(x) for x in c.execute('SELECT s.*,COALESCE((SELECT SUM(cents) FROM manual_payments107 WHERE sale_id=s.id),0) paid FROM manual_sales107 s WHERE professional_id=? ORDER BY (status=\'open\') DESC,id DESC LIMIT 200',(p['id'],))]
+        row=owned(c,p['id'],sale) if sale else None
+    tab='whatsapp' if row and row['channel']=='delivery' else 'comandas'
+    return RedirectResponse(f'/painel?conta={sale}#{tab}',303)
+
+def panel_data(request,sale=0):
+    with connection() as c:
+        u,p=merchant(c,request)
+        rows=[dict(x) for x in c.execute('SELECT s.*,COALESCE((SELECT SUM(cents) FROM manual_payments107 WHERE sale_id=s.id),0) paid,COALESCE((SELECT SUM(quantity) FROM manual_items107 WHERE sale_id=s.id),0) item_count FROM manual_sales107 s WHERE professional_id=? ORDER BY (status=\'open\') DESC,id DESC LIMIT 200',(p['id'],))]
         current=owned(c,p['id'],sale) if sale else None
         items=payments=events=[]
         if current:
@@ -149,7 +156,10 @@ def page(request:Request,sale:int=0):
             events=[dict(x) for x in c.execute('SELECT * FROM manual_history107 WHERE sale_id=? ORDER BY id DESC LIMIT 100',(sale,))]
             current['paid']=sum(x['cents'] for x in payments);current['remaining']=current['total_cents']-current['paid']
         products=[dict(x) for x in c.execute('SELECT id,name,price_cents FROM products WHERE professional_id=? AND available=1 ORDER BY name',(p['id'],))]
-    return render(request,'manual_sales107.html',sales=rows,sale=current,items=items,payments=payments,events=events,products=products,pro=dict(p),token=secrets.token_urlsafe(24))
+    return dict(sales=rows,sale=current,items=items,payments=payments,events=events,products=products,token=secrets.token_urlsafe(24),methods=METHODS)
+
+def go(sid,channel):
+    return RedirectResponse(f'/painel?conta={sid}#'+('whatsapp' if channel=='delivery' else 'comandas'),303)
 
 @router.post('/painel/vendas-manuais/abrir')
 def create(request:Request,label:str=Form(...),channel:str=Form(...),token:str=Form(...)):
@@ -162,7 +172,7 @@ def create(request:Request,label:str=Form(...),channel:str=Form(...),token:str=F
         else:
             now=stamp();sid=c.execute('INSERT INTO manual_sales107(professional_id,label,channel,created_at,updated_at,creation_token) VALUES(?,?,?,?,?,?)',(p['id'],label.strip(),channel,now,now,token)).lastrowid
             history(c,sid,u['id'],'abrir',channel)
-    return RedirectResponse(f'/painel/vendas-manuais?sale={sid}',303)
+    return go(sid,channel)
 
 @router.post('/painel/vendas-manuais/{sid}/alterar')
 def mutate(request:Request,sid:int,version:int=Form(...),action:str=Form(...),product_id:int=Form(0),quantity:int=Form(1),item_id:int=Form(0),payment_id:int=Form(0),method:str=Form(''),amount:str=Form(''),label:str=Form(''),notes:str=Form(''),reason:str=Form(''),refund:str=Form('')):
@@ -199,7 +209,29 @@ def mutate(request:Request,sid:int,version:int=Form(...),action:str=Form(...),pr
             c.execute("UPDATE manual_sales107 SET status='cancelled',cancel_reason=?,refund_recorded=?,closed_at=? WHERE id=?",(reason.strip()[:500],int(paid(c,sid)>0),stamp(),sid));detail=reason.strip()[:500]
         else: raise HTTPException(400,'Ação inválida.')
         c.execute('UPDATE manual_sales107 SET version=version+1,updated_at=? WHERE id=?',(stamp(),sid));history(c,sid,u['id'],action,detail)
-    return RedirectResponse(f'/painel/vendas-manuais?sale={sid}',303)
+    return go(sid,s['channel'])
+
+@router.post('/painel/vendas-manuais/{sid}/finalizar')
+def finalize(request:Request,sid:int,version:int=Form(...),payments_json:str=Form('[]')):
+    check_origin(request)
+    try:
+        records=json.loads(payments_json)
+        if not isinstance(records,list) or len(records)>20: raise ValueError()
+        parts=[]
+        for part in records:
+            if not isinstance(part,dict) or part.get('method') not in METHODS: raise ValueError()
+            parts.append((part['method'],money(part.get('amount'))))
+    except (ValueError,TypeError): raise HTTPException(400,'Confira as formas e valores do pagamento.')
+    with connection() as c:
+        u,p=merchant(c,request);c.execute('BEGIN IMMEDIATE');sale=owned(c,p['id'],sid)
+        if sale['status']!='open' or sale['version']!=version: raise HTTPException(409,'Conta atualizada. Confira os valores antes de finalizar novamente.')
+        if sale['total_cents']<=0 or paid(c,sid)+sum(value for _,value in parts)!=sale['total_cents']: raise HTTPException(400,'A soma dos pagamentos deve ser igual ao total da conta.')
+        for method,value in parts:
+            c.execute('INSERT INTO manual_payments107(sale_id,method,cents,created_at) VALUES(?,?,?,?)',(sid,method,value,stamp()))
+            history(c,sid,u['id'],'payment',f'{METHODS[method]}: {value} centavos')
+        c.execute("UPDATE manual_sales107 SET status='completed',version=version+1,closed_at=?,updated_at=? WHERE id=?",(stamp(),stamp(),sid))
+        history(c,sid,u['id'],'close','Conta quitada')
+    return go(sid,sale['channel'])
 
 def period(params):
     today=datetime.now(TZ).date()
