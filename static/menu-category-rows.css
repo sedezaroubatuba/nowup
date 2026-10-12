@@ -1,0 +1,22 @@
+html body.public-menu-area .menu-layout > main {min-width:0!important;max-width:100%}
+html body.public-menu-area .menu-products[data-category-rows] {display:block!important;min-width:0!important;max-width:100%;overflow:hidden;padding-bottom:16px}
+html body.public-menu-area .nu-category-section {margin:0 0 26px;min-width:0;max-width:100%}
+html body.public-menu-area .nu-category-section[hidden] {display:none!important}
+html body.public-menu-area .nu-category-section>header {display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 4px}
+html body.public-menu-area .nu-category-section>header h3 {margin:0;font-size:21px;color:#172b45}
+html body.public-menu-area .nu-category-hint {display:block;margin-bottom:10px;color:#60758a;font-size:12px}
+html body.public-menu-area .nu-category-arrows {display:flex;gap:6px}
+html body.public-menu-area .nu-category-arrows button {width:44px;height:44px;border:1px solid #dce4ec;border-radius:12px;background:#fff;color:#172b45;font-size:25px;cursor:pointer}
+html body.public-menu-area .nu-category-track {display:flex!important;gap:12px;overflow-x:auto;max-width:100%;padding:2px 2px 12px;scroll-snap-type:x proximity;overscroll-behavior-x:contain;scrollbar-width:thin}
+html body.public-menu-area .nu-category-track .menu-product {display:flex;flex-direction:column;flex:0 0 190px!important;width:190px!important;max-width:190px!important;min-width:0!important;align-self:flex-start;scroll-snap-align:start;border:1px solid #dce4ec;border-radius:16px;overflow:hidden;background:#fff!important;box-sizing:border-box}
+html body.public-menu-area .nu-category-track .menu-product[hidden] {display:none!important}
+html body.public-menu-area .nu-category-track .menu-product>img,html body.public-menu-area .nu-category-track .menu-product-placeholder {width:100%!important;height:145px!important;object-fit:contain!important;background:#fff;padding:8px;box-sizing:border-box}
+html body.public-menu-area .nu-category-track .menu-product-info {min-width:0;padding:12px!important}
+html body.public-menu-area .nu-category-track .menu-product-info h3 {font-size:16px!important;line-height:1.35;white-space:normal;overflow-wrap:anywhere;margin:6px 0}
+html body.public-menu-area .nu-category-track .menu-product-info p {font-size:13px!important;white-space:normal;overflow-wrap:anywhere}
+html body.public-menu-area .nu-category-track .product-buy {display:flex!important;flex-direction:column;gap:8px;align-items:stretch!important}
+html body.public-menu-area .nu-category-track .product-buy label {display:flex;align-items:center;justify-content:space-between;gap:8px}
+html body.public-menu-area .nu-category-track .product-quantity-input {width:68px!important;min-height:44px;font-size:16px!important;box-sizing:border-box}
+html body.public-menu-area .nu-category-track .product-buy button {width:100%;min-height:44px;white-space:normal;font-size:14px!important}
+html body.public-menu-area .nu-category-track .product-options label {white-space:normal;overflow-wrap:anywhere;font-size:13px}
+html body.public-menu-area .nu-category-track:focus-visible,html body.public-menu-area .nu-category-arrows button:focus-visible {outline:2px solid #087db5;outline-offset:2px}
