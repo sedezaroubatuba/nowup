@@ -20,3 +20,22 @@ html body.public-menu-area .nu-category-track .product-quantity-input {width:68p
 html body.public-menu-area .nu-category-track .product-buy button {width:100%;min-height:44px;white-space:normal;font-size:14px!important}
 html body.public-menu-area .nu-category-track .product-options label {white-space:normal;overflow-wrap:anywhere;font-size:13px}
 html body.public-menu-area .nu-category-track:focus-visible,html body.public-menu-area .nu-category-arrows button:focus-visible {outline:2px solid #087db5;outline-offset:2px}
+/* Cartões compactos como a referência escolhida. */
+html body.public-menu-area .nu-category-track {gap:8px}
+html body.public-menu-area .nu-category-track .menu-product {flex-basis:calc((100% - 24px)/3.25)!important;width:calc((100% - 24px)/3.25)!important;max-width:none!important;border-radius:12px}
+html body.public-menu-area .nu-category-track .menu-product>img,html body.public-menu-area .nu-category-track .menu-product-placeholder {height:110px!important;padding:6px}
+html body.public-menu-area .nu-category-track .menu-product-info {padding:8px!important}
+html body.public-menu-area .nu-category-track .menu-product-info>small,html body.public-menu-area .nu-category-track .v67-product-status {display:none}
+html body.public-menu-area .nu-category-track .menu-product-info h3 {font-size:13px!important;line-height:1.3;margin:2px 0 6px}
+html body.public-menu-area .nu-category-track .menu-product-info strong {font-size:15px!important;display:block;margin-bottom:6px}
+html body.public-menu-area .nu-category-track .product-buy button {font-size:12px!important;min-height:36px!important;padding:6px 3px!important;border-radius:9px;background:#e7f2ff!important;color:#123c67!important}
+html body.public-menu-area .nu-category-track .product-buy label {font-size:11px!important;gap:3px}
+html body.public-menu-area .nu-category-track .product-quantity-input {width:44px!important;min-height:32px!important;padding:4px!important;font-size:16px!important}
+html body.public-menu-area .nu-category-track .nu85-note summary {font-size:10px!important;padding:2px!important}
+html body.public-menu-area .nu-category-section>header h3 {font-size:20px}
+html body.public-menu-area .nu-category-hint {display:none}
+html body.public-menu-area .nu-category-arrows button {width:36px;height:36px;font-size:22px}
+html body.public-menu-area .nu-category-track .nu-product-details {font-size:12px;margin:4px 0;color:#52667c}
+html body.public-menu-area .nu-category-track .nu-product-details summary {cursor:pointer;min-height:30px}
+html body.public-menu-area .nu-category-track .nu-product-details p {font-size:12px!important}
+@media(min-width:700px){html body.public-menu-area .nu-category-track .menu-product {flex-basis:150px!important;width:150px!important}}
