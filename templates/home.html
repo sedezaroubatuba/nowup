@@ -43,4 +43,18 @@ html body.v50-directory-home .v50-highlight-row .v50-card>div{display:flex;flex:
 html body.v50-directory-home .v50-highlight-row .v86-view-store{margin-top:auto}
 html body.v50-directory-home .v50-highlights>header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
 @media(min-width:900px){html body.v50-directory-home .v50-highlight-row>.v50-card{flex-basis:230px!important;width:230px!important;min-width:230px!important;max-width:230px!important}}
-</style>{% endblock %}
+</style>
+<style id="nowup-square-shop-covers">
+/* Mesma proporção em todos os tamanhos, apenas nos cartões das lojas. */
+html body.v50-directory-home .v50-card > a.v50-photo {
+ display:flex!important;align-items:center;justify-content:center;
+ width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;
+ aspect-ratio:1 / 1!important;box-sizing:border-box;overflow:hidden;background:#f5f7fa!important;
+}
+html body.v50-directory-home .v50-card > a.v50-photo > img {
+ display:block!important;width:100%!important;height:100%!important;
+ max-width:100%!important;max-height:100%!important;
+ object-fit:contain!important;object-position:center!important;
+}
+</style>
+{% endblock %}
