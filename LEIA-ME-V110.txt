@@ -1,0 +1,31 @@
+NOWUP V110 — CÓDIGOS, LANÇAMENTO SEM RECARREGAR E ENTER NOS PAGAMENTOS
+Instale sobre a V109, com os três ZIPs juntos.
+RAIZ: substituir somente nowup_sales107.py na raiz do projeto. app.py permanece da V109.
+TEMPLATES: pro_panel.html e sales109.html dentro de templates.
+STATIC: sales109.js dentro de static.
+Depois faça deploy e atualize a página do painel.
+
+CÓDIGOS
+Cada produto mostra o código numérico já existente no cadastro (ID), sem renumerar produtos antigos.
+Código é automático, não é código de barras e não é editável nesta versão. A numeração pode ter intervalos e não reinicia por loja.
+O lançamento sempre aceita somente produtos da própria loja e disponíveis.
+Adicionar produtos: digite o código ou parte do nome. Um resultado único é selecionado automaticamente; se houver vários, escolha na lista.
+Informe quantidade e confirme Adicionar à conta, ou pressione Enter após os campos válidos.
+
+SEM PISCAR AO LANÇAR
+Adicionar e retirar itens nas contas manuais atualiza a lista, o total e o saldo sem recarregar o documento.
+A janela de produtos permanece aberta para lançar o próximo item.
+O servidor continua validando preços, loja e versão da conta antes de confirmar.
+Uma falha de conexão pode deixar o resultado incerto: atualize a conta antes de repetir, conforme a mensagem.
+A criação de conta, o fechamento e a edição do cadastro de produtos continuam com seu fluxo anterior.
+
+ENTER NO PAGAMENTO
+Em Dinheiro, Enter avança para Pix; depois Crédito e Débito.
+No último campo, se os valores quitarem o total, Enter foca Finalizar e fechar conta.
+Só uma nova confirmação no botão fecha a conta. Enter em um campo não finaliza sozinho.
+Se houver diferença ou valor inválido, mostra o aviso para corrigir.
+Tab também continua funcionando.
+
+Mantém a correção HTTPS V108, integração no painel V109, pagamentos divididos, proteção por loja, histórico e separação das vendas presenciais do ADM.
+Testes locais: pesquisa por código/nome, entrada por código com zeros à esquerda, inclusão sem navegação/recarregamento, atualização de totais e versão, proteção contra duplicidade e produto de outra loja, Enter/foco, pagamentos divididos e templates.
+Ainda precisa validar no celular e PC após deploy. Nenhum banco ou upload é substituído.

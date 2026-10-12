@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 from urllib.parse import urlsplit
 import json, secrets, inspect
 from fastapi import APIRouter, Request, Form, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.routing import APIRoute
 from fastapi.exceptions import RequestValidationError
 
@@ -17,10 +17,12 @@ class SalesRoute(APIRoute):
         async def handler(request):
             try: return await original(request)
             except RequestValidationError:
+                if 'application/json' in request.headers.get('accept',''): return JSONResponse({'detail':'Confira os campos informados.'},status_code=400)
                 response=render(request,'manual_error107.html',message='Confira os campos informados e tente novamente.')
                 response.status_code=400
                 return response
             except HTTPException as exc:
+                if 'application/json' in request.headers.get('accept',''): return JSONResponse({'detail':exc.detail},status_code=exc.status_code)
                 if exc.status_code==401: return RedirectResponse('/entrar',303)
                 response=render(request,'manual_error107.html',message=exc.detail)
                 response.status_code=exc.status_code
@@ -209,7 +211,13 @@ def mutate(request:Request,sid:int,version:int=Form(...),action:str=Form(...),pr
             c.execute("UPDATE manual_sales107 SET status='cancelled',cancel_reason=?,refund_recorded=?,closed_at=? WHERE id=?",(reason.strip()[:500],int(paid(c,sid)>0),stamp(),sid));detail=reason.strip()[:500]
         else: raise HTTPException(400,'Ação inválida.')
         c.execute('UPDATE manual_sales107 SET version=version+1,updated_at=? WHERE id=?',(stamp(),sid));history(c,sid,u['id'],action,detail)
-    return go(sid,s['channel'])
+        if action in ('item','remove_item') and 'application/json' in request.headers.get('accept',''):
+            latest=owned(c,p['id'],sid)
+            items=[dict(r) for r in c.execute('SELECT id,product_id,product_name,quantity,unit_price_cents,notes FROM manual_items107 WHERE sale_id=? ORDER BY id',(sid,))]
+            payload=dict(id=sid,version=latest['version'],total_cents=latest['total_cents'],paid=paid(c,sid),items=items,item_count=sum(i['quantity'] for i in items))
+            response=JSONResponse(payload,headers={'Cache-Control':'no-store'})
+        else: response=go(sid,s['channel'])
+    return response
 
 @router.post('/painel/vendas-manuais/{sid}/finalizar')
 def finalize(request:Request,sid:int,version:int=Form(...),payments_json:str=Form('[]')):
