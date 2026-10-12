@@ -87,7 +87,24 @@ def merchant(c,request):
 
 def check_origin(request):
     origin=request.headers.get('origin')
-    if origin and origin!=str(request.base_url).rstrip('/'): raise HTTPException(403,'Origem inválida.')
+    if origin:
+        try:
+            source=urlsplit(origin)
+            target=urlsplit(str(request.url))
+            def authority(parsed):
+                port=parsed.port
+                default=443 if parsed.scheme=='https' else 80
+                return ((parsed.hostname or '').lower(),None if port in (None,default) else port)
+            # Render terminates HTTPS before forwarding HTTP to the application.
+            # Match the public Host, permitting HTTPS with an internal HTTP scheme.
+            valid=(source.scheme in ('http','https') and bool(source.hostname)
+                and not source.username and not source.password
+                and source.path in ('','/') and not source.query and not source.fragment
+                and authority(source)==authority(target)
+                and (source.scheme==target.scheme or source.scheme=='https' and target.scheme=='http'))
+        except ValueError:
+            valid=False
+        if not valid: raise HTTPException(403,'Origem inválida.')
     if request.headers.get('sec-fetch-site')=='cross-site': raise HTTPException(403,'Origem inválida.')
 
 def owned(c,pid,sid):

@@ -1,0 +1,9 @@
+NOWUP V108 — CORREÇÃO DE ORIGEM NAS VENDAS MANUAIS
+Requer os três pacotes V107 já instalados.
+Substitua somente nowup_sales107.py na raiz do projeto pelo arquivo deste ZIP.
+Não substitua app.py nem arquivos de templates/static. Não modifique banco ou uploads.
+Faça o deploy e aguarde concluir. Volte a Vendas manuais, atualize a página e tente abrir a conta novamente.
+A correção compara o host público e aceita HTTPS do navegador quando Render encaminha a requisição internamente por HTTP.
+Continua bloqueando origens de outros sites, origens inválidas, portas diferentes e requisições marcadas como cross-site.
+Testado localmente: abertura e alteração de conta simulando proxy, pagamentos divididos, permissões e relatórios.
+O deploy e o teste no servidor real serão feitos por você.
