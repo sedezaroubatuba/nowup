@@ -787,9 +787,9 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
        (SELECT COUNT(*) FROM reviews r WHERE r.professional_id=p.id) review_count,
        (SELECT COUNT(*) FROM products pr WHERE pr.professional_id=p.id AND pr.available=1) product_count,
        COALESCE(
-         CASE WHEN p.featured=1 THEN NULLIF(p.featured_image_filename,'') END,
          NULLIF(p.cover_filename,''),
          NULLIF(p.avatar_filename,''),
+         CASE WHEN p.featured=1 THEN NULLIF(p.featured_image_filename,'') END,
          (SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1)
        ) cover
       FROM professionals p JOIN users u ON u.id=p.user_id
@@ -821,6 +821,8 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
     conn.close()
     response=templates.TemplateResponse("home.html", context(request, professionals=rows, rotating_stores=rotating_stores[:12], catalog_stores=catalog_stores[:12], recent_orders=recent_orders, status_labels=ORDER_STATUS_LABELS, open_now=open_now, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today, has_home_filter=bool(q or category or business_type)))
     response = attach_food_assets(response)
+    # A home deve buscar a identidade atual das lojas em cada acesso.
+    response.headers["Cache-Control"] = "private, no-store"
     if not request.cookies.get("nowup_visitor"):
         response.set_cookie("nowup_visitor",visitor_key,max_age=31536000,httponly=True,samesite="lax",secure=request.url.scheme=="https")
     return response
