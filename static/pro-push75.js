@@ -1,35 +1,16 @@
 (() => {
- const box=document.querySelector('[data-push75]'); if(!box)return;
- const message=box.querySelector('[data-push-message]');
- const activate=box.querySelector('[data-push-enable]'), disable=box.querySelector('[data-push-disable]'), test=box.querySelector('[data-push-test]');
- const supported=window.isSecureContext && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+ const box=document.querySelector('[data-push75]');if(!box)return;
+ const message=box.querySelector('[data-push-message]'),activate=box.querySelector('[data-push-enable]'),disable=box.querySelector('[data-push-disable]'),test=box.querySelector('[data-push-test]');
+ const supported=window.isSecureContext&&'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
  let busy=false;
- async function api(path, body) {
-  const response=await fetch('/painel/push/'+path,{method:path==='config'?'GET':'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
-  if(!response.ok){let data={};try{data=await response.json()}catch(_){}throw new Error(data.detail || 'Não foi possível salvar. Entre na conta novamente e tente outra vez.');}
-  return response.json();
- }
+ async function api(path,body){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);try{const response=await fetch('/painel/push/'+path,{method:path==='config'?'GET':'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined,signal:controller.signal});const data=await response.json();if(!response.ok)throw new Error(data.detail||'Entre novamente para ativar os avisos.');return data;}finally{clearTimeout(timer);}}
  function state(on){activate.hidden=on;disable.hidden=!on;test.hidden=!on;}
  function key(value){const raw=atob(value.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-value.length%4)%4));return Uint8Array.from(raw,c=>c.charCodeAt(0));}
- async function action(fn){if(busy)return;busy=true;try{await fn()}catch(e){message.textContent=e.message}finally{busy=false}}
- activate.onclick=()=>action(async()=>{
-  if(!supported)return;
-  const permission=await Notification.requestPermission();
-  if(permission!=='granted')throw new Error('Permita notificações nas configurações do navegador para receber avisos.');
-  const config=await api('config');
-  await navigator.serviceWorker.register('/nowup-push-sw.js',{scope:'/'});
-  const registration=await navigator.serviceWorker.ready;
-  let subscription=await registration.pushManager.getSubscription();
-  if(!subscription)subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:key(config.publicKey)});
-  await api('ativar',subscription.toJSON());state(true);message.textContent='Avisos ativados neste aparelho. Use Testar aviso para conferir.';
- });
- disable.onclick=()=>action(async()=>{
-  await api('desativar');const registration=await navigator.serviceWorker.getRegistration('/');
-  const subscription=await registration?.pushManager.getSubscription();if(subscription)await subscription.unsubscribe();
-  state(false);message.textContent='Avisos desativados neste aparelho.';
- });
- test.onclick=()=>action(async()=>{await api('testar');message.textContent='Teste enviado. Confira a notificação do aparelho.'});
- state(false);
- if(!supported){activate.disabled=true;message.textContent='Este navegador não oferece avisos aqui. No iPhone, adicione o NowUp à Tela de Início e abra por esse ícone.';return;}
- action(async()=>{const registration=await navigator.serviceWorker.getRegistration('/');const subscription=await registration?.pushManager.getSubscription();if(subscription&&Notification.permission==='granted'){await api('ativar',subscription.toJSON());state(true);message.textContent='Avisos ativados neste aparelho.'}});
+ async function action(fn){if(busy)return;busy=true;try{await fn();}catch(e){message.textContent=e.name==='AbortError'?'Conexão lenta. Tente novamente.':e.message;}finally{busy=false;}}
+ async function ready(reg){if(reg.active)return;await new Promise((resolve,reject)=>{const worker=reg.installing||reg.waiting;if(!worker)return reject(new Error('Atualize o painel e tente novamente.'));const timer=setTimeout(()=>reject(new Error('Atualize o painel e tente novamente.')),12000);worker.addEventListener('statechange',()=>{if(worker.state==='activated'){clearTimeout(timer);resolve();}});});}
+ activate.onclick=()=>action(async()=>{if(!supported)return;const permission=await Notification.requestPermission();if(permission!=='granted')throw new Error('Permita as notificações nas configurações do navegador.');const config=await api('config'),reg=await navigator.serviceWorker.register('/nowup-push-sw.js',{scope:'/'});await ready(reg);let sub=await reg.pushManager.getSubscription();if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:key(config.publicKey)});await api('ativar',sub.toJSON());state(true);message.textContent='Avisos ativados neste aparelho. Use Testar aviso.';});
+ disable.onclick=()=>action(async()=>{await api('desativar');const reg=await navigator.serviceWorker.getRegistration('/');const sub=await reg?.pushManager.getSubscription();if(sub)await sub.unsubscribe();state(false);message.textContent='Avisos desativados neste aparelho.';});
+ test.onclick=()=>action(async()=>{await api('testar');message.textContent='Teste enviado. Confira o aviso no aparelho.';});
+ state(false);if(!supported){activate.disabled=true;message.textContent='Use um navegador compatível. No iPhone, adicione o site à Tela de Início e abra pelo ícone.';return;}
+ action(async()=>{const reg=await navigator.serviceWorker.getRegistration('/'),sub=await reg?.pushManager.getSubscription();if(sub&&Notification.permission==='granted'){await api('ativar',sub.toJSON());state(true);message.textContent='Avisos ativados neste aparelho.';}});
 })();
