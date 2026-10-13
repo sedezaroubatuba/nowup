@@ -10,28 +10,8 @@
  const hint=document.createElement('p');hint.className='nu-swipe-hint';hint.textContent='Deslize sobre os produtos para trocar de categoria ↔';bar.after(hint);
  const buttons=[...nav.querySelectorAll('[data-category-filter]')];
  const desktop=matchMedia('(min-width:1100px)');
- const groups=new Map();
- const cards=[...products.querySelectorAll('[data-product]')];
- for(const card of cards){
-  const key=card.dataset.category||'';
-  let group=groups.get(key);
-  if(!group){
-   const section=document.createElement('section');section.className='nu-desktop-category';
-   const title=document.createElement('h3');title.className='nu-desktop-category-title';
-   title.textContent=card.querySelector('.menu-product-info > small')?.textContent.trim()||'Outros produtos';
-   section.append(title);products.append(section);
-   group={section,cards:[]};groups.set(key,group);
-  }
-  group.section.append(card);group.cards.push(card);
- }
- function updateGroups(){
-  for(const group of groups.values())group.section.hidden=!group.cards.some(card=>!card.hidden);
- }
- const observer=new MutationObserver(updateGroups);
- for(const card of cards)observer.observe(card,{attributes:true,attributeFilter:['hidden']});
- updateGroups();
- function mode(){for(const card of cards){if(desktop.matches)groups.get(card.dataset.category||'').section.append(card);else products.append(card);}updateGroups();hint.textContent=desktop.matches?'Categorias lado a lado. Use a busca ou selecione uma categoria.':'Deslize sobre os produtos para trocar de categoria ↔';}
- desktop.addEventListener('change',mode);mode();
+ const firstCategory=buttons.find(b=>b.dataset.categoryFilter!=='all');
+ if(firstCategory)firstCategory.click();
  const reduce=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
  const announce=document.createElement('span');announce.className='nu-swipe-announcement';announce.setAttribute('role','status');bar.append(announce);
  function reveal(button){button.scrollIntoView({block:'nearest',inline:'center',behavior:reduce()?'auto':'smooth'});announce.textContent='Categoria: '+button.textContent.trim();}
