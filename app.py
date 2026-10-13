@@ -969,6 +969,25 @@ def pro_zone_delete89(request: Request, zone_id: int):
     finally: conn.close()
     return RedirectResponse("/painel?ok=entrega#cardapio",303)
 
+def attach_cart_assets144(response):
+    """Carrega o carrinho mesmo com uma base HTML anterior instalada."""
+    body=response.body.decode("utf-8")
+    if 'data-native-menu' not in body:
+        return response
+    assets=[]
+    if '/static/cart144.css' not in body:
+        assets.append('<link rel="stylesheet" href="/static/cart144.css?v=144">')
+    if '/static/cart144.js' not in body:
+        assets.append('<script src="/static/cart144.js?v=144" defer></script>')
+    if '/static/categories142.js' not in body:
+        assets.append('<script src="/static/categories142.js?v=144" defer></script>')
+    if assets:
+        markup=''.join(assets)
+        response.body=(body.replace('</body>',markup+'</body>',1) if '</body>' in body else body+markup).encode("utf-8")
+        response.headers['content-length']=str(len(response.body))
+    response.headers['Cache-Control']='no-store'
+    return response
+
 @app.get("/p/{slug}", response_class=HTMLResponse)
 def profile(request: Request, slug: str):
     conn=db()
@@ -1010,7 +1029,7 @@ def profile(request: Request, slug: str):
     has_contact=(pub["contact_target"]=="external" and bool(pub["external_url"])) or (pub["contact_target"]!="external" and bool(re.sub(r"\D","",pub["whatsapp"] or "")))
     pub["contact_link"]=""
     status=shop_status(p)
-    return templates.TemplateResponse("profile.html", context(request, pro=pub, products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, photos=photos, posts=posts, reviews=reviews, pro_categories=cats, product_count=product_count, shop_status=status, hours_lines=business_hours_lines(p), can_review=can_review))
+    return attach_cart_assets144(templates.TemplateResponse("profile.html", context(request, pro=pub, products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, photos=photos, posts=posts, reviews=reviews, pro_categories=cats, product_count=product_count, shop_status=status, hours_lines=business_hours_lines(p), can_review=can_review)))
 
 @app.get("/p/{slug}/menu", response_class=HTMLResponse)
 def native_menu(request: Request, slug: str):
@@ -1035,7 +1054,7 @@ def native_menu(request: Request, slug: str):
     conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"menu_click",now_iso())); conn.commit()
     product_groups,delivery_zones=menu_rules89(conn,p["id"]); conn.close()
     status=shop_status(p)
-    return attach_food_assets(templates.TemplateResponse("menu.html", context(request, pro=p, products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, shop_status=status)))
+    return attach_cart_assets144(attach_food_assets(templates.TemplateResponse("menu.html", context(request, pro=p, products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, shop_status=status))))
 
 @app.post("/p/{slug}/menu/pedido")
 def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...), save_address: Optional[str]=Form(None), order_channel: str=Form("internal")):

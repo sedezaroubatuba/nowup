@@ -1,16 +1,16 @@
-V143 — Carrinho organizado (opção 2)
-Atualização incremental para a instalação atual com V142.
+V144 — Correção de abertura do carrinho e Continuar comprando
+Pacote incremental para o projeto atual, baseado no app.py enviado e na V143.
 
-Substitua os arquivos deste pacote nas mesmas pastas do projeto e faça o deploy.
-Não exclua outros arquivos do projeto. O pacote não contém banco nem uploads.
-O app acrescenta automaticamente o campo cart_notice, sem apagar lojas ou produtos.
+Copie TODOS os arquivos para as mesmas pastas do projeto: app.py na raiz, conteúdo de static dentro de static e conteúdo de templates dentro de templates. Substitua os correspondentes e mantenha os demais. Faça o deploy. Não contém banco nem uploads.
 
-Cliente: ao adicionar produtos, aparece a barra verde Ver carrinho na parte inferior. Ela abre o resumo com fotos, quantidades, observações dos itens, entrega/retirada, subtotal e total. Continuar pedido abre o formulário existente. O carrinho usa a gravação e as regras de pedido já existentes.
-Lojista: Cardápio > Mensagem no carrinho do cliente. Até 150 caracteres; salvar vazio oculta o aviso. A mensagem é exclusiva da própria loja e é exibida como texto.
+Novo comportamento:
+Ver carrinho abre o resumo por cima do cardápio. O clique é interceptado antes do comportamento antigo de rolar a página. A correção reconhece também o carrinho antigo e o coloca numa janela.
+Continuar comprando fecha o carrinho e retorna à posição da rolagem, mantendo os itens. Quantidades, exclusão e observações usam os controles existentes.
+Continuar pedido segue para o fechamento existente. Aviso do lojista continua limitado a 150 caracteres.
+O app.py garante a inclusão dos arquivos novos nas respostas de cardápio/perfil, mesmo com uma base HTML anterior. Respostas dessas telas não usam cache de página.
+Mantém categories142.js para troca em ciclo das categorias.
 
-Arquivos alterados: app.py; templates/base.html, templates/pro_panel.html, templates/menu.html, templates/profile.html.
-Novos arquivos: static/cart143.css e static/cart143.js.
-Os demais arquivos deste pacote mantêm as alterações da V142.
+Verificado: sintaxe Python/JavaScript; inclusão dos assets em HTML antigo; inclusão sem duplicação; tamanho da resposta; páginas sem cardápio preservadas; migração e autorização do aviso.
+Não foi possível executar navegador neste ambiente. O clique, a aparência no celular e a troca automática de categorias precisam ser conferidos após deploy.
 
-Verificado: sintaxe Python e JavaScript; migração aditiva e idempotente; autorização de profissional; isolamento entre lojas; limite de 150 caracteres; remoção da mensagem.
-Limite da validação: instalação completa e navegador não disponíveis no ambiente. O teste de interação no navegador não foi executado. Conferir após deploy: adicionar/remover último item, quantidade, foto, aviso, entrega/retirada, total, abrir/fechar carrinho, continuar pedido, adicionais, voltar ao cardápio e carrinho salvo. Testar Android, tela estreita e taxa por bairro quando configurada. O fechamento mantém o cálculo e a validação existentes no servidor.
+Teste após publicação: adicionar produto; tocar Ver carrinho; editar quantidade; Continuar comprando; conferir itens e posição; reabrir e Continuar pedido. No cardápio, chegar ao fim dos produtos e continuar o gesto para trocar a categoria. Se ainda aparecer o botão antigo, envie o endereço completo da loja para conferir qual página foi publicada.
