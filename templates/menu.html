@@ -49,21 +49,28 @@ html body.public-profile-area .nu85-note textarea{height:66px!important;min-heig
 <p class="muted">Esta empresa ainda não publicou produtos.</p>
 </div>{% endfor %}</div>
 </main>
-<aside class="menu-cart" id="nu83-cart" tabindex="-1">
+
+</div>
+</div>
+<dialog class="nu143-cart-dialog" data-cart-dialog143 aria-labelledby="nu143-cart-title"><aside class="menu-cart" id="nu83-cart" tabindex="-1">
 <div class="panel">
-<h2>Seu pedido</h2>
+<header class="nu143-cart-header"><h2 id="nu143-cart-title">Seu carrinho</h2><button type="button" data-cart-close143 aria-label="Fechar carrinho">×</button></header>
+<div class="nu143-store">{% if pro.avatar_filename %}<img src="/uploads/{{pro.avatar_filename}}" alt="">{% endif %}<div><b>{{pro.display_name}}</b><small>Confira os itens do seu pedido</small></div></div>
+{% if pro.cart_notice %}<div class="nu143-notice"><b>⚠ Atenção</b><p>{{pro.cart_notice}}</p></div>{% endif %}
 <div data-cart-items>
 <p class="muted">Adicione produtos para começar.</p>
 </div>
+<div class="nu143-fulfillment" data-cart-fulfillment143>
+{% if pro.allows_delivery %}<button type="button" data-receive143="delivery">Entrega</button>{% endif %}
+{% if pro.allows_pickup %}<button type="button" data-receive143="pickup">Retirar no local</button>{% endif %}</div>
+<div class="nu143-summary"><p><span>Subtotal</span><b data-cart-subtotal143>R$ 0,00</b></p><p><span>Entrega</span><b data-cart-fee143>R$ 0,00</b></p></div>
 <div class="cart-total">
 <span>Total</span>
 <b data-cart-total>R$ 0,00</b>
 </div>
 <button class="btn primary full-btn" type="button" data-checkout disabled>{% if shop_status.open %}Continuar pedido{% else %}Pedidos pausados{% endif %}</button>
 </div>
-</aside>
-</div>
-</div>
+</aside></dialog>
 <dialog class="checkout-dialog" data-checkout-dialog>
 <form action="/p/{{pro.slug}}/menu/pedido" method="post" data-order-form>
 <button class="dialog-close" type="button" data-dialog-close>×</button>
@@ -91,11 +98,11 @@ html body.public-profile-area .nu85-note textarea{height:66px!important;min-heig
 <button class="btn primary full-btn">Enviar pedido pelo NowUp</button>
 </form>
 </dialog>
-<footer class="nu83-cart-dock"><button type="button" data-cart-summary><span>🛒 <span data-cart-count>0 itens</span></span><strong>Ver pedido · <span data-dock-total>R$ 0,00</span></strong></button></footer></section>
+<footer class="nu83-cart-dock" hidden><button type="button" data-cart-summary><span>🛒 <span data-cart-count>0 itens</span></span><strong>Ver carrinho · <span data-dock-total>R$ 0,00</span></strong></button></footer></section>
 <script>window.NOWUP_MENU={{ {'deliveryFee':pro.delivery_fee_cents,'minimumOrder':pro.minimum_order_cents,'open':shop_status.open,'storeName':pro.display_name,'customerId':user.id if user and user.role=='customer' else none}|tojson }};</script>
-<script src="/static/menu88.js?v=89">
+<link rel="stylesheet" href="/static/cart143.css?v=143"><script src="/static/menu88.js?v=89">
 </script>
-<script src="/static/customer-address.js?v=69" defer></script><link rel="stylesheet" href="/static/menu-swipe.css?v=126">
+<script src="/static/cart143.js?v=143" defer></script><script src="/static/customer-address.js?v=69" defer></script><link rel="stylesheet" href="/static/menu-swipe.css?v=126">
 <script src="/static/menu-swipe.js?v=126" defer></script>
 <style id="nu-inline-shop-identity">
 html body.public-menu-area .public-profile-hero .profile-cover{display:none!important}
