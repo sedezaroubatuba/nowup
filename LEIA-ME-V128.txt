@@ -1,0 +1,8 @@
+V128 — Logo e ícones da MARCA NowUp em roxo e azul
+
+Substitua os arquivos das pastas templates e static nos mesmos lugares no GitHub. Depois faça seu deploy.
+Atualiza logo no cabeçalho/rodapé, símbolos no ADM, favicon, ícones do app e notificações. Mantém cores dos estados de pedido e ícones das categorias/lojas.
+Arquivos PNG da logo e do símbolo preparados com geração de imagem a partir da marca original; podem ter pequenas variações no desenho.
+Referências de imagens atualizadas para v128 para evitar cache antigo. Ícone do aplicativo já instalado pode demorar a atualizar; feche e reabra, e se necessário reinstale o atalho após publicar.
+Verificado: dimensões/formato PNG, manifesto JSON e sintaxe do service worker. Aparência no navegador ainda precisa de conferência após publicar.
+Não altera app.py nem as telas de pedido da V127.
