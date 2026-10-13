@@ -1,0 +1,25 @@
+/* V137: tema exclusivo do lojista; ADM independente. */
+html body.professional-area{--brand:#7036c6;--brand2:#2275ed;--primary:#7036c6;--accent:#7036c6;background:#fff!important;color:#203047!important;color-scheme:light}
+html body.professional-area :is(.panel,.pro-section,.order-card,.product-card,.formCard){background:#fff!important;background-image:none!important;color:#203047!important;border-color:#dce3eb!important}
+html body.professional-area :is(h1,h2,h3,h4,label,p,.muted){color:#203047}
+html body.professional-area :is(input:not([type=checkbox]):not([type=radio]),select,textarea){background:#fff!important;color:#203047!important;border-color:#c6d1df!important}
+html body.professional-area .btn:not(.danger):not(.orange):not(.whatsapp),html body.professional-area .nowup-back-top,html body.professional-area .edit-chip{background:#7036c6!important;background-image:none!important;color:#fff!important;border-color:#7036c6!important}
+html body.professional-area .btn:not(.danger):not(.orange):not(.whatsapp) :is(span,b,strong,svg){color:#fff!important}
+html body.professional-area .btn:not(.danger):not(.orange):not(.whatsapp):hover{background:#5e2bac!important}
+html body.professional-area :is(.tabs,.pro-product-filters) :is(a,button){background:#f7f8fb!important;color:#203047!important;border-color:#d5deea!important}
+html body.professional-area :is(.tabs,.pro-product-filters) :is(a,button).active{background:#7036c6!important;color:#fff!important;border-color:#7036c6!important}
+html body.professional-area :is(.pro-sidebar,.pro-nav,.pro-menu,.nowup-panel-bottom){background:#7036c6!important;background-image:none!important;color:#fff!important}
+html body.professional-area :is(.pro-sidebar,.pro-nav,.pro-menu,.nowup-panel-bottom) :is(a,button,span,small,b,strong){color:#fff!important}
+html body.professional-area :is(.pro-sidebar,.pro-nav,.pro-menu,.nowup-panel-bottom) a.active{background:#5e2bac!important;color:#fff!important}
+html body.professional-area .completion :is(progress, .bar){accent-color:#7036c6}
+html body.professional-area :focus-visible{outline:2px solid #2275ed;outline-offset:2px}
+/* Mantém cores de ações e avisos com significado operacional. */
+html body.professional-area .nu-confirm{background:#17864b!important;color:#fff!important}
+html body.professional-area .nu-review{background:#e98416!important;color:#fff!important}
+html body.professional-area .nu-refuse,html body.professional-area .btn.danger{background:#c33333!important;color:#fff!important}
+html body.professional-area .v60-top{background:#fff!important;color:#203047!important;border-color:#e0e5ed!important}
+html body.professional-area .v60-top :is(b,small){color:#203047!important}
+html body.professional-area .sales109-tabs a{background:#f7f8fb!important;color:#203047!important;border-color:#d5deea!important}
+html body.professional-area .sales109-tabs a.active,html body.professional-area .sales109-tabs a[aria-selected=true]{background:#7036c6!important;color:#fff!important;border-color:#7036c6!important}
+html body.professional-area .sidebar.pro-sidebar{background:#7036c6!important;background-image:none!important;color:#fff!important}
+html body.professional-area .sidebar.pro-sidebar :is(h2,a,span){color:#fff!important}
