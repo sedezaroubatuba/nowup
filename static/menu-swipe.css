@@ -7,6 +7,13 @@ html body.public-menu-area .nu-swipe-hint {font-size:12px!important;color:#61758
 html body.public-menu-area .menu-products {touch-action:pan-y pinch-zoom}
 html body.public-menu-area .menu-products :is(input,textarea,select,button,a,label,summary) {touch-action:auto}
 .nu-swipe-announcement {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.nu-search-anchor {width:100%;height:0}
+html body.public-menu-area .nu-menu-sticky.nu-search-fixed {position:fixed!important;top:var(--nu-sticky-top,0px)!important;box-sizing:border-box;z-index:90;background:#fff!important}
+@media(max-width:1099px){
+ html body.public-menu-area .nu-search-focused .nu83-cart-dock {display:none!important}
+ html body.public-menu-area .nu-search-focused .nu-menu-sticky h2 {display:none!important}
+ html body.public-menu-area .nu-search-focused .nu-menu-sticky .nu83-search {font-size:12px!important}
+}
 /* Celular conserva os cartões originais, inclusive a ordem de exibição. */
 html body.public-menu-area .nu-desktop-category {display:contents}
 html body.public-menu-area .nu-desktop-category-title {display:none}
