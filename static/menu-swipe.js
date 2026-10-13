@@ -11,7 +11,7 @@
  const buttons=[...nav.querySelectorAll('[data-category-filter]')];
  const desktop=matchMedia('(min-width:1100px)');
  const firstCategory=buttons.find(b=>b.dataset.categoryFilter!=='all');
- if(firstCategory)firstCategory.click();
+
  const announce=document.createElement('span');announce.className='nu-swipe-announcement';announce.setAttribute('role','status');bar.append(announce);
  function reveal(button){
   const left=button.offsetLeft-(nav.clientWidth-button.offsetWidth)/2;
@@ -25,12 +25,12 @@
  let queued=false;
  function offset(){
   queued=false;
-  const header=document.querySelector('header.top,.top');let top=window.visualViewport?.offsetTop||0;
-  if(header){const cs=getComputedStyle(header);if(['fixed','sticky'].includes(cs.position)){const rect=header.getBoundingClientRect();if(rect.top<=top+1)top=Math.max(top,rect.bottom);}}
+  const top=window.visualViewport?.offsetTop||0;
   const rect=anchor.getBoundingClientRect(),end=root.getBoundingClientRect().bottom;
   const focused=document.activeElement===search;
   const fixed=(rect.top<=top||focused)&&end>top+bar.offsetHeight;
   bar.classList.toggle('nu-search-fixed',fixed);
+  document.body.classList.toggle('nu145-browsing',fixed);
   anchor.style.height=fixed?bar.offsetHeight+'px':'0px';
   bar.style.setProperty('--nu-sticky-top',top+'px');
   if(fixed){bar.style.left=rect.left+'px';bar.style.width=rect.width+'px';}
@@ -55,24 +55,4 @@
  search?.addEventListener('input',()=>requestAnimationFrame(showResults));
  search?.addEventListener('blur',schedule);
  if(typeof ResizeObserver!=='undefined')new ResizeObserver(schedule).observe(bar);
- let start=null;
- const controls='input,textarea,select,button,a,label,summary,[contenteditable="true"]';
- products.addEventListener('pointerdown',e=>{if(desktop.matches||!e.isPrimary||e.pointerType==='mouse'||e.target.closest(controls))return;start={id:e.pointerId,x:e.clientX,y:e.clientY};},{passive:true});
- products.addEventListener('pointercancel',()=>start=null,{passive:true});
- function swipe(e){
-  if(!start||e.pointerId!==start.id)return;
-  const dx=e.clientX-start.x,dy=e.clientY-start.y;
-  if(Math.abs(dy)>18&&Math.abs(dy)>Math.abs(dx)){start=null;return;}
-  if(Math.abs(dx)<38||Math.abs(dx)<Math.abs(dy)*1.7)return;
-  start=null;
-  const current=Math.max(0,buttons.findIndex(b=>b.classList.contains('active')));
-  const target=current+(dx<0?1:-1);if(target<0||target>=buttons.length)return;
-  buttons[target].click();
-  // Recomeça a lista da nova categoria mantendo a barra visível.
-  const top=products.getBoundingClientRect().top+window.scrollY-bar.offsetHeight-parseFloat(bar.style.getPropertyValue('--nu-sticky-top')||0)-12;
-  window.scrollTo({top:Math.max(0,top),behavior:'instant'});
- }
- products.addEventListener('pointermove',swipe,{passive:true});
- products.addEventListener('pointerup',e=>{swipe(e);start=null;},{passive:true});
 })();
-
