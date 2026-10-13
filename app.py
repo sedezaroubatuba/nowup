@@ -991,7 +991,7 @@ def profile(request: Request, slug: str):
           WHERE pr.professional_id=?
           AND (NOT EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category))
             OR EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) AND pc.active=1))
-          ORDER BY pr.category,pr.sort_order,pr.id DESC""",(p["id"],)).fetchall()
+          ORDER BY COALESCE((SELECT pc.sort_order FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) LIMIT 1),999999),pr.category,pr.sort_order,pr.id DESC""",(p["id"],)).fetchall()
         menu_categories=[]
         for product in products:
             category=(product["category"] or "Geral").strip() or "Geral"
@@ -1021,7 +1021,7 @@ def native_menu(request: Request, slug: str):
       WHERE pr.professional_id=?
       AND (NOT EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category))
         OR EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) AND pc.active=1))
-      ORDER BY pr.category,pr.sort_order,pr.id DESC""",(p["id"],)).fetchall()
+      ORDER BY COALESCE((SELECT pc.sort_order FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) LIMIT 1),999999),pr.category,pr.sort_order,pr.id DESC""",(p["id"],)).fetchall()
     menu_categories=[]
     for product in products:
         category=(product["category"] or "Geral").strip() or "Geral"
@@ -1546,7 +1546,7 @@ def pro_product_add(request: Request, name: str=Form(...), description: str=Form
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); fn=""
     if photo and photo.filename: fn=save_image(photo)
     created=now_iso(); conn.execute("INSERT INTO products(professional_id,name,description,category,price_cents,image_filename,available,created_at,updated_at,promo_price_cents,featured,max_quantity) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",(p["id"],name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,created,created,price_to_cents(promo_price) if promo_price.strip() else 0,1 if featured else 0,max(1,min(99,max_quantity))))
-    conn.commit(); conn.close(); return RedirectResponse("/painel?ok=produto#cardapio",303)
+    conn.commit(); conn.close(); return RedirectResponse("/painel?ok=produto#novo-produto",303)
 
 @app.post("/painel/cardapio/produtos/{product_id}")
 def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None)):
@@ -2454,3 +2454,23 @@ app.add_event_handler("shutdown", nowup_alerts112.stop)
 # V127: revisão explícita, sem modificar o pedido antes da aprovação.
 import nowup_review127
 nowup_review127.install(globals())
+
+
+# V141: ordenar categorias somente da loja autenticada.
+@app.post("/painel/cardapio/categorias/{category_id}/mover")
+def pro_category_move141(request: Request, category_id: int, direction: str=Form(...)):
+    u=require_user(request,"professional")
+    if direction not in {"up","down"}: raise HTTPException(400,"Direção inválida")
+    conn=db()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        p=require_premium_catalog(conn,u["id"])
+        rows=conn.execute("SELECT id FROM product_categories WHERE professional_id=? ORDER BY sort_order,id",(p["id"],)).fetchall()
+        ids=[r["id"] for r in rows]
+        if category_id not in ids: raise HTTPException(404,"Categoria não encontrada")
+        index=ids.index(category_id); target=index+(-1 if direction=="up" else 1)
+        if 0<=target<len(ids): ids[index],ids[target]=ids[target],ids[index]
+        for position,cid in enumerate(ids): conn.execute("UPDATE product_categories SET sort_order=? WHERE id=? AND professional_id=?",(position,cid,p["id"]))
+        conn.commit()
+    finally: conn.close()
+    return RedirectResponse("/painel?ok=categoria-ordenada#categorias-loja",303)
