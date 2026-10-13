@@ -12,9 +12,12 @@
  const desktop=matchMedia('(min-width:1100px)');
  const firstCategory=buttons.find(b=>b.dataset.categoryFilter!=='all');
  if(firstCategory)firstCategory.click();
- const reduce=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
  const announce=document.createElement('span');announce.className='nu-swipe-announcement';announce.setAttribute('role','status');bar.append(announce);
- function reveal(button){button.scrollIntoView({block:'nearest',inline:'center',behavior:reduce()?'auto':'smooth'});announce.textContent='Categoria: '+button.textContent.trim();}
+ function reveal(button){
+  const left=button.offsetLeft-(nav.clientWidth-button.offsetWidth)/2;
+  nav.scrollTo({left:Math.max(0,left),behavior:'instant'});
+  announce.textContent='Categoria: '+button.textContent.trim();
+ }
  nav.addEventListener('click',e=>{const b=e.target.closest('[data-category-filter]');if(b)reveal(b);});
  // Soma somente cabeçalhos fixos da aplicação, sem usar altura do conteúdo rolável.
  const anchor=document.createElement('div');anchor.className='nu-search-anchor';bar.before(anchor);
@@ -56,15 +59,20 @@
  const controls='input,textarea,select,button,a,label,summary,[contenteditable="true"]';
  products.addEventListener('pointerdown',e=>{if(desktop.matches||!e.isPrimary||e.pointerType==='mouse'||e.target.closest(controls))return;start={id:e.pointerId,x:e.clientX,y:e.clientY};},{passive:true});
  products.addEventListener('pointercancel',()=>start=null,{passive:true});
- products.addEventListener('pointerup',e=>{
+ function swipe(e){
   if(!start||e.pointerId!==start.id)return;
-  const dx=e.clientX-start.x,dy=e.clientY-start.y;start=null;
-  if(Math.abs(dx)<65||Math.abs(dx)<Math.abs(dy)*1.7)return;
+  const dx=e.clientX-start.x,dy=e.clientY-start.y;
+  if(Math.abs(dy)>18&&Math.abs(dy)>Math.abs(dx)){start=null;return;}
+  if(Math.abs(dx)<38||Math.abs(dx)<Math.abs(dy)*1.7)return;
+  start=null;
   const current=Math.max(0,buttons.findIndex(b=>b.classList.contains('active')));
   const target=current+(dx<0?1:-1);if(target<0||target>=buttons.length)return;
   buttons[target].click();
   // Recomeça a lista da nova categoria mantendo a barra visível.
   const top=products.getBoundingClientRect().top+window.scrollY-bar.offsetHeight-parseFloat(bar.style.getPropertyValue('--nu-sticky-top')||0)-12;
-  window.scrollTo({top:Math.max(0,top),behavior:reduce()?'auto':'smooth'});
- },{passive:true});
+  window.scrollTo({top:Math.max(0,top),behavior:'instant'});
+ }
+ products.addEventListener('pointermove',swipe,{passive:true});
+ products.addEventListener('pointerup',e=>{swipe(e);start=null;},{passive:true});
 })();
+
