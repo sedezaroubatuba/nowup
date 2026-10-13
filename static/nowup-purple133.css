@@ -23,3 +23,12 @@ html body dialog[data-checkout-dialog] .btn.primary{background:#7036c6!important
 html body dialog[data-checkout-dialog] [hidden]{display:none!important}
 html body dialog[data-checkout-dialog] label.check{display:flex!important;align-items:center;gap:8px!important}
 html body dialog[data-checkout-dialog]::backdrop{background:#172b4566!important}
+/* V135: somente a categoria ativa recebe destaque roxo. */
+html body.public-menu-area [data-native-menu] .menu-category-nav button[data-category-filter]{background:#f7f8fb!important;background-image:none!important;color:#203047!important;border:1px solid #d5deea!important;box-shadow:none!important}
+html body.public-menu-area [data-native-menu] .menu-category-nav button[data-category-filter].active{background:#7036c6!important;color:#fff!important;border-color:#7036c6!important}
+html body.public-menu-area [data-native-menu] .menu-category-nav button[data-category-filter].active *{color:#fff!important}
+html body.public-menu-area [data-native-menu] .menu-category-nav button[data-category-filter]:focus-visible{outline:2px solid #2275ed;outline-offset:2px}
+/* V136: prioridade sobre os estilos antigos do perfil e do cabeçalho. */
+html body.public-profile-area.public-menu-area [data-native-menu] .nu-menu-sticky .menu-category-nav button[data-category-filter].active,html body.public-menu-area [data-native-menu] .nu-menu-sticky .menu-category-nav button[data-category-filter].active{background:#7036c6!important;background-color:#7036c6!important;background-image:none!important;color:#fff!important;border:1px solid #7036c6!important;box-shadow:none!important}
+html body header.top .container.nav button.mobile-menu[data-nowup-menu-open]{background:#7036c6!important;background-color:#7036c6!important;background-image:none!important;color:#fff!important;border:1px solid #7036c6!important}
+html body header.top .container.nav button.mobile-menu[data-nowup-menu-open] *{color:#fff!important;stroke:currentColor!important}
