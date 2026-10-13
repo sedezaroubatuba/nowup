@@ -95,5 +95,17 @@ html body.public-profile-area .nu85-note textarea{height:66px!important;min-heig
 <script>window.NOWUP_MENU={{ {'deliveryFee':pro.delivery_fee_cents,'minimumOrder':pro.minimum_order_cents,'open':shop_status.open,'storeName':pro.display_name,'customerId':user.id if user and user.role=='customer' else none}|tojson }};</script>
 <script src="/static/menu88.js?v=89">
 </script>
-<script src="/static/customer-address.js?v=69" defer></script><link rel="stylesheet" href="/static/menu-swipe.css?v=123">
-<script src="/static/menu-swipe.js?v=123" defer></script>{% endblock %}
+<script src="/static/customer-address.js?v=69" defer></script><link rel="stylesheet" href="/static/menu-swipe.css?v=124">
+<script src="/static/menu-swipe.js?v=124" defer></script>
+<style id="nu-centered-shop-identity">
+html body.public-menu-area .public-profile-hero .profile-cover{display:none!important}
+html body.public-menu-area .public-profile-hero .profile-summary{display:flex!important;flex-direction:column!important;align-items:center!important;gap:8px!important;padding:16px!important;text-align:center!important}
+html body.public-menu-area .public-profile-hero .profile-avatar{width:80px!important;height:80px!important;min-width:80px!important;margin:0 auto!important;flex:none;border-radius:50%;overflow:hidden}
+html body.public-menu-area .public-profile-hero .profile-avatar img{width:100%;height:100%;object-fit:contain;background:#fff}
+html body.public-menu-area .public-profile-hero .profile-heading{text-align:center!important;width:100%;min-width:0}
+html body.public-menu-area .public-profile-hero .profile-heading h1{font-size:20px!important;margin:0 0 5px!important}
+html body.public-menu-area .public-profile-hero .profile-status-badges{display:flex;justify-content:center!important;flex-wrap:wrap}
+html body.public-menu-area .public-profile-hero .profile-primary-actions{grid-column:auto!important;max-width:100%}
+html body.public-menu-area .public-profile-hero .profile-location{margin:4px 0!important}
+</style>
+{% endblock %}

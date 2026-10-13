@@ -50,7 +50,7 @@ body.public-profile-area :focus-visible {outline:3px solid #08a5d0;outline-offse
 <div class="stars">{% if pro.review_count %}★ {{pro.rating}} <span class="muted">({{pro.review_count}} {{'avaliação' if pro.review_count == 1 else 'avaliações'}})</span>{% else %}<span class="muted">☆ Sem avaliações</span>{% endif %}</div>
 </div>
 <div class="profile-cta profile-primary-actions">
-{% if pro.plan_active == 'vitrine' and pro.contact_link %}<a class="btn primary" href="{{pro.contact_link}}" target="_blank" rel="noopener">{{'Abrir link da empresa' if pro.contact_target=='external' else 'Conversar pelo WhatsApp'}}</a>{% elif pro.plan_active in ['cardapio','ambos'] and not (pro.is_premium and pro.offer_mode in ['menu','catalog']) %}<a class="btn primary" href="/p/{{pro.slug}}/menu">Ver {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}} e pedir</a>{% endif %}
+{% if pro.plan_active == 'vitrine' and pro.contact_link %}<a class="btn primary" href="{{pro.contact_link}}" target="_blank" rel="noopener">{{'Abrir link da empresa' if pro.contact_target=='external' else 'Conversar pelo WhatsApp'}}</a>{% elif pro.plan_active in ['cardapio','ambos'] %}<a class="btn primary" href="/p/{{pro.slug}}/menu">Ver {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}} e pedir</a>{% endif %}
 {% if pro.address and not pro.hide_address %}<a class="btn soft" href="https://www.google.com/maps/search/?api=1&query={{pro.address|urlencode}}" target="_blank" rel="noopener">📍 Como chegar</a>{% else %}<span class="btn soft disabled">📍 Como chegar</span>{% endif %}
 
 
@@ -189,6 +189,18 @@ body.public-profile-area :focus-visible {outline:3px solid #08a5d0;outline-offse
 </aside>
 </div>
 </section>
-<link rel="stylesheet" href="/static/menu-swipe.css?v=123">
-<script src="/static/menu-swipe.js?v=123" defer></script>{% endblock %}
+<link rel="stylesheet" href="/static/menu-swipe.css?v=124">
+<script src="/static/menu-swipe.js?v=124" defer></script>
+<style id="nu-centered-shop-identity">
+html body.public-menu-area .public-profile-hero .profile-cover{display:none!important}
+html body.public-menu-area .public-profile-hero .profile-summary{display:flex!important;flex-direction:column!important;align-items:center!important;gap:8px!important;padding:16px!important;text-align:center!important}
+html body.public-menu-area .public-profile-hero .profile-avatar{width:80px!important;height:80px!important;min-width:80px!important;margin:0 auto!important;flex:none;border-radius:50%;overflow:hidden}
+html body.public-menu-area .public-profile-hero .profile-avatar img{width:100%;height:100%;object-fit:contain;background:#fff}
+html body.public-menu-area .public-profile-hero .profile-heading{text-align:center!important;width:100%;min-width:0}
+html body.public-menu-area .public-profile-hero .profile-heading h1{font-size:20px!important;margin:0 0 5px!important}
+html body.public-menu-area .public-profile-hero .profile-status-badges{display:flex;justify-content:center!important;flex-wrap:wrap}
+html body.public-menu-area .public-profile-hero .profile-primary-actions{grid-column:auto!important;max-width:100%}
+html body.public-menu-area .public-profile-hero .profile-location{margin:4px 0!important}
+</style>
+{% endblock %}
 
