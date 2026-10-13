@@ -1,1 +1,7 @@
 html body .brand img.nowup-official-logo{width:150px!important;height:150px!important;max-width:none!important;object-fit:contain!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;filter:none!important}html body .brand{gap:0!important}html body .footerbrand img.nowup-official-logo{width:170px!important;height:170px!important}html body .nowup-official-icon{width:44px!important;height:44px!important;object-fit:contain!important;border-radius:0!important;background:transparent!important;filter:none!important}.admin-brand{align-items:center}@media(max-width:600px){html body .top .brand img.nowup-official-logo{width:108px!important;height:108px!important}html body .top .brand{flex-shrink:0!important}}
+
+/* V132: somente a marca horizontal. */
+html body .brand img.nowup-official-logo{width:190px!important;height:auto!important;max-width:100%!important;aspect-ratio:3 / 1;object-fit:contain!important}
+html body .footerbrand img.nowup-official-logo{width:200px!important;height:auto!important}
+@media(max-width:600px){html body .top .brand img.nowup-official-logo{width:155px!important;height:auto!important}}
+
