@@ -1,6 +1,6 @@
 self.addEventListener('push',event=>{
   let data={};try{data=event.data.json();}catch(_){}
-  event.waitUntil(self.registration.showNotification(data.title||'NowUp',{body:data.body||'Abra seus pedidos para conferir.',tag:data.tag||'nowup',renotify:true,icon:'/static/nowup-push-192.png?v=100',badge:'/static/nowup-icon100.png?v=100',vibrate:[250,100,250],data:{url:data.url||'/painel'}}));
+  event.waitUntil(self.registration.showNotification(data.title||'NowUp',{body:data.body||'Abra seus pedidos para conferir.',tag:data.tag||'nowup',renotify:true,icon:'/static/nowup-push-192.png?v=128',badge:'/static/nowup-icon100.png?v=128',vibrate:[250,100,250],data:{url:data.url||'/painel'}}));
 });
 self.addEventListener('notificationclick',event=>{
   event.notification.close();let url;
