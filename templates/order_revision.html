@@ -1,0 +1,25 @@
+{% set revision=order_revision(order.id) %}
+<section class="nu-revision" data-review-box>
+{% if revision and revision.state=='pending' and order.status=='awaiting_approval' %}
+<h3>Aguardando aprovação do cliente</h3><p>O pedido original permanece válido até a aprovação.</p>
+{% if revision.message %}<p>{{revision.message}}</p>{% endif %}
+<h4>Pedido proposto</h4>{% for item in revision['items'] %}<p>{{item.quantity}} × {{item.product_name}} — R$ {{'%.2f'|format(item.quantity*item.unit_price_cents/100)|replace('.',',')}}</p>{% endfor %}
+<p>Entrega: R$ {{'%.2f'|format(order.delivery_fee_cents/100)|replace('.',',')}}</p><strong>Novo total: R$ {{'%.2f'|format(revision.total_cents/100)|replace('.',',')}}</strong>
+{% if review_customer %}<form action="/pedido/{{order.tracking_token}}/revisao/{{revision.id}}" method="post" class="nu-review-actions"><button name="decision" value="accept" class="nu-confirm">Aceitar alteração</button><button name="decision" value="decline" class="nu-review">Não aceitar / pedir outra opção</button><button name="decision" value="cancel" class="nu-refuse">Cancelar pedido</button></form>{% endif %}
+{% elif not review_customer and order.status in ['new','reviewing','revision_approved'] %}
+<div class="nu-review-actions">
+<form action="/painel/pedidos/{{order.id}}/status" method="post"><button name="status" value="reviewing" class="nu-review">Revisar pedido</button></form>
+<form action="/painel/pedidos/{{order.id}}/status" method="post"><button name="status" value="confirmed" class="nu-confirm">Confirmar pedido</button></form>
+<form action="/painel/pedidos/{{order.id}}/status" method="post" data-cancel-form><input type="hidden" name="status" value="rejected"><input type="hidden" name="reason"><button class="nu-refuse">Recusar pedido</button></form></div>
+{% if order.status=='reviewing' %}
+<form action="/painel/pedidos/{{order.id}}/revisao" method="post" data-review-form data-fee="{{order.delivery_fee_cents}}">
+<h3>Conferir itens e oferecer substitutos</h3><p>Desmarque o que faltou. Os adicionais dos itens mantidos continuam incluídos no preço.</p>
+{% for item in order_items_by_order.get(order.id,[]) %}<div class="nu-review-item"><label><input type="checkbox" name="keep" value="{{item.id}}" checked data-price="{{item.unit_price_cents}}"> {{item.product_name}} <small>R$ {{'%.2f'|format(item.unit_price_cents/100)|replace('.',',')}} cada</small></label><label>Quantidade<input type="number" min="1" max="99" name="qty_{{item.id}}" value="{{item.quantity}}"></label></div>{% endfor %}
+<div data-substitutes><div class="nu-review-item" data-substitute><label>Oferecer outro produto<select name="product_id"><option value="">Sem substituição</option>{% for product in products if product.available %}<option value="{{product.id}}" data-price="{{product.promo_price_cents if product.promo_price_cents>0 else product.price_cents}}">{{product.name}} — R$ {{'%.2f'|format((product.promo_price_cents if product.promo_price_cents>0 else product.price_cents)/100)|replace('.',',')}}</option>{% endfor %}</select></label><label>Quantidade<input type="number" name="add_quantity" min="1" max="99" value="1"></label></div></div>
+<button type="button" class="btn soft" data-more-substitute>Oferecer mais um produto</button>
+<label>Mensagem para o cliente<input name="message" maxlength="500" placeholder="Posso colocar duas Bud Zero no lugar?"></label>
+<p>Entrega: R$ {{'%.2f'|format(order.delivery_fee_cents/100)|replace('.',',')}}</p><strong data-review-total></strong><p>A alteração só será aplicada com a aprovação do cliente.</p><button class="nu-review" type="submit">Enviar proposta ao cliente</button>
+</form>{% endif %}
+{% elif review_customer and order.status=='reviewing' %}<p>A loja está conferindo a disponibilidade dos seus itens. Aguarde a confirmação.</p>
+{% elif review_customer and order.status=='revision_approved' %}<p>Você aprovou a alteração. Aguarde a confirmação da loja.</p>{% endif %}
+</section>
