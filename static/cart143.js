@@ -1,0 +1,60 @@
+(() => {
+  'use strict';
+  const root=document.querySelector('[data-native-menu]');
+  const cart=root?.querySelector('[data-cart-dialog143]');
+  const items=cart?.querySelector('[data-cart-items]');
+  const dock=root?.querySelector('.nu83-cart-dock');
+  if(!cart||!items||!dock)return;
+  const checkout=root.querySelector('[data-checkout-dialog]');
+  const receive=checkout?.querySelector('[data-fulfillment]');
+  const total=cart.querySelector('[data-cart-total]');
+  const sub=cart.querySelector('[data-cart-subtotal143]');
+  const fee=cart.querySelector('[data-cart-fee143]');
+  const money=n=>(n/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const cents=s=>Math.round(Number(String(s||'').replace(/[^\d,.-]/g,'').replace(/\./g,'').replace(',','.'))*100)||0;
+  let scheduled=false;
+  function refresh(){
+    scheduled=false;
+    items.querySelectorAll('.cart-item').forEach(row=>{
+      if(row.querySelector('.nu143-product-thumb'))return;
+      const control=row.querySelector('[data-minus], [data-cart-quantity], [data-remove]');
+      const id=(control?.dataset.minus||control?.dataset.cartQuantity||control?.dataset.remove||'').split(':')[0];
+      const product=[...root.querySelectorAll('[data-product]')].find(p=>p.dataset.id===id);
+      const photo=product?.querySelector('img');
+      const thumb=document.createElement(photo?'img':'span');
+      thumb.className='nu143-product-thumb';
+      if(photo){thumb.src=photo.src;thumb.alt='';thumb.addEventListener('error',()=>{thumb.replaceWith(Object.assign(document.createElement('span'),{className:'nu143-product-thumb',textContent:'🍽'}));},{once:true});}
+      else{thumb.textContent='🍽';thumb.setAttribute('aria-hidden','true');}
+      row.prepend(thumb);
+      const name=row.querySelector('b')?.textContent||'produto';
+      row.querySelector('[data-minus]')?.setAttribute('aria-label','Diminuir quantidade de '+name);
+      row.querySelector('[data-plus]')?.setAttribute('aria-label','Aumentar quantidade de '+name);
+      row.querySelector('[data-cart-quantity]')?.setAttribute('aria-label','Quantidade de '+name);
+    });
+    const hasItems=!!items.querySelector('.cart-item');
+    dock.hidden=!hasItems;
+    document.body.classList.toggle('nu143-has-cart',hasItems);
+    const subtotal=cents(root.querySelector('[data-dock-total]')?.textContent);
+    const grand=cents(checkout?.querySelector('[data-dialog-total]')?.textContent);
+    sub.textContent=money(subtotal);fee.textContent=money(Math.max(0,grand-subtotal));total.textContent=money(grand);
+    root.querySelectorAll('[data-receive143]').forEach(b=>{const active=b.dataset.receive143===receive?.value;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
+  }
+  const schedule=()=>{if(!scheduled){scheduled=true;requestAnimationFrame(refresh);}};
+  new MutationObserver(schedule).observe(items,{childList:true,subtree:true});
+  const nativeTotal=checkout?.querySelector('[data-dialog-total]');
+  if(nativeTotal)new MutationObserver(schedule).observe(nativeTotal,{childList:true,characterData:true,subtree:true});
+  dock.addEventListener('click',event=>{
+    if(!event.target.closest('[data-cart-summary]'))return;
+    event.preventDefault();event.stopImmediatePropagation();refresh();
+    if(!cart.open)cart.showModal();
+  },true);
+  cart.querySelector('[data-cart-close143]')?.addEventListener('click',()=>cart.close());
+  cart.addEventListener('click',event=>{
+    const button=event.target.closest('[data-receive143]');
+    if(button&&receive){receive.value=button.dataset.receive143;receive.dispatchEvent(new Event('change',{bubbles:true}));schedule();}
+    if(event.target===cart){const bounds=cart.getBoundingClientRect();if(event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom)cart.close();}
+  });
+  cart.querySelector('[data-checkout]')?.addEventListener('click',()=>{if(cart.open)cart.close();},true);
+  window.addEventListener('nowup-cart-changed',schedule);
+  refresh();
+})();
