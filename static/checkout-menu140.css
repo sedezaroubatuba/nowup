@@ -1,0 +1,15 @@
+/* V140: prioridade sobre o tema escuro e as cores conflitantes do menu. */
+html body.public-profile-area.public-menu-area .native-menu dialog.checkout-dialog[data-checkout-dialog] form[data-order-form],html body.public-menu-area .native-menu dialog.checkout-dialog[data-checkout-dialog] form[data-order-form]{--menu-card:#fff;background:#fff!important;background-image:none!important;color:#203047!important;border:0!important;padding:0!important;min-width:0;gap:14px!important}
+html body.public-menu-area .native-menu dialog.checkout-dialog[data-checkout-dialog]{background:#fff!important;color:#203047!important;width:calc(100% - 24px)!important;max-width:560px!important;max-height:85dvh!important;overflow:auto!important;padding:20px!important;box-sizing:border-box!important}
+html body.public-menu-area .native-menu dialog.checkout-dialog[data-checkout-dialog] form[data-order-form] :is(h2,label,p,small,span,b,strong){color:#203047!important;text-shadow:none!important}
+html body.public-menu-area .native-menu dialog.checkout-dialog[data-checkout-dialog] form[data-order-form] :is(input,textarea,select){background:#fff!important;color:#203047!important;border:1px solid #c5cfdd!important;border-radius:10px!important;box-sizing:border-box;width:100%;min-height:44px;font-size:16px;color-scheme:light}
+html body.public-menu-area .native-menu dialog.checkout-dialog[data-checkout-dialog] form[data-order-form] :is(button.btn.primary,.dialog-close){background:#7036c6!important;background-image:none!important;color:#fff!important;border-color:#7036c6!important}
+html body.public-menu-area .native-menu dialog.checkout-dialog[data-checkout-dialog] form[data-order-form] [hidden]{display:none!important}
+html body dialog#nowup-navigation.nowup-navigation,html body dialog#nowup-navigation.nowup-navigation :is(.nowup-navigation-header,.nowup-navigation-links,.nowup-navigation-city){background:#fff!important;background-image:none!important;color:#203047!important}
+html body dialog#nowup-navigation.nowup-navigation :is(#nowup-navigation-title,label){color:#203047!important}
+html body dialog#nowup-navigation.nowup-navigation .nowup-navigation-header small{color:#627388!important}
+html body dialog#nowup-navigation.nowup-navigation .nowup-navigation-links a{background:#7036c6!important;background-image:none!important;color:#fff!important;border:1px solid #7036c6!important;margin:4px 0!important}
+html body dialog#nowup-navigation.nowup-navigation .nowup-navigation-links a *{color:#fff!important;opacity:1!important}
+html body dialog#nowup-navigation.nowup-navigation :is(.nowup-navigation-city button,[data-nowup-menu-close]){background:#7036c6!important;color:#fff!important}
+html body dialog#nowup-navigation.nowup-navigation .nowup-navigation-city input{background:#fff!important;color:#203047!important}
+html body dialog#nowup-navigation.nowup-navigation .nowup-navigation-logout button{background:#fff3f4!important;color:#a52239!important}
