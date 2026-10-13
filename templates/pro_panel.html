@@ -139,9 +139,10 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <label class="check"><input type="checkbox" name="active" value="1" {% if category.active %}checked{% endif %}> Pública</label>
 <button class="btn soft tiny">Salvar</button>
 </form>
-<form action="/painel/cardapio/categorias/{{category.id}}/mover" method="post" class="nu-category-move141"><button class="btn primary" name="direction" value="up" aria-label="Mover {{category.name}} para cima" {% if loop.first %}disabled{% endif %}>↑</button><button class="btn primary" name="direction" value="down" aria-label="Mover {{category.name}} para baixo" {% if loop.last %}disabled{% endif %}>↓</button></form>
+<label class="nu-position142">Posição<input class="input" type="number" min="1" max="{{product_categories|length}}" value="{{loop.index}}" data-category-position142="{{category.id}}" aria-label="Posição de {{category.name}}"></label>
 <form action="/painel/cardapio/categorias/{{category.id}}/excluir" method="post" data-confirm-delete><button class="btn danger tiny">Excluir</button></form>
 </div>{% endfor %}</div>
+<p class="muted">Numere de 1 a {{product_categories|length}} sem repetir posições e salve todas de uma vez.</p><button type="button" class="btn primary" data-save-order142>Salvar ordem</button><p data-order-status142 role="status" aria-live="polite"></p>
 </details>
 <details class="product-create" id="novo-produto" {% if not products %}open{% endif %}>
 <summary class="btn primary" role="button">＋ Adicionar produto</summary>
