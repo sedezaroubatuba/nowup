@@ -1,0 +1,15 @@
+NOWUP V127 — Revisão e aprovação de pedidos
+
+Substituir app.py na raiz e adicionar nowup_review127.py na raiz.
+Substituir templates/pro_panel.html e templates/order_tracking.html.
+Adicionar templates/order_revision.html.
+Adicionar static/order-review127.js e static/order-review127.css.
+Depois faça seu deploy. Nenhum deploy foi realizado aqui.
+
+Fluxo: recebido > revisar (laranja) > conferir itens e quantidades, desmarcar indisponíveis, oferecer produtos do catálogo > enviar proposta > cliente aceita, recusa ou cancela > lojista confirma (verde). Recusar pedido em vermelho com motivo. Sem alteração, confirmar direto.
+O original fica preservado até a aprovação. Preço dos itens mantidos inclui adicionais originais; substitutos usam preço atual/promoção do catálogo, sem adicionais novos. Entrega mantém o valor do pedido original. Totais em centavos calculados no servidor.
+Chave Pix cadastrada no painel aparece na notinha confirmada, na tela do cliente e na impressão do lojista. QR Code e confirmação automática de pagamento não fazem parte deste pacote.
+Requer cliente cadastrado para responder; cardápios externos de WhatsApp não usam este fluxo.
+Banco: tabela order_revisions criada automaticamente no início, sem apagar pedidos anteriores.
+Verificações: sintaxe Python/JS e testes isolados com SQLite de proposta, recusa, aprovação, preservação dos adicionais, taxa, duplicidade e produto de outra loja. Servidor completo, navegador, push real e impressão ainda precisam de teste após publicar.
+Teste recomendado: pedido com 2 itens, revisar, retirar 1, oferecer 2 substitutos, conferir total e notificação no cliente, recusar, reenviar, aceitar, confirmar e conferir notinha/Pix.

@@ -875,7 +875,7 @@ def delivery_quote89(conn, pro, neighborhood):
 def merchant_overview89(conn, pro):
     lower,upper=order_day_bounds(datetime.now(SAO_PAULO_TZ).date())
     today=conn.execute("SELECT status,total_cents FROM orders WHERE professional_id=? AND created_at>=? AND created_at<?",(pro["id"],lower,upper)).fetchall()
-    active=[dict(row) for row in conn.execute("SELECT id,order_code,customer_name,status,created_at,fulfillment_type FROM orders WHERE professional_id=? AND status IN ('new','confirmed','preparing','ready','out_for_delivery') ORDER BY id",(pro["id"],))]
+    active=[dict(row) for row in conn.execute("SELECT id,order_code,customer_name,status,created_at,fulfillment_type FROM orders WHERE professional_id=? AND status IN ('new','reviewing','awaiting_approval','revision_approved','confirmed','preparing','ready','out_for_delivery') ORDER BY id",(pro["id"],))]
     now=datetime.now(timezone.utc)
     for order in active:
         try: age=max(0,int((now-datetime.fromisoformat(order["created_at"])).total_seconds()/60))
@@ -1116,7 +1116,7 @@ ORDER_STATUS_LABELS={
 }
 
 def tracked_order(conn, token: str):
-    return conn.execute("""SELECT o.*,p.display_name,p.slug,p.whatsapp,p.prep_minutes
+    return conn.execute("""SELECT o.*,p.display_name,p.slug,p.whatsapp,p.prep_minutes,p.pix_key
       FROM orders o JOIN professionals p ON p.id=o.professional_id
       WHERE o.tracking_token=?""",(token,)).fetchone()
 
@@ -1632,14 +1632,20 @@ def pro_product_delete(request: Request, product_id: int):
 @app.post("/painel/pedidos/{order_id}/status")
 def pro_order_status(request: Request, order_id: int, status: str=Form(...), reason: str=Form("")):
     u=require_user(request,"professional")
-    allowed={"new","confirmed","preparing","ready","out_for_delivery","completed","cancelled","rejected"}
+    allowed={"reviewing","new","confirmed","preparing","ready","out_for_delivery","completed","cancelled","rejected"}
     if status not in allowed: raise HTTPException(400,"Status inválido")
     conn=db(); conn.execute("BEGIN IMMEDIATE"); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
     order=conn.execute("SELECT id,status,customer_id,tracking_token FROM orders WHERE id=? AND professional_id=?",(order_id,p["id"])).fetchone()
     if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
+    if order["status"]=='awaiting_approval' and status not in {'cancelled','rejected'}:
+        conn.close(); raise HTTPException(409,"Aguarde a aprovação do cliente")
+    if status=='reviewing' and order["status"] not in {'new','reviewing','revision_approved'}:
+        conn.close(); raise HTTPException(409,"Este pedido já foi confirmado")
+    if order["status"] in {'new','reviewing','revision_approved'} and status not in {'reviewing','confirmed','cancelled','rejected'}:
+        conn.close(); raise HTTPException(409,"Confirme o pedido antes de iniciar o preparo")
     if status==order["status"]:
         conn.rollback(); conn.close(); return RedirectResponse(f"/painel?abrir_pedido={order_id}#pedido-{order_id}",303)
-    rank={"new":0,"confirmed":1,"preparing":2,"ready":3,"out_for_delivery":4,"completed":5}
+    rank={"reviewing":0,"revision_approved":0,"new":0,"confirmed":1,"preparing":2,"ready":3,"out_for_delivery":4,"completed":5}
     if order["status"] in {"completed","cancelled","rejected"} or (status in rank and rank[status]<rank.get(order["status"],0)):
         conn.rollback(); conn.close(); return RedirectResponse(f"/painel?erro=pedido-encerrado&abrir_pedido={order_id}#pedido-{order_id}",303)
     reason=reason.strip()[:300]
@@ -1648,7 +1654,7 @@ def pro_order_status(request: Request, order_id: int, status: str=Form(...), rea
     conn.execute("UPDATE orders SET status=?,cancellation_reason=?,updated_at=? WHERE id=?",(status,reason if status in {"cancelled","rejected"} else "",now_iso(),order_id))
     conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)",(order_id,status,now_iso()))
     if order["customer_id"] and status != order["status"]:
-        label=ORDER_STATUS_LABELS.get(status,status); message=f"Seu pedido foi atualizado para: {label}."
+        label=ORDER_STATUS_LABELS.get(status,status); message=("A loja está conferindo a disponibilidade dos seus itens. Aguarde a confirmação." if status=="reviewing" else f"Seu pedido foi atualizado para: {label}.")
         if reason: message += f" Motivo: {reason}"
         notification=conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(order["customer_id"],"Atualização do pedido",message,f"/pedido/{order['tracking_token']}",now_iso()))
         nowup_alerts112.enqueue(conn,order["customer_id"],notification.lastrowid,{"title":"Atualização do pedido","body":message,"url":f"/pedido/{order['tracking_token']}","tag":f"nowup-status-{order_id}"})
@@ -1660,7 +1666,7 @@ def pro_order_edit(request: Request, order_id: int, customer_name: str=Form(...)
     u=require_user(request,"professional"); conn=db(); conn.execute("BEGIN IMMEDIATE"); p=conn.execute("SELECT id,plan_active,offer_mode FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
     order=conn.execute("SELECT id,status FROM orders WHERE id=? AND professional_id=?",(order_id,p["id"])).fetchone()
     if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
-    if order["status"] in {"completed","cancelled","rejected"}:
+    if order["status"] in {"awaiting_approval","reviewing","revision_approved","completed","cancelled","rejected"}:
         conn.rollback();conn.close();return RedirectResponse(f"/painel?erro=pedido-encerrado&abrir_pedido={order_id}#pedido-{order_id}",303)
     fulfillment_type="delivery" if fulfillment_type=="delivery" else "pickup"
     if payment_method not in {"pix","cash","credit","debit","on_delivery"}: payment_method="pix"
@@ -1669,20 +1675,8 @@ def pro_order_edit(request: Request, order_id: int, customer_name: str=Form(...)
 
 @app.post("/painel/pedidos/{order_id}/itens/{item_id}")
 def pro_order_item_edit(request: Request, order_id: int, item_id: int, quantity: int=Form(1), notes: str=Form(""), remove: Optional[str]=Form(None)):
-    u=require_user(request,"professional"); conn=db(); conn.execute("BEGIN IMMEDIATE"); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
-    item=conn.execute("SELECT oi.id,o.status FROM order_items oi JOIN orders o ON o.id=oi.order_id WHERE oi.id=? AND oi.order_id=? AND o.professional_id=?",(item_id,order_id,p["id"])).fetchone()
-    if not item: conn.close(); raise HTTPException(404,"Item não encontrado")
-    if item["status"] in {"completed","cancelled","rejected"}:
-        conn.rollback();conn.close();return RedirectResponse(f"/painel?erro=pedido-encerrado&abrir_pedido={order_id}#pedido-{order_id}",303)
-    if remove and conn.execute("SELECT COUNT(*) FROM order_items WHERE order_id=?",(order_id,)).fetchone()[0]<=1:
-        conn.rollback();conn.close();return RedirectResponse(f"/painel?erro=ultimo-item&abrir_pedido={order_id}#pedido-{order_id}",303)
-    if remove: conn.execute("DELETE FROM order_items WHERE id=?",(item_id,))
-    else: conn.execute("UPDATE order_items SET quantity=?,notes=? WHERE id=?",(max(1,min(99,quantity)),notes.strip()[:300],item_id))
-    subtotal=conn.execute("SELECT COALESCE(SUM(quantity*unit_price_cents),0) FROM order_items WHERE order_id=?",(order_id,)).fetchone()[0]
-    delivery_fee=conn.execute("SELECT delivery_fee_cents FROM orders WHERE id=?",(order_id,)).fetchone()[0]
-    conn.execute("UPDATE orders SET subtotal_cents=?,total_cents=?,updated_at=? WHERE id=?",(subtotal,subtotal+delivery_fee,now_iso(),order_id)); conn.commit(); conn.close()
-    return RedirectResponse(f"/painel?ok=item-editado&abrir_pedido={order_id}#pedido-{order_id}",303)
-
+    require_user(request,"professional")
+    raise HTTPException(409,"Use Revisar pedido para propor alterações com aprovação do cliente")
 @app.post("/painel/horarios")
 async def pro_business_hours(request: Request):
     u=require_user(request,"professional"); form=await request.form(); schedule={}
@@ -2455,3 +2449,8 @@ nowup_alerts112.configure(db, require_user)
 app.include_router(nowup_alerts112.router)
 app.add_event_handler("startup", nowup_alerts112.start)
 app.add_event_handler("shutdown", nowup_alerts112.stop)
+
+
+# V127: revisão explícita, sem modificar o pedido antes da aprovação.
+import nowup_review127
+nowup_review127.install(globals())
