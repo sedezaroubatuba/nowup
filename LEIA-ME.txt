@@ -1,6 +1,8 @@
-V141 — Categorias compactas e ordenadas; cadastro contínuo
-Substitua app.py na raiz, templates/base.html, templates/pro_panel.html e static/pro-purple137.css. Adicione/substitua static/pro-next138.js. Depois faça seu deploy.
-Categorias recolhidas por padrão, lista compacta quando aberta. Setas ↑ ↓ mudam a ordem da loja e também no cardápio público.
-Salvar produto retorna para novo-produto, reabre formulário, preserva categoria e prepara próximo cadastro.
-Mantém campos existentes. Fotos e preço do próximo produto são novos.
-Sintaxe Python/JS conferida, ordenação isolada testada incluindo posições empatadas e preservação de outra loja. Conferir cadastro, setas e telas no navegador após publicar.
+V142 — Rolagem em ciclo e ordem das categorias em lote
+Pacote incremental para a instalação atual com V141. Substitua os arquivos nas mesmas pastas do projeto e faça o deploy. Não substitua o banco de dados nem uploads.
+Novo arquivo: static/categories142.js. O base.html carrega o novo script.
+Lojista: numere as posições de 1 até o total, sem repetir, e clique em Salvar ordem. Todas são gravadas em uma transação, sem recarregar a tela. Erros aparecem junto ao botão.
+Cliente: ao continuar descendo no fim dos produtos, passa à próxima categoria; após a última volta à primeira. Deslizar as categorias para o lado muda a seleção em ciclo. Categorias sem produtos são puladas. Com busca preenchida ou diálogo aberto a troca automática fica suspensa. Carrinho e produtos não são clonados.
+Validado: sintaxe Python/JavaScript, gravação em lote, isolamento entre lojas e rejeição de posições inválidas/listas desatualizadas.
+Validação pendente na instalação completa: gestos no Android, compatibilidade com menu-category-rows.js existente, carrinho e checkout. O pacote anterior não inclui todos os módulos para iniciar o app localmente.
+Teste após deploy: selecione uma categoria, desça até o fim e continue o gesto; confira a próxima categoria. Repita na última. Deslize à esquerda/direita e confirme o ciclo. Organize várias posições, salve uma vez, reabra o painel/cardápio e confira a persistência.

@@ -2474,3 +2474,24 @@ def pro_category_move141(request: Request, category_id: int, direction: str=Form
         conn.commit()
     finally: conn.close()
     return RedirectResponse("/painel?ok=categoria-ordenada#categorias-loja",303)
+
+
+# V142: uma transação para todas as posições da loja autenticada.
+@app.post("/painel/cardapio/ordem-categorias")
+def pro_category_order142(request: Request, order_json: str=Form(...)):
+    u=require_user(request,"professional")
+    try: ids=json.loads(order_json)
+    except (ValueError,TypeError): raise HTTPException(400,"Ordem inválida")
+    if not isinstance(ids,list) or any(type(cid) is not int for cid in ids) or len(ids)!=len(set(ids)):
+        raise HTTPException(400,"Ordem inválida")
+    conn=db()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        p=require_premium_catalog(conn,u["id"])
+        current=[r["id"] for r in conn.execute("SELECT id FROM product_categories WHERE professional_id=?",(p["id"],)).fetchall()]
+        if set(ids)!=set(current): raise HTTPException(409,"As categorias mudaram. Atualize o painel e tente novamente.")
+        for position,cid in enumerate(ids):
+            conn.execute("UPDATE product_categories SET sort_order=? WHERE id=? AND professional_id=?",(position,cid,p["id"]))
+        conn.commit()
+    finally: conn.close()
+    return JSONResponse({"ok":True,"ids":ids})
