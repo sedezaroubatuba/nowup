@@ -554,6 +554,7 @@ def init_db():
     ensure_column(conn, "professionals", "opening_hours", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "business_hours", "TEXT NOT NULL DEFAULT '{}'")
     ensure_column(conn, "professionals", "business_status", "TEXT NOT NULL DEFAULT 'open'")
+    ensure_column(conn, "professionals", "cart_notice", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "professionals", "instagram_url", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "facebook_url", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "website_url", "TEXT DEFAULT ''")
@@ -1561,6 +1562,21 @@ def pro_product_edit(request: Request, product_id: int, name: str=Form(...), des
         fn=new_fn
     conn.execute("UPDATE products SET name=?,description=?,category=?,price_cents=?,image_filename=?,available=?,updated_at=?,promo_price_cents=?,featured=?,max_quantity=? WHERE id=?",(name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,now_iso(),price_to_cents(promo_price) if promo_price.strip() else 0,1 if featured else 0,max(1,min(99,max_quantity)),product_id)); conn.commit(); conn.close()
     return RedirectResponse("/painel?ok=produto#cardapio",303)
+
+@app.post("/painel/cardapio/aviso-carrinho")
+def pro_cart_notice143(request: Request, cart_notice: str=Form("")):
+    u=require_user(request,"professional")
+    clean=cart_notice.strip()
+    if len(clean)>150:
+        raise HTTPException(400,"O aviso deve ter no máximo 150 caracteres.")
+    conn=db()
+    try:
+        p=require_premium_catalog(conn,u["id"])
+        conn.execute("UPDATE professionals SET cart_notice=? WHERE id=?",(clean,p["id"]))
+        conn.commit()
+    finally:
+        conn.close()
+    return RedirectResponse("/painel?ok=aviso-carrinho#aviso-carrinho",303)
 
 @app.post("/painel/cardapio/configuracoes")
 def pro_menu_settings(request: Request, delivery_fee: str=Form("0"), minimum_order: str=Form("0"), prep_minutes: int=Form(40), pix_key: str=Form(""), allows_delivery: Optional[str]=Form(None), allows_pickup: Optional[str]=Form(None)):
