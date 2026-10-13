@@ -1,0 +1,12 @@
+html body .btn.primary,html body [data-native-menu] [data-add],html body [data-native-menu] [data-checkout],html body [data-native-menu] [data-cart-summary],html body [data-native-menu] [data-category-filter].active{background:#7036c6!important;background-image:none!important;color:#fff!important;border-color:#7036c6!important;border-radius:12px!important}
+html body .btn.primary:not(:disabled):hover,html body [data-native-menu] [data-add]:not(:disabled):hover{background:#5e2bac!important}
+html body [data-native-menu] [data-cart-summary] :is(span,strong){color:#fff!important}
+html body .nu-quantity131{display:inline-flex;align-items:center;gap:6px;max-width:100%;vertical-align:middle}
+html body .nu-quantity131 button,html body [data-native-menu] .cart-quantity button[data-plus],html body [data-native-menu] .cart-quantity button[data-minus]{display:inline-flex;align-items:center;justify-content:center;background:#7036c6!important;color:white!important;border:0!important;border-radius:50%!important;width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important;padding:0!important;font-size:25px!important;line-height:1;cursor:pointer;flex:none}
+html body .nu-quantity131 input[data-product-quantity]{width:58px!important;min-width:0!important;height:42px!important;margin:0!important;text-align:center;box-sizing:border-box;padding:5px!important;background:#fff!important;color:#203047!important;border:1px solid #c8d2df!important;border-radius:9px!important}
+html body [data-native-menu] .product-buy{flex-wrap:wrap;gap:10px}
+html body [data-native-menu] .product-buy>label{min-width:0}
+html body [data-native-menu] .cart-quantity{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+html body [data-native-menu] .cart-quantity input{width:58px!important;text-align:center}
+html body .nu-quantity131 button:disabled,html body [data-native-menu] [data-add]:disabled{opacity:.45;cursor:not-allowed}
+html body .nu-quantity131 button:focus-visible{outline:3px solid #2275ed;outline-offset:2px}
