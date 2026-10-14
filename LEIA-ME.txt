@@ -1,10 +1,7 @@
-V160 — Personalização da prévia e edição no carrinho
-Pacote incremental para a instalação atual. Copie TODOS os arquivos para as mesmas pastas: app.py na raiz, static em static e templates em templates. Mantenha outros arquivos, banco e uploads.
+NOWUP V162 — cartões compactos
 
-Cardápio: cartões de produtos personalizados mais compactos, com foto, descrição/ingredientes, preço e sinal +. Tocar na foto/texto ou + abre Personalizar. Produtos comuns mantêm o fluxo anterior.
-Personalizar: até três adicionais, uma porção de cada; observações/retirada de ingredientes; talheres desmarcados por padrão. No topo, quantidade de lanches. Se escolher três, configure Lanche 1 de 3, 2 de 3 e 3 de 3. Cada unidade tem escolhas próprias. Pode voltar ao lanche anterior. O carrinho só recebe o conjunto depois da confirmação final; fechar antes não adiciona parcialmente. O botão final mostra o valor total das unidades configuradas.
-Carrinho: Editar adicionais e observações abre as unidades daquele item. As alterações substituem o item original somente ao confirmar. Cancelar mantém o pedido anterior. Unidades com configurações iguais podem se agrupar; opções/observações/talheres diferentes ficam separadas. Adicionais são opcionais: confirmar sem marcar mantém o lanche normal.
-Mantém adicionais compartilhados cadastrados uma vez, regras do servidor V158, talheres, preço unitário, busca e alertas já instalados. Ícones enviados separadamente não são integrados às categorias de produtos por este pacote.
+Atualize app.py, templates e static com os arquivos deste pacote. O pacote inclui as alterações de personalização V160. Não substitui arquivos que não estão no ZIP.
 
-Verificado: sintaxe Python/JS; inclusão de unidades independentes; preço exato com diferentes adicionais; separação por observação/talheres; edição substituindo original; edição desatualizada e excesso de quantidade sem alteração parcial do carrinho.
-Limite: não foi executado teste de interação real no navegador para este pacote. Após deploy: escolha três lanches com opções diferentes; confira valor final e carrinho; edite um; cancele uma edição; escolha lanche normal sem adicionais; envie e confira observações/talheres no painel.
+Produtos em cartões horizontais com foto menor, preço roxo, botão + e observação discreta. Carrinho no topo do catálogo e barra inferior preservada. Categorias de produtos continuam somente com texto. Personalização e edição no carrinho preservadas.
+
+Após o deploy, confira no celular: busca, categorias, produto comum, personalização de duas unidades diferentes e edição no carrinho. Quantidade de cartões visíveis depende do tamanho da tela e das descrições. Verificação local: sintaxe JS, referências aos novos arquivos, integridade do ZIP e lógica do carrinho. Aparência no site publicado ainda precisa ser conferida.
