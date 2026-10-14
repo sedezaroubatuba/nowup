@@ -10,7 +10,10 @@
  if(count)new MutationObserver(refresh).observe(count,{childList:true,characterData:true,subtree:true});refresh();
  }
  root.querySelectorAll('.menu-products>[data-product]').forEach(card=>{
- const add=card.querySelector('[data-add]');if(add){const set=()=>{if(!add.disabled&&!card.classList.contains('nu151-dish-open')){if(add.textContent!=='+')add.textContent='+';add.setAttribute('aria-label','Adicionar '+card.dataset.name);}};new MutationObserver(set).observe(add,{childList:true});set();}
+ const photo=card.querySelector(':scope>img,:scope>.menu-product-placeholder');
+ const quantity=card.querySelector('[data-product-quantity]')?.closest('label');
+ if(photo&&quantity){const media=document.createElement('div');media.className='nu163-media';photo.before(media);media.append(photo,quantity);quantity.classList.add('nu163-quantity');quantity.setAttribute('aria-label','Quantidade de '+card.dataset.name);[...quantity.childNodes].filter(n=>n.nodeType===3).forEach(n=>n.remove());}
+ const choose=card.querySelector('.nu151-choose');if(choose){choose.textContent='Adicionar';choose.setAttribute('aria-label','Personalizar e adicionar '+card.dataset.name);}
  if(card.dataset.dish==='1'&&card.querySelector('[data-product-option]')){const badge=document.createElement('small');badge.className='nu162-extra-badge';badge.textContent='Adicionais disponíveis';card.querySelector('.menu-product-info>p')?.after(badge);}
  });
 })();

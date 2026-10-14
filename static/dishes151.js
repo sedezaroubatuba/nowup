@@ -17,7 +17,7 @@
  dialog.addEventListener('close',restore);header.querySelector('[data-close160]').addEventListener('click',close);
  function begin(card,key=null){if(current||card.querySelector('[data-add]')?.disabled)return;if(!window.NOWUP_CART160)return;
   editKey=key;editDefault=key?window.NOWUP_CART160.get(key):null;if(key&&!editDefault)return;
-  total=editDefault?.quantity||1;index=0;drafts=Array.from({length:total},()=>null);oldScroll=window.scrollY;marker=document.createComment('produto');card.before(marker);current=card;dialog.append(card);card.classList.add('nu151-dish-open');
+  total=editDefault?.quantity||Math.max(1,Math.min(Number(card.dataset.max)||99,parseInt(card.querySelector('[data-product-quantity]')?.value,10)||1));index=0;drafts=Array.from({length:total},()=>null);oldScroll=window.scrollY;marker=document.createComment('produto');card.before(marker);current=card;dialog.append(card);card.classList.add('nu151-dish-open');
   countInput.max=String(Number(card.dataset.max)||99);countInput.value=String(total);const note=card.querySelector('.nu85-note');if(note)note.open=true;showDraft(editDefault);
   const cart=root.querySelector('[data-cart-dialog143]');if(cart?.open){returnCart=cart;cart.close();}dialog.showModal();
  }
