@@ -1,0 +1,12 @@
+/* V169: catalog begins at search, without the store presentation above it. */
+html body.public-profile-area.nu169-products-view:has([data-native-menu]) > :is(.top,.notice-ticker,.public-profile-hero,.customer-alerts112,.order-alert-control,.nu88-resume,.footer,.mobile-bottom-nav),
+html body.public-profile-area.nu169-products-view:has([data-native-menu]) > .profileGrid{display:none!important}
+html body.public-profile-area.nu169-products-view:has([data-native-menu]) [data-native-menu]{margin-top:0!important;padding-top:0!important}
+html body.public-profile-area.nu169-products-view:has([data-native-menu]) [data-native-menu] > .container{padding-top:0!important}
+html body.public-profile-area.nu169-products-view:has([data-native-menu]) [data-native-menu] .nu-swipe-hint,
+html body.public-profile-area.nu169-products-view:has([data-native-menu]) [data-native-menu] .store-status.open{display:none!important}
+html body.public-profile-area.nu169-products-view:has([data-native-menu]) .nu-menu-sticky{margin-top:0!important;padding-top:0!important;background:#fff!important}
+html body.public-profile-area.nu169-products-view:has([data-native-menu]) .menu-layout{margin-top:10px!important;padding-top:0!important}
+/* Keep a closed store's purchasing restriction visible. */
+html body.public-profile-area.nu169-products-view:has([data-native-menu]) .store-status.closed{margin:8px 0!important;padding:8px 12px!important;font-size:13px!important}
+html body.public-profile-area.nu169-products-view:has([data-native-menu]) .store-status.closed span{display:none!important}
