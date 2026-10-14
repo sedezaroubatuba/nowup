@@ -1491,6 +1491,9 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
       FROM orders WHERE professional_id=? AND customer_id IS NOT NULL
       GROUP BY customer_id ORDER BY last_order DESC""",(p["id"],)).fetchall()
     latest_order_id=conn.execute("SELECT COALESCE(MAX(id),0) FROM orders WHERE professional_id=?",(p["id"],)).fetchone()[0]
+    if p["business_type"]=="restaurant" and p["is_premium"] and p["offer_mode"] in ("menu","catalog"):
+        ensure_dish_category151(conn,p["id"]);conn.commit()
+        product_categories=conn.execute("SELECT * FROM product_categories WHERE professional_id=? ORDER BY sort_order,id",(p["id"],)).fetchall()
     product_groups,delivery_zones=menu_rules89(conn,p["id"])
     merchant_overview=merchant_overview89(conn,p)
     conn.close()
@@ -1618,17 +1621,30 @@ def pro_dish_extra151(request: Request, product_id: int, option_name: str=Form(.
     finally:conn.close()
     return RedirectResponse(f"/painel?ok=adicional&prato={product_id}#pratos",303)
 
+def configure_personalization153(conn, product_id, enabled, max_choices):
+    conn.execute("UPDATE products SET is_dish=? WHERE id=?",(1 if enabled else 0,product_id))
+    if not enabled:return
+    group=conn.execute("SELECT id FROM product_option_groups WHERE product_id=? AND name='Adicionais' ORDER BY id LIMIT 1",(product_id,)).fetchone()
+    if group:
+        gid=group["id"];conn.execute("UPDATE product_option_groups SET max_choices=? WHERE id=?",(max_choices,gid))
+    else:
+        gid=conn.execute("INSERT INTO product_option_groups(product_id,name,min_choices,max_choices) VALUES(?,'Adicionais',0,?)",(product_id,max_choices)).lastrowid
+    conn.execute("UPDATE product_options SET group_id=? WHERE product_id=? AND group_id=0",(gid,product_id))
+
 @app.post("/painel/cardapio/produtos")
-def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None)):
+def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3)):
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); fn=""
     if photo and photo.filename: fn=save_image(photo)
-    created=now_iso(); conn.execute("INSERT INTO products(professional_id,name,description,category,price_cents,image_filename,available,created_at,updated_at,promo_price_cents,featured,max_quantity) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",(p["id"],name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,created,created,price_to_cents(promo_price) if promo_price.strip() else 0,1 if featured else 0,max(1,min(99,max_quantity))))
+    if personalizable and not 1<=max_choices<=20:conn.close();raise HTTPException(400,"Escolha de 1 a 20 adicionais.")
+    created=now_iso(); cur=conn.execute("INSERT INTO products(professional_id,name,description,category,price_cents,image_filename,available,created_at,updated_at,promo_price_cents,featured,max_quantity) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",(p["id"],name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,created,created,price_to_cents(promo_price) if promo_price.strip() else 0,1 if featured else 0,max(1,min(99,max_quantity))))
+    configure_personalization153(conn,cur.lastrowid,bool(personalizable),max_choices)
     conn.commit(); conn.close(); return RedirectResponse("/painel?ok=produto#novo-produto",303)
 
 @app.post("/painel/cardapio/produtos/{product_id}")
-def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None)):
+def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3)):
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=?",(product_id,p["id"])).fetchone()
     if not product: conn.close(); raise HTTPException(404)
+    if personalizable and not 1<=max_choices<=20:conn.close();raise HTTPException(400,"Escolha de 1 a 20 adicionais.")
     fn=product["image_filename"]
     if photo and photo.filename:
         new_fn=save_image(photo)
@@ -1636,7 +1652,7 @@ def pro_product_edit(request: Request, product_id: int, name: str=Form(...), des
             try: (UPLOAD_DIR/fn).unlink(missing_ok=True)
             except OSError: pass
         fn=new_fn
-    conn.execute("UPDATE products SET name=?,description=?,category=?,price_cents=?,image_filename=?,available=?,updated_at=?,promo_price_cents=?,featured=?,max_quantity=? WHERE id=?",(name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,now_iso(),price_to_cents(promo_price) if promo_price.strip() else 0,1 if featured else 0,max(1,min(99,max_quantity)),product_id)); conn.commit(); conn.close()
+    conn.execute("UPDATE products SET name=?,description=?,category=?,price_cents=?,image_filename=?,available=?,updated_at=?,promo_price_cents=?,featured=?,max_quantity=? WHERE id=?",(name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,now_iso(),price_to_cents(promo_price) if promo_price.strip() else 0,1 if featured else 0,max(1,min(99,max_quantity)),product_id)); configure_personalization153(conn,product_id,bool(personalizable),max_choices); conn.commit(); conn.close()
     return RedirectResponse("/painel?ok=produto#cardapio",303)
 
 @app.post("/painel/cardapio/aviso-carrinho")
@@ -1694,7 +1710,7 @@ def pro_option_availability(request: Request, option_id: int, available: int=For
 @app.post("/painel/cardapio/produtos/{product_id}/adicionais")
 def pro_product_option_add(request: Request, product_id: int, option_name: str=Form(...), option_price: str=Form("0"), option_kind: str=Form("add")):
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"])
-    product=conn.execute("SELECT id FROM products WHERE id=? AND professional_id=?",(product_id,p["id"])).fetchone()
+    product=conn.execute("SELECT id,is_dish FROM products WHERE id=? AND professional_id=?",(product_id,p["id"])).fetchone()
     if not product: conn.close(); raise HTTPException(404)
     name=option_name.strip()[:100]
     if option_kind=="remove":
@@ -1702,7 +1718,11 @@ def pro_product_option_add(request: Request, product_id: int, option_name: str=F
         option_price="0"
     if name:
         next_order=conn.execute("SELECT COALESCE(MAX(sort_order),0)+1 FROM product_options WHERE product_id=?",(product_id,)).fetchone()[0]
-        conn.execute("INSERT INTO product_options(product_id,name,price_cents,available,sort_order) VALUES(?,?,?,?,?)",(product_id,name,price_to_cents(option_price),1,next_order)); conn.commit()
+        cur=conn.execute("INSERT INTO product_options(product_id,name,price_cents,available,sort_order) VALUES(?,?,?,?,?)",(product_id,name,price_to_cents(option_price),1,next_order));
+        if product["is_dish"]:
+            group=conn.execute("SELECT id FROM product_option_groups WHERE product_id=? AND name='Adicionais' ORDER BY id LIMIT 1",(product_id,)).fetchone()
+            if group:conn.execute("UPDATE product_options SET group_id=? WHERE id=?",(group["id"],cur.lastrowid))
+        conn.commit()
     conn.close(); return RedirectResponse("/painel?ok=adicional#cardapio",303)
 
 @app.post("/painel/cardapio/adicionais/{option_id}/excluir")
