@@ -1,0 +1,13 @@
+.nu165-splash{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;background:#fff;color:#640493;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;animation:nu165-exit 1.45s ease both;}
+.nu165-inner{width:min(320px,90vw);text-align:center;padding:24px;box-sizing:border-box;}
+.nu165-inner img{display:block;width:240px;max-width:100%;height:auto;margin:0 auto 10px;object-fit:contain;}
+.nu165-inner h2{font-size:25px;line-height:1.2;margin:0;font-weight:700;letter-spacing:-.5px;}
+.nu165-inner p{font-size:14px;line-height:1.5;color:#796587;margin:12px 0 0;}
+.nu165-home img{animation:nu165-rise 1.1s ease both;}
+.nu165-menu img{animation:nu165-bounce 1.1s ease both;}
+.nu165-inner h2,.nu165-inner p{animation:nu165-copy .7s .2s ease both;}
+@keyframes nu165-rise{0%{opacity:0;transform:translate(-30px,60px) scale(.75);}65%{opacity:1;transform:translateY(-8px) scale(1.03);}100%{opacity:1;transform:none;}}
+@keyframes nu165-bounce{0%{opacity:0;transform:scale(.8);}25%{opacity:1;transform:translateY(-18px);}50%{transform:translateY(3px);}75%{transform:translateY(-5px);}100%{opacity:1;transform:none;}}
+@keyframes nu165-copy{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+@keyframes nu165-exit{0%,82%{opacity:1;}100%{opacity:0;}}
+@media(prefers-reduced-motion:reduce){.nu165-splash,.nu165-inner *{animation:none!important;}}
