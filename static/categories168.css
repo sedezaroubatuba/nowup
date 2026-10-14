@@ -1,0 +1,24 @@
+/* V168: native catalog only. Existing search/filter/cart remain authoritative. */
+html body.public-profile-area [data-native-menu] .nu83-catalog-heading{display:flex!important;align-items:center!important;gap:10px!important;padding:8px 0!important;margin:0!important}
+html body.public-profile-area [data-native-menu] .nu83-catalog-heading>h2,html body.public-profile-area [data-native-menu] .nu162-top-cart{display:none!important}
+html body.public-profile-area [data-native-menu] .nu83-search{display:block!important;flex:1!important;min-width:0!important;font-size:0!important;margin:0!important}
+html body.public-profile-area [data-native-menu] .nu83-search input{width:100%!important;box-sizing:border-box!important;min-height:46px!important;font-size:16px!important;margin:0!important}
+html body.public-profile-area [data-native-menu] .nu168-trigger{flex:none!important;display:grid!important;place-items:center!important;width:46px!important;height:46px!important;padding:0!important;border:1px solid #e4d9f5!important;border-radius:12px!important;background:#f5effc!important;color:#7036c6!important;font-size:24px!important;cursor:pointer}
+html body.public-profile-area [data-native-menu] .menu-category-nav{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;gap:8px!important;padding:6px 0!important;margin:0!important}
+html body.public-profile-area [data-native-menu] .menu-category-nav>button{flex:none!important;white-space:nowrap!important;min-height:42px!important}
+html body.public-profile-area .nu-menu-sticky{background:#fff!important;z-index:90!important}
+html body.public-profile-area .nu-menu-sticky.nu-search-fixed{position:fixed!important;top:var(--nu-sticky-top,0px)!important}
+html body.public-profile-area.nu145-browsing .top,html body.public-profile-area.nu145-browsing .mobile-bottom-nav{display:none!important}
+html body.public-profile-area [data-native-menu]{padding-bottom:calc(110px + env(safe-area-inset-bottom))!important}
+html body.public-profile-area .nu83-cart-dock{position:fixed!important;bottom:calc(12px + env(safe-area-inset-bottom))!important;z-index:95!important}
+html.nu168-menu-open{overflow:hidden}
+html body dialog.nu168-categories{position:fixed;inset:0 auto 0 0;margin:0;border:0;border-radius:0;width:min(340px,88vw);max-width:88vw;height:100dvh;max-height:100dvh;padding:20px 16px;box-sizing:border-box;background:#fff;color:#263247;overflow:auto;overscroll-behavior:contain;text-align:left;box-shadow:8px 0 32px #0002}
+html body dialog.nu168-categories:not([open]){display:none!important}
+.nu168-categories::backdrop{background:#17203280}
+.nu168-categories header{display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #eee;padding-bottom:14px;margin-bottom:12px}
+.nu168-categories h2{margin:0;font-size:22px;color:#263247}
+.nu168-categories header button{width:44px;height:44px;border:0;border-radius:12px;font-size:26px;background:#f5effc;color:#7036c6;cursor:pointer}
+.nu168-categories nav{display:grid;gap:6px}
+.nu168-categories nav button{min-height:48px;width:100%;padding:12px 14px;border:0;border-radius:12px;background:#fff;color:#263247;text-align:left;font:inherit;font-weight:600;overflow-wrap:anywhere;cursor:pointer}
+.nu168-categories nav button.active{background:#7036c6;color:#fff}
+.nu168-categories :focus-visible,.nu168-trigger:focus-visible{outline:3px solid #ad7fe9;outline-offset:2px}
