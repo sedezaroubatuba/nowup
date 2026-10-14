@@ -116,6 +116,7 @@
       resumo:['resumo','estatisticas'],
       pedidos:['pedidos'],
       cardapio:['cardapio'],
+      pratos:['cardapio'],
       adicionais:['adicionais'],
       clientes:['clientes'],
       relatorios:['relatorios','mais-pedidos'],
@@ -167,6 +168,13 @@
         }
       });
     }
+
+    dashboard.querySelectorAll('[data-open-category152]').forEach(button=>button.addEventListener('click',()=>{
+      if(location.hash!=='#cardapio')history.pushState(null,'','#cardapio');
+      navigate();
+      const manager=dashboard.querySelector('#categorias-loja');
+      if(manager){manager.open=true;requestAnimationFrame(()=>manager.scrollIntoView({block:'start',behavior:'instant'}));}
+    }));
 
     function openOrder(id){
       id=Number(id||0);
