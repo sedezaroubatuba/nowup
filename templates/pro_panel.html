@@ -43,14 +43,6 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <p data-push-message role="status">Ative e permita as notificações. Ao sair da conta, os avisos deste aparelho serão desativados.</p>
 <small>No iPhone, use o NowUp adicionado à Tela de Início. O recebimento depende das permissões e da conexão do aparelho.</small>
 </section>
-<div class="order-alert-control" data-order-alerts data-latest-order-id="{{latest_order_id}}" data-latest-notification-id="{{latest_notification_id}}">
-<button class="btn order-alert-enable" type="button" data-enable-order-alerts>🔊 Ativar som com painel aberto</button>
-<small data-alert-status>O som funciona enquanto este painel estiver aberto.</small>
-</div>
-<div class="new-order-alert" data-new-order-alert hidden role="alert">
-<div><b>🔔 Novo pedido recebido!</b><span data-new-order-message>Abra a central de pedidos para conferir.</span></div>
-<button class="btn" type="button" data-open-new-order>Ver pedido</button>
-</div>
 <section class="panel active-orders-inbox" id="pedidos-ativos">
 <div class="active-orders-title"><div><span class="kicker">{{today_day[8:10]}}/{{today_day[5:7]}}/{{today_day[:4]}}</span><h2>Pedidos de hoje</h2><p>Pedidos de outros dias ficam em Menu ☰ → Pedidos.</p></div><span class="active-orders-count">{{today_orders|length}}</span></div>
 <div class="active-orders-list">{% for order in today_orders %}<article class="active-order-row status-{{order.status}}">
@@ -543,7 +535,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </section>{% endif %}
 </main>
 </div>
-<script src="/static/order-chat.js?v=61"></script><script src="/static/pro-panel-menu.js?v=99"></script><script src="/static/order-alerts.js?v=112"></script>
+<script src="/static/order-chat.js?v=61"></script><script src="/static/pro-panel-menu.js?v=99"></script>
 
 <link rel="stylesheet" href="/static/panel-back-top.css?v=70">
 <footer class="nowup-panel-bottom"><button type="button" class="nowup-back-top" data-panel-back-top aria-label="Voltar ao topo do painel">↑ Voltar ao topo</button></footer>
