@@ -18,7 +18,51 @@ dialog.nowup-navigation:not([open]){display:none!important}
 .nowup-navigation-city select,.nowup-navigation-city input{width:100%;min-height:46px;padding:10px;border:1px solid #cbd9e8;border-radius:10px;font:inherit;box-sizing:border-box;background:#fff;color:#14365d}
 .nowup-navigation-city button{min-height:46px;border:0;border-radius:10px;background:#123e7d;color:#fff;font:inherit;font-weight:700;padding:10px;cursor:pointer}
 .nowup-navigation-logout{padding-top:20px}.nowup-navigation-logout button{width:100%;min-height:46px;border:1px solid #f1c9ce;border-radius:10px;background:#fff3f4;color:#a52239;font:inherit;font-weight:700;cursor:pointer}
-</style><script src="/static/sounds148.js?v=148"></script><link rel="stylesheet" href="/static/splash165.css?v=165"><script src="/static/splash165.js?v=165" defer></script><link rel="stylesheet" href="/static/catalog169.css?v=169"></head><body class="{% if request is defined and request.url.path.rstrip('/').endswith('/menu') %}nu169-products-view {% endif %}{% block body_class %}{% endblock %}">
+</style><script src="/static/sounds148.js?v=148"></script><link rel="stylesheet" href="/static/splash165.css?v=165"><script src="/static/splash165.js?v=165" defer></script><style id="nowup-catalog171">/* V168: native catalog only. Existing search/filter/cart remain authoritative. */
+html body.public-profile-area [data-native-menu] .nu83-catalog-heading{display:flex!important;align-items:center!important;gap:10px!important;padding:8px 0!important;margin:0!important}
+html body.public-profile-area [data-native-menu] .nu83-catalog-heading>h2,html body.public-profile-area [data-native-menu] .nu162-top-cart{display:none!important}
+html body.public-profile-area [data-native-menu] .nu83-search{display:block!important;flex:1!important;min-width:0!important;font-size:0!important;margin:0!important}
+html body.public-profile-area [data-native-menu] .nu83-search input{width:100%!important;box-sizing:border-box!important;min-height:46px!important;font-size:16px!important;margin:0!important}
+html body.public-profile-area [data-native-menu] .nu168-trigger{flex:none!important;display:grid!important;place-items:center!important;width:46px!important;height:46px!important;padding:0!important;border:1px solid #e4d9f5!important;border-radius:12px!important;background:#f5effc!important;color:#7036c6!important;font-size:24px!important;cursor:pointer}
+html body.public-profile-area [data-native-menu] .menu-category-nav{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;gap:8px!important;padding:6px 0!important;margin:0!important}
+html body.public-profile-area [data-native-menu] .menu-category-nav>button{flex:none!important;white-space:nowrap!important;min-height:42px!important}
+html body.public-profile-area .nu-menu-sticky{background:#fff!important;z-index:90!important}
+html body.public-profile-area .nu-menu-sticky.nu-search-fixed{position:fixed!important;top:var(--nu-sticky-top,0px)!important}
+html body.public-profile-area.nu145-browsing .top,html body.public-profile-area.nu145-browsing .mobile-bottom-nav{display:none!important}
+html body.public-profile-area [data-native-menu]{padding-bottom:calc(110px + env(safe-area-inset-bottom))!important}
+html body.public-profile-area .nu83-cart-dock{position:fixed!important;bottom:calc(12px + env(safe-area-inset-bottom))!important;z-index:95!important}
+html.nu168-menu-open{overflow:hidden}
+html body dialog.nu168-categories{position:fixed;inset:0 auto 0 0;margin:0;border:0;border-radius:0;width:min(340px,88vw);max-width:88vw;height:100dvh;max-height:100dvh;padding:20px 16px;box-sizing:border-box;background:#fff;color:#263247;overflow:auto;overscroll-behavior:contain;text-align:left;box-shadow:8px 0 32px #0002}
+html body dialog.nu168-categories:not([open]){display:none!important}
+.nu168-categories::backdrop{background:#17203280}
+.nu168-categories header{display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #eee;padding-bottom:14px;margin-bottom:12px}
+.nu168-categories h2{margin:0;font-size:22px;color:#263247}
+.nu168-categories header button{width:44px;height:44px;border:0;border-radius:12px;font-size:26px;background:#f5effc;color:#7036c6;cursor:pointer}
+.nu168-categories nav{display:grid;gap:6px}
+.nu168-categories nav button{min-height:48px;width:100%;padding:12px 14px;border:0;border-radius:12px;background:#fff;color:#263247;text-align:left;font:inherit;font-weight:600;overflow-wrap:anywhere;cursor:pointer}
+.nu168-categories nav button.active{background:#7036c6;color:#fff}
+.nu168-categories :focus-visible,.nu168-trigger:focus-visible{outline:3px solid #ad7fe9;outline-offset:2px}
+
+/* V169: catalog begins at search, without the store presentation above it. */
+html body.public-profile-area.nu169-products-view:has([data-native-menu]) > :is(.top,.notice-ticker,.public-profile-hero,.customer-alerts112,.order-alert-control,.nu88-resume,.footer,.mobile-bottom-nav),
+html body.public-profile-area.nu169-products-view:has([data-native-menu]) > .profileGrid{display:none!important}
+html body.public-profile-area.nu169-products-view:has([data-native-menu]) [data-native-menu]{margin-top:0!important;padding-top:0!important}
+html body.public-profile-area.nu169-products-view:has([data-native-menu]) [data-native-menu] > .container{padding-top:0!important}
+html body.public-profile-area.nu169-products-view:has([data-native-menu]) [data-native-menu] .nu-swipe-hint,
+html body.public-profile-area.nu169-products-view:has([data-native-menu]) [data-native-menu] .store-status.open{display:none!important}
+html body.public-profile-area.nu169-products-view:has([data-native-menu]) .nu-menu-sticky{margin-top:0!important;padding-top:0!important;background:#fff!important}
+html body.public-profile-area.nu169-products-view:has([data-native-menu]) .menu-layout{margin-top:10px!important;padding-top:0!important}
+/* Keep a closed store's purchasing restriction visible. */
+html body.public-profile-area.nu169-products-view:has([data-native-menu]) .store-status.closed{margin:8px 0!important;padding:8px 12px!important;font-size:13px!important}
+html body.public-profile-area.nu169-products-view:has([data-native-menu]) .store-status.closed span{display:none!important}
+
+/* One fixed search/category bar, independent of scroll activation. */
+html body.public-profile-area.nu170-fixed-catalog .native-menu .nu-menu-sticky,
+html body.public-profile-area.nu170-fixed-catalog .native-menu .nu-menu-sticky.nu-search-fixed{position:fixed!important;inset:0 0 auto 0!important;top:0!important;left:0!important;right:0!important;width:100%!important;max-width:none!important;box-sizing:border-box!important;margin:0!important;padding:6px max(14px,calc((100vw - 1400px)/2)) 0!important;transform:none!important;z-index:90!important;background:#fff!important}
+html body.public-profile-area.nu170-fixed-catalog .native-menu .nu-search-anchor{height:var(--nu170-bar-height,128px)!important;display:block!important;flex:none!important;margin:0!important;padding:0!important}
+html body.public-profile-area.nu170-fixed-catalog .native-menu .menu-products>[data-product]{scroll-margin-top:calc(var(--nu170-bar-height,128px) + 12px)}
+html body.public-profile-area.nu170-fixed-catalog .native-menu .nu83-cart-dock:not([hidden]){position:fixed!important;bottom:calc(12px + env(safe-area-inset-bottom))!important;z-index:95!important}
+</style></head><body class="{% if request is defined and request.url.path.rstrip('/').endswith('/menu') %}nu169-products-view {% endif %}{% block body_class %}{% endblock %}">
 {% if settings.ticker_enabled=='1' and settings.ticker_text %}<div class="notice-ticker ticker-{{settings.ticker_animation or 'continuous'}}" role="status" aria-label="Aviso"><div class="notice-ticker-track"><span>{{settings.ticker_text}}</span><i>•</i><span aria-hidden="true">{{settings.ticker_text}}</span><i aria-hidden="true">•</i><span aria-hidden="true">{{settings.ticker_text}}</span><i aria-hidden="true">•</i><span aria-hidden="true">{{settings.ticker_text}}</span></div></div>{% endif %}
 <header class="top"><div class="container nav"><a class="brand" href="/" aria-label="Página inicial"><img class="nowup-official-logo" src="/static/nowup-logo100.png?v=132" alt="NowUp Brasil" width="150" height="118"></a>
 <nav class="mainnav"><a href="/profissionais">Profissionais</a><a href="/cadastro/profissional">Anunciar</a><a href="/noticias">Notícias</a><a href="/contato">Contato</a><a href="/quem-somos">Quem somos</a></nav><div class="navlinks">{% if user %}<span class="muted hello">Olá, {{user.name}}</span>{% if user.role=='professional' %}<a class="btn soft" href="/painel">Painel profissional</a>{% elif user.role=='customer' %}<a class="btn soft" href="/cliente">Área do cliente</a>{% elif user.role=='admin' %}<a class="btn dark" href="/admin">Painel administrativo</a>{% endif %}<form action="/sair" method="post"><button class="btn ghost">Sair</button></form>{% else %}<a class="btn ghost" href="/entrar">Entrar</a><a class="btn orange" href="/cadastro/cliente">Cadastrar</a>{% endif %}</div><button class="mobile-menu" type="button" aria-label="Abrir menu" data-nowup-menu-open aria-controls="nowup-navigation" aria-expanded="false">☰</button></div></header>
@@ -86,7 +130,63 @@ dialog.nowup-navigation:not([open]){display:none!important}
     if (opener && opener.isConnected) opener.focus();
   });
 })();
-</script><script src="/static/logout-confirm.js?v=65"></script><link rel="stylesheet" href="/static/nowup-white82.css?v=82"><link rel="stylesheet" href="/static/customer88.css?v=88"><script src="/static/resume-cart88.js?v=89" defer></script><link rel="stylesheet" href="/static/nowup-white99.css?v=99"><link rel="stylesheet" href="/static/nowup-brand100.css?v=132"><script src="/static/internal-contact106.js?v=106" defer></script><link rel="stylesheet" href="/static/buttons131.css?v=136"><script src="/static/quantity131.js?v=131" defer></script><link rel="stylesheet" href="/static/nowup-purple133.css?v=136"><link rel="stylesheet" href="/static/pro-purple137.css?v=141"><link rel="stylesheet" href="/static/checkout-menu140.css?v=140"><script src="/static/pro-next138.js?v=141" defer></script><script src="/static/categories142.js?v=145" defer></script><link rel="stylesheet" href="/static/cart144.css?v=144"><link rel="stylesheet" href="/static/dishes151.css?v=160"><script src="/static/dishes151.js?v=163" defer></script><link rel="stylesheet" href="/static/catalog162.css?v=164"><script src="/static/catalog162.js?v=163" defer></script><link rel="stylesheet" href="/static/scroll-return167.css?v=167"><script src="/static/scroll-return167.js?v=167" defer></script><link rel="stylesheet" href="/static/categories168.css?v=169"><script src="/static/categories168.js?v=169" defer></script><link rel="stylesheet" href="/static/catalog170.css?v=170"><script src="/static/catalog170.js?v=170" defer></script></body></html>
+</script><script src="/static/logout-confirm.js?v=65"></script><link rel="stylesheet" href="/static/nowup-white82.css?v=82"><link rel="stylesheet" href="/static/customer88.css?v=88"><script src="/static/resume-cart88.js?v=89" defer></script><link rel="stylesheet" href="/static/nowup-white99.css?v=99"><link rel="stylesheet" href="/static/nowup-brand100.css?v=132"><script src="/static/internal-contact106.js?v=106" defer></script><link rel="stylesheet" href="/static/buttons131.css?v=136"><script src="/static/quantity131.js?v=131" defer></script><link rel="stylesheet" href="/static/nowup-purple133.css?v=136"><link rel="stylesheet" href="/static/pro-purple137.css?v=141"><link rel="stylesheet" href="/static/checkout-menu140.css?v=140"><script src="/static/pro-next138.js?v=141" defer></script><script src="/static/categories142.js?v=145" defer></script><link rel="stylesheet" href="/static/cart144.css?v=144"><link rel="stylesheet" href="/static/dishes151.css?v=160"><script src="/static/dishes151.js?v=163" defer></script><link rel="stylesheet" href="/static/catalog162.css?v=164"><script src="/static/catalog162.js?v=163" defer></script><link rel="stylesheet" href="/static/scroll-return167.css?v=167"><script src="/static/scroll-return167.js?v=167" defer></script><script id="nowup-catalog171-init">
+document.addEventListener("DOMContentLoaded",()=>{
+(() => {
+ 'use strict';
+ const root=document.querySelector('[data-native-menu]');
+ const nav=root?.querySelector('.menu-category-nav');
+ const heading=root?.querySelector('.nu83-catalog-heading');
+ if(!nav||!heading||root.dataset.categories168)return;
+ root.dataset.categories168='1';
+ const originals=[...nav.querySelectorAll('[data-category-filter]')];
+ if(!originals.length)return;
+ const dialog=document.createElement('dialog');
+ dialog.className='nu168-categories';dialog.id='nu168-categories';
+ dialog.setAttribute('aria-labelledby','nu168-title');
+ const header=document.createElement('header');
+ const title=document.createElement('h2');title.id='nu168-title';title.textContent='Categorias';
+ const close=document.createElement('button');close.type='button';close.textContent='×';close.setAttribute('aria-label','Fechar categorias');
+ header.append(title,close);dialog.append(header);
+ const list=document.createElement('nav');list.setAttribute('aria-label','Categorias da loja');dialog.append(list);
+ const trigger=document.createElement('button');trigger.type='button';trigger.className='nu168-trigger';trigger.textContent='☰';trigger.setAttribute('aria-label','Abrir categorias');trigger.setAttribute('aria-controls',dialog.id);trigger.setAttribute('aria-expanded','false');heading.prepend(trigger);
+ document.body.append(dialog);
+ const entries=originals.map(original=>{
+  const button=document.createElement('button');button.type='button';button.textContent=original.textContent.trim();
+  button.addEventListener('click',()=>{dialog.close();original.click();original.focus({preventScroll:true});});list.append(button);return {original,button};
+ });
+ function sync(){entries.forEach(({original,button})=>{const active=original.classList.contains('active');button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});}
+ function open(opener=trigger){sync();dialog.showModal();trigger.setAttribute('aria-expanded','true');dialog.dataset.opener=opener===trigger?'catalog':'site';document.documentElement.classList.add('nu168-menu-open');close.focus();}
+ trigger.addEventListener('click',()=>open());close.addEventListener('click',()=>dialog.close());
+ dialog.addEventListener('close',()=>{trigger.setAttribute('aria-expanded','false');document.documentElement.classList.remove('nu168-menu-open');trigger.focus({preventScroll:true});});
+ dialog.addEventListener('click',event=>{if(event.target!==dialog)return;const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();});
+ document.addEventListener('click',event=>{const button=event.target.closest('[data-nowup-menu-open]');if(button&&document.body.classList.contains('nu145-browsing')){event.preventDefault();event.stopImmediatePropagation();open(button);}},true);
+ new MutationObserver(sync).observe(nav,{subtree:true,attributes:true,attributeFilter:['class']});
+})();
+
+(() => {
+ 'use strict';
+ const root=document.querySelector('[data-native-menu]');
+ const heading=root?.querySelector('.nu83-catalog-heading');
+ const nav=root?.querySelector('.menu-category-nav');
+ if(!root||!heading)return;
+ document.body.classList.add('nu169-products-view','nu170-fixed-catalog');
+ let bar=root.querySelector('.nu-menu-sticky');
+ if(!bar){bar=document.createElement('div');bar.className='nu-menu-sticky';heading.before(bar);bar.append(heading);if(nav)bar.append(nav);}
+ let anchor=root.querySelector('.nu-search-anchor');
+ if(!anchor){anchor=document.createElement('div');anchor.className='nu-search-anchor';bar.before(anchor);}
+ const measure=()=>{
+  const height=Math.ceil(bar.getBoundingClientRect().height);
+  document.body.style.setProperty('--nu170-bar-height',height+'px');
+ };
+ measure();
+ if(typeof ResizeObserver==='function')new ResizeObserver(measure).observe(bar);
+ window.addEventListener('resize',measure,{passive:true});
+ document.fonts?.ready.then(measure);
+})();
+
+},{once:true});
+</script></body></html>
 
 
 
