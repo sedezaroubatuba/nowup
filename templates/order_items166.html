@@ -1,0 +1,14 @@
+<section class="nu166-items" aria-label="Itens do pedido">
+<h3>Itens do pedido</h3>
+{% for item in order_items_by_order.get(order.id,[]) %}
+<div class="nu166-item">
+<b class="nu166-qty">{{item.quantity}}×</b>
+<div class="nu166-product"><b>{{item.product_name}}</b>
+{% if order_item_options.get(item.id) %}<p class="nu166-extras"><strong>Adicionais / opções:</strong> {{order_item_options.get(item.id)|map(attribute='option_name')|join(', ')}}</p>{% endif %}
+{% if item.notes %}<p class="nu166-note"><strong>Observação:</strong> {{item.notes}}</p>{% endif %}
+<small>R$ {{'%.2f'|format(item.unit_price_cents/100)|replace('.',',')}} por unidade</small></div>
+<b class="nu166-price">R$ {{'%.2f'|format(item.quantity*item.unit_price_cents/100)|replace('.',',')}}</b>
+</div>
+{% else %}<p>Os itens deste pedido não foram carregados. Atualize a página para conferir antes de aceitar.</p>{% endfor %}
+<div class="nu166-total"><span>Subtotal: R$ {{'%.2f'|format(order.subtotal_cents/100)|replace('.',',')}}{% if order.delivery_fee_cents %} · Entrega: R$ {{'%.2f'|format(order.delivery_fee_cents/100)|replace('.',',')}}{% endif %}</span><strong>Total: R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</strong></div>
+</section>

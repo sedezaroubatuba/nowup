@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% block title %}Painel do profissional | NowUp{% endblock %}{% block body_class %}professional-area{% endblock %}{% block content %}<link rel="stylesheet" href="/static/pro-compact.css?v=67">{% set status_labels = status_labels|default({'new':'Pedido recebido','confirmed':'Pedido aceito','preparing':'Em preparo','ready':'Pronto','out_for_delivery':'Saiu para entrega','completed':'Concluído','cancelled':'Cancelado','rejected':'Recusado'}, true) %}<link rel="stylesheet" href="/static/pro-panel-navigation.css?v=60">
+{% extends 'base.html' %}{% block title %}Painel do profissional | NowUp{% endblock %}{% block body_class %}professional-area{% endblock %}{% block content %}<link rel="stylesheet" href="/static/order-items166.css?v=166"><link rel="stylesheet" href="/static/pro-compact.css?v=67">{% set status_labels = status_labels|default({'new':'Pedido recebido','confirmed':'Pedido aceito','preparing':'Em preparo','ready':'Pronto','out_for_delivery':'Saiu para entrega','completed':'Concluído','cancelled':'Cancelado','rejected':'Recusado'}, true) %}<link rel="stylesheet" href="/static/pro-panel-navigation.css?v=60">
 <style>
 body.professional-area .pro-dashboard .order-alert-control{display:flex!important}
 body.professional-area .pro-dashboard .new-order-alert:not([hidden]){display:flex!important}
@@ -329,11 +329,11 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <span>📱 {{order.customer_phone or 'Sem telefone'}}</span>
 <span>{% if order.fulfillment_type=='delivery' %}🛵 Entrega{% else %}🏪 Retirada{% endif %}</span>
 <span>💳 {% if order.payment_method=='cash' %}Dinheiro{% elif order.payment_method=='credit' %}Cartão de crédito{% elif order.payment_method=='debit' %}Cartão de débito{% elif order.payment_method=='on_delivery' %}Combinar no atendimento{% else %}Pix{% endif %}</span>
-</div>{% if order.address %}<p class="tiny">
+</div>{% include 'order_items166.html' %}{% if order.address %}<p class="tiny">
 <b>Endereço:</b> {{order.address}}</p>{% endif %}{% if order.notes %}<p class="tiny">
 <b>Observações:</b> {{order.notes}}</p>{% endif %}{% set review_customer=false %}{% include 'order_revision.html' %}
 {% if order.status not in ('completed','cancelled','rejected') %}<details class="order-edit"><summary class="btn soft tiny">✏️ Editar pedido</summary><form action="/painel/pedidos/{{order.id}}/editar" method="post" class="product-form"><label>Cliente<input class="input" name="customer_name" value="{{order.customer_name}}" required></label><label>WhatsApp<input class="input" name="customer_phone" value="{{order.customer_phone}}" required></label><label>Recebimento<select name="fulfillment_type"><option value="pickup" {% if order.fulfillment_type=='pickup' %}selected{% endif %}>Retirada</option><option value="delivery" {% if order.fulfillment_type=='delivery' %}selected{% endif %}>Entrega</option></select></label><label>Pagamento<select name="payment_method"><option value="pix" {% if order.payment_method=='pix' %}selected{% endif %}>Pix</option><option value="cash" {% if order.payment_method=='cash' %}selected{% endif %}>Dinheiro</option><option value="credit" {% if order.payment_method=='credit' %}selected{% endif %}>Crédito</option><option value="debit" {% if order.payment_method=='debit' %}selected{% endif %}>Débito</option><option value="on_delivery" {% if order.payment_method=='on_delivery' %}selected{% endif %}>Combinar</option></select></label><label class="full">Endereço<input class="input" name="address" value="{{order.address}}"></label><label class="full">Observações<textarea name="notes">{{order.notes}}</textarea></label><button class="btn primary">Salvar edição</button></form></details>
-{% endif %}{% set chat_order_id=order.id %}{% include 'order_chat.html' %}{% if order.status not in ('new','reviewing','revision_approved','awaiting_approval','completed','cancelled','rejected') %}<form action="/painel/pedidos/{{order.id}}/status" method="post" class="order-status-form">
+{% endif %}<details class="nu166-chat"><summary>Conversa com o cliente</summary>{% set chat_order_id=order.id %}{% include 'order_chat.html' %}</details>{% if order.status not in ('new','reviewing','revision_approved','awaiting_approval','completed','cancelled','rejected') %}<form action="/painel/pedidos/{{order.id}}/status" method="post" class="order-status-form">
 <label>Status<select name="status">
 <option value="new" {% if order.status=='new' %}selected{% endif %}>Novo</option>
 <option value="confirmed" {% if order.status=='confirmed' %}selected{% endif %}>Confirmado</option>
@@ -348,7 +348,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <label>Motivo ao cancelar/recusar<input class="input" name="reason" value="{{order.cancellation_reason or ''}}" placeholder="Obrigatório somente ao cancelar"></label>
 <button class="btn soft tiny">Salvar status</button>
 <button class="btn soft tiny" type="button" data-print-order>🖨 Imprimir</button>
-</form>{% else %}<p>Pedido encerrado — registro protegido.</p><button class="btn soft tiny" type="button" data-print-order>🖨 Imprimir</button>{% endif %}
+</form>{% else %}{% if order.status in ('completed','cancelled','rejected') %}<p>Pedido encerrado — registro protegido.</p>{% endif %}<button class="btn soft tiny" type="button" data-print-order>🖨 Imprimir</button>{% endif %}
 </article>{% else %}<div class="empty-state">
 <span>🧾</span>
 <h3>Nenhum pedido neste período</h3>
