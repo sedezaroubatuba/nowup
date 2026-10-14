@@ -32,3 +32,6 @@ html body .nu151-dish-dialog .nu151-summary{margin-top:8px!important;padding-top
 html body .nu151-dish-dialog .nu151-summary p{margin:6px 0!important}
 html body .nu151-dish-dialog .product-buy{gap:7px!important;margin-top:6px!important}
 html body .nu151-dish-dialog [data-dish-error151]:empty{display:none!important}
+/* V156: botão Personalizar compacto no cartão, preservando área de toque. */
+html body.public-profile-area .native-menu .menu-product[data-dish="1"]:not(.nu151-dish-open) .nu151-choose.btn.primary{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:auto!important;max-width:100%!important;min-width:0!important;min-height:44px!important;height:auto!important;padding:7px 12px!important;margin:7px 0 0!important;border:1px solid #7036c6!important;border-radius:10px!important;background:#fff!important;background-image:none!important;color:#7036c6!important;font-size:13px!important;font-weight:600!important;line-height:1.2!important;box-shadow:none!important;flex:none!important}
+html body.public-profile-area .native-menu .menu-product[data-dish="1"]:not(.nu151-dish-open) .nu151-choose *{color:#7036c6!important}
