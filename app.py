@@ -872,13 +872,13 @@ def zone_key89(name):
     return " ".join("".join(c for c in unicodedata.normalize("NFD",name.strip()) if not unicodedata.combining(c)).casefold().split())
 
 def validate_choices89(conn, product_id, chosen):
+    if len(chosen)>3:raise HTTPException(400,"Escolha até 3 adicionais, uma porção de cada.")
     mode=conn.execute("SELECT extras_mode FROM products WHERE id=?",(product_id,)).fetchone()
     if mode and mode["extras_mode"]=='none':return
     for group in conn.execute("SELECT * FROM product_option_groups WHERE product_id=?",(product_id,)):
-        if mode and mode["extras_mode"] in ("all","selected") and group["name"]!="Adicionais":continue
+        if mode and mode["extras_mode"] in ('all','selected') and group["name"]!='Adicionais':continue
         count=sum(option["group_id"]==group["id"] for option in chosen)
-        if count<group["min_choices"] or count>group["max_choices"]:
-            raise HTTPException(400,f"{group['name']}: escolha de {group['min_choices']} a {group['max_choices']} opção(ões). Atualize o produto no carrinho.")
+        if count<group["min_choices"]:raise HTTPException(400,f"{group['name']}: selecione pelo menos {group['min_choices']} opções.")
 
 def delivery_quote89(conn, pro, neighborhood):
     zones=conn.execute("SELECT * FROM professional_delivery_zones WHERE professional_id=?",(pro["id"],)).fetchall()
@@ -1078,6 +1078,24 @@ def native_menu(request: Request, slug: str):
     status=shop_status(p)
     return attach_cart_assets144(attach_food_assets(templates.TemplateResponse("menu.html", context(request, pro=p, products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, shop_status=status))))
 
+def options_single158(conn, product_id, raw_options):
+    if not isinstance(raw_options,list):raise HTTPException(400,"Adicionais inválidos.")
+    ids=[]
+    for raw in raw_options:
+        if isinstance(raw,dict):
+            if raw.get('quantity',1)!=1:raise HTTPException(400,"Agora é permitida uma porção de cada adicional. Atualize o item no carrinho.")
+            raw=raw.get('id')
+        try:oid=int(raw)
+        except (TypeError,ValueError):raise HTTPException(400,"Adicional inválido.")
+        if oid not in ids:ids.append(oid)
+    if len(ids)>3:raise HTTPException(400,"Escolha até 3 adicionais.")
+    chosen=[]
+    for oid in ids:
+        row=conn.execute("SELECT * FROM product_options WHERE id=? AND product_id=? AND available=1",(oid,product_id)).fetchone()
+        if not row:raise HTTPException(400,"Um adicional ficou indisponível. Atualize o item no carrinho.")
+        chosen.append(row)
+    return chosen,sum(row['price_cents'] for row in chosen)
+
 @app.post("/p/{slug}/menu/pedido")
 def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...), save_address: Optional[str]=Form(None), order_channel: str=Form("internal")):
     logged=current_user(request)
@@ -1103,12 +1121,10 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
             conn.close(); raise HTTPException(400,"Um produto do carrinho ficou indisponível. Atualize o cardápio antes de enviar o pedido.")
         if product:
             qty=min(qty,max(1,product["max_quantity"] or 99)); chosen=[]; extras=0
-            option_ids=raw.get("options",[]) if isinstance(raw,dict) else []
-            if isinstance(option_ids,list):
-                for oid in dict.fromkeys(str(x) for x in option_ids[:200]):
-                    try: option=conn.execute("SELECT * FROM product_options WHERE id=? AND product_id=? AND available=1",(int(oid),pid)).fetchone()
-                    except (TypeError,ValueError): option=None
-                    if option: chosen.append(option); extras += option["price_cents"]
+            try:chosen,extras=options_single158(conn,pid,raw.get("options",[]))
+            except HTTPException:conn.close();raise
+            utensils=raw.get("utensils",False)
+            if utensils is True:item_notes=(item_notes[:240]+(" · " if item_notes else "")+"Enviar talheres (garfo e faca)")
             try: validate_choices89(conn,pid,chosen)
             except HTTPException: conn.close(); raise
             unit=(product["promo_price_cents"] if product["promo_price_cents"]>0 else product["price_cents"])+extras

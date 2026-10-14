@@ -1,11 +1,10 @@
-V155 — Lista única de adicionais da loja
-Atualização incremental sobre V154. Substitua app.py na raiz, arquivos static dentro de static e templates dentro de templates. Mantenha os demais arquivos, banco e uploads.
+V158 — Até 3 adicionais, uma porção de cada, e opção de talheres
+Este pacote substitui a regra de quantidades livres da V157. Copie TODOS os arquivos para as mesmas pastas: app.py na raiz, static em static e templates em templates. Mantenha os demais arquivos e dados.
 
-Adicionais da loja: cadastre nome, preço e disponibilidade uma vez. Edite nessa mesma aba para atualizar os produtos vinculados. Indisponibilizar um complemento o retira das opções compráveis dos produtos vinculados.
-Cadastro e edição de produto: Sem adicionais; Permitir todos os adicionais da loja; Selecionar adicionais. No modo Todos, novos complementos cadastrados depois também passam a ser permitidos. No modo Selecionar, somente os marcados ficam liberados. Defina o máximo de escolhas.
-Cliente continua usando Personalizar, com preço somado e retirada de ingredientes no campo de observações.
+Cliente: volta a marcar os adicionais por checkbox, até três tipos no total por produto, uma porção de cada. Sem controles de quantidade dos complementos. Porções extras são vendidas como produtos normais em categoria criada pelo lojista.
+Personalização: nova opção Enviar talheres (garfo e faca), desmarcada por padrão. Não acrescenta valor. A escolha fica no carrinho e é registrada na observação do item para o lojista. Produtos com/sem talheres ficam como configurações separadas no carrinho.
+Mantém o botão Personalizar compacto, os adicionais compartilhados, observação livre para retiradas e o preço por unidade separado do total.
+Validação de até três opções e uma porção também feita no servidor. Carrinhos antigos com quantidade maior que uma ou mais de três complementos mostram pedido de atualização, em vez de finalizar com valores inconsistentes. Remova e adicione novamente esses itens.
 
-Migração aditiva: novas colunas e tabela de adicionais compartilhados. No primeiro início, adicionais antigos com mesmo nome/preço da mesma loja são reunidos numa lista para reutilização, sem apagar os registros por produto. Opções antigas Sem ingrediente não viram complementos compartilhados. Produtos antigos ficam no modo Manter adicionais atuais até você escolher uma das novas opções e salvar. Os complementos antigos por produto continuam preservados para consulta. Alterações na lista compartilhada afetam produtos convertidos para Todos/Selecionar; não alteram os valores dos pedidos já gravados.
-
-Verificado: sintaxe Python/JS; modos nenhum/todos/selecionados; novos adicionais incluídos só em Todos; propagação de preço e indisponibilidade; IDs vinculados preservados ao editar seleção; isolamento entre lojas.
-Limite: teste visual/interação no navegador não executado. Após deploy: cadastre Bacon/Cheddar; produto A seleciona só Bacon; produto B permite Todos. Adicione Salada: só B passa a oferecer. Altere preço de Bacon e confira ambos; indisponibilize e confira remoção das opções. Teste cliente, quantidade, observações e total do pedido.
+Verificado: sintaxe; três opções permitidas e quarta rejeitada; uma porção; compatibilidade de IDs e objetos; deduplicação; opção de outro produto rejeitada; JSON e chave do carrinho incluem talheres; controles de quantidade removidos.
+Limite: teste visual/interação no celular ainda necessário após deploy. Testar três adicionais, tentativa de quarto, marcar/desmarcar talheres, carrinho, envio e impressão do pedido.
