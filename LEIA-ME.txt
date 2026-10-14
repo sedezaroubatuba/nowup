@@ -1,10 +1,10 @@
-V158 — Até 3 adicionais, uma porção de cada, e opção de talheres
-Este pacote substitui a regra de quantidades livres da V157. Copie TODOS os arquivos para as mesmas pastas: app.py na raiz, static em static e templates em templates. Mantenha os demais arquivos e dados.
+V160 — Personalização da prévia e edição no carrinho
+Pacote incremental para a instalação atual. Copie TODOS os arquivos para as mesmas pastas: app.py na raiz, static em static e templates em templates. Mantenha outros arquivos, banco e uploads.
 
-Cliente: volta a marcar os adicionais por checkbox, até três tipos no total por produto, uma porção de cada. Sem controles de quantidade dos complementos. Porções extras são vendidas como produtos normais em categoria criada pelo lojista.
-Personalização: nova opção Enviar talheres (garfo e faca), desmarcada por padrão. Não acrescenta valor. A escolha fica no carrinho e é registrada na observação do item para o lojista. Produtos com/sem talheres ficam como configurações separadas no carrinho.
-Mantém o botão Personalizar compacto, os adicionais compartilhados, observação livre para retiradas e o preço por unidade separado do total.
-Validação de até três opções e uma porção também feita no servidor. Carrinhos antigos com quantidade maior que uma ou mais de três complementos mostram pedido de atualização, em vez de finalizar com valores inconsistentes. Remova e adicione novamente esses itens.
+Cardápio: cartões de produtos personalizados mais compactos, com foto, descrição/ingredientes, preço e sinal +. Tocar na foto/texto ou + abre Personalizar. Produtos comuns mantêm o fluxo anterior.
+Personalizar: até três adicionais, uma porção de cada; observações/retirada de ingredientes; talheres desmarcados por padrão. No topo, quantidade de lanches. Se escolher três, configure Lanche 1 de 3, 2 de 3 e 3 de 3. Cada unidade tem escolhas próprias. Pode voltar ao lanche anterior. O carrinho só recebe o conjunto depois da confirmação final; fechar antes não adiciona parcialmente. O botão final mostra o valor total das unidades configuradas.
+Carrinho: Editar adicionais e observações abre as unidades daquele item. As alterações substituem o item original somente ao confirmar. Cancelar mantém o pedido anterior. Unidades com configurações iguais podem se agrupar; opções/observações/talheres diferentes ficam separadas. Adicionais são opcionais: confirmar sem marcar mantém o lanche normal.
+Mantém adicionais compartilhados cadastrados uma vez, regras do servidor V158, talheres, preço unitário, busca e alertas já instalados. Ícones enviados separadamente não são integrados às categorias de produtos por este pacote.
 
-Verificado: sintaxe; três opções permitidas e quarta rejeitada; uma porção; compatibilidade de IDs e objetos; deduplicação; opção de outro produto rejeitada; JSON e chave do carrinho incluem talheres; controles de quantidade removidos.
-Limite: teste visual/interação no celular ainda necessário após deploy. Testar três adicionais, tentativa de quarto, marcar/desmarcar talheres, carrinho, envio e impressão do pedido.
+Verificado: sintaxe Python/JS; inclusão de unidades independentes; preço exato com diferentes adicionais; separação por observação/talheres; edição substituindo original; edição desatualizada e excesso de quantidade sem alteração parcial do carrinho.
+Limite: não foi executado teste de interação real no navegador para este pacote. Após deploy: escolha três lanches com opções diferentes; confira valor final e carrinho; edite um; cancele uma edição; escolha lanche normal sem adicionais; envie e confira observações/talheres no painel.
