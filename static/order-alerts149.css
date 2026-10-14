@@ -1,0 +1,6 @@
+html body [data-order-alerts]{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 12px;padding:8px 12px;background:#f5effd;color:#542096;font-size:12px;border-bottom:1px solid #e9dcfa}
+html body [data-order-alerts] button{border:0;background:#7036c6;color:#fff;padding:9px 12px;min-height:40px;border-radius:10px;font-weight:700;cursor:pointer}
+html body [data-new-order-alert][hidden]{display:none!important}
+html body [data-new-order-alert]:not([hidden]){position:fixed;bottom:88px;left:12px;right:12px;z-index:1000;max-width:720px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px;border-radius:16px;background:#7036c6!important;color:#fff!important;box-shadow:0 8px 30px #25104040}
+html body [data-new-order-alert] span{display:block;font-size:13px;margin-top:5px}
+html body [data-new-order-alert] button{flex-shrink:0;min-height:44px;border:0;border-radius:10px;background:#fff;color:#7036c6;padding:10px 12px;font-weight:700;cursor:pointer}
