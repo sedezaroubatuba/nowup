@@ -1,0 +1,6 @@
+/* One fixed search/category bar, independent of scroll activation. */
+html body.public-profile-area.nu170-fixed-catalog .native-menu .nu-menu-sticky,
+html body.public-profile-area.nu170-fixed-catalog .native-menu .nu-menu-sticky.nu-search-fixed{position:fixed!important;inset:0 0 auto 0!important;top:0!important;left:0!important;right:0!important;width:100%!important;max-width:none!important;box-sizing:border-box!important;margin:0!important;padding:6px max(14px,calc((100vw - 1400px)/2)) 0!important;transform:none!important;z-index:90!important;background:#fff!important}
+html body.public-profile-area.nu170-fixed-catalog .native-menu .nu-search-anchor{height:var(--nu170-bar-height,128px)!important;display:block!important;flex:none!important;margin:0!important;padding:0!important}
+html body.public-profile-area.nu170-fixed-catalog .native-menu .menu-products>[data-product]{scroll-margin-top:calc(var(--nu170-bar-height,128px) + 12px)}
+html body.public-profile-area.nu170-fixed-catalog .native-menu .nu83-cart-dock:not([hidden]){position:fixed!important;bottom:calc(12px + env(safe-area-inset-bottom))!important;z-index:95!important}
