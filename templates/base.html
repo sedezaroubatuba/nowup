@@ -18,7 +18,9 @@ dialog.nowup-navigation:not([open]){display:none!important}
 .nowup-navigation-city select,.nowup-navigation-city input{width:100%;min-height:46px;padding:10px;border:1px solid #cbd9e8;border-radius:10px;font:inherit;box-sizing:border-box;background:#fff;color:#14365d}
 .nowup-navigation-city button{min-height:46px;border:0;border-radius:10px;background:#123e7d;color:#fff;font:inherit;font-weight:700;padding:10px;cursor:pointer}
 .nowup-navigation-logout{padding-top:20px}.nowup-navigation-logout button{width:100%;min-height:46px;border:1px solid #f1c9ce;border-radius:10px;background:#fff3f4;color:#a52239;font:inherit;font-weight:700;cursor:pointer}
-</style><script src="/static/sounds148.js?v=148"></script><link rel="stylesheet" href="/static/splash165.css?v=165"><script src="/static/splash165.js?v=165" defer></script><style id="nowup-catalog171">/* V168: native catalog only. Existing search/filter/cart remain authoritative. */
+</style><script src="/static/sounds148.js?v=148"></script><link rel="stylesheet" href="/static/splash165.css?v=165"><script src="/static/splash165.js?v=165" defer></script>
+<link rel="stylesheet" href="/static/nowup-white82.css?v=82"><link rel="stylesheet" href="/static/customer88.css?v=88"><link rel="stylesheet" href="/static/nowup-white99.css?v=99"><link rel="stylesheet" href="/static/nowup-brand100.css?v=132"><link rel="stylesheet" href="/static/buttons131.css?v=136"><link rel="stylesheet" href="/static/nowup-purple133.css?v=136"><link rel="stylesheet" href="/static/pro-purple137.css?v=141"><link rel="stylesheet" href="/static/checkout-menu140.css?v=140"><link rel="stylesheet" href="/static/cart144.css?v=144"><link rel="stylesheet" href="/static/dishes151.css?v=160"><link rel="stylesheet" href="/static/catalog162.css?v=164"><link rel="stylesheet" href="/static/scroll-return167.css?v=167">
+<style id="nowup-catalog171">/* V168: native catalog only. Existing search/filter/cart remain authoritative. */
 html body.public-profile-area [data-native-menu] .nu83-catalog-heading{display:flex!important;align-items:center!important;gap:10px!important;padding:8px 0!important;margin:0!important}
 html body.public-profile-area [data-native-menu] .nu83-catalog-heading>h2,html body.public-profile-area [data-native-menu] .nu162-top-cart{display:none!important}
 html body.public-profile-area [data-native-menu] .nu83-search{display:block!important;flex:1!important;min-width:0!important;font-size:0!important;margin:0!important}
@@ -62,7 +64,18 @@ html body.public-profile-area.nu170-fixed-catalog .native-menu .nu-menu-sticky.n
 html body.public-profile-area.nu170-fixed-catalog .native-menu .nu-search-anchor{height:var(--nu170-bar-height,128px)!important;display:block!important;flex:none!important;margin:0!important;padding:0!important}
 html body.public-profile-area.nu170-fixed-catalog .native-menu .menu-products>[data-product]{scroll-margin-top:calc(var(--nu170-bar-height,128px) + 12px)}
 html body.public-profile-area.nu170-fixed-catalog .native-menu .nu83-cart-dock:not([hidden]){position:fixed!important;bottom:calc(12px + env(safe-area-inset-bottom))!important;z-index:95!important}
-</style></head><body class="{% if request is defined and request.url.path.rstrip('/').endswith('/menu') %}nu169-products-view {% endif %}{% block body_class %}{% endblock %}">
+</style><style id="nowup-first-paint172">
+html body.nu172-catalog-pending [data-native-menu]{visibility:hidden!important}
+html body.nu169-products-view > :is(.top,.notice-ticker,.public-profile-hero,.customer-alerts112,.order-alert-control,.nu88-resume,.footer,.mobile-bottom-nav,.profileGrid){display:none!important}
+</style>
+<script>
+(()=>{const reveal=()=>document.body?.classList.remove('nu172-catalog-pending');
+window.addEventListener('load',reveal,{once:true});
+setTimeout(reveal,3000);
+})();
+</script>
+<noscript><style>html body.nu172-catalog-pending [data-native-menu]{visibility:visible!important}</style></noscript>
+</head><body class="{% if request is defined and request.url.path.startswith('/p/') and pro is defined and (request.url.path.rstrip('/').endswith('/menu') or (pro.plan_active in ['cardapio','ambos'] and pro.is_premium and pro.offer_mode in ['menu','catalog'])) %}nu169-products-view nu170-fixed-catalog nu172-catalog-pending {% endif %}{% block body_class %}{% endblock %}">
 {% if settings.ticker_enabled=='1' and settings.ticker_text %}<div class="notice-ticker ticker-{{settings.ticker_animation or 'continuous'}}" role="status" aria-label="Aviso"><div class="notice-ticker-track"><span>{{settings.ticker_text}}</span><i>•</i><span aria-hidden="true">{{settings.ticker_text}}</span><i aria-hidden="true">•</i><span aria-hidden="true">{{settings.ticker_text}}</span><i aria-hidden="true">•</i><span aria-hidden="true">{{settings.ticker_text}}</span></div></div>{% endif %}
 <header class="top"><div class="container nav"><a class="brand" href="/" aria-label="Página inicial"><img class="nowup-official-logo" src="/static/nowup-logo100.png?v=132" alt="NowUp Brasil" width="150" height="118"></a>
 <nav class="mainnav"><a href="/profissionais">Profissionais</a><a href="/cadastro/profissional">Anunciar</a><a href="/noticias">Notícias</a><a href="/contato">Contato</a><a href="/quem-somos">Quem somos</a></nav><div class="navlinks">{% if user %}<span class="muted hello">Olá, {{user.name}}</span>{% if user.role=='professional' %}<a class="btn soft" href="/painel">Painel profissional</a>{% elif user.role=='customer' %}<a class="btn soft" href="/cliente">Área do cliente</a>{% elif user.role=='admin' %}<a class="btn dark" href="/admin">Painel administrativo</a>{% endif %}<form action="/sair" method="post"><button class="btn ghost">Sair</button></form>{% else %}<a class="btn ghost" href="/entrar">Entrar</a><a class="btn orange" href="/cadastro/cliente">Cadastrar</a>{% endif %}</div><button class="mobile-menu" type="button" aria-label="Abrir menu" data-nowup-menu-open aria-controls="nowup-navigation" aria-expanded="false">☰</button></div></header>
@@ -130,8 +143,9 @@ html body.public-profile-area.nu170-fixed-catalog .native-menu .nu83-cart-dock:n
     if (opener && opener.isConnected) opener.focus();
   });
 })();
-</script><script src="/static/logout-confirm.js?v=65"></script><link rel="stylesheet" href="/static/nowup-white82.css?v=82"><link rel="stylesheet" href="/static/customer88.css?v=88"><script src="/static/resume-cart88.js?v=89" defer></script><link rel="stylesheet" href="/static/nowup-white99.css?v=99"><link rel="stylesheet" href="/static/nowup-brand100.css?v=132"><script src="/static/internal-contact106.js?v=106" defer></script><link rel="stylesheet" href="/static/buttons131.css?v=136"><script src="/static/quantity131.js?v=131" defer></script><link rel="stylesheet" href="/static/nowup-purple133.css?v=136"><link rel="stylesheet" href="/static/pro-purple137.css?v=141"><link rel="stylesheet" href="/static/checkout-menu140.css?v=140"><script src="/static/pro-next138.js?v=141" defer></script><script src="/static/categories142.js?v=145" defer></script><link rel="stylesheet" href="/static/cart144.css?v=144"><link rel="stylesheet" href="/static/dishes151.css?v=160"><script src="/static/dishes151.js?v=163" defer></script><link rel="stylesheet" href="/static/catalog162.css?v=164"><script src="/static/catalog162.js?v=163" defer></script><link rel="stylesheet" href="/static/scroll-return167.css?v=167"><script src="/static/scroll-return167.js?v=167" defer></script><script id="nowup-catalog171-init">
+</script><script src="/static/logout-confirm.js?v=65"></script><script src="/static/resume-cart88.js?v=89" defer></script><script src="/static/internal-contact106.js?v=106" defer></script><script src="/static/quantity131.js?v=131" defer></script><script src="/static/pro-next138.js?v=141" defer></script><script src="/static/categories142.js?v=145" defer></script><script src="/static/dishes151.js?v=163" defer></script><script src="/static/catalog162.js?v=163" defer></script><script src="/static/scroll-return167.js?v=167" defer></script><script id="nowup-catalog171-init">
 document.addEventListener("DOMContentLoaded",()=>{
+try {
 (() => {
  'use strict';
  const root=document.querySelector('[data-native-menu]');
@@ -185,6 +199,7 @@ document.addEventListener("DOMContentLoaded",()=>{
  document.fonts?.ready.then(measure);
 })();
 
+} finally { document.body.classList.remove("nu172-catalog-pending"); }
 },{once:true});
 </script></body></html>
 
