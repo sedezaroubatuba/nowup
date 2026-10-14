@@ -1,16 +1,11 @@
-V144 — Correção de abertura do carrinho e Continuar comprando
-Pacote incremental para o projeto atual, baseado no app.py enviado e na V143.
+V151 — Área Pratos e lanches e escolha de adicionais
+Atualização incremental do projeto atual. Copie TODOS os arquivos para as mesmas pastas: app.py na raiz; static em static; templates em templates. Mantenha os outros arquivos, o banco e uploads. O app acrescenta automaticamente a coluna products.is_dish sem apagar produtos.
 
-Copie TODOS os arquivos para as mesmas pastas do projeto: app.py na raiz, conteúdo de static dentro de static e conteúdo de templates dentro de templates. Substitua os correspondentes e mantenha os demais. Faça o deploy. Não contém banco nem uploads.
+Painel do lojista: nova seção Pratos e lanches para planos com cardápio/catálogo. Cadastre nome, preço, foto, descrição e limite de adicionais (padrão 3). Ao salvar, abra o prato nessa seção e cadastre complementos, como bacon e cheddar. Eles são vinculados a um grupo opcional do próprio prato. Edição/exclusão do prato e dos adicionais continuam nas áreas existentes.
+A categoria é criada quando você usa a área pela primeira vez e começa oculta. Os pratos criados enquanto ela está oculta começam indisponíveis. Marque Mostrar Pratos e lanches no cardápio e salve para publicar a categoria e disponibilizar os pratos. Desmarcar oculta a categoria e indisponibiliza esses pratos. Ao publicar, todos os pratos desta categoria são disponibilizados; ajuste individualmente no cadastro se necessário.
+Cliente: pratos criados nessa área têm o botão Escolher prato e adicionais. Abre janela com foto, descrição, complementos, observação, quantidade e resumo do preço base/adicionais/total. A escolha usa os controles originais e o fluxo existente do carrinho. Limites dos grupos são conferidos na interface e pelo servidor ao enviar o pedido. Não há cadastro automático de bacon/cheddar: o lojista escolhe nomes e preços.
+Não converte produtos antigos em pratos. Pratos da categoria oculta não são listados nas telas públicas de perfil/cardápio. Não precisa criar outra loja ou mudar o tipo de empresa.
+Mantém a base do alerta global V149 e usa os arquivos já instalados de busca, cores e preço por unidade. Este ZIP não remove arquivos das atualizações anteriores.
 
-Novo comportamento:
-Ver carrinho abre o resumo por cima do cardápio. O clique é interceptado antes do comportamento antigo de rolar a página. A correção reconhece também o carrinho antigo e o coloca numa janela.
-Continuar comprando fecha o carrinho e retorna à posição da rolagem, mantendo os itens. Quantidades, exclusão e observações usam os controles existentes.
-Continuar pedido segue para o fechamento existente. Aviso do lojista continua limitado a 150 caracteres.
-O app.py garante a inclusão dos arquivos novos nas respostas de cardápio/perfil, mesmo com uma base HTML anterior. Respostas dessas telas não usam cache de página.
-Mantém categories142.js para troca em ciclo das categorias.
-
-Verificado: sintaxe Python/JavaScript; inclusão dos assets em HTML antigo; inclusão sem duplicação; tamanho da resposta; páginas sem cardápio preservadas; migração e autorização do aviso.
-Não foi possível executar navegador neste ambiente. O clique, a aparência no celular e a troca automática de categorias precisam ser conferidos após deploy.
-
-Teste após publicação: adicionar produto; tocar Ver carrinho; editar quantidade; Continuar comprando; conferir itens e posição; reabrir e Continuar pedido. No cardápio, chegar ao fim dos produtos e continuar o gesto para trocar a categoria. Se ainda aparecer o botão antigo, envie o endereço completo da loja para conferir qual página foi publicada.
+Validação: sintaxe Python/JavaScript; criação oculta; adicionais/grupo do prato; cálculo de preço 25+4+3=32; isolamento entre lojas; publicação e ocultação; rejeição de nome vazio.
+Limite: navegador e interação real no celular não executados para esta mudança. Após deploy, crie Lanche teste, cadastre bacon/cheddar, confira categoria oculta, publique, abra no cliente, selecione adicionais e confira preço/quantidade/carrinho. Confira recusar seleção acima do limite e voltar ao cardápio. Depois oculte novamente a categoria.

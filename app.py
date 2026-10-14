@@ -555,6 +555,7 @@ def init_db():
     ensure_column(conn, "professionals", "business_hours", "TEXT NOT NULL DEFAULT '{}'")
     ensure_column(conn, "professionals", "business_status", "TEXT NOT NULL DEFAULT 'open'")
     ensure_column(conn, "professionals", "cart_notice", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "products", "is_dish", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "professionals", "instagram_url", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "facebook_url", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "website_url", "TEXT DEFAULT ''")
@@ -980,10 +981,18 @@ def attach_cart_assets144(response):
     if '/static/cart144.js' not in body:
         assets.append('<script src="/static/cart144.js?v=144" defer></script>')
     if '/static/categories142.js' not in body:
-        assets.append('<script src="/static/categories142.js?v=144" defer></script>')
+        assets.append('<script src="/static/categories142.js?v=145" defer></script>')
+    body=re.sub(r'(/static/(?:categories142\.js|menu-swipe\.(?:js|css)))(?:\?v=[^"\s<]*)?',r'\1?v=145',body)
+    if '/static/menu-swipe.css' not in body:
+        assets.append('<link rel="stylesheet" href="/static/menu-swipe.css?v=145">')
+    if '/static/menu-swipe.js' not in body:
+        assets.append('<script src="/static/menu-swipe.js?v=145" defer></script>')
     if assets:
         markup=''.join(assets)
         response.body=(body.replace('</body>',markup+'</body>',1) if '</body>' in body else body+markup).encode("utf-8")
+        response.headers['content-length']=str(len(response.body))
+    if not assets:
+        response.body=body.encode('utf-8')
         response.headers['content-length']=str(len(response.body))
     response.headers['Cache-Control']='no-store'
     return response
@@ -1560,6 +1569,54 @@ def pro_menu_category_delete(request: Request, category_id: int):
         conn.execute("UPDATE products SET category='Geral',updated_at=? WHERE professional_id=? AND lower(category)=lower(?)",(now_iso(),p["id"],row["name"]))
         conn.execute("DELETE FROM product_categories WHERE id=?",(category_id,)); conn.execute("INSERT OR IGNORE INTO product_categories(professional_id,name,sort_order,active,created_at) VALUES(?,?,?,?,?)",(p["id"],"Geral",999,1,now_iso())); conn.commit()
     conn.close(); return RedirectResponse("/painel?ok=categoria-excluida#cardapio",303)
+
+def ensure_dish_category151(conn, professional_id):
+    conn.execute("INSERT OR IGNORE INTO product_categories(professional_id,name,sort_order,active,created_at) VALUES(?,?,999,0,?)",(professional_id,"Pratos e lanches",now_iso()))
+    return conn.execute("SELECT * FROM product_categories WHERE professional_id=? AND name=?",(professional_id,"Pratos e lanches")).fetchone()
+
+@app.post("/painel/pratos/publicacao")
+def pro_dish_publish151(request: Request, publish: Optional[str]=Form(None)):
+    u=require_user(request,"professional");conn=db()
+    try:
+        p=require_premium_catalog(conn,u["id"]);category=ensure_dish_category151(conn,p["id"])
+        active=1 if publish else 0
+        conn.execute("UPDATE product_categories SET active=? WHERE id=? AND professional_id=?",(active,category["id"],p["id"]))
+        conn.execute("UPDATE products SET available=?,updated_at=? WHERE professional_id=? AND is_dish=1 AND category=?",(active,now_iso(),p["id"],category["name"]))
+        conn.commit()
+    finally:conn.close()
+    return RedirectResponse("/painel?ok=pratos-publicacao#pratos",303)
+
+@app.post("/painel/pratos")
+def pro_dish_add151(request: Request, name: str=Form(...), description: str=Form(""), price: str=Form(...), max_choices: int=Form(3), photo: Optional[UploadFile]=File(None)):
+    u=require_user(request,"professional")
+    clean=name.strip()[:140]
+    if not clean:raise HTTPException(400,"Informe o nome do prato.")
+    if not 1<=max_choices<=20:raise HTTPException(400,"Escolha de 1 a 20 adicionais.")
+    cents=price_to_cents(price);conn=db()
+    try:
+        p=require_premium_catalog(conn,u["id"]);category=ensure_dish_category151(conn,p["id"])
+        fn=save_image(photo) if photo and photo.filename else ""
+        created=now_iso()
+        cur=conn.execute("INSERT INTO products(professional_id,name,description,category,price_cents,image_filename,available,created_at,updated_at,is_dish) VALUES(?,?,?,?,?,?,?,?,?,1)",(p["id"],clean,description.strip()[:600],category["name"],cents,fn,category["active"],created,created))
+        pid=cur.lastrowid
+        conn.execute("INSERT INTO product_option_groups(product_id,name,min_choices,max_choices) VALUES(?,'Adicionais',0,?)",(pid,max_choices))
+        conn.commit()
+    finally:conn.close()
+    return RedirectResponse(f"/painel?ok=prato&prato={pid}#pratos",303)
+
+@app.post("/painel/pratos/{product_id}/adicionais")
+def pro_dish_extra151(request: Request, product_id: int, option_name: str=Form(...), option_price: str=Form("0")):
+    u=require_user(request,"professional");conn=db()
+    try:
+        p=require_premium_catalog(conn,u["id"])
+        if not conn.execute("SELECT id FROM products WHERE id=? AND professional_id=? AND is_dish=1",(product_id,p["id"])).fetchone():raise HTTPException(404)
+        clean=option_name.strip()[:100]
+        if not clean:raise HTTPException(400,"Informe o adicional.")
+        group=conn.execute("SELECT id FROM product_option_groups WHERE product_id=? AND name='Adicionais' ORDER BY id LIMIT 1",(product_id,)).fetchone()
+        gid=group["id"] if group else conn.execute("INSERT INTO product_option_groups(product_id,name,min_choices,max_choices) VALUES(?, 'Adicionais',0,3)",(product_id,)).lastrowid
+        conn.execute("INSERT INTO product_options(product_id,name,price_cents,available,sort_order,group_id) VALUES(?,?,?,1,100,?)",(product_id,clean,price_to_cents(option_price),gid));conn.commit()
+    finally:conn.close()
+    return RedirectResponse(f"/painel?ok=adicional&prato={product_id}#pratos",303)
 
 @app.post("/painel/cardapio/produtos")
 def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None)):
