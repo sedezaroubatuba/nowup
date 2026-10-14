@@ -556,6 +556,16 @@ def init_db():
     ensure_column(conn, "professionals", "business_status", "TEXT NOT NULL DEFAULT 'open'")
     ensure_column(conn, "professionals", "cart_notice", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "products", "is_dish", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn,"products","extras_mode","TEXT NOT NULL DEFAULT 'legacy'")
+    ensure_column(conn,"product_options","shared_extra_id","INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn,"product_options","shared_selected155","INTEGER NOT NULL DEFAULT 1")
+    conn.execute("CREATE TABLE IF NOT EXISTS shared_extras155(id INTEGER PRIMARY KEY,professional_id INTEGER NOT NULL,name TEXT NOT NULL,price_cents INTEGER NOT NULL DEFAULT 0,available INTEGER NOT NULL DEFAULT 1)")
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_shared_option155 ON product_options(product_id,shared_extra_id) WHERE shared_extra_id>0")
+    if not conn.execute("SELECT 1 FROM site_settings WHERE key='shared_extras155_import'").fetchone():
+        conn.execute("INSERT INTO shared_extras155(professional_id,name,price_cents,available) SELECT pr.professional_id,po.name,po.price_cents,MAX(po.available) FROM product_options po JOIN products pr ON pr.id=po.product_id WHERE po.shared_extra_id=0 AND lower(po.name) NOT LIKE 'sem %' GROUP BY pr.professional_id,po.name,po.price_cents")
+        conn.execute("INSERT INTO site_settings(key,value) VALUES('shared_extras155_import','1')")
+
+
     ensure_column(conn, "professionals", "instagram_url", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "facebook_url", "TEXT DEFAULT ''")
     ensure_column(conn, "professionals", "website_url", "TEXT DEFAULT ''")
@@ -862,7 +872,10 @@ def zone_key89(name):
     return " ".join("".join(c for c in unicodedata.normalize("NFD",name.strip()) if not unicodedata.combining(c)).casefold().split())
 
 def validate_choices89(conn, product_id, chosen):
+    mode=conn.execute("SELECT extras_mode FROM products WHERE id=?",(product_id,)).fetchone()
+    if mode and mode["extras_mode"]=='none':return
     for group in conn.execute("SELECT * FROM product_option_groups WHERE product_id=?",(product_id,)):
+        if mode and mode["extras_mode"] in ("all","selected") and group["name"]!="Adicionais":continue
         count=sum(option["group_id"]==group["id"] for option in chosen)
         if count<group["min_choices"] or count>group["max_choices"]:
             raise HTTPException(400,f"{group['name']}: escolha de {group['min_choices']} a {group['max_choices']} opção(ões). Atualize o produto no carrinho.")
@@ -1388,6 +1401,10 @@ def orders_for_day(conn, professional_id, day, status="todos"):
 def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido_status: str="todos", pedido_dia: str="", abrir_pedido: int=0, conta: int=0):
     u=require_user(request,"professional"); conn=db()
     p=conn.execute("SELECT * FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+    shared_extras=conn.execute("SELECT * FROM shared_extras155 WHERE professional_id=? ORDER BY name,id",(p["id"],)).fetchall()
+    shared_selected={}
+    for row in conn.execute("SELECT po.product_id,po.shared_extra_id FROM product_options po JOIN products pr ON pr.id=po.product_id WHERE pr.professional_id=? AND po.shared_extra_id>0 AND po.shared_selected155=1",(p["id"],)):
+        shared_selected.setdefault(row["product_id"],[]).append(row["shared_extra_id"])
     photos=conn.execute("SELECT * FROM photos WHERE professional_id=? ORDER BY is_cover DESC,id DESC",(p["id"],)).fetchall()
     posts=conn.execute("SELECT * FROM posts WHERE professional_id=? ORDER BY id DESC LIMIT 20",(p["id"],)).fetchall()
     products=conn.execute("SELECT * FROM products WHERE professional_id=? ORDER BY category,sort_order,id DESC",(p["id"],)).fetchall()
@@ -1498,7 +1515,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     merchant_overview=merchant_overview89(conn,p)
     conn.close()
     status=shop_status(p); business_hours=parse_business_hours(p["business_hours"])
-    return templates.TemplateResponse("pro_panel.html", context(request, manual=nowup_sales107.panel_data(request,conta), pro=p, photos=photos, posts=posts, products=products, product_groups=product_groups, delivery_zones=delivery_zones, merchant_overview=merchant_overview, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, today_orders=today_orders, day_order_summary=day_order_summary, order_day=order_day.isoformat(), today_day=today.isoformat(), order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
+    return templates.TemplateResponse("pro_panel.html", context(request, manual=nowup_sales107.panel_data(request,conta), shared_extras=shared_extras, shared_selected=shared_selected, pro=p, photos=photos, posts=posts, products=products, product_groups=product_groups, delivery_zones=delivery_zones, merchant_overview=merchant_overview, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, today_orders=today_orders, day_order_summary=day_order_summary, order_day=order_day.isoformat(), today_day=today.isoformat(), order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
 
 @app.post('/painel/plano')
 def request_store_plan(request: Request, plan: str=Form(...), offer_mode: str=Form('services')):
@@ -1621,6 +1638,53 @@ def pro_dish_extra151(request: Request, product_id: int, option_name: str=Form(.
     finally:conn.close()
     return RedirectResponse(f"/painel?ok=adicional&prato={product_id}#pratos",303)
 
+def sync_shared155(conn, professional_id):
+    catalog=conn.execute("SELECT * FROM shared_extras155 WHERE professional_id=?",(professional_id,)).fetchall()
+    for product in conn.execute("SELECT * FROM products WHERE professional_id=? AND extras_mode IN ('all','selected','none')",(professional_id,)).fetchall():
+        pid=product["id"];mode=product["extras_mode"]
+        selected={r[0] for r in conn.execute("SELECT shared_extra_id FROM product_options WHERE product_id=? AND shared_extra_id>0 AND shared_selected155=1",(pid,))}
+        if mode=='all':selected={r["id"] for r in catalog}
+        conn.execute("UPDATE product_options SET available=0 WHERE product_id=?",(pid,))
+        if mode=='none':continue
+        group=conn.execute("SELECT id FROM product_option_groups WHERE product_id=? AND name='Adicionais' ORDER BY id LIMIT 1",(pid,)).fetchone()
+        gid=group["id"] if group else conn.execute("INSERT INTO product_option_groups(product_id,name,min_choices,max_choices) VALUES(?,'Adicionais',0,3)",(pid,)).lastrowid
+        for extra in catalog:
+            if extra["id"] not in selected:continue
+            old=conn.execute("SELECT id FROM product_options WHERE product_id=? AND shared_extra_id=?",(pid,extra["id"])).fetchone()
+            if old:conn.execute("UPDATE product_options SET name=?,price_cents=?,available=?,group_id=? WHERE id=?",(extra["name"],extra["price_cents"],extra["available"],gid,old["id"]))
+            else:conn.execute("INSERT INTO product_options(product_id,name,price_cents,available,sort_order,group_id,shared_extra_id) VALUES(?,?,?,?,100,?,?)",(pid,extra["name"],extra["price_cents"],extra["available"],gid,extra["id"]))
+
+def configure_shared155(conn, professional_id, product_id, mode, extra_ids, max_choices):
+    if mode not in ('none','all','selected'):raise HTTPException(400,"Opção de adicionais inválida.")
+    if not 1<=max_choices<=20:raise HTTPException(400,"Escolha de 1 a 20 adicionais.")
+    ids=set(extra_ids)
+    owned={r[0] for r in conn.execute("SELECT id FROM shared_extras155 WHERE professional_id=?",(professional_id,))}
+    if not ids<=owned:raise HTTPException(400,"Adicional de outra loja.")
+    configure_personalization153(conn,product_id,mode!='none',max_choices)
+    conn.execute("UPDATE products SET extras_mode=? WHERE id=? AND professional_id=?",(mode,product_id,professional_id))
+    if mode=='selected':
+        conn.execute("UPDATE product_options SET shared_selected155=0 WHERE product_id=? AND shared_extra_id>0",(product_id,))
+        for eid in ids:
+            extra=conn.execute("SELECT * FROM shared_extras155 WHERE id=?",(eid,)).fetchone()
+            existing=conn.execute("SELECT id FROM product_options WHERE product_id=? AND shared_extra_id=?",(product_id,eid)).fetchone()
+            if existing:conn.execute("UPDATE product_options SET shared_selected155=1 WHERE id=?",(existing["id"],))
+            else:conn.execute("INSERT INTO product_options(product_id,name,price_cents,available,sort_order,shared_extra_id) VALUES(?,?,?,?,100,?)",(product_id,extra["name"],extra["price_cents"],extra["available"],eid))
+    sync_shared155(conn,professional_id)
+
+@app.post("/painel/adicionais-loja")
+def shared_extra_save155(request: Request, name: str=Form(...), price: str=Form("0"), available: Optional[str]=Form(None), extra_id: int=Form(0)):
+    u=require_user(request,"professional");conn=db()
+    try:
+        p=require_premium_catalog(conn,u["id"]);clean=name.strip()[:100]
+        if not clean:raise HTTPException(400,"Informe o nome do adicional.")
+        cents=price_to_cents(price)
+        if extra_id:
+            if not conn.execute("UPDATE shared_extras155 SET name=?,price_cents=?,available=? WHERE id=? AND professional_id=?",(clean,cents,1 if available else 0,extra_id,p["id"])).rowcount:raise HTTPException(404)
+        else:conn.execute("INSERT INTO shared_extras155(professional_id,name,price_cents,available) VALUES(?,?,?,?)",(p["id"],clean,cents,1 if available else 0))
+        sync_shared155(conn,p["id"]);conn.commit()
+    finally:conn.close()
+    return RedirectResponse("/painel?ok=adicional-loja#adicionais",303)
+
 def configure_personalization153(conn, product_id, enabled, max_choices):
     conn.execute("UPDATE products SET is_dish=? WHERE id=?",(1 if enabled else 0,product_id))
     if not enabled:return
@@ -1632,16 +1696,17 @@ def configure_personalization153(conn, product_id, enabled, max_choices):
     conn.execute("UPDATE product_options SET group_id=? WHERE product_id=? AND group_id=0",(gid,product_id))
 
 @app.post("/painel/cardapio/produtos")
-def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3)):
+def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([])):
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); fn=""
     if photo and photo.filename: fn=save_image(photo)
     if personalizable and not 1<=max_choices<=20:conn.close();raise HTTPException(400,"Escolha de 1 a 20 adicionais.")
     created=now_iso(); cur=conn.execute("INSERT INTO products(professional_id,name,description,category,price_cents,image_filename,available,created_at,updated_at,promo_price_cents,featured,max_quantity) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",(p["id"],name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,created,created,price_to_cents(promo_price) if promo_price.strip() else 0,1 if featured else 0,max(1,min(99,max_quantity))))
-    configure_personalization153(conn,cur.lastrowid,bool(personalizable),max_choices)
+    if extras_mode=="legacy":configure_personalization153(conn,cur.lastrowid,bool(personalizable),max_choices)
+    else:configure_shared155(conn,p["id"],cur.lastrowid,extras_mode,extra_ids,max_choices)
     conn.commit(); conn.close(); return RedirectResponse("/painel?ok=produto#novo-produto",303)
 
 @app.post("/painel/cardapio/produtos/{product_id}")
-def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3)):
+def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([])):
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=?",(product_id,p["id"])).fetchone()
     if not product: conn.close(); raise HTTPException(404)
     if personalizable and not 1<=max_choices<=20:conn.close();raise HTTPException(400,"Escolha de 1 a 20 adicionais.")
@@ -1652,7 +1717,7 @@ def pro_product_edit(request: Request, product_id: int, name: str=Form(...), des
             try: (UPLOAD_DIR/fn).unlink(missing_ok=True)
             except OSError: pass
         fn=new_fn
-    conn.execute("UPDATE products SET name=?,description=?,category=?,price_cents=?,image_filename=?,available=?,updated_at=?,promo_price_cents=?,featured=?,max_quantity=? WHERE id=?",(name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,now_iso(),price_to_cents(promo_price) if promo_price.strip() else 0,1 if featured else 0,max(1,min(99,max_quantity)),product_id)); configure_personalization153(conn,product_id,bool(personalizable),max_choices); conn.commit(); conn.close()
+    conn.execute("UPDATE products SET name=?,description=?,category=?,price_cents=?,image_filename=?,available=?,updated_at=?,promo_price_cents=?,featured=?,max_quantity=? WHERE id=?",(name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,now_iso(),price_to_cents(promo_price) if promo_price.strip() else 0,1 if featured else 0,max(1,min(99,max_quantity)),product_id)); configure_personalization153(conn,product_id,bool(personalizable),max_choices) if extras_mode=="legacy" else configure_shared155(conn,p["id"],product_id,extras_mode,extra_ids,max_choices); conn.commit(); conn.close()
     return RedirectResponse("/painel?ok=produto#cardapio",303)
 
 @app.post("/painel/cardapio/aviso-carrinho")
