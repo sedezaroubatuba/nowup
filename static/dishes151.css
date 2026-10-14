@@ -37,3 +37,14 @@ html body.public-profile-area .native-menu .menu-product[data-dish="1"]:not(.nu1
 html body.public-profile-area .native-menu .menu-product[data-dish="1"]:not(.nu151-dish-open) .nu151-choose *{color:#7036c6!important}
 html body .nu151-dish-dialog .nu158-utensils{display:flex!important;align-items:center!important;gap:8px!important;min-height:44px!important;margin:8px 0!important;padding:7px 9px!important;box-sizing:border-box!important;border:1px solid #dfd2ef!important;border-radius:10px!important;font-size:14px!important;background:#fff!important;color:#203047!important}
 html body .menu-product[data-dish="1"]:not(.nu151-dish-open) .nu158-utensils{display:none!important}
+/* V159: produto personalizado é escolhido uma unidade por vez. */
+html body .nu151-dish-dialog .product-buy>label{display:none!important}
+/* V160: cartão compacto com + e etapas de personalização. */
+html body.public-profile-area .native-menu .menu-product[data-dish="1"]:not(.nu151-dish-open){display:grid!important;grid-template-columns:88px minmax(0,1fr)!important;gap:12px!important;padding:12px!important;min-height:0!important;cursor:pointer}
+html body.public-profile-area .native-menu .menu-product[data-dish="1"]:not(.nu151-dish-open)>img{width:88px!important;height:100px!important;max-height:100px!important;object-fit:cover!important;border-radius:12px!important}
+html body.public-profile-area .native-menu .menu-product[data-dish="1"]:not(.nu151-dish-open) .nu151-choose.btn.primary{width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important;padding:0!important;margin:5px 0 0 auto!important;display:flex!important;border-radius:50%!important;background:#7036c6!important;color:#fff!important;font-size:25px!important}
+html body .menu-product:not(.nu151-dish-open) [data-prev160]{display:none!important}
+.nu160-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}.nu160-header>button{width:44px;height:44px;border:0;border-radius:50%;background:#f3ecfc;color:#7036c6;font-size:24px;cursor:pointer}.nu160-header label{display:flex;align-items:center;gap:6px;margin-left:auto;font-size:13px}.nu160-header input{width:54px;min-height:44px;box-sizing:border-box;border:1px solid #dfd2ef;border-radius:10px;text-align:center;font-size:16px}
+html body .nu151-dish-dialog .nu160-prev{min-height:44px;border:0;border-radius:10px;background:#f3ecfc;color:#7036c6;padding:8px 12px;cursor:pointer}
+html body .nu151-dish-dialog [data-prev160][hidden]{display:none!important}
+html body .nu143-cart-dialog .nu160-edit{display:block;width:100%;min-height:44px;margin-top:8px;border:1px solid #dfd2ef;border-radius:9px;padding:7px 8px;background:#f5effd!important;color:#7036c6!important;font-size:13px;font-weight:600;cursor:pointer}
