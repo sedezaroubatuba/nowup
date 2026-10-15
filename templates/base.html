@@ -1,8 +1,14 @@
 <!doctype html><html lang="pt-BR"><head>
+<link rel="manifest" href="/static/nowup.webmanifest?v=182">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="NowUp">
+<link rel="stylesheet" href="/static/pwa182.css?v=182">
+<script src="/static/pwa182.js?v=182" defer></script>
 <link rel="stylesheet" href="/static/navigation-instant98.css?v=98">
 <script src="/static/navigation-instant98.js?v=98"></script><meta name="color-scheme" content="only light"><meta name="supported-color-schemes" content="light"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{% block title %}{{settings.seo_title or settings.brand_name or 'NowUp'}}{% endblock %}</title><meta name="description" content="{% block meta_description %}{{settings.seo_description or 'Encontre profissionais e empresas perto de você.'}}{% endblock %}"><meta name="keywords" content="{{settings.seo_keywords or ''}}">
-<link rel="icon" href="/static/nowup-icon100.png?v=128" type="image/png"><link rel="apple-touch-icon" href="/static/nowup-push-192.png?v=128"><link rel="stylesheet" href="/static/style.css"><link rel="stylesheet" href="/static/redesign.css"><link rel="stylesheet" href="/static/slides.css"><link rel="stylesheet" href="/static/panels.css?v=18"><link rel="stylesheet" href="/static/social-blue.css?v=5"><link rel="stylesheet" href="/static/v19-home.css?v=19"><link rel="stylesheet" href="/static/v21-finish.css?v=30">
+<link rel="icon" href="/static/nowup-icon100.png?v=128" type="image/png"><link rel="apple-touch-icon" href="/static/nowup-pwa-180.png?v=182"><link rel="stylesheet" href="/static/style.css"><link rel="stylesheet" href="/static/redesign.css"><link rel="stylesheet" href="/static/slides.css"><link rel="stylesheet" href="/static/panels.css?v=18"><link rel="stylesheet" href="/static/social-blue.css?v=5"><link rel="stylesheet" href="/static/v19-home.css?v=19"><link rel="stylesheet" href="/static/v21-finish.css?v=30">
 <link rel="stylesheet" href="/static/v34-white-colorful.css?v=1"><link rel="stylesheet" href="/static/v50-directory.css?v=53"><link rel="stylesheet" href="/static/v52-white-food.css?v=54"><style>:root{--brand:{{settings.primary_color or '#08131F'}};--brand2:{{settings.accent_color or '#08BCEB'}};--ticker-color:{{settings.ticker_color or '#e30613'}};--site-font:'{{settings.font_family or 'Inter'}}',ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}</style><style>html.nowup-navigation-open{overflow:hidden}
 dialog.nowup-navigation{position:fixed;inset:0 auto 0 0;margin:0;width:min(360px,92vw);max-width:92vw;height:100dvh;max-height:100dvh;box-sizing:border-box;border:0;padding:22px 20px 30px;background:#fff;color:#14365d;overflow:auto;overscroll-behavior:contain;box-shadow:8px 0 35px #09275530;text-align:left}
 dialog.nowup-navigation:not([open]){display:none!important}
@@ -18,7 +24,7 @@ dialog.nowup-navigation:not([open]){display:none!important}
 .nowup-navigation-city select,.nowup-navigation-city input{width:100%;min-height:46px;padding:10px;border:1px solid #cbd9e8;border-radius:10px;font:inherit;box-sizing:border-box;background:#fff;color:#14365d}
 .nowup-navigation-city button{min-height:46px;border:0;border-radius:10px;background:#123e7d;color:#fff;font:inherit;font-weight:700;padding:10px;cursor:pointer}
 .nowup-navigation-logout{padding-top:20px}.nowup-navigation-logout button{width:100%;min-height:46px;border:1px solid #f1c9ce;border-radius:10px;background:#fff3f4;color:#a52239;font:inherit;font-weight:700;cursor:pointer}
-</style><link rel="stylesheet" href="/static/splash165.css?v=165"><script src="/static/splash165.js?v=181" defer></script>
+</style><script src="/static/sounds148.js?v=148"></script><link rel="stylesheet" href="/static/splash165.css?v=165"><script src="/static/splash165.js?v=165" defer></script>
 <link rel="stylesheet" href="/static/nowup-white82.css?v=82"><link rel="stylesheet" href="/static/customer88.css?v=88"><link rel="stylesheet" href="/static/nowup-white99.css?v=99"><link rel="stylesheet" href="/static/nowup-brand100.css?v=132"><link rel="stylesheet" href="/static/buttons131.css?v=136"><link rel="stylesheet" href="/static/nowup-purple133.css?v=136"><link rel="stylesheet" href="/static/pro-purple137.css?v=141"><link rel="stylesheet" href="/static/checkout-menu140.css?v=140"><link rel="stylesheet" href="/static/cart144.css?v=144"><link rel="stylesheet" href="/static/dishes151.css?v=160"><link rel="stylesheet" href="/static/catalog162.css?v=164"><link rel="stylesheet" href="/static/scroll-return167.css?v=167">
 <style id="nowup-catalog171">/* V168: native catalog only. Existing search/filter/cart remain authoritative. */
 html body.public-profile-area [data-native-menu] .nu83-catalog-heading{display:flex!important;align-items:center!important;gap:10px!important;padding:8px 0!important;margin:0!important}
@@ -239,6 +245,7 @@ html body.public-profile-area [data-native-menu] .nu83-catalog-heading .nu83-sea
 <dialog id="nowup-navigation" class="nowup-navigation" aria-labelledby="nowup-navigation-title">
 <div class="nowup-navigation-header"><div><b id="nowup-navigation-title">Menu NowUp Brasil</b><small>{% if user %}Olá, {{user.name}}{% else %}Sua cidade na sua mão{% endif %}</small></div><button type="button" data-nowup-menu-close aria-label="Fechar menu">✕</button></div>
 <nav class="nowup-navigation-links" aria-label="Menu da conta">
+<button type="button" data-nowup-install>↓ <span>Instalar NowUp</span></button>
 {% if user %}
 <a href="{% if user.role=='professional' %}/painel#perfil{% elif user.role=='admin' %}/admin{% else %}/cliente#conta{% endif %}">♙ <span>Meu perfil</span></a>
 {% else %}<a href="/entrar">♙ <span>Entrar / Meu perfil</span></a>{% endif %}
@@ -299,7 +306,7 @@ html body.public-profile-area [data-native-menu] .nu83-catalog-heading .nu83-sea
     if (opener && opener.isConnected) opener.focus();
   });
 })();
-</script><script src="/static/logout-confirm.js?v=65"></script><script src="/static/resume-cart88.js?v=89" defer></script><script src="/static/internal-contact106.js?v=106" defer></script><script src="/static/quantity131.js?v=131" defer></script><script src="/static/pro-next138.js?v=141" defer></script><script src="/static/categories142.js?v=179" defer></script><script src="/static/dishes151.js?v=163" defer></script><script src="/static/catalog162.js?v=163" defer></script><script src="/static/scroll-return167.js?v=181" defer></script><script id="nowup-catalog171-init">
+</script><script src="/static/logout-confirm.js?v=65"></script><script src="/static/resume-cart88.js?v=89" defer></script><script src="/static/internal-contact106.js?v=106" defer></script><script src="/static/quantity131.js?v=131" defer></script><script src="/static/pro-next138.js?v=141" defer></script><script src="/static/categories142.js?v=179" defer></script><script src="/static/dishes151.js?v=163" defer></script><script src="/static/catalog162.js?v=163" defer></script><script src="/static/scroll-return167.js?v=167" defer></script><script id="nowup-catalog171-init">
 document.addEventListener("DOMContentLoaded",()=>{
 try {
 (() => {
@@ -492,6 +499,8 @@ document.addEventListener('DOMContentLoaded',()=>{
 },{once:true});
 </script>
 {% endif %}
+<div id="nowup-install-bar" class="nowup-install-bar" hidden><img src="/static/nowup-pwa-192.png" width="40" height="40" alt=""><span><b>NowUp no seu celular</b><small>Acesse pelo ícone na tela inicial</small></span><button type="button" data-nowup-install>Instalar</button><button type="button" id="nowup-install-dismiss" aria-label="Dispensar convite">×</button></div>
+<dialog id="nowup-install-help" class="nowup-install-help" aria-labelledby="nowup-install-title"><h2 id="nowup-install-title">Instalar NowUp</h2><p id="nowup-install-instructions"></p><p>Depois de adicionar, abra pelo ícone do NowUp na tela inicial.</p><form method="dialog"><button>Entendi</button></form></dialog>
 </body></html>
 
 
