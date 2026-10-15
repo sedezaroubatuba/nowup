@@ -135,6 +135,23 @@ html body.v50-directory-home .top .brand{min-height:0!important;margin:0!importa
 html body.v50-directory-home .top .brand .nowup-official-logo{width:128px!important;height:52px!important;max-height:52px!important;object-fit:contain!important;display:block!important}
 html body.v50-directory-home .top .mobile-menu{width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important;padding:0!important;font-size:25px!important;border-radius:12px!important;margin:0!important}
 html body.v50-directory-home .v50-head{padding-top:8px!important;padding-bottom:6px!important}
+</style><style id="nowup-fixed175">/* Home header and search remain available throughout store browsing. */
+html body.v50-directory-home{padding-top:calc(var(--nu175-header-height,64px) + var(--nu175-search-height,72px))!important}
+html body.v50-directory-home>.top{position:fixed!important;inset:0 0 auto 0!important;width:100%!important;max-width:none!important;box-sizing:border-box!important;z-index:110!important;transform:none!important;background:#fff!important;border-bottom:1px solid #ece5f4!important}
+html body.v50-directory-home .v50-home>.v50-head{position:fixed!important;top:var(--nu175-header-height,64px)!important;left:0!important;right:0!important;width:100%!important;max-width:none!important;box-sizing:border-box!important;margin:0!important;padding:8px 0!important;z-index:105!important;background:#fff!important;box-shadow:0 4px 12px #4920770d;border-bottom:1px solid #eee8f5!important;transform:none!important}
+html body.v50-directory-home .v50-home>.v50-head>.container{width:100%!important;box-sizing:border-box!important;margin:0 auto!important;padding:0 12px!important;max-width:1440px!important}
+html body.v50-directory-home .v50-search input{font-size:16px!important;min-height:44px!important}
+html body.v50-directory-home .v50-business{scroll-margin-top:calc(var(--nu175-header-height,64px) + var(--nu175-search-height,72px) + 12px)}
+@media(min-width:1024px){html body.v50-directory-home .v50-home>.nu173-categories{grid-row:1/span 25!important;top:calc(var(--nu175-header-height,64px) + var(--nu175-search-height,72px) + 12px)!important;max-height:calc(100dvh - var(--nu175-header-height,64px) - var(--nu175-search-height,72px) - 24px)!important}}
+/* Four existing navigation destinations, with outlined purple icons. */
+html body .mobile-bottom-nav{background:#fff!important;border-top:1px solid #dfcff3!important;box-shadow:0 -3px 12px #57228508!important}
+html body .mobile-bottom-nav>a{position:relative!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important;min-height:58px!important;padding:7px 4px!important;text-decoration:none!important;color:#7036c6!important;box-sizing:border-box!important}
+html body .mobile-bottom-nav>a>svg{display:block!important;width:25px!important;height:25px!important;padding:3px 10px!important;box-sizing:content-box!important;border-radius:10px!important;stroke:#7036c6!important;fill:none!important;stroke-width:1.8!important;stroke-linecap:round;stroke-linejoin:round}
+html body .mobile-bottom-nav>a>span{display:block!important;font-size:11px!important;line-height:1.2!important;color:#746187!important;font-weight:500!important}
+html body .mobile-bottom-nav>a[aria-current="page"]>svg{background:#f0e7fc!important}
+html body .mobile-bottom-nav>a[aria-current="page"]>span{color:#7036c6!important;font-weight:700!important}
+html body .mobile-bottom-nav>a[aria-current="page"]::before{content:'';position:absolute;top:3px;width:24px;height:3px;border-radius:3px;background:#7036c6}
+html body .mobile-bottom-nav>a:focus-visible{outline:3px solid #ac85de;outline-offset:-3px}
 </style></head><body class="{% if request is defined and request.url.path.startswith('/p/') and pro is defined and (request.url.path.rstrip('/').endswith('/menu') or (pro.plan_active in ['cardapio','ambos'] and pro.is_premium and pro.offer_mode in ['menu','catalog'])) %}nu169-products-view nu170-fixed-catalog nu172-catalog-pending {% endif %}{% block body_class %}{% endblock %}">
 {% if settings.ticker_enabled=='1' and settings.ticker_text %}<div class="notice-ticker ticker-{{settings.ticker_animation or 'continuous'}}" role="status" aria-label="Aviso"><div class="notice-ticker-track"><span>{{settings.ticker_text}}</span><i>•</i><span aria-hidden="true">{{settings.ticker_text}}</span><i aria-hidden="true">•</i><span aria-hidden="true">{{settings.ticker_text}}</span><i aria-hidden="true">•</i><span aria-hidden="true">{{settings.ticker_text}}</span></div></div>{% endif %}
 <header class="top"><div class="container nav"><a class="brand" href="/" aria-label="Página inicial"><img class="nowup-official-logo" src="/static/nowup-logo100.png?v=132" alt="NowUp Brasil" width="150" height="118"></a>
@@ -171,7 +188,7 @@ html body.v50-directory-home .v50-head{padding-top:8px!important;padding-bottom:
 </div>
 <script src="/static/order-alerts.js?v=149" defer></script>{% endif %}{% block content %}{% endblock %}
 <footer class="footer"><div class="container footergrid"><div><div class="brand footerbrand"><img class="nowup-official-logo" src="/static/nowup-logo100.png?v=132" alt="NowUp Brasil" width="150" height="118"></div><p>Encontre profissionais e empresas na sua região e conheça seus produtos e serviços.</p></div><div><b>Institucional</b><p><a href="/quem-somos">Quem somos</a></p><p><a href="/termos">Termos de uso</a></p><p><a href="/privacidade">Privacidade</a></p></div><div><b>Para profissionais</b><p><a href="/cadastro/profissional">Cadastre-se</a></p><p><a href="/profissionais">Ver profissionais</a></p><p><a href="/contato">Fale conosco</a></p></div><div><b>Atendimento</b><p>A NowUp divulga e conecta. Os pedidos são feitos e acompanhados no NowUp.</p></div></div><div class="container copyright">© 2026 NowUp. Todos os direitos reservados.</div></footer>
-<nav class="mobile-bottom-nav" aria-label="Navegação principal"><a href="/">⌂<span>Início</span></a><a href="/profissionais">⌕<span>Explorar</span></a><a href="{% if user and user.role=='customer' %}/cliente#favoritos{% else %}/entrar{% endif %}">♡<span>Favoritos</span></a><a href="{% if user and user.role=='professional' %}/painel{% elif user and user.role=='customer' %}/cliente#conta{% else %}/entrar{% endif %}">♙<span>Perfil</span></a></nav>
+<nav class="mobile-bottom-nav" aria-label="Navegação principal"><a data-nav175="home" href="/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v11h-7v-7h-4v7H3Z"/></svg><span>Início</span></a><a data-nav175="search" href="/profissionais"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="m15 15 6 6"/></svg><span>Buscar</span></a><a data-nav175="favorites" href="{% if user and user.role=='customer' %}/cliente#favoritos{% else %}/entrar{% endif %}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg><span>Favoritos</span></a><a data-nav175="profile" href="{% if user and user.role=='professional' %}/painel{% elif user and user.role=='customer' %}/cliente#conta{% else %}/entrar{% endif %}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3Z"/></svg><span>Perfil</span></a></nav>
 <div id="cookie" class="cookie"><div><b>Cookies essenciais</b><div class="tiny">Usamos apenas o necessário para login e preferências.</div></div><button class="btn orange" onclick="acceptCookies()">Entendi</button></div><script src="/static/app.js?v=21"></script><script src="/static/image-editor.js?v=21"></script><script>(() => {
   'use strict';
   const menu = document.getElementById('nowup-navigation');
@@ -295,7 +312,29 @@ try {
  }
 })();
 
-},{once:true});</script></body></html>
+},{once:true});</script><script id="nowup-fixed175-init">document.addEventListener('DOMContentLoaded',()=>{
+ const header=document.querySelector('body.v50-directory-home>.top');
+ const search=document.querySelector('body.v50-directory-home .v50-home>.v50-head');
+ if(header&&search){
+  const measure=()=>{
+   const h=Math.ceil(header.getBoundingClientRect().height),s=Math.ceil(search.getBoundingClientRect().height);
+   document.body.style.setProperty('--nu175-header-height',h+'px');
+   document.body.style.setProperty('--nu175-search-height',s+'px');
+  };
+  measure();if(typeof ResizeObserver==='function'){const observer=new ResizeObserver(measure);observer.observe(header);observer.observe(search);}
+  window.addEventListener('resize',measure,{passive:true});document.fonts?.ready.then(measure);
+ }
+ const nav=document.querySelector('.mobile-bottom-nav');
+ function selected(){
+  if(!nav)return;
+  const path=location.pathname,hash=location.hash;
+  nav.querySelectorAll('a').forEach(a=>a.removeAttribute('aria-current'));
+  let key=path==='/'?'home':path==='/profissionais'?'search':hash==='#favoritos'?'favorites':(path==='/cliente'||path==='/painel'||path==='/entrar'||path==='/admin')?'profile':null;
+  nav.querySelector('[data-nav175="'+key+'"]')?.setAttribute('aria-current','page');
+ }
+ selected();window.addEventListener('hashchange',selected);
+},{once:true});
+</script></body></html>
 
 
 
