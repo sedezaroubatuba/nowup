@@ -1,0 +1,25 @@
+<template id="nu187-store-template">
+<section class="nu187-intro" aria-label="Informações da loja">
+ <div class="nu187-cover" {% if pro.cover_filename %}style="background-image:url('/uploads/{{pro.cover_filename}}')"{% endif %}></div>
+ <div class="nu187-identity">
+  <div class="nu187-avatar">{% if pro.avatar_filename %}<img src="/uploads/{{pro.avatar_filename}}" alt="Perfil de {{pro.display_name}}">{% else %}<span>🏪</span>{% endif %}</div>
+  <h1>{{pro.display_name}}</h1>
+  {% if pro.description %}<p class="nu187-description">{{pro.description}}</p>{% endif %}
+  <p class="nu187-status {% if shop_status.open %}is-open{% endif %}">● {{shop_status.label}}</p>
+ </div>
+ <div class="nu187-information">
+  {% if shop_status.detail %}<p>◷ {{shop_status.detail}}</p>{% endif %}
+  {% if pro.allows_delivery or pro.allows_pickup %}<p>{% if pro.allows_delivery %}Entrega{% endif %}{% if pro.allows_delivery and pro.allows_pickup %} e {% endif %}{% if pro.allows_pickup %}Retirada no local{% endif %}</p>{% endif %}
+  {% if not pro.hide_address and pro.address %}<p>📍 {{pro.address}}{% if pro.neighborhood %} · {{pro.neighborhood}}{% endif %}{% if pro.city %} · {{pro.city}}{% endif %}</p>{% elif pro.city %}<p>📍 {{pro.city}}{% if pro.neighborhood %} · {{pro.neighborhood}}{% endif %}</p>{% endif %}
+  <details><summary>Ver informações da loja</summary>
+   {% if hours_lines %}<h2>Horários de funcionamento</h2>{% for line in hours_lines %}<p>{{line}}</p>{% endfor %}{% elif pro.opening_hours %}<h2>Horários de funcionamento</h2><p class="nu187-hours">{{pro.opening_hours}}</p>{% else %}<p>Horários não informados pela loja.</p>{% endif %}
+   {% if pro.address and not pro.hide_address %}<p><a href="https://www.google.com/maps/search/?api=1&query={{pro.address|urlencode}}" target="_blank" rel="noopener">Como chegar</a></p>{% endif %}
+  </details>
+ </div>
+ {% set promotions=namespace(count=0) %}{% for product in products %}{% if product.available and product.promo_price_cents > 0 and product.promo_price_cents < product.price_cents %}{% set promotions.count=promotions.count+1 %}{% endif %}{% endfor %}
+ {% if promotions.count %}<button class="nu187-promotion" type="button" data-store-promotion187><b>Promoções da loja</b><span>{{promotions.count}} {{'produto com preço especial' if promotions.count == 1 else 'produtos com preços especiais'}} · Ver produtos →</span></button>{% endif %}
+ <h2 class="nu187-category-title">Categorias</h2>
+ <div data-store-categories187></div>
+ <nav class="nu187-category-list" aria-label="Escolher categoria">{% for category in menu_categories %}<button type="button" data-store-category187="{{category|lower}}"><span>{{category}}</span><span aria-hidden="true">›</span></button>{% else %}<button type="button" data-store-category187="all">Ver todos os produtos <span aria-hidden="true">›</span></button>{% endfor %}</nav>
+</section>
+</template>
