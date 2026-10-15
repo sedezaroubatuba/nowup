@@ -32,10 +32,10 @@
   const search=root.querySelector('[data-product-search], [data-store-search]');
   let active=buttons.find(b=>b.classList.contains('active'))?.dataset.categoryFilter||'all';
   let lastSwitch=0, lastY=window.scrollY, touch=null;
-  const names=new Map(products.map(p=>[p,(p.dataset.name||'')+' '+(p.querySelector('.menu-product-info p')?.textContent||'')]));
+  const names=new Map(products.map(p=>[p,(p.dataset.name||'')+' '+(p.dataset.category||'')+' '+(p.querySelector('.menu-product-info p')?.textContent||'')]));
   const empty=document.createElement('p');empty.className='nu145-empty';empty.textContent='Nenhum produto encontrado.';empty.hidden=true;root.querySelector('.menu-products')?.after(empty);
   const normalize=s=>(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-  function filter(){const terms=normalize(search?.value).trim().split(/\s+/).filter(Boolean);products.forEach(p=>{p.hidden=(active!=='all'&&p.dataset.category!==active)||!terms.every(term=>normalize(names.get(p)).includes(term));});empty.hidden=products.some(p=>!p.hidden);buttons.forEach(b=>{b.classList.toggle('active',b.dataset.categoryFilter===active);b.setAttribute('aria-pressed',String(b.dataset.categoryFilter===active));});}
+  function filter(){const terms=normalize(search?.value).trim().split(/\s+/).filter(Boolean);products.forEach(p=>{p.hidden=(active!=='all'&&p.dataset.category!==active)||!(window.NowUpSearch179 ? window.NowUpSearch179.matches(names.get(p),search?.value) : terms.every(term=>normalize(names.get(p)).includes(term)));});empty.hidden=products.some(p=>!p.hidden);buttons.forEach(b=>{b.classList.toggle('active',b.dataset.categoryFilter===active);b.setAttribute('aria-pressed',String(b.dataset.categoryFilter===active));});}
   function choose(button,scroll){active=button.dataset.categoryFilter;filter();button.scrollIntoView({block:'nearest',inline:'nearest',behavior:'auto'});lastSwitch=Date.now();if(scroll){const first=products.find(p=>!p.hidden);if(first){window.scrollTo({top:Math.max(0,first.getBoundingClientRect().top+window.scrollY-(root.querySelector('.nu-menu-sticky')?.offsetHeight||100)-8),behavior:'instant'});lastY=window.scrollY;}}}
   nav.addEventListener('click',event=>{const button=event.target.closest('[data-category-filter]');if(!button)return;event.preventDefault();event.stopImmediatePropagation();choose(button,true);},true);
   search?.addEventListener('input',event=>{event.stopImmediatePropagation();active='all';filter();},true);
