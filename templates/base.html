@@ -111,10 +111,34 @@ html body.v50-directory-home .top .nowup-official-logo{width:115px!important;hei
 html body.v50-directory-home .v50-home .v50-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 html body.v50-directory-home.nu173-filtered .v50-home .v50-grid{grid-template-columns:minmax(0,1fr)!important}
 }
+</style><style id="nowup-ui174-style">/* A single bell in the header replaces the large notification settings block. */
+html body>.customer-alerts112{display:none!important}
+html body .nu174-bell{position:relative!important;display:grid!important;place-items:center!important;flex:none!important;width:44px!important;height:44px!important;min-height:44px!important;margin:0 8px 0 auto!important;padding:0!important;border:1px solid #e5d9f3!important;border-radius:12px!important;background:#f4effb!important;color:#7036c6!important;cursor:pointer}
+.nu174-bell svg{display:block;width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nu174-bell.has-update::after{content:'';position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:#df345c;border:2px solid #fff}
+html body dialog.nu174-alert-dialog:not([open]){display:none!important}
+html body dialog.nu174-alert-dialog{width:calc(100% - 32px);max-width:440px;max-height:80dvh;box-sizing:border-box;padding:20px;border:0;border-radius:18px;background:#fff;color:#243248;overflow:auto}
+.nu174-alert-dialog::backdrop{background:#15223880}.nu174-alert-dialog>header{display:flex;align-items:center;justify-content:space-between;gap:12px}.nu174-alert-dialog h2{font-size:20px;margin:0}.nu174-alert-dialog [data-alert-close174]{width:44px;height:44px;font-size:24px;border:0;border-radius:10px;background:#f4effb;color:#7036c6;cursor:pointer}
+html body .nu174-alert-dialog .customer-alerts112{display:flex!important;flex-wrap:wrap!important;gap:10px!important;border:0!important;box-shadow:none!important;padding:16px 0 0!important;margin:0!important;width:100%!important;box-sizing:border-box}
+html body .nu174-alert-dialog .customer-alerts112 [hidden]{display:none!important}
+html body .nu174-alert-dialog .customer-alerts112 small{font-size:13px!important;line-height:1.5!important;color:#536477!important}
+html body.v50-directory-home .nu174-orders{box-sizing:border-box;margin:24px auto;padding:12px 16px;border:1px solid #e5dfed;border-radius:14px;background:#fff}
+.nu174-orders>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:650;color:#536477;list-style:none;gap:8px}.nu174-orders>summary::before{content:'▸'}.nu174-orders[open]>summary::before{content:'▾'}
+html body.v50-directory-home .nu174-orders .nu88-orders{padding:10px 0!important;margin:0!important;max-width:100%!important}
+@media(min-width:1024px){html body.v50-directory-home .v50-home>.nu174-orders{grid-column:2;width:100%!important;max-width:none!important}}
+.nu174-bell:focus-visible,.nu174-orders>summary:focus-visible{outline:3px solid #a17bda;outline-offset:3px}
+
+/* Compact the main storefront header only; preserve panels/catalog behavior. */
+html body.v50-directory-home .top{padding:0!important;min-height:0!important}
+html body.v50-directory-home .top .nav{min-height:64px!important;padding-top:6px!important;padding-bottom:6px!important;gap:8px!important}
+html body.v50-directory-home .top .brand{min-height:0!important;margin:0!important}
+html body.v50-directory-home .top .brand .nowup-official-logo{width:128px!important;height:52px!important;max-height:52px!important;object-fit:contain!important;display:block!important}
+html body.v50-directory-home .top .mobile-menu{width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important;padding:0!important;font-size:25px!important;border-radius:12px!important;margin:0!important}
+html body.v50-directory-home .v50-head{padding-top:8px!important;padding-bottom:6px!important}
 </style></head><body class="{% if request is defined and request.url.path.startswith('/p/') and pro is defined and (request.url.path.rstrip('/').endswith('/menu') or (pro.plan_active in ['cardapio','ambos'] and pro.is_premium and pro.offer_mode in ['menu','catalog'])) %}nu169-products-view nu170-fixed-catalog nu172-catalog-pending {% endif %}{% block body_class %}{% endblock %}">
 {% if settings.ticker_enabled=='1' and settings.ticker_text %}<div class="notice-ticker ticker-{{settings.ticker_animation or 'continuous'}}" role="status" aria-label="Aviso"><div class="notice-ticker-track"><span>{{settings.ticker_text}}</span><i>•</i><span aria-hidden="true">{{settings.ticker_text}}</span><i aria-hidden="true">•</i><span aria-hidden="true">{{settings.ticker_text}}</span><i aria-hidden="true">•</i><span aria-hidden="true">{{settings.ticker_text}}</span></div></div>{% endif %}
 <header class="top"><div class="container nav"><a class="brand" href="/" aria-label="Página inicial"><img class="nowup-official-logo" src="/static/nowup-logo100.png?v=132" alt="NowUp Brasil" width="150" height="118"></a>
-<nav class="mainnav"><a href="/profissionais">Profissionais</a><a href="/cadastro/profissional">Anunciar</a><a href="/noticias">Notícias</a><a href="/contato">Contato</a><a href="/quem-somos">Quem somos</a></nav><div class="navlinks">{% if user %}<span class="muted hello">Olá, {{user.name}}</span>{% if user.role=='professional' %}<a class="btn soft" href="/painel">Painel profissional</a>{% elif user.role=='customer' %}<a class="btn soft" href="/cliente">Área do cliente</a>{% elif user.role=='admin' %}<a class="btn dark" href="/admin">Painel administrativo</a>{% endif %}<form action="/sair" method="post"><button class="btn ghost">Sair</button></form>{% else %}<a class="btn ghost" href="/entrar">Entrar</a><a class="btn orange" href="/cadastro/cliente">Cadastrar</a>{% endif %}</div><button class="mobile-menu" type="button" aria-label="Abrir menu" data-nowup-menu-open aria-controls="nowup-navigation" aria-expanded="false">☰</button></div></header>
+<nav class="mainnav"><a href="/profissionais">Profissionais</a><a href="/cadastro/profissional">Anunciar</a><a href="/noticias">Notícias</a><a href="/contato">Contato</a><a href="/quem-somos">Quem somos</a></nav><div class="navlinks">{% if user %}<span class="muted hello">Olá, {{user.name}}</span>{% if user.role=='professional' %}<a class="btn soft" href="/painel">Painel profissional</a>{% elif user.role=='customer' %}<a class="btn soft" href="/cliente">Área do cliente</a>{% elif user.role=='admin' %}<a class="btn dark" href="/admin">Painel administrativo</a>{% endif %}<form action="/sair" method="post"><button class="btn ghost">Sair</button></form>{% else %}<a class="btn ghost" href="/entrar">Entrar</a><a class="btn orange" href="/cadastro/cliente">Cadastrar</a>{% endif %}</div>{% if user and user.role=='customer' %}<button class="nu174-bell" type="button" data-bell174 aria-label="Avisos de pedidos" aria-controls="nu174-alert-dialog" aria-haspopup="dialog" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></button>{% endif %}<button class="mobile-menu" type="button" aria-label="Abrir menu" data-nowup-menu-open aria-controls="nowup-navigation" aria-expanded="false">☰</button></div></header>
 
 <dialog id="nowup-navigation" class="nowup-navigation" aria-labelledby="nowup-navigation-title">
 <div class="nowup-navigation-header"><div><b id="nowup-navigation-title">Menu NowUp Brasil</b><small>{% if user %}Olá, {{user.name}}{% else %}Sua cidade na sua mão{% endif %}</small></div><button type="button" data-nowup-menu-close aria-label="Fechar menu">✕</button></div>
@@ -253,7 +277,25 @@ try {
  if(text)text.textContent='Categoria da loja fictícia';
  const help=document.createElement('small');help.textContent='A loja aparecerá no filtro desta categoria. Para trocar depois, use Editar perfil.';label.append(help);
 });
-</script>{% endif %}</body></html>
+</script>{% endif %}{% if user and user.role=='customer' %}<dialog class="nu174-alert-dialog" id="nu174-alert-dialog" aria-labelledby="nu174-alert-title"><header><h2 id="nu174-alert-title">Avisos de pedidos</h2><button type="button" data-alert-close174 aria-label="Fechar avisos">×</button></header><div data-alert-body174></div></dialog>{% endif %}<script id="nowup-ui174">document.addEventListener("DOMContentLoaded",()=>{
+(() => {
+ 'use strict';
+ // Preserve the notification engine's existing nodes and event handlers.
+ const bell=document.querySelector('[data-bell174]');
+ const alerts=document.querySelector('[data-customer-alerts112]');
+ const dialog=document.querySelector('#nu174-alert-dialog');
+ if(bell&&alerts&&dialog&&typeof dialog.showModal==='function'){
+  dialog.querySelector('[data-alert-body174]').append(alerts);
+  bell.addEventListener('click',()=>{dialog.showModal();bell.setAttribute('aria-expanded','true');});
+  dialog.querySelector('[data-alert-close174]').addEventListener('click',()=>dialog.close());
+  dialog.addEventListener('close',()=>{bell.setAttribute('aria-expanded','false');bell.focus({preventScroll:true});});
+  dialog.addEventListener('click',event=>{if(event.target!==dialog)return;const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();});
+  const update=()=>bell.classList.toggle('has-update',!!alerts.querySelector('[data-customer-update]:not([hidden])'));
+  new MutationObserver(update).observe(alerts,{subtree:true,attributes:true,attributeFilter:['hidden']});update();
+ }
+})();
+
+},{once:true});</script></body></html>
 
 
 
