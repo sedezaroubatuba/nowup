@@ -24,6 +24,7 @@
  const search=bar.querySelector('[data-product-search]');
  let queued=false;
  function offset(){
+  if(document.body.classList.contains("nu187-store-home")){queued=false;return;}
   queued=false;
   const top=window.visualViewport?.offsetTop||0;
   const rect=anchor.getBoundingClientRect(),end=root.getBoundingClientRect().bottom;
@@ -38,7 +39,7 @@
   root.classList.toggle('nu-search-focused',focused);
  }
  function schedule(){if(!queued){queued=true;requestAnimationFrame(offset);}}
- function showResults(){
+ function showResults(){if(document.body.classList.contains("nu187-store-home"))return;
   if(document.activeElement!==search)return;
   offset();
   const first=[...products.querySelectorAll('[data-product]')].find(p=>!p.hidden);

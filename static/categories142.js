@@ -40,7 +40,7 @@
   nav.addEventListener('click',event=>{const button=event.target.closest('[data-category-filter]');if(!button)return;event.preventDefault();event.stopImmediatePropagation();choose(button,true);},true);
   search?.addEventListener('input',event=>{event.stopImmediatePropagation();active='all';filter();},true);
   search?.addEventListener('search',event=>{event.stopImmediatePropagation();active='all';filter();},true);
-  function next(direction=1,lateral=false){if(categories.length<2||search?.value.trim()||document.querySelector('dialog[open]')||Date.now()-lastSwitch<(lateral?80:500))return;const index=categories.findIndex(b=>b.dataset.categoryFilter===active);choose(categories[(index+direction+categories.length)%categories.length],true);}
+  function next(direction=1,lateral=false){if(document.body.classList.contains("nu187-store-home"))return;if(categories.length<2||search?.value.trim()||document.querySelector('dialog[open]')||Date.now()-lastSwitch<(lateral?80:500))return;const index=categories.findIndex(b=>b.dataset.categoryFilter===active);choose(categories[(index+direction+categories.length)%categories.length],true);}
   function atEnd(){const visible=products.filter(p=>!p.hidden);return visible.length&&visible[visible.length-1].getBoundingClientRect().bottom<=window.innerHeight-70;}
   window.addEventListener('scroll',()=>{const y=window.scrollY;if(y>lastY+2&&atEnd())next();lastY=window.scrollY;},{passive:true});
   window.addEventListener('wheel',event=>{if(root.contains(event.target)&&event.deltaY>0&&atEnd())next();},{passive:true});
