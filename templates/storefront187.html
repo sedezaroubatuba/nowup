@@ -4,8 +4,8 @@
  <div class="nu187-identity">
   <div class="nu187-avatar">{% if pro.avatar_filename %}<img src="/uploads/{{pro.avatar_filename}}" alt="Perfil de {{pro.display_name}}">{% else %}<span>🏪</span>{% endif %}</div>
   <h1>{{pro.display_name}}</h1>
-  {% if pro.description %}<p class="nu187-description">{{pro.description}}</p>{% endif %}
-  <p class="nu187-status {% if shop_status.open %}is-open{% endif %}">● {{shop_status.label}}</p>
+  {% if pro.description and pro.description|trim not in ['.', '-', '…'] %}<p class="nu187-description">{{pro.description}}</p>{% endif %}
+  <p class="nu187-status {% if shop_status.open %}is-open{% endif %}"><span class="nu190-status-dot" aria-hidden="true"></span>{{shop_status.label}}</p>
  </div>
  <div class="nu187-information">
   {% if shop_status.detail %}<p>◷ {{shop_status.detail}}</p>{% endif %}
