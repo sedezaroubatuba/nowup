@@ -1,4 +1,45 @@
 <!doctype html><html lang="pt-BR"><head>
+<style>
+html.nu186-opening::before{content:"";position:fixed;inset:0;background:#fff;z-index:2147483000;pointer-events:none;opacity:1;transition:opacity .2s ease;animation:nu186-safety 1.2s forwards}
+html.nu186-opening::after{content:"";position:fixed;left:50%;top:50%;width:150px;height:150px;margin:-75px 0 0 -75px;background:url('/static/nowup-symbol186.svg?v=186') center/contain no-repeat;z-index:2147483001;pointer-events:none;animation:nu186-symbol .28s ease-out both,nu186-safety 1.2s forwards;transition:opacity .2s ease}
+html.nu186-opening.nu186-leaving::before,html.nu186-opening.nu186-leaving::after{opacity:0;animation:none}
+@keyframes nu186-symbol{from{opacity:.15;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+@keyframes nu186-safety{0%,80%{visibility:visible}100%{visibility:hidden}}
+@media(prefers-reduced-motion:reduce){html.nu186-opening::before,html.nu186-opening::after{display:none}}
+</style>
+<script>
+(()=>{'use strict';
+ const root=document.documentElement;
+ const clear=()=>root.classList.remove('nu186-opening','nu186-leaving');
+ try{
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  if(!['/','/app','/entrar','/painel','/cliente'].includes(location.pathname))return;
+  const navigation=performance.getEntriesByType?.('navigation')?.[0];
+  if(navigation&&navigation.type!=='navigate')return;
+  if(sessionStorage.getItem('nowup-opening186'))return;
+  sessionStorage.setItem('nowup-opening186','1');
+  root.classList.add('nu186-opening');
+  const started=performance.now();let leaving=false;
+  const leave=()=>{
+   if(leaving)return;leaving=true;
+   setTimeout(()=>{
+    root.classList.add('nu186-leaving');setTimeout(clear,220);
+   },Math.max(0,300-(performance.now()-started)));
+  };
+  setTimeout(clear,1200);
+  setTimeout(leave,750);
+  addEventListener('pagehide',clear,{once:true});
+  addEventListener('pageshow',event=>{if(event.persisted)clear();});
+  const ready=()=>{
+   const image=new Image();image.src='/static/nowup-symbol186.svg?v=186';
+   const decoded=image.decode?image.decode():new Promise(resolve=>{image.onload=resolve;image.onerror=resolve;});
+   Promise.resolve(decoded).catch(()=>{}).then(()=>requestAnimationFrame(()=>requestAnimationFrame(leave)));
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready,{once:true});else ready();
+ }catch(_){clear();}
+})();
+</script>
+
 <link rel="manifest" href="/static/nowup.webmanifest?v=185">
 <meta name="theme-color" content="#ffffff">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -25,7 +66,7 @@ dialog.nowup-navigation:not([open]){display:none!important}
 .nowup-navigation-city select,.nowup-navigation-city input{width:100%;min-height:46px;padding:10px;border:1px solid #cbd9e8;border-radius:10px;font:inherit;box-sizing:border-box;background:#fff;color:#14365d}
 .nowup-navigation-city button{min-height:46px;border:0;border-radius:10px;background:#123e7d;color:#fff;font:inherit;font-weight:700;padding:10px;cursor:pointer}
 .nowup-navigation-logout{padding-top:20px}.nowup-navigation-logout button{width:100%;min-height:46px;border:1px solid #f1c9ce;border-radius:10px;background:#fff3f4;color:#a52239;font:inherit;font-weight:700;cursor:pointer}
-</style><link rel="stylesheet" href="/static/splash165.css?v=165"><script src="/static/splash165.js?v=181" defer></script>
+</style><link rel="stylesheet" href="/static/splash165.css?v=165"><script src="/static/splash165.js?v=186" defer></script>
 <link rel="stylesheet" href="/static/nowup-white82.css?v=82"><link rel="stylesheet" href="/static/customer88.css?v=88"><link rel="stylesheet" href="/static/nowup-white99.css?v=99"><link rel="stylesheet" href="/static/nowup-brand100.css?v=132"><link rel="stylesheet" href="/static/buttons131.css?v=136"><link rel="stylesheet" href="/static/nowup-purple133.css?v=136"><link rel="stylesheet" href="/static/pro-purple137.css?v=141"><link rel="stylesheet" href="/static/checkout-menu140.css?v=140"><link rel="stylesheet" href="/static/cart144.css?v=144"><link rel="stylesheet" href="/static/dishes151.css?v=160"><link rel="stylesheet" href="/static/catalog162.css?v=164"><link rel="stylesheet" href="/static/scroll-return167.css?v=167">
 <style id="nowup-catalog171">/* V168: native catalog only. Existing search/filter/cart remain authoritative. */
 html body.public-profile-area [data-native-menu] .nu83-catalog-heading{display:flex!important;align-items:center!important;gap:10px!important;padding:8px 0!important;margin:0!important}
