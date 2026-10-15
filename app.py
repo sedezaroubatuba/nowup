@@ -2692,3 +2692,7 @@ def pro_category_order142(request: Request, order_json: str=Form(...)):
 # V177: public product/store search, no schema changes.
 from nowup_search177 import register as register_search177
 register_search177(app, db, public_business_scope, shop_status)
+
+# V182: installable NowUp, sharing the current site and authentication.
+from nowup_pwa182 import register as register_pwa182
+register_pwa182(app, current_user)
