@@ -19,7 +19,6 @@
  {% set promotions=namespace(count=0) %}{% for product in products %}{% if product.available and product.promo_price_cents > 0 and product.promo_price_cents < product.price_cents %}{% set promotions.count=promotions.count+1 %}{% endif %}{% endfor %}
  {% if promotions.count %}<button class="nu187-promotion" type="button" data-store-promotion187><b>Promoções da loja</b><span>{{promotions.count}} {{'produto com preço especial' if promotions.count == 1 else 'produtos com preços especiais'}} · Ver produtos →</span></button>{% endif %}
  <h2 class="nu187-category-title">Categorias</h2>
- <div data-store-categories187></div>
- <nav class="nu187-category-list" aria-label="Escolher categoria">{% for category in menu_categories %}<button type="button" data-store-category187="{{category|lower}}"><span>{{category}}</span><span aria-hidden="true">›</span></button>{% else %}<button type="button" data-store-category187="all">Ver todos os produtos <span aria-hidden="true">›</span></button>{% endfor %}</nav>
+
 </section>
 </template>

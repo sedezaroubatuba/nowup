@@ -281,8 +281,8 @@ html body.public-profile-area [data-native-menu] .nu83-catalog-heading .nu83-sea
 </style>
 <link rel="stylesheet" href="/static/brand185.css?v=185">
 <script src="/static/brand185.js?v=185" defer></script>
-<link rel="stylesheet" href="/static/storefront187.css?v=187">
-<script src="/static/storefront187.js?v=187" defer></script>
+<link rel="stylesheet" href="/static/storefront187.css?v=189">
+<script src="/static/storefront187.js?v=189" defer></script>
 <noscript><style>html body.nu187-store-home [data-native-menu] .menu-layout{display:block!important}</style></noscript>
 <script>setTimeout(()=>{if(document.body&&!document.body.dataset.store187Ready)document.body.classList.remove("nu187-store-home");},3000);</script>
 </head><body class="{% if request is defined and request.url.path.startswith('/p/') and pro is defined and (request.url.path.rstrip('/').endswith('/menu') or (pro.plan_active in ['cardapio','ambos'] and pro.is_premium and pro.offer_mode in ['menu','catalog'])) %}nu169-products-view nu170-fixed-catalog nu172-catalog-pending nu187-store-home {% endif %}{% block body_class %}{% endblock %}">
@@ -522,30 +522,7 @@ try {
 },{once:true});
 </script>{% if pro is defined and pro %}
 <template id="nu180-store-identity"><span data-store-name="{{ pro.display_name|e }}" data-avatar="{{ (pro.avatar_filename or '')|e }}"></span></template>
-<script id="nowup-store-header180-init">
-document.addEventListener('DOMContentLoaded',()=>{
- 'use strict';
- const root=document.querySelector('body.public-profile-area [data-native-menu]');
- const heading=root?.querySelector('.nu83-catalog-heading');
- const input=heading?.querySelector('[data-product-search], [data-store-search], .nu83-search input');
- const identity=document.getElementById('nu180-store-identity')?.content.firstElementChild;
- if(!root||!heading||!input||!identity||heading.querySelector('.nu180-store-avatar'))return;
- const name=identity.dataset.storeName||'esta loja';
- const avatar=document.createElement('span');avatar.className='nu180-store-avatar';avatar.title=name;avatar.setAttribute('role','img');avatar.setAttribute('aria-label','Logo da loja '+name);
- const initials=name.trim().split(/\s+/).slice(0,2).map(word=>Array.from(word)[0]||'').join('').toUpperCase();avatar.textContent=initials||'L';
- const filename=identity.dataset.avatar;
- if(filename){
-  // Reuse the rendered store image URL (including remote image hosting).
-  const existing=[...document.querySelectorAll('.public-profile-hero img, .profileGrid img, img')].find(img=>{const src=img.getAttribute('src')||'';return src.includes(filename)||src.includes(encodeURIComponent(filename));});
-  const src=existing?.currentSrc||existing?.getAttribute('src')||(/^(https?:\/\/|\/)/i.test(filename)?filename:'/uploads/'+encodeURIComponent(filename));
-  if(/^(https?:\/\/|\/)/i.test(src)){
-   const image=document.createElement('img');image.alt='';image.decoding='async';image.addEventListener('error',()=>{avatar.textContent=initials||'L';},{once:true});image.src=src;avatar.replaceChildren(image);
-  }
- }
- const search= input.closest('.nu83-search')||input;heading.insertBefore(avatar,search);
- input.placeholder='Buscar em '+name;input.setAttribute('aria-label','Buscar produtos em '+name);
-},{once:true});
-</script>
+
 {% endif %}
 <div id="nowup-install-bar" class="nowup-install-bar" hidden><img src="/static/nowup-pwa-192.png" width="40" height="40" alt=""><span><b>NowUp no seu celular</b><small>Acesse pelo ícone na tela inicial</small></span><button type="button" data-nowup-install>Instalar</button><button type="button" id="nowup-install-dismiss" aria-label="Dispensar convite">×</button></div>
 <dialog id="nowup-install-help" class="nowup-install-help" aria-labelledby="nowup-install-title"><h2 id="nowup-install-title">Instalar NowUp</h2><p id="nowup-install-instructions"></p><p>Depois de adicionar, abra pelo ícone do NowUp na tela inicial.</p><form method="dialog"><button>Entendi</button></form></dialog>
