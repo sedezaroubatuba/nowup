@@ -2688,3 +2688,7 @@ def pro_category_order142(request: Request, order_json: str=Form(...)):
         conn.commit()
     finally: conn.close()
     return JSONResponse({"ok":True,"ids":ids})
+
+# V177: public product/store search, no schema changes.
+from nowup_search177 import register as register_search177
+register_search177(app, db, public_business_scope, shop_status)
