@@ -1,0 +1,22 @@
+html body.nu187-store-home [data-native-menu] .menu-layout{display:none!important}
+html body.public-profile-area .nu187-intro[hidden]{display:none!important}
+html body.public-profile-area .nu187-intro{display:block;background:#fff;color:#263247;padding-bottom:20px}
+html body.public-profile-area .nu187-cover{height:clamp(190px,34vw,310px);background-color:#f0e8fa;background-size:cover;background-position:center;border-radius:14px 14px 0 0}
+.nu187-identity{text-align:center;padding:0 16px}
+.nu187-avatar{display:grid;place-items:center;position:relative;width:96px;height:96px;margin:-48px auto 12px;border:4px solid #fff;border-radius:50%;background:#fff;overflow:hidden;box-shadow:0 3px 12px #25163b18;box-sizing:border-box;font-size:40px}
+.nu187-avatar img{width:100%;height:100%;object-fit:cover}
+.nu187-identity h1{font-size:26px;line-height:1.2;margin:8px 0;overflow-wrap:anywhere}
+.nu187-description{font-size:14px;line-height:1.5;color:#637084;white-space:pre-line;overflow-wrap:anywhere;margin:8px 0}
+.nu187-status{color:#996020;font-size:14px}.nu187-status.is-open{color:#17844d}
+.nu187-information{padding:0 16px;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+.nu187-information p{margin:10px 0}.nu187-information summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:#7036c6;font-weight:600}.nu187-information h2{font-size:16px}.nu187-information a{color:#7036c6}.nu187-hours{white-space:pre-line}
+.nu187-promotion{display:flex;flex-direction:column;gap:6px;width:calc(100% - 32px);margin:16px;border:0;border-radius:12px;background:#f3edfd;color:#7036c6;padding:16px;text-align:left;font:inherit;cursor:pointer;box-sizing:border-box}.nu187-promotion span{font-size:13px;color:#536075}
+.nu187-category-title{font-size:21px;margin:20px 16px 10px}
+.nu187-category-list{display:grid;padding:6px 16px}.nu187-category-list button{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:48px;border:0;border-bottom:1px solid #ece7f2;background:#fff;color:#263247;padding:12px 0;text-align:left;font:inherit;cursor:pointer}
+.nu187-back{min-width:44px;min-height:44px;border:0;border-radius:10px;background:#f4eefc;color:#7036c6;font:inherit;cursor:pointer;flex:none}
+html body.nu187-store-home [data-native-menu] .nu187-back{display:none!important}
+html body.public-profile-area .nu187-intro .menu-category-nav{position:static!important;padding:6px 16px!important}
+html body.public-profile-area.nu187-store-home [data-native-menu] .nu83-catalog-heading .nu180-store-avatar{display:none!important}
+.nu187-intro :focus-visible,.nu187-back:focus-visible{outline:3px solid #ad87dd;outline-offset:3px}
+@media(min-width:800px){.nu187-intro{max-width:850px;margin:0 auto}}
+@media(prefers-reduced-motion:reduce){.nu187-intro *{scroll-behavior:auto!important}}
