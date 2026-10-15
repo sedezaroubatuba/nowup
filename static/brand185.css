@@ -1,0 +1,20 @@
+/* V185: shared branding, including customer, merchant and admin screens. */
+html:root { color-scheme: only light; }
+html body, html body .top, html body .footer, html body .mobile-bottom-nav { background-color:#fff!important; background-image:none!important; }
+html body .brand img.nowup-official-logo,
+html body.v50-directory-home .top .brand img.nowup-official-logo {
+  width:180px!important;height:72px!important;max-height:72px!important;
+  max-width:100%!important;aspect-ratio:auto!important;object-fit:contain!important;
+  background:transparent!important;filter:none!important;border-radius:0!important;
+}
+html body .footerbrand img.nowup-official-logo {width:210px!important;height:84px!important;max-height:84px!important;}
+html body .nowup-official-icon {object-fit:contain!important;background:transparent!important;filter:none!important;}
+.nowup-login-brand185 {display:block;width:min(100%,340px);height:auto;margin:0 auto 26px;object-fit:contain;}
+@media(max-width:600px){
+ html body .top .brand img.nowup-official-logo,
+ html body.v50-directory-home .top .brand img.nowup-official-logo {width:142px!important;height:56px!important;max-height:56px!important;}
+}
+@media(max-width:350px){
+ html body .top .brand img.nowup-official-logo,
+ html body.v50-directory-home .top .brand img.nowup-official-logo {width:88px!important;height:70px!important;max-height:70px!important;}
+}
