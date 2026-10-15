@@ -1,0 +1,62 @@
+NOWUP — INSTALAÇÃO NO CELULAR (PWA) — V182
+
+Base utilizada: nowup-main (3).zip enviado em 15/10/2026.
+Este pacote contém somente arquivos novos ou alterados. Não apague o projeto.
+Se o seu GitHub já tiver alterações posteriores a esse ZIP, será necessário
+mesclar essas alterações antes de substituir app.py e os templates.
+
+COMO PUBLICAR
+1. Extraia este ZIP.
+2. Coloque app.py e nowup_pwa182.py na raiz do projeto do GitHub, ao lado de
+   requirements.txt. O arquivo LEIA-ME é apenas uma orientação.
+3. Coloque os arquivos da pasta static dentro da pasta static existente.
+4. Coloque os arquivos da pasta templates dentro de templates existente.
+   Substitua os arquivos de mesmo nome, sem apagar os demais.
+5. Faça o commit e aguarde o deploy do Render terminar com sucesso.
+6. Abra o endereço HTTPS do NowUp no Chrome do Android. Na página inicial
+   ou no login haverá um convite Instalar. O menu também tem Instalar NowUp.
+7. Toque em Instalar e confirme. Se aparecer uma orientação, siga o menu do
+   navegador: Instalar aplicativo ou Adicionar à tela inicial.
+8. No iPhone: Compartilhar > Adicionar à Tela de Início. Se necessário, Safari.
+   Links abertos dentro de outros apps podem precisar abrir no navegador.
+
+COMO FUNCIONA
+- Usa o ícone oficial roxo e azul presente no projeto, com fundo branco.
+- A abertura pelo ícone vai para /app. Sem sessão, mostra o login existente,
+  com Mostrar senha e Esqueci minha senha, em uma apresentação compacta.
+- Com sessão válida: cliente vai a /cliente, lojista a /painel e ADM a /admin.
+- A recuperação de senha continua dependendo da configuração existente de
+  envio de e-mails. Não foram alteradas credenciais nem configurações Brevo.
+- O PWA conserva as telas e o sistema atual. Não é APK e não exige Play Store.
+- A instalação depende do navegador; o botão não força instalação silenciosa.
+- A sessão de um navegador ou de uma instalação diferente pode exigir novo
+  login. Não é necessário digitar senha novamente enquanto a sessão usada
+  pelo PWA continuar válida.
+- Depois do deploy, telas e dados são buscados no site; para visualizar uma
+  tela alterada que estava aberta, navegue novamente ou feche e abra o PWA.
+- Nenhum recarregamento forçado acontece durante um pedido ou formulário.
+- Alterações de nome ou ícone instalados podem demorar a ser aplicadas pelo
+  sistema; em alguns aparelhos será necessário reinstalar.
+- É necessário internet para comprar e conferir pedidos. Sem conexão,
+  aparece uma mensagem e Tentar novamente. Não há pedidos offline.
+- Mantém o mesmo service worker das notificações, evitando substituí-lo por
+  outro. Não solicita nova permissão de notificação automaticamente.
+- O painel do lojista passa a usar o mesmo manifesto geral para novas
+  instalações. Instalações antigas do NowUp Lojista permanecem no aparelho.
+- Não altera banco de dados, produtos, estoque, pagamentos nem assinaturas.
+
+VERIFICAÇÃO REALIZADA
+- Sintaxe Python e JavaScript.
+- Rotas HTTP do aplicativo, manifesto, ícones, login e worker.
+- Destinos de entrada por perfil e ausência de sessão.
+- Simulação do convite de instalação, instruções alternativas e ocultação
+  depois de instalar.
+- Preservação dos manipuladores push, ausência de interceptação de POST e
+  tela de falta de conexão.
+A instalação física em Android/iPhone e os avisos reais de pedidos precisam
+ser conferidos após a publicação. Não foi realizado deploy neste atendimento.
+
+TESTE NO SEU CELULAR
+Instalar > abrir ícone > entrar > abrir loja > adicionar produto > conferir
+carrinho > sair e abrir novamente > testar recuperar senha com sua conta.
+No lojista, conferir o aviso de um pedido de teste.

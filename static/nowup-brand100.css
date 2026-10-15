@@ -5,3 +5,7 @@ html body .brand img.nowup-official-logo{width:190px!important;height:auto!impor
 html body .footerbrand img.nowup-official-logo{width:200px!important;height:auto!important}
 @media(max-width:600px){html body .top .brand img.nowup-official-logo{width:155px!important;height:auto!important}}
 
+
+/* V183: approved dark brand artwork; site backgrounds keep their current style. */
+html body .brand img.nowup-official-logo{border-radius:8px!important;background:#090920!important;aspect-ratio:3 / 1}
+html body .nowup-official-icon{border-radius:10px!important;background:#090920!important}

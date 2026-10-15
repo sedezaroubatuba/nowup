@@ -1,0 +1,67 @@
+NOWUP — PWA + NOVA IDENTIDADE — V183
+
+ESTE ZIP SUBSTITUI O PACOTE NOWUP-PWA-V182.zip.
+Inclui a instalação PWA e a nova marca aprovada: localização/gota com
+flecha subindo, degradê azul/roxo e fundo escuro.
+Não é necessário aplicar o ZIP V182 antes nem depois deste.
+Outros pacotes de correções, de assuntos diferentes, continuam separados.
+
+BASE
+Preparado sobre nowup-main (3).zip enviado em 15/10/2026.
+Se você mudou o código depois desse ZIP, mescle as alterações para preservar
+seu trabalho, principalmente em app.py e templates.
+
+PUBLICAÇÃO
+1. Extraia este ZIP.
+2. Envie os arquivos da raiz para a raiz do projeto no GitHub.
+3. Envie static/ para a pasta static existente e templates/ para templates.
+   Substitua os mesmos nomes; mantenha todos os demais arquivos do projeto.
+4. Faça commit e aguarde o deploy do Render terminar com sucesso.
+5. No navegador, atualize a página e confira a marca e o botão Instalar.
+Não apague pastas existentes, banco de dados, uploads nem configurações.
+
+O QUE ESTÁ INCLUÍDO
+- Instalação pelo convite na home/login e pelo menu Instalar NowUp.
+- Instruções alternativas para Android, iPhone e navegadores internos.
+- Ícone instalado, favicon, marca do cabeçalho/rodapé, ícones do ADM e
+  imagens das notificações com o símbolo novo.
+- Marca horizontal com Now branco, Up roxo e BRASIL sobre fundo escuro.
+- As telas continuam brancas; somente as imagens da marca são escuras.
+- Atualização das referências de imagens para reduzir o efeito de cache.
+- O mesmo worker já usado pelos avisos de pedidos; não cria um concorrente.
+- Sem alterações no banco, vendas, estoque ou pagamentos.
+
+ABERTURA PELO ÍCONE
+- /app envia visitantes sem sessão para /entrar?pwa=1, com o formulário
+  existente, Mostrar senha e Esqueci minha senha.
+- Com sessão válida, cliente vai para /cliente, lojista para /painel e ADM
+  para /admin. O PWA reaproveita a autenticação existente.
+- Instalações e navegadores diferentes podem exigir um novo login.
+- Recuperação de senha utiliza o envio de e-mails já configurado no projeto.
+
+INSTALAR
+Android: abra o endereço HTTPS no Chrome, toque em Instalar e confirme.
+Se o navegador não liberar o convite, siga as instruções do menu.
+iPhone: Compartilhar > Adicionar à Tela de Início; use Safari se necessário.
+A instalação depende do navegador e sempre exige confirmação do usuário.
+
+ATUALIZAÇÕES
+Após deploy bem-sucedido, o aplicativo usa o site atualizado. Quem estiver
+com uma tela aberta pode precisar navegar novamente ou fechar e abrir.
+Não há recarregamento forçado durante formulários ou pedidos.
+Ícones já instalados podem demorar a mudar; se o antigo persistir, remova
+somente o atalho/aplicativo PWA e instale novamente. Pode ser necessário
+entrar na conta novamente. Não é preciso apagar dados do navegador.
+
+CONEXÃO E NOTIFICAÇÕES
+Precisa de internet para comprar e conferir pedidos. Sem conexão, há uma
+tela com Tentar novamente; não existe envio de pedidos offline.
+Mantém os eventos push existentes e não pede novas permissões sozinho.
+Um ícone de aviso já entregue pode continuar com a imagem antiga.
+
+VERIFICAÇÃO
+Sintaxe Python/JavaScript, rotas HTTP, manifesto e tamanhos dos ícones,
+redirecionamento por perfil, convite de instalação e instruções alternativas,
+comportamento sem internet e manutenção dos eventos de notificação.
+A instalação real e os alertas devem ser testados no celular após publicar.
+Não houve deploy durante a criação deste pacote.
