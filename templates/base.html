@@ -75,7 +75,43 @@ setTimeout(reveal,3000);
 })();
 </script>
 <noscript><style>html body.nu172-catalog-pending [data-native-menu]{visibility:visible!important}</style></noscript>
-</head><body class="{% if request is defined and request.url.path.startswith('/p/') and pro is defined and (request.url.path.rstrip('/').endswith('/menu') or (pro.plan_active in ['cardapio','ambos'] and pro.is_premium and pro.offer_mode in ['menu','catalog'])) %}nu169-products-view nu170-fixed-catalog nu172-catalog-pending {% endif %}{% block body_class %}{% endblock %}">
+<style id="nowup-home173">/* Scope all home changes; store cards on unfiltered mobile home stay intact. */
+html body.v50-directory-home .nu173-categories{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:9px!important;overflow:visible!important;position:relative;box-sizing:border-box;padding-top:8px!important;padding-bottom:12px!important}
+html body.v50-directory-home .nu173-categories>a.nu173-tile,html body.v50-directory-home .nu173-more>summary{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:7px!important;min-width:0!important;width:auto!important;min-height:82px!important;padding:10px 5px!important;margin:0!important;border:1px solid transparent!important;border-radius:14px!important;box-sizing:border-box!important;text-align:center!important;text-decoration:none!important;cursor:pointer;background:var(--nu173-bg,#f0f1f5)!important;color:var(--nu173-color,#596079)!important;list-style:none;font:inherit}
+html body.v50-directory-home .nu173-categories .nu173-food{--nu173-bg:#f0e8ff;--nu173-color:#7036c6}html body.v50-directory-home .nu173-categories .nu173-market{--nu173-bg:#e8f8ed;--nu173-color:#239653}html body.v50-directory-home .nu173-categories .nu173-wine{--nu173-bg:#ffedf3;--nu173-color:#cf2777}html body.v50-directory-home .nu173-categories .nu173-bread{--nu173-bg:#fff1e1;--nu173-color:#d8790a}html body.v50-directory-home .nu173-categories .nu173-pet{--nu173-bg:#e7f3ff;--nu173-color:#1278d7}
+html body.v50-directory-home .nu173-categories a.nu173-tile>i{display:block!important;width:30px!important;height:30px!important;background:transparent!important;color:inherit!important;border-radius:0!important;padding:0!important;margin:0!important;font-style:normal}
+.nu173-categories svg{display:block;width:30px;height:30px;flex:none}
+html body.v50-directory-home .nu173-categories .nu173-tile>span,html body.v50-directory-home .nu173-more>summary>span{font-size:12px!important;line-height:1.2!important;font-weight:650!important;color:inherit!important;white-space:normal!important}
+html body.v50-directory-home .nu173-categories .nu173-tile.is-selected{border-color:currentColor!important;box-shadow:0 0 0 1px currentColor}
+html body.v50-directory-home .nu173-categories>a.nu173-extra,html body.v50-directory-home .nu173-categories>.nu173-all-desktop{display:none!important}
+.nu173-more{margin:0;padding:0;border:0;min-width:0}.nu173-more summary::-webkit-details-marker{display:none}
+.nu173-all-panel{position:absolute;left:0;right:0;top:100%;z-index:65;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:14px;background:#fff;border:1px solid #e1d9ee;border-radius:14px;box-shadow:0 10px 25px #24113e20;max-height:60dvh;overflow:auto}
+html body.v50-directory-home .nu173-all-panel>a{display:flex!important;align-items:center!important;min-width:0!important;width:auto!important;min-height:46px;padding:8px;border-radius:8px;background:#f6f1fb!important;color:#403050!important;font-size:12px!important;text-decoration:none}
+.nu173-more:not([open])>.nu173-all-panel{display:none!important}.nu173-categories :focus-visible{outline:3px solid #9a6cdb;outline-offset:3px}
+/* Selected category only: one compact shop per row. */
+html body.v50-directory-home.nu173-filtered .v50-business .v50-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:8px!important}
+html body.v50-directory-home.nu173-filtered .v50-business .v50-card{display:grid!important;grid-template-columns:86px minmax(0,1fr)!important;gap:10px!important;padding:8px!important;min-height:96px!important;border-radius:13px!important;align-items:center!important}
+html body.v50-directory-home.nu173-filtered .v50-business .v50-card .v50-photo{display:block!important;width:86px!important;height:86px!important;min-height:0!important;aspect-ratio:auto!important;border-radius:10px!important;overflow:hidden!important}
+html body.v50-directory-home.nu173-filtered .v50-business .v50-photo img{width:100%!important;height:100%!important;object-fit:cover!important}
+html body.v50-directory-home.nu173-filtered .v50-business .v50-card>div{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:4px 8px!important;padding:0!important;min-width:0!important}
+html body.v50-directory-home.nu173-filtered .v50-business h3{grid-column:1/-1;font-size:14px!important;line-height:1.25!important;margin:0!important}
+html body.v50-directory-home.nu173-filtered .v50-business .v50-card p{display:none!important}
+html body.v50-directory-home.nu173-filtered .v50-business .v50-card small,html body.v50-directory-home.nu173-filtered .v50-business .v50-card span{font-size:11px!important;margin:0!important;line-height:1.3!important;min-width:0;overflow-wrap:anywhere}
+html body.v50-directory-home.nu173-filtered .v50-business .v86-view-store{grid-column:2;font-size:11px!important;min-height:32px!important;padding:5px 8px!important;margin:0!important;width:auto!important}
+.nu173-category-header{display:flex;align-items:center;gap:12px;margin-bottom:8px}.nu173-category-header a{color:#7036c6;font-size:13px}
+@media(min-width:1024px){
+html body.v50-directory-home .v50-home{display:grid!important;grid-template-columns:190px minmax(0,1fr)!important;gap:0 22px!important;max-width:1440px!important;padding:0 20px!important;margin:0 auto!important;box-sizing:border-box}
+html body.v50-directory-home .v50-home>section{grid-column:2;min-width:0;width:100%!important;max-width:none!important;box-sizing:border-box}
+html body.v50-directory-home .v50-home>.nu173-categories{grid-column:1!important;grid-row:2/span 25!important;position:sticky;top:16px;align-self:start;display:flex!important;flex-direction:column!important;gap:5px!important;padding:8px 0!important;max-height:calc(100dvh - 32px);overflow-y:auto!important}
+html body.v50-directory-home .nu173-categories>a.nu173-tile,html body.v50-directory-home .nu173-categories>.nu173-all-desktop{display:flex!important;flex-direction:row!important;justify-content:flex-start!important;gap:10px!important;width:100%!important;min-height:44px!important;flex:0 0 auto!important;padding:10px!important;text-align:left!important;border-radius:10px!important;background:#fff!important;color:#27354a!important;font-size:13px!important;text-decoration:none}
+html body.v50-directory-home .nu173-categories a.nu173-tile>i,.nu173-categories svg{width:23px!important;height:23px!important}
+html body.v50-directory-home .nu173-categories .nu173-tile.is-selected{background:#f0e8ff!important;color:#7036c6!important}
+html body.v50-directory-home .nu173-categories>.nu173-more{display:none!important}
+html body.v50-directory-home .top .nowup-official-logo{width:115px!important;height:auto!important;max-height:62px!important;object-fit:contain!important}
+html body.v50-directory-home .v50-home .v50-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+html body.v50-directory-home.nu173-filtered .v50-home .v50-grid{grid-template-columns:minmax(0,1fr)!important}
+}
+</style></head><body class="{% if request is defined and request.url.path.startswith('/p/') and pro is defined and (request.url.path.rstrip('/').endswith('/menu') or (pro.plan_active in ['cardapio','ambos'] and pro.is_premium and pro.offer_mode in ['menu','catalog'])) %}nu169-products-view nu170-fixed-catalog nu172-catalog-pending {% endif %}{% block body_class %}{% endblock %}">
 {% if settings.ticker_enabled=='1' and settings.ticker_text %}<div class="notice-ticker ticker-{{settings.ticker_animation or 'continuous'}}" role="status" aria-label="Aviso"><div class="notice-ticker-track"><span>{{settings.ticker_text}}</span><i>•</i><span aria-hidden="true">{{settings.ticker_text}}</span><i aria-hidden="true">•</i><span aria-hidden="true">{{settings.ticker_text}}</span><i aria-hidden="true">•</i><span aria-hidden="true">{{settings.ticker_text}}</span></div></div>{% endif %}
 <header class="top"><div class="container nav"><a class="brand" href="/" aria-label="Página inicial"><img class="nowup-official-logo" src="/static/nowup-logo100.png?v=132" alt="NowUp Brasil" width="150" height="118"></a>
 <nav class="mainnav"><a href="/profissionais">Profissionais</a><a href="/cadastro/profissional">Anunciar</a><a href="/noticias">Notícias</a><a href="/contato">Contato</a><a href="/quem-somos">Quem somos</a></nav><div class="navlinks">{% if user %}<span class="muted hello">Olá, {{user.name}}</span>{% if user.role=='professional' %}<a class="btn soft" href="/painel">Painel profissional</a>{% elif user.role=='customer' %}<a class="btn soft" href="/cliente">Área do cliente</a>{% elif user.role=='admin' %}<a class="btn dark" href="/admin">Painel administrativo</a>{% endif %}<form action="/sair" method="post"><button class="btn ghost">Sair</button></form>{% else %}<a class="btn ghost" href="/entrar">Entrar</a><a class="btn orange" href="/cadastro/cliente">Cadastrar</a>{% endif %}</div><button class="mobile-menu" type="button" aria-label="Abrir menu" data-nowup-menu-open aria-controls="nowup-navigation" aria-expanded="false">☰</button></div></header>
@@ -201,7 +237,23 @@ try {
 
 } finally { document.body.classList.remove("nu172-catalog-pending"); }
 },{once:true});
-</script></body></html>
+</script>{% if user and user.role=="admin" %}<script id="nowup-demo-category173">document.addEventListener('DOMContentLoaded',()=>{
+ const form=document.querySelector('form[action="/admin/perfis/demonstracao"]');
+ if(!form)return;
+ let select=form.querySelector('select[name="category_id"]');
+ if(!select)return;
+ let label=select.closest('label');
+ if(!label)return;
+ const phone=form.querySelector('[name="whatsapp"]')?.closest('label');
+ if(phone)phone.before(label);else form.prepend(label);
+ select.required=true;
+ const auto=select.querySelector('option[value="0"]');
+ if(auto){auto.value='';auto.textContent='Selecione uma categoria';auto.disabled=true;auto.selected=true;}
+ const text=[...label.childNodes].find(n=>n.nodeType===3);
+ if(text)text.textContent='Categoria da loja fictícia';
+ const help=document.createElement('small');help.textContent='A loja aparecerá no filtro desta categoria. Para trocar depois, use Editar perfil.';label.append(help);
+});
+</script>{% endif %}</body></html>
 
 
 
