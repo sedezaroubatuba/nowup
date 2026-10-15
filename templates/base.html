@@ -166,6 +166,15 @@ html body.v50-directory-home .v50-head .v50-search input{font-size:14px!importan
 html body.v50-directory-home .v50-head .v50-search input::placeholder{font-size:inherit!important;letter-spacing:0!important;opacity:1!important}
 html body.v50-directory-home .v50-head .v50-search button{font-size:13px!important;padding-left:9px!important;padding-right:9px!important;flex:none!important;min-height:44px!important}
 @media(max-width:380px){html body.v50-directory-home .v50-head .v50-search input{font-size:13px!important}}
+</style><style id="nowup-search177">html body.v50-directory-home.nu177-searching .v50-home>:is(.v50-business,.v50-filter,.v50-ad,.v50-highlights,.nu88-stores,.nu88-catalogs){display:none!important}
+html body .nu177-results[hidden]{display:none!important}
+html body.v50-directory-home .nu177-results{padding-top:12px;padding-bottom:20px;box-sizing:border-box;scroll-margin-top:calc(var(--nu175-header-height,64px) + var(--nu175-search-height,72px) + 12px)}
+.nu177-results>header{display:flex;align-items:center;justify-content:space-between;gap:10px}.nu177-results h2{font-size:20px;margin:0 0 14px}.nu177-results h3{font-size:17px;margin:16px 0 10px}.nu177-results header button{font-size:12px;min-height:40px}
+.nu177-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+html body.v50-directory-home .nu177-result{display:flex!important;align-items:center;gap:12px;min-width:0;padding:12px;border:1px solid #e5deef;border-radius:14px;background:#fff;color:#243248!important;text-decoration:none!important;box-sizing:border-box}
+.nu177-result>img{width:76px;height:90px;object-fit:contain;background:#faf8fd;border-radius:10px;flex:none}.nu177-result>div{display:grid;gap:5px;min-width:0}.nu177-result b{font-size:15px;overflow-wrap:anywhere}.nu177-result .nu177-price{font-size:18px;color:#7036c6!important}.nu177-result small{font-size:12px;color:#647187}.nu177-result .nu177-open{color:#087a35!important}.nu177-result .nu177-closed{color:#817488!important}
+.nu177-result:focus-visible{outline:3px solid #ad87dd;outline-offset:2px}.nu177-found{outline:3px solid #a67bd9!important;outline-offset:3px;scroll-margin-top:calc(var(--nu170-bar-height,128px) + 10px)}
+@media(min-width:1024px){.nu177-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style></head><body class="{% if request is defined and request.url.path.startswith('/p/') and pro is defined and (request.url.path.rstrip('/').endswith('/menu') or (pro.plan_active in ['cardapio','ambos'] and pro.is_premium and pro.offer_mode in ['menu','catalog'])) %}nu169-products-view nu170-fixed-catalog nu172-catalog-pending {% endif %}{% block body_class %}{% endblock %}">
 {% if settings.ticker_enabled=='1' and settings.ticker_text %}<div class="notice-ticker ticker-{{settings.ticker_animation or 'continuous'}}" role="status" aria-label="Aviso"><div class="notice-ticker-track"><span>{{settings.ticker_text}}</span><i>•</i><span aria-hidden="true">{{settings.ticker_text}}</span><i aria-hidden="true">•</i><span aria-hidden="true">{{settings.ticker_text}}</span><i aria-hidden="true">•</i><span aria-hidden="true">{{settings.ticker_text}}</span></div></div>{% endif %}
 <header class="top"><div class="container nav"><a class="brand" href="/" aria-label="Página inicial"><img class="nowup-official-logo" src="/static/nowup-logo100.png?v=132" alt="NowUp Brasil" width="150" height="118"></a>
@@ -347,6 +356,58 @@ try {
   nav.querySelector('[data-nav175="'+key+'"]')?.setAttribute('aria-current','page');
  }
  selected();window.addEventListener('hashchange',selected);
+},{once:true});
+</script><script id="nowup-search177-init">document.addEventListener('DOMContentLoaded',()=>{
+ 'use strict';
+ const deep=new URLSearchParams(location.search).get('produto');
+ if(deep&&/^\d+$/.test(deep)){
+  const root=document.querySelector('[data-native-menu]');
+  const card=root?.querySelector('[data-product][data-id="'+deep+'"]');
+  if(card){const search=root.querySelector('[data-product-search]');if(search){search.value=card.dataset.name||'';search.dispatchEvent(new Event('input',{bubbles:true}));}card.id='produto-'+deep;card.classList.add('nu177-found');card.tabIndex=-1;requestAnimationFrame(()=>{card.scrollIntoView({block:'start',behavior:'auto'});card.focus({preventScroll:true});});}
+ }
+ const form=document.querySelector('body.v50-directory-home .v50-search');
+ const input=form?.querySelector('[name="q"]');
+ const main=document.querySelector('.v50-home');
+ if(!form||!input||!main)return;
+ input.type='search';input.autocomplete='off';
+ const panel=document.createElement('section');panel.className='nu177-results container';panel.setAttribute('aria-label','Resultados da pesquisa');panel.hidden=true;
+ const categories=main.querySelector('.nu173-categories');if(categories)categories.after(panel);else main.append(panel);
+ const el=(tag,cls,value)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(value!==undefined)n.textContent=value;return n;};
+ const money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+ let timer,controller,sequence=0;
+ function reset(){clearTimeout(timer);controller?.abort();sequence++;panel.hidden=true;panel.replaceChildren();document.body.classList.remove('nu177-searching');input.removeAttribute('aria-busy');}
+ function card(item,product){
+  const a=el('a','nu177-result');a.href=item.url;
+  if(item.image){const img=el('img');img.src=item.image;img.alt=item.name;img.loading='lazy';img.addEventListener('error',()=>img.remove(),{once:true});a.append(img);}
+  const copy=el('div');copy.append(el('b','',item.name));
+  if(product){copy.append(el('strong','nu177-price',money.format(item.price_cents/100)));copy.append(el('small','',item.store_name));}
+  else copy.append(el('small','',item.city));
+  copy.append(el('small',item.open?'nu177-open':'nu177-closed',item.open?'● Loja aberta':'Loja fechada'));
+  a.append(copy);return a;
+ }
+ async function run(scroll=false){
+  const query=input.value.trim();if(query.length<2){reset();return;}
+  controller?.abort();controller=new AbortController();const id=++sequence;input.setAttribute('aria-busy','true');
+  const params=new URLSearchParams(new FormData(form));params.set('q',query);
+  try{
+   const response=await fetch('/api/busca177?'+params,{credentials:'same-origin',signal:controller.signal});
+   if(!response.ok)throw new Error('search');
+   const data=await response.json();if(id!==sequence)return;
+   panel.replaceChildren();const header=el('header');header.append(el('h2','','Resultados para “'+query+'”'));
+   const clear=el('button','btn soft','Limpar busca');clear.type='button';clear.addEventListener('click',()=>{input.value='';reset();input.focus();});header.append(clear);panel.append(header);
+   if(data.products.length){panel.append(el('h3','','Produtos e pratos'));const grid=el('div','nu177-grid');data.products.forEach(item=>grid.append(card(item,true)));panel.append(grid);}
+   if(data.stores.length){panel.append(el('h3','','Lojas'));const grid=el('div','nu177-grid');data.stores.forEach(item=>grid.append(card(item,false)));panel.append(grid);}
+   if(!data.products.length&&!data.stores.length)panel.append(el('p','','Nenhum resultado nesta cidade. Tente outro nome de produto ou loja.'));
+   panel.hidden=false;document.body.classList.add('nu177-searching');
+   if(scroll)panel.scrollIntoView({behavior:'auto',block:'start'});
+  }catch(error){if(error.name!=='AbortError'&&id===sequence){panel.replaceChildren(el('p','','Não foi possível carregar a busca inteligente. Toque em Buscar novamente.'));panel.hidden=false;document.body.classList.remove('nu177-searching');}}
+  finally{if(id===sequence)input.removeAttribute('aria-busy');}
+ }
+ input.addEventListener('input',()=>{clearTimeout(timer);controller?.abort();sequence++;if(input.value.trim().length<2){reset();return;}timer=setTimeout(()=>run(),300);});
+ form.addEventListener('submit',event=>{if(input.value.trim().length<2)return;event.preventDefault();clearTimeout(timer);run(true);});
+ input.addEventListener('search',()=>{if(!input.value)reset();});
+ if(input.value.trim().length>=2)run();
+ window.addEventListener('pagehide',()=>{clearTimeout(timer);controller?.abort();},{once:true});
 },{once:true});
 </script></body></html>
 
