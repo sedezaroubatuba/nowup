@@ -1,4 +1,4 @@
-html body.nu187-store-home [data-native-menu] .menu-layout{display:none!important}
+html body.nu187-store-home [data-native-menu] .menu-layout{display:block!important}
 html body.public-profile-area .nu187-intro[hidden]{display:none!important}
 html body.public-profile-area .nu187-intro{display:block;background:#fff;color:#263247;padding-bottom:20px}
 html body.public-profile-area .nu187-cover{height:clamp(190px,34vw,310px);background-color:#f0e8fa;background-size:cover;background-position:center;border-radius:14px 14px 0 0}
@@ -14,9 +14,22 @@ html body.public-profile-area .nu187-cover{height:clamp(190px,34vw,310px);backgr
 .nu187-category-title{font-size:21px;margin:20px 16px 10px}
 .nu187-category-list{display:grid;padding:6px 16px}.nu187-category-list button{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:48px;border:0;border-bottom:1px solid #ece7f2;background:#fff;color:#263247;padding:12px 0;text-align:left;font:inherit;cursor:pointer}
 .nu187-back{min-width:44px;min-height:44px;border:0;border-radius:10px;background:#f4eefc;color:#7036c6;font:inherit;cursor:pointer;flex:none}
-html body.nu187-store-home [data-native-menu] .nu187-back{display:none!important}
+
 html body.public-profile-area .nu187-intro .menu-category-nav{position:static!important;padding:6px 16px!important}
 html body.public-profile-area.nu187-store-home [data-native-menu] .nu83-catalog-heading .nu180-store-avatar{display:none!important}
 .nu187-intro :focus-visible,.nu187-back:focus-visible{outline:3px solid #ad87dd;outline-offset:3px}
 @media(min-width:800px){.nu187-intro{max-width:850px;margin:0 auto}}
 @media(prefers-reduced-motion:reduce){.nu187-intro *{scroll-behavior:auto!important}}
+
+/* V188: dedicate the catalogue toolbar to navigation and search. */
+html body.public-profile-area [data-native-menu] .nu83-catalog-heading .nu180-store-avatar{display:none!important}
+html body.public-profile-area [data-native-menu] .nu83-catalog-heading{gap:6px!important;flex-wrap:nowrap!important;width:100%!important;box-sizing:border-box!important}
+html body.public-profile-area [data-native-menu] .nu83-catalog-heading .nu83-search{display:block!important;flex:1 1 0%!important;width:auto!important;min-width:0!important;max-width:none!important;margin:0!important;font-size:0!important;line-height:0!important}
+html body.public-profile-area [data-native-menu] .nu83-catalog-heading .nu83-search input{width:100%!important;min-width:0!important;max-width:none!important;box-sizing:border-box!important;font-size:16px!important;line-height:1.3!important;min-height:46px!important;padding:10px 14px!important}
+html body.public-profile-area [data-native-menu] .nu83-catalog-heading :is(.nu187-back,.nu168-trigger){width:44px!important;min-width:44px!important;max-width:44px!important;height:44px!important;min-height:44px!important;flex:0 0 44px!important;padding:0!important}
+
+/* Categories scroll with products in the presentation; only search stays fixed. */
+html body.public-profile-area.nu187-store-home [data-native-menu]>.container>.menu-category-nav{position:static!important;top:auto!important;transform:none!important;margin:0 0 12px!important}
+html body.public-profile-area .nu187-category-title{margin-bottom:8px}
+
+html body.public-profile-area.nu187-store-home [data-native-menu] .menu-layout{scroll-margin-top:calc(var(--nu170-bar-height,64px) + 10px)}
