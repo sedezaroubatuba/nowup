@@ -1,0 +1,33 @@
+NOWUP V184 — RESTAURAR INSTALAÇÃO PWA
+
+DIAGNÓSTICO
+Na consulta ao site publicado, a página inicial continha a ligação de instalação, mas /static/pwa182.js e /static/nowup.webmanifest retornaram HTTP 404. A rota de notificações /nowup-push-sw.js respondeu 200. Arquivos ausentes impedem o funcionamento esperado da configuração PWA.
+
+COMO APLICAR
+1. Extraia o ZIP inteiro, não apenas os dois arquivos CSS.
+2. Na RAIZ do GitHub, envie app.py e nowup_pwa182.py.
+   app.py é exatamente o arquivo enviado por você nesta conversa, sem alterações adicionais. Se você o mudou depois, preserve a versão mais recente e confira as duas linhas de register_pwa182 no final.
+3. Na pasta static EXISTENTE, envie TODOS os arquivos de static deste pacote, incluindo .js, .webmanifest e .png, não só os .css.
+4. Na pasta templates EXISTENTE, substitua base.html.
+5. Confirme o commit e aguarde o deploy do Render terminar com sucesso.
+6. Abra o site HTTPS diretamente no Chrome normal. Vá à página inicial; toque em Instalar no convite ou no menu do site.
+
+VERIFICAÇÃO APÓS DEPLOY
+Abra no Chrome:
+https://nowup-i9n4.onrender.com/static/nowup.webmanifest
+https://nowup-i9n4.onrender.com/static/pwa182.js
+Os dois devem exibir texto/código, não erro 404. O JavaScript não é uma página de instalação; isso apenas confirma que o upload funcionou.
+
+Mantém login e abertura por perfil em /app. Reutiliza o worker de notificações, sem criar um segundo worker. Não armazena pedidos offline nem recarrega formulários para forçar atualização. Não altera produtos, banco, taxas ou pagamentos. Inclui os três scripts corrigidos da V181 e preserva cabeçalho da loja V180.
+
+ÍCONE
+Usa a prévia aprovada do ícone quadrado em fundo branco, símbolo em cima e NowUp pequeno embaixo, exportada em 180, 192 e 512 pixels. Não substitui a imagem da marca do site neste pacote.
+
+LIMITES
+A abertura do convite nativo depende do navegador e da confirmação do usuário. Um botão ou teste de código não garante que o convite nativo aparecerá naquele aparelho. Testar no celular após publicar. Não é necessário apagar dados nem sair das contas. Ícones de instalações antigas podem levar tempo para atualizar.
+
+Não aplique templates/base.html de V180 ou V181 por cima desta versão: são versões anteriores à integração PWA.
+A correção de pedidos duplicados identificada na revisão não faz parte deste pacote.
+
+TESTES LOCAIS CONCLUÍDOS
+Manifesto, JS, CSS, worker e ícones retornaram HTTP 200. Tamanhos dos ícones validados. Redirecionamento /app testado sem sessão e com cliente, lojista e ADM. Templates compilados. Convite e evento de instalação testados com navegador simulado; sem teste real de instalação no Android.
