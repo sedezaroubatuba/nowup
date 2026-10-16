@@ -21,8 +21,8 @@ body.nowup-login-white{background:#fff!important;background-image:none!important
 <h1>Como você quer entrar?</h1>
 <p class="muted">Escolha seu tipo de acesso para deixar tudo mais claro.</p>
 <div class="rolegrid">
-<a class="rolecard" href="/entrar?tipo=cliente"><span class="roleicon">👤</span><b>Cliente</b><span class="muted tiny">Avaliar, denunciar e acompanhar profissionais.</span></a>
-<a class="rolecard" href="/entrar?tipo=profissional"><span class="roleicon">🧰</span><b>Profissional</b><span class="muted tiny">Gerenciar perfil, fotos, serviços e publicações.</span></a>
+<a class="rolecard" href="/entrar?tipo=cliente"><span class="roleicon">👤</span><b>Cliente</b><span class="muted tiny">Comprar, acompanhar pedidos e descobrir lojas.</span></a>
+<a class="rolecard" href="/entrar?tipo=profissional"><span class="roleicon">🧰</span><b>Lojista</b><span class="muted tiny">Gerenciar sua loja, produtos e pedidos.</span></a>
 </div>
 {% set tipo=request.query_params.get('tipo','') %}
 {% set erro=request.query_params.get('erro','') %}
@@ -30,7 +30,7 @@ body.nowup-login-white{background:#fff!important;background-image:none!important
 {% if request.query_params.get('verificado') %}<div class="alert" style="background:#e9fbf3;color:#087b4b;border:1px solid #abefc6">E-mail confirmado com sucesso. Agora você pode entrar.</div>{% endif %}
 {% if request.query_params.get('senha_redefinida') %}<div class="alert success">Senha alterada com sucesso. Entre novamente.</div>{% endif %}
 <div class="loginbox">
-<h2>{% if tipo=='admin' %}Acesso administrativo{% elif tipo=='profissional' %}Entrar como profissional ou empresa{% elif tipo=='cliente' %}Entrar como cliente{% else %}Entrar na NowUp{% endif %}</h2>
+<h2>{% if tipo=='admin' %}Acesso administrativo{% elif tipo=='profissional' %}Entrar como lojista{% elif tipo=='cliente' %}Entrar como cliente{% else %}Entrar na NowUp{% endif %}</h2>
 {% if tipo=='admin' %}<div class="security-note"><b>🔐 Acesso administrativo</b><div class="tiny muted">Use somente suas credenciais de administrador. O painel será tratado como acesso sensível.</div></div>{% endif %}
 <form method="post" action="/entrar">
 <input type="hidden" name="tipo" value="{{tipo}}">
@@ -40,5 +40,5 @@ body.nowup-login-white{background:#fff!important;background-image:none!important
 </form>
 <p style="text-align:right;margin:10px 0 0"><a class="muted tiny" href="/recuperar-senha">Esqueci minha senha</a></p>
 <p class="muted tiny" style="margin-top:16px">Ainda não tem conta?</p>
-<div class="row" style="flex-wrap:wrap"><a class="btn soft" href="/cadastro/cliente">Criar conta de cliente</a><a class="btn soft" href="/cadastro/profissional">Cadastrar como profissional</a></div>
+<div class="row" style="flex-wrap:wrap"><a class="btn soft" href="/cadastro/cliente">Criar conta de cliente</a><a class="btn soft" href="/cadastro/profissional">Cadastrar minha loja</a></div>
 </div></div></div>{% endblock %}
