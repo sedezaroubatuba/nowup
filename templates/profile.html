@@ -67,7 +67,7 @@ body.public-profile-area :focus-visible {outline:3px solid #08a5d0;outline-offse
 <button type="button" class="active" data-category-filter="all">Todos</button>{% for category in menu_categories %}<button type="button" data-category-filter="{{category|lower}}">{{category}}</button>{% endfor %}</nav>{% endif %}
 <div class="menu-layout">
 <main>
-<div class="menu-products">{% for product in products %}<article class="menu-product" data-product data-dish="{{1 if product.is_dish else 0}}" data-category="{{product.category|lower}}" data-id="{{product.id}}" data-name="{{product.name}}" data-price="{{product.promo_price_cents if product.promo_price_cents > 0 else product.price_cents}}" data-max="{{product.max_quantity}}">{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" onerror="this.onerror=null;this.src='/static/product-placeholder.svg'" alt="{{product.name}}">{% else %}<div class="menu-product-placeholder">🍽</div>{% endif %}<div class="menu-product-info">
+<div class="menu-products">{% for product in products %}<article class="menu-product" data-product data-custom192="{{product.customization192}}" data-dish="{{1 if product.is_dish else 0}}" data-category="{{product.category|lower}}" data-id="{{product.id}}" data-name="{{product.name}}" data-price="{{product.promo_price_cents if product.promo_price_cents > 0 else product.price_cents}}" data-max="{{product.max_quantity}}">{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" onerror="this.onerror=null;this.src='/static/product-placeholder.svg'" alt="{{product.name}}">{% else %}<div class="menu-product-placeholder">🍽</div>{% endif %}<div class="menu-product-info">
 <small>{{product.category}}</small>
 <h3>{{product.name}}</h3>
 <p>{{product.description}}</p><span class="v67-product-status">{{'Disponível' if product.available else 'Indisponível'}}</span>
@@ -134,7 +134,7 @@ body.public-profile-area :focus-visible {outline:3px solid #08a5d0;outline-offse
 </dialog>
 <footer class="nu83-cart-dock" hidden><button type="button" data-cart-summary><span>🛒 <span data-cart-count>0 itens</span></span><strong>Ver carrinho · <span data-dock-total>R$ 0,00</span></strong></button></footer></section>
 <script>window.NOWUP_MENU={{ {'deliveryFee':pro.delivery_fee_cents,'minimumOrder':pro.minimum_order_cents,'open':shop_status.open,'storeName':pro.display_name,'customerId':user.id if user and user.role=='customer' else none}|tojson }};</script>
-<link rel="stylesheet" href="/static/cart144.css?v=144"><script src="/static/menu88.js?v=160">
+<link rel="stylesheet" href="/static/cart144.css?v=144"><script src="/static/menu88.js?v=192">
 </script>
 <script src="/static/cart144.js?v=144" defer></script><script src="/static/customer-address.js?v=69" defer></script>{% endif %}
 <section class="section">

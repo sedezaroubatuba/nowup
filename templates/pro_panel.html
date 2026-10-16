@@ -159,7 +159,8 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <label class="check">
 <input type="checkbox" name="available" value="1" checked> Produto disponível</label>
 <label class="check"><input type="checkbox" name="featured" value="1"> Colocar em promoção/destaque (máximo 3)</label>
-<label>Adicionais deste produto<select name="extras_mode" data-extras-mode155><option value="none">Sem adicionais</option><option value="all">Permitir todos os adicionais da loja</option><option value="selected">Selecionar adicionais</option></select></label><div class="full" data-shared-picker155>{% for extra in shared_extras %}<label class="check"><input type="checkbox" name="extra_ids" value="{{extra.id}}"> {{extra.name}} · + R$ {{'%.2f'|format(extra.price_cents/100)|replace('.',',')}}{% if not extra.available %} (indisponível){% endif %}</label>{% else %}<p>Cadastre primeiro seus complementos na aba Adicionais.</p>{% endfor %}</div><small>O cliente pode escolher até 3 adicionais, uma porção de cada.</small><small>Cadastre os complementos uma vez na área Adicionais e reutilize nos produtos. Retiradas são escritas pelo cliente nas observações.</small>
+<label>Adicionais deste produto<select name="extras_mode" data-extras-mode155><option value="none">Sem adicionais</option><option value="all">Permitir todos os adicionais da loja</option><option value="selected">Selecionar adicionais</option></select></label><div class="full" data-shared-picker155>{% for extra in shared_extras %}<label class="check"><input type="checkbox" name="extra_ids" value="{{extra.id}}"> {{extra.name}} · + R$ {{'%.2f'|format(extra.price_cents/100)|replace('.',',')}}{% if not extra.available %} (indisponível){% endif %}</label>{% else %}<p>Cadastre primeiro seus complementos na aba Adicionais.</p>{% endfor %}</div>
+<div class="nu192-editor full" data-editor192="" data-max192="3"></div>
 <button class="btn primary">Salvar e cadastrar próximo</button>
 </form>
 </details>
@@ -173,7 +174,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </summary>
 <form action="/painel/cardapio/produtos/{{product.id}}/disponibilidade" method="post" class="v67-availability"><input type="hidden" name="available" value="{{0 if product.available else 1}}"><button class="btn soft" type="submit">{{'Marcar indisponível' if product.available else 'Marcar disponível'}}</button></form>
 <form action="/painel/cardapio/produtos/{{product.id}}" method="post" enctype="multipart/form-data" class="product-form">
-<input type="hidden" name="personalizable" value="{{1 if product.is_dish else ''}}"><label>Adicionais deste produto<select name="extras_mode" data-extras-mode155><option value="none" {% if product.extras_mode=='none' %}selected{% endif %}>Sem adicionais</option><option value="all" {% if product.extras_mode=='all' %}selected{% endif %}>Permitir todos os adicionais da loja</option><option value="selected" {% if product.extras_mode=='selected' %}selected{% endif %}>Selecionar adicionais</option>{% if product.extras_mode=='legacy' %}<option value="legacy" selected>Manter adicionais atuais deste produto</option>{% endif %}</select></label><div class="full" data-shared-picker155>{% for extra in shared_extras %}<label class="check"><input type="checkbox" name="extra_ids" value="{{extra.id}}" {% if extra.id in shared_selected.get(product.id,[]) %}checked{% endif %}> {{extra.name}} · + R$ {{'%.2f'|format(extra.price_cents/100)|replace('.',',')}}{% if not extra.available %} (indisponível){% endif %}</label>{% else %}<p>Cadastre primeiro seus complementos na aba Adicionais.</p>{% endfor %}</div><small>O cliente pode escolher até 3 adicionais, uma porção de cada.</small><label>Nome<input class="input" name="name" value="{{product.name}}" required>
+<input type="hidden" name="personalizable" value="{{1 if product.is_dish else ''}}"><label>Adicionais deste produto<select name="extras_mode" data-extras-mode155><option value="none" {% if product.extras_mode=='none' %}selected{% endif %}>Sem adicionais</option><option value="all" {% if product.extras_mode=='all' %}selected{% endif %}>Permitir todos os adicionais da loja</option><option value="selected" {% if product.extras_mode=='selected' %}selected{% endif %}>Selecionar adicionais</option>{% if product.extras_mode=='legacy' %}<option value="legacy" selected>Manter adicionais atuais deste produto</option>{% endif %}</select></label><div class="full" data-shared-picker155>{% for extra in shared_extras %}<label class="check"><input type="checkbox" name="extra_ids" value="{{extra.id}}" {% if extra.id in shared_selected.get(product.id,[]) %}checked{% endif %}> {{extra.name}} · + R$ {{'%.2f'|format(extra.price_cents/100)|replace('.',',')}}{% if not extra.available %} (indisponível){% endif %}</label>{% else %}<p>Cadastre primeiro seus complementos na aba Adicionais.</p>{% endfor %}</div><label>Nome<input class="input" name="name" value="{{product.name}}" required>
 </label>
 <label>Categoria<select name="category" required>{% for category in product_categories if category.active %}<option value="{{category.name}}" {% if category.name==product.category %}selected{% endif %}>{{category.name}}</option>{% endfor %}</select>
 </label>
@@ -188,6 +189,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <label class="check">
 <input type="checkbox" name="available" value="1" {% if product.available %}checked{% endif %}> Disponível para pedidos (desmarque quando esgotar)</label>
 <label class="check"><input type="checkbox" name="featured" value="1" {% if product.featured %}checked{% endif %}> Produto em promoção/destaque (máximo 3)</label>
+<div class="nu192-editor full" data-editor192="{{product.customization192}}" data-max192="{% for g in product_groups.get(product.id,[]) if g.name=='Adicionais' %}{{g.max_choices}}{% endfor %}"></div>
 <button class="btn primary">Salvar alterações</button>
 </form>
 <p class="muted">Os adicionais são escolhidos no formulário acima. Cadastre e edite os complementos na aba <a href="#adicionais">Adicionais da loja</a>.</p>
@@ -541,7 +543,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <footer class="nowup-panel-bottom"><button type="button" class="nowup-back-top" data-panel-back-top aria-label="Voltar ao topo do painel">↑ Voltar ao topo</button></footer>
 <script src="/static/panel-back-top.js?v=70" defer></script>
 
-<script src="/static/pro-push75.js?v=112" defer></script>
+<link rel="manifest" href="/static/nowup-lojista.webmanifest"><script src="/static/pro-push75.js?v=112" defer></script>
 <link rel="stylesheet" href="/static/order-review127.css?v=127"><script src="/static/order-review127.js?v=127" defer></script>{% endblock %}
 
 
