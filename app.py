@@ -1,4 +1,5 @@
 from __future__ import annotations
+import nowup_included195
 from nowup_custom192 import parse_config, save_config, charge_options, validate_customization
 import html
 import os, re, io, hmac, hashlib, secrets, sqlite3, unicodedata, json
@@ -607,6 +608,7 @@ def init_db():
     ensure_column(conn, "orders", "address_reference", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "orders", "change_for_cents", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "products", "customization192", "TEXT NOT NULL DEFAULT ''")
+    nowup_included195.initialize(conn)
     ensure_column(conn, "orders", "customer_id", "INTEGER REFERENCES users(id) ON DELETE SET NULL")
     ensure_column(conn, "orders", "tracking_token", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "orders", "order_origin", "TEXT NOT NULL DEFAULT 'legacy'")
@@ -1423,6 +1425,7 @@ def orders_for_day(conn, professional_id, day, status="todos"):
 def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido_status: str="todos", pedido_dia: str="", abrir_pedido: int=0, conta: int=0):
     u=require_user(request,"professional"); conn=db()
     p=conn.execute("SELECT * FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+    included_catalog195=nowup_included195.catalog(conn,p["id"])
     shared_extras=conn.execute("SELECT * FROM shared_extras155 WHERE professional_id=? ORDER BY name,id",(p["id"],)).fetchall()
     shared_selected={}
     for row in conn.execute("SELECT po.product_id,po.shared_extra_id FROM product_options po JOIN products pr ON pr.id=po.product_id WHERE pr.professional_id=? AND po.shared_extra_id>0 AND po.shared_selected155=1",(p["id"],)):
@@ -1537,7 +1540,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     merchant_overview=merchant_overview89(conn,p)
     conn.close()
     status=shop_status(p); business_hours=parse_business_hours(p["business_hours"])
-    return templates.TemplateResponse("pro_panel.html", context(request, manual=nowup_sales107.panel_data(request,conta), shared_extras=shared_extras, shared_selected=shared_selected, pro=p, photos=photos, posts=posts, products=products, product_groups=product_groups, delivery_zones=delivery_zones, merchant_overview=merchant_overview, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, today_orders=today_orders, day_order_summary=day_order_summary, order_day=order_day.isoformat(), today_day=today.isoformat(), order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
+    return templates.TemplateResponse("pro_panel.html", context(request, manual=nowup_sales107.panel_data(request,conta), included_catalog195=included_catalog195, shared_extras=shared_extras, shared_selected=shared_selected, pro=p, photos=photos, posts=posts, products=products, product_groups=product_groups, delivery_zones=delivery_zones, merchant_overview=merchant_overview, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, today_orders=today_orders, day_order_summary=day_order_summary, order_day=order_day.isoformat(), today_day=today.isoformat(), order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
 
 @app.post('/painel/plano')
 def request_store_plan(request: Request, plan: str=Form(...), offer_mode: str=Form('services')):
@@ -1722,6 +1725,9 @@ def pro_product_add(request: Request, name: str=Form(...), description: str=Form
     custom192=parse_config(customization192) if customization192 else None
     if custom192 and custom192["free_count"]>max_choices:raise HTTPException(400,"A quantidade grátis não pode superar o máximo de adicionais.")
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); fn=""
+    if custom192 is not None:
+        try:custom192=nowup_included195.resolve(conn,p["id"],custom192)
+        except HTTPException:conn.close();raise
     if photo and photo.filename: fn=save_image(photo)
     if personalizable and not 1<=max_choices<=20:conn.close();raise HTTPException(400,"Escolha de 1 a 20 adicionais.")
     created=now_iso(); cur=conn.execute("INSERT INTO products(professional_id,name,description,category,price_cents,image_filename,available,created_at,updated_at,promo_price_cents,featured,max_quantity) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",(p["id"],name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,created,created,price_to_cents(promo_price) if promo_price.strip() else 0,1 if featured else 0,max(1,min(99,max_quantity))))
@@ -1735,6 +1741,9 @@ def pro_product_edit(request: Request, product_id: int, name: str=Form(...), des
     custom192=parse_config(customization192) if customization192 else None
     if custom192 and custom192["free_count"]>max_choices:raise HTTPException(400,"A quantidade grátis não pode superar o máximo de adicionais.")
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=?",(product_id,p["id"])).fetchone()
+    if custom192 is not None:
+        try:custom192=nowup_included195.resolve(conn,p["id"],custom192)
+        except HTTPException:conn.close();raise
     if not product: conn.close(); raise HTTPException(404)
     if personalizable and not 1<=max_choices<=20:conn.close();raise HTTPException(400,"Escolha de 1 a 20 adicionais.")
     fn=product["image_filename"]
@@ -2709,3 +2718,5 @@ register_search177(app, db, public_business_scope, shop_status)
 # V182: installable NowUp, sharing the current site and authentication.
 from nowup_pwa182 import register as register_pwa182
 register_pwa182(app, current_user)
+
+nowup_included195.register(app, db, require_user, require_premium_catalog)

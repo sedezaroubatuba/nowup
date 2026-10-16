@@ -1,0 +1,48 @@
+NOWUP V195 — CADASTRO DE ACOMPANHAMENTOS E BEBIDAS DE COMBOS
+
+Na área de cadastro de produtos:
+1. Abra Cadastrar acompanhamentos e cadastre fritas, salada, arroz etc.
+2. Abra Cadastrar bebidas para combos e cadastre as bebidas incluídas.
+3. Ao cadastrar ou editar cada produto, marque os acompanhamentos permitidos
+   e quantos o cliente poderá escolher. A escolha pode ser obrigatória ou opcional.
+4. Para combo, marque Este produto é um combo e selecione as bebidas permitidas.
+   O cliente deverá escolher uma bebida para completar esse combo.
+5. Preencha a descrição completa manualmente. Cadastre os ingredientes em linhas
+   separadas para o cliente desmarcar os que não deseja.
+
+Acompanhamentos e bebidas desta lista são incluídos no preço do produto.
+Não aparecem como produtos à venda no catálogo geral. Para vender uma bebida
+separadamente, cadastre-a também como um produto normal.
+Adicionais pagos e gratuidade opcional continuam em configuração separada.
+Talheres, observação escrita, carrinho e edição das escolhas são mantidos.
+
+Cada produto seleciona sua própria lista. Cadastrar uma opção não a oferece
+em todos os produtos automaticamente.
+Os nomes alterados no cadastro compartilhado atualizam os produtos vinculados.
+Pedidos antigos preservam as informações de quando foram feitos.
+Para tornar um item indisponível, retire antes o vínculo nos produtos que o usam.
+
+CLIENTE
+Descrição completa, acompanhamentos, bebida do combo, ingredientes para
+retirada, adicionais extras, talheres e observações.
+As retiradas e escolhas acompanham cada item recebido pelo lojista.
+Produtos da V192/V193 com grupos manuais continuam preservados em Outras opções.
+Você pode desativá-los e passar a usar os cadastros compartilhados.
+
+INSTALAÇÃO
+Extraia o ZIP na raiz do projeto atual, respeitando as pastas static e templates.
+Substitua os arquivos correspondentes e faça o deploy pelo fluxo habitual.
+O pacote contém as alterações acumuladas desde a V191 (inclui V192/V193).
+O banco recebe uma coluna de configuração e uma tabela privada de opções,
+automaticamente na inicialização. Nenhum banco de dados está incluído.
+Não foi aplicado ao site de produção.
+
+VALIDAÇÃO
+Testes HTTP com banco temporário: cadastro de opções e produto, combo com bebida
+obrigatória, refeição sem combo, seleção independente por produto, isolamento por
+loja, renomeação com atualização dos vínculos, proteção do histórico e restrição
+de indisponibilidade para item vinculado. Pedido completo conferido a R$32,90.
+Testes do painel renderizado: seletores, chave de combo, envio de IDs e edição.
+Mantidos os 15 testes de regras de personalização da V192 e os testes do carrinho.
+Não houve conferência visual em navegador real nem teste no site publicado.
+Após o deploy, faça um pedido de teste pelo celular e confira a sala de pedidos.

@@ -65,9 +65,11 @@ def parse_config(raw):
         minimum = integer(group.get('min', 0), 0, maximum, title)
         clean_groups.append({'id': gid, 'name': title, 'min': minimum, 'max': maximum, 'options': options})
     free_enabled = data.get('free_enabled', False)
-    return {'ingredients': clean_ingredients, 'groups': clean_groups,
+    output = {'ingredients': clean_ingredients, 'groups': clean_groups,
             'free_enabled': free_enabled, 'free_count': integer(data.get('free_count', 0), 0, 20, 'Gratuitos') if free_enabled else 0,
             'utensils': data.get('utensils', False), 'notes': data.get('notes', True)}
+    if 'included195' in data:output['included195'] = data['included195']
+    return output
 
 
 def save_config(conn, product_id, config):
