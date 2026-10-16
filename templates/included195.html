@@ -1,0 +1,19 @@
+<div class="nu195-managers">
+{% for kind,title,example in [('side','Cadastrar acompanhamentos','Ex.: Batata frita'),('drink','Cadastrar bebidas para combos','Ex.: Guaraná lata 350 ml')] %}
+<details class="menu-category-manager"><summary class="btn soft">＋ {{title}}</summary>
+<p>Opções incluídas no preço dos produtos. Esta lista não aparece à venda no catálogo geral.</p>
+<form action="/painel/cardapio/incluidos195" method="post" class="product-form">
+<input type="hidden" name="kind" value="{{kind}}"><input type="hidden" name="available" value="1">
+<label>Nome<input class="input" name="name" maxlength="100" placeholder="{{example}}" required></label><button class="btn primary">Cadastrar</button>
+</form>
+{% for item in included_catalog195 if item.kind==kind %}
+<form action="/painel/cardapio/incluidos195" method="post" class="nu195-registry-row">
+<input type="hidden" name="item_id" value="{{item.id}}"><input type="hidden" name="kind" value="{{kind}}">
+<label>Nome<input class="input" name="name" maxlength="100" value="{{item.name}}" required></label>
+<label class="check"><input type="checkbox" name="available" value="1" {% if item.available %}checked{% endif %}>Disponível</label>
+<button class="btn soft">Salvar</button></form>
+{% else %}<p>Nenhum item cadastrado nesta lista.</p>{% endfor %}
+<small>Para indisponibilizar um item vinculado, desmarque-o primeiro nos produtos que o utilizam.</small>
+</details>
+{% endfor %}
+</div>

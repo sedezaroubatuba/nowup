@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% block title %}Painel do profissional | NowUp{% endblock %}{% block body_class %}professional-area{% endblock %}{% block content %}<link rel="stylesheet" href="/static/order-items166.css?v=166"><link rel="stylesheet" href="/static/pro-compact.css?v=67">{% set status_labels = status_labels|default({'new':'Pedido recebido','confirmed':'Pedido aceito','preparing':'Em preparo','ready':'Pronto','out_for_delivery':'Saiu para entrega','completed':'Concluído','cancelled':'Cancelado','rejected':'Recusado'}, true) %}<link rel="stylesheet" href="/static/pro-panel-navigation.css?v=60">
+{% extends 'base.html' %}{% block title %}Painel do profissional | NowUp<link rel="stylesheet" href="/static/custom192.css?v=195"><script type="application/json" id="included-catalog195">{{included_catalog195|tojson}}</script><script defer src="/static/custom192.js?v=195"></script>{% endblock %}{% block body_class %}professional-area<link rel="stylesheet" href="/static/custom192.css?v=195"><script type="application/json" id="included-catalog195">{{included_catalog195|tojson}}</script><script defer src="/static/custom192.js?v=195"></script>{% endblock %}{% block content %}<link rel="stylesheet" href="/static/order-items166.css?v=166"><link rel="stylesheet" href="/static/pro-compact.css?v=67">{% set status_labels = status_labels|default({'new':'Pedido recebido','confirmed':'Pedido aceito','preparing':'Em preparo','ready':'Pronto','out_for_delivery':'Saiu para entrega','completed':'Concluído','cancelled':'Cancelado','rejected':'Recusado'}, true) %}<link rel="stylesheet" href="/static/pro-panel-navigation.css?v=60">
 <style>
 body.professional-area .pro-dashboard .order-alert-control{display:flex!important}
 body.professional-area .pro-dashboard .new-order-alert:not([hidden]){display:flex!important}
@@ -140,6 +140,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </div>{% endfor %}</div>
 <p class="muted">Numere de 1 a {{product_categories|length}} sem repetir posições e salve todas de uma vez.</p><button type="button" class="btn primary" data-save-order142>Salvar ordem</button><p data-order-status142 role="status" aria-live="polite"></p>
 </details>
+{% include "included195.html" %}
 <details class="product-create" id="novo-produto" {% if not products %}open{% endif %}>
 <summary class="btn primary" role="button">＋ Adicionar produto</summary>
 <form action="/painel/cardapio/produtos" method="post" enctype="multipart/form-data" class="product-form">
@@ -153,14 +154,14 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <label>Máximo por pedido<input class="input" type="number" name="max_quantity" min="1" max="99" value="99"></label>
 <label>Foto<input class="input" type="file" name="photo" accept="image/*">
 </label>
-<label class="full">Descrição / ingredientes<textarea name="description" maxlength="600" placeholder="Ingredientes, tamanho ou informações importantes">
+<label class="full">Descrição completa do produto<textarea name="description" maxlength="600" placeholder="Ingredientes, tamanho ou informações importantes">
 </textarea>
 </label>
 <label class="check">
 <input type="checkbox" name="available" value="1" checked> Produto disponível</label>
 <label class="check"><input type="checkbox" name="featured" value="1"> Colocar em promoção/destaque (máximo 3)</label>
 <label>Adicionais deste produto<select name="extras_mode" data-extras-mode155><option value="none">Sem adicionais</option><option value="all">Permitir todos os adicionais da loja</option><option value="selected">Selecionar adicionais</option></select></label><div class="full" data-shared-picker155>{% for extra in shared_extras %}<label class="check"><input type="checkbox" name="extra_ids" value="{{extra.id}}"> {{extra.name}} · + R$ {{'%.2f'|format(extra.price_cents/100)|replace('.',',')}}{% if not extra.available %} (indisponível){% endif %}</label>{% else %}<p>Cadastre primeiro seus complementos na aba Adicionais.</p>{% endfor %}</div>
-<div class="nu192-editor full" data-editor192="" data-max192="3"></div>
+<div class="nu192-editor full" data-editor192="" data-max192="3"><h3>Personalização deste produto</h3></div>
 <button class="btn primary">Salvar e cadastrar próximo</button>
 </form>
 </details>
@@ -184,12 +185,12 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <label>Máximo por pedido<input class="input" type="number" name="max_quantity" min="1" max="99" value="{{product.max_quantity}}"></label>
 <label>Trocar foto<input class="input" type="file" name="photo" accept="image/*">
 </label>
-<label class="full">Descrição / ingredientes<textarea name="description">{{product.description}}</textarea>
+<label class="full">Descrição completa do produto<textarea name="description">{{product.description}}</textarea>
 </label>
 <label class="check">
 <input type="checkbox" name="available" value="1" {% if product.available %}checked{% endif %}> Disponível para pedidos (desmarque quando esgotar)</label>
 <label class="check"><input type="checkbox" name="featured" value="1" {% if product.featured %}checked{% endif %}> Produto em promoção/destaque (máximo 3)</label>
-<div class="nu192-editor full" data-editor192="{{product.customization192}}" data-max192="{% for g in product_groups.get(product.id,[]) if g.name=='Adicionais' %}{{g.max_choices}}{% endfor %}"></div>
+<div class="nu192-editor full" data-editor192="{{product.customization192}}" data-max192="{% for g in product_groups.get(product.id,[]) if g.name=='Adicionais' %}{{g.max_choices}}{% endfor %}"><h3>Personalização deste produto</h3></div>
 <button class="btn primary">Salvar alterações</button>
 </form>
 <p class="muted">Os adicionais são escolhidos no formulário acima. Cadastre e edite os complementos na aba <a href="#adicionais">Adicionais da loja</a>.</p>
@@ -544,6 +545,6 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <script src="/static/panel-back-top.js?v=70" defer></script>
 
 <link rel="manifest" href="/static/nowup-lojista.webmanifest"><script src="/static/pro-push75.js?v=112" defer></script>
-<link rel="stylesheet" href="/static/order-review127.css?v=127"><script src="/static/order-review127.js?v=127" defer></script>{% endblock %}
+<link rel="stylesheet" href="/static/order-review127.css?v=127"><script src="/static/order-review127.js?v=127" defer></script><link rel="stylesheet" href="/static/custom192.css?v=195"><script type="application/json" id="included-catalog195">{{included_catalog195|tojson}}</script><script defer src="/static/custom192.js?v=195"></script>{% endblock %}
 
 
