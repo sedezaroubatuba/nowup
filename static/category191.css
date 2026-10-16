@@ -1,0 +1,16 @@
+/* No category shortcut strip on the presentation or the dedicated category grid.
+   Its original nodes remain available to the existing side menu and search. */
+html body.public-profile-area.nu187-store-home [data-native-menu] .menu-category-nav,
+html body.public-profile-area.nu191-category [data-native-menu] .menu-category-nav{display:none!important}
+html body.public-profile-area.nu187-store-home .nu187-category-title{display:none!important}
+html body.public-profile-area.nu191-category [data-native-menu] .menu-layout,
+html body.public-profile-area.nu191-category [data-native-menu] .nu145-empty,
+html body.public-profile-area.nu191-category [data-native-menu] .nu167-products-return{display:none!important}
+html body .nu191-category-view[hidden],html body .nu191-grid[hidden],html body .nu191-grid>[hidden],html body .nu191-empty[hidden]{display:none!important}
+.nu191-category-view{display:block;margin:12px 0 0;padding-bottom:12px}
+html body.public-profile-area .nu191-category-view>h2{margin:0 0 4px!important;font-size:22px!important;line-height:1.25!important;color:#263247!important}
+.nu191-count{margin:0 0 12px;color:#728095;font-size:13px}
+.nu191-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:stretch}
+.nu191-grid>.nu190-card{min-height:118px}
+.nu191-empty{font-size:14px;color:#637184;padding:14px 0}
+@media(min-width:800px){.nu191-category-view{max-width:850px;margin:14px auto}}

@@ -13,18 +13,23 @@ document.addEventListener('DOMContentLoaded',()=>{
  const showcase=make('div','nu190-showcase');layout.before(showcase);
  const originals=Array.from(layout.querySelectorAll('[data-product]')),sections=new Map(),refreshers=[],cartRefreshers=[];
  const back=make('button','nu187-back','←');back.type='button';heading.prepend(back);
- let homeScroll=0;
+ let homeScroll=0,selectedCategory=null;
+ const categoryView=make('section','nu191-category-view');categoryView.hidden=true;layout.before(categoryView);
+ const categoryTitle=make('h2'),categoryCount=make('p','nu191-count'),categoryEmpty=make('p','nu191-empty','Nenhum produto encontrado nesta categoria.');categoryEmpty.hidden=true;
+ categoryView.append(categoryTitle,categoryCount,categoryEmpty);const categoryCache=new Map();
  const money=cents=>(cents/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
  const resize=()=>window.dispatchEvent(new Event('resize'));
  function showProducts(focus=false){
   if(body.classList.contains('nu187-store-home'))homeScroll=window.scrollY;
+  selectedCategory=null;categoryView.hidden=true;body.classList.remove('nu191-category');
   intro.hidden=true;showcase.hidden=true;back.setAttribute('aria-label','Voltar às informações da loja');
-  if(nav)sticky.append(nav);body.classList.remove('nu187-store-home');search.placeholder='Buscar nesta loja';
+  if(nav)sticky.append(nav);body.classList.remove('nu187-store-home');search.placeholder='Buscar nesta loja';search.setAttribute('aria-label','Buscar produtos nesta loja');
   resize();window.scrollTo({top:0,behavior:'instant'});if(focus)search.focus({preventScroll:true});
  }
  function showHome(){
+  selectedCategory=null;categoryView.hidden=true;body.classList.remove('nu191-category');
   intro.hidden=false;showcase.hidden=false;body.classList.add('nu187-store-home');back.setAttribute('aria-label','Voltar ao início do NowUp');
-  if(nav)anchor.after(nav);search.value='';search.dispatchEvent(new Event('input',{bubbles:true}));search.placeholder='Pesquisar produtos';search.blur();
+  if(nav)anchor.after(nav);search.value='';search.dispatchEvent(new Event('input',{bubbles:true}));search.placeholder='Pesquisar produtos';search.setAttribute('aria-label','Pesquisar produtos nesta loja');search.blur();
   refreshers.forEach(fn=>fn());cartRefreshers.forEach(fn=>fn());resize();window.scrollTo({top:homeScroll,behavior:'instant'});
  }
  function compact(card){
@@ -52,7 +57,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  groups.forEach((group,key)=>{
   if(!group.cards.length)return;
   const section=make('section','nu190-category');section.dataset.category190=key;sections.set(key,section);
-  const header=make('header'),all=make('button','','Ver todos ›');all.type='button';all.addEventListener('click',()=>{showProducts();buttons.find(b=>b.dataset.categoryFilter===key)?.click();});header.append(make('h2','',group.name),all);section.append(header);
+  const header=make('header'),all=make('button','','Ver todos ›');all.type='button';all.addEventListener('click',()=>showCategory(key));header.append(make('h2','',group.name),all);section.append(header);
   const track=make('div','nu190-track');track.tabIndex=0;track.setAttribute('aria-label','Produtos de '+group.name+'; deslize para os lados');
   const pages=[];for(let i=0;i<group.cards.length;i+=4){const page=make('div','nu190-page');group.cards.slice(i,i+4).forEach(card=>page.append(compact(card)));pages.push(page);track.append(page);}section.append(track);
   const indicator=make('div','nu190-indicator'),prev=make('button','','‹'),next=make('button','','›'),dots=make('div','nu190-dots');prev.type=next.type='button';prev.setAttribute('aria-label','Página anterior de '+group.name);next.setAttribute('aria-label','Próxima página de '+group.name);
@@ -64,8 +69,29 @@ document.addEventListener('DOMContentLoaded',()=>{
   track.addEventListener('keydown',event=>{if(event.target!==track)return;if(event.key==='ArrowRight'||event.key==='ArrowLeft'){event.preventDefault();go(index+(event.key==='ArrowRight'?1:-1));}});
   indicator.append(prev,dots,next);section.append(indicator,make('small','nu190-hint',pages.length>1?'Deslize para o lado':'Todos os produtos desta categoria'));refreshers.push(refresh);refresh();showcase.append(section);
  });
+ function filterCategory(){
+  if(!selectedCategory)return;
+  const entry=categoryCache.get(selectedCategory),query=search.value.trim();let count=0;
+  entry.cards.forEach(({source,node})=>{const text=(source.dataset.name||'')+' '+(source.querySelector('.menu-product-info p')?.textContent||'');const match=window.NowUpSearch179?window.NowUpSearch179.matches(text,query):text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(query.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase());node.hidden=!match;if(match)count++;});
+  categoryCount.textContent=count+' '+(count===1?'produto':'produtos');categoryEmpty.hidden=count>0;
+ }
+ function showCategory(key){
+  const group=groups.get(key);if(!group)return;
+  if(body.classList.contains('nu187-store-home'))homeScroll=window.scrollY;
+  selectedCategory=key;body.classList.remove('nu187-store-home');body.classList.add('nu191-category');
+  intro.hidden=true;showcase.hidden=true;categoryView.hidden=false;back.setAttribute('aria-label','Voltar à página da loja');
+  if(nav)sticky.append(nav);
+  if(!categoryCache.has(key)){
+   const grid=make('div','nu191-grid'),cards=group.cards.map(source=>{const node=compact(source);grid.append(node);return {source,node};});categoryView.append(grid);categoryCache.set(key,{grid,cards});
+  }
+  categoryCache.forEach((entry,k)=>entry.grid.hidden=k!==key);
+  categoryTitle.textContent=group.name;search.value='';search.placeholder='Buscar em '+group.name;search.setAttribute('aria-label','Buscar em '+group.name);filterCategory();
+  resize();window.scrollTo({top:0,behavior:'instant'});
+ }
+ root.addEventListener('input',event=>{if(event.target===search&&selectedCategory){event.stopImmediatePropagation();filterCategory();}},true);
+ root.addEventListener('search',event=>{if(event.target===search&&selectedCategory){event.stopImmediatePropagation();filterCategory();}},true);
  if(!originals.length)showcase.append(make('p','nu190-empty','Esta loja ainda não publicou produtos.'));
- root.addEventListener('click',event=>{if(!body.classList.contains('nu187-store-home'))return;const button=event.target.closest('[data-category-filter]');if(!button)return;event.preventDefault();event.stopImmediatePropagation();(sections.get(button.dataset.categoryFilter)||showcase).scrollIntoView({block:'start',behavior:'auto'});},true);
+ root.addEventListener('click',event=>{if(!body.classList.contains('nu187-store-home')&&!selectedCategory)return;const button=event.target.closest('[data-category-filter]');if(!button)return;event.preventDefault();event.stopImmediatePropagation();if(selectedCategory){if(button.dataset.categoryFilter==='all')showHome();else showCategory(button.dataset.categoryFilter);return;}(sections.get(button.dataset.categoryFilter)||showcase).scrollIntoView({block:'start',behavior:'auto'});},true);
  // Focus alone does not switch views: explicit top-search interaction does.
  search.addEventListener('click',()=>{if(body.classList.contains('nu187-store-home'))showProducts(true);});
  search.addEventListener('keydown',event=>{if(body.classList.contains('nu187-store-home')&&(event.key==='Enter'||event.key.length===1))showProducts();});
