@@ -1,0 +1,17 @@
+html body.professional-area .menu-manager details{margin:8px 0!important;border:1px solid #e7e0f3;border-radius:12px!important;overflow:hidden}
+html body.professional-area .menu-manager details>summary{min-height:44px!important;padding:12px 14px!important;font-size:14px!important;background:#f6f2fc!important;color:#4f2486!important;line-height:1.3!important;list-style-position:inside}
+html body.professional-area .menu-manager details[open]>form{padding:14px!important}
+html body.professional-area .menu-manager .product-form{gap:10px!important}
+html body.professional-area .nu200-question{grid-column:1/-1;min-width:0;margin:0;padding:10px 0;border:0}
+html body.professional-area .nu200-question legend{font-size:14px;font-weight:650;margin-bottom:8px}
+html body.professional-area .nu200-question label{display:inline-flex!important;align-items:center;gap:8px;margin-right:24px;min-height:44px}
+html body.professional-area .nu200-question input{accent-color:#7134c6;width:20px;height:20px}
+html body.professional-area .nu200-options{grid-column:1/-1;min-width:0}
+html body.professional-area .nu200-options[hidden]{display:none!important}
+html body.professional-area .nu200-secondary{grid-column:1/-1;min-width:0}
+html body.professional-area .nu200-secondary>label{display:block;padding:10px 14px}
+html body.professional-area .nu200-order-status{display:block;width:fit-content;padding:7px 10px;border:1px solid #d6c7ee;border-radius:9px;background:#f4effc;color:#51278b;font-size:13px;font-weight:700;margin:8px 0;line-height:1.4}
+html body.professional-area .nu200-order-status.status-new,html body.professional-area .nu200-order-status.status-reviewing{color:#854000;background:#fff3de;border-color:#ecd0a3}
+html body.professional-area .nu200-order-status.status-completed{color:#11673f;background:#e9f8f0;border-color:#b5dfc9}
+html body.professional-area .nu200-order-status.status-cancelled,html body.professional-area .nu200-order-status.status-rejected{color:#952b3d;background:#fff0f2;border-color:#ebbdc6}
+html body [data-owner200='1'] .product-buy,html body [data-owner200='1'] .nu190-add,html body [data-owner200='1'] .nu190-amount,html body [data-owner200='1'] .nu151-choose,html body [data-owner200='1'] .nu83-cart-dock,html body [data-owner200='1'] .menu-cart{display:none!important}
