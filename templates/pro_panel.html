@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% block title %}Painel do profissional | NowUp<link rel="stylesheet" href="/static/custom196.css?v=196"><script type="application/json" id="included-catalog195">{{included_catalog195|tojson}}</script><script defer src="/static/custom196.js?v=196"></script>{% endblock %}{% block body_class %}professional-area<link rel="stylesheet" href="/static/custom196.css?v=196"><script type="application/json" id="included-catalog195">{{included_catalog195|tojson}}</script><script defer src="/static/custom196.js?v=196"></script>{% endblock %}{% block content %}<link rel="stylesheet" href="/static/order-items166.css?v=166"><link rel="stylesheet" href="/static/pro-compact.css?v=67">{% set status_labels = status_labels|default({'new':'Pedido recebido','confirmed':'Pedido aceito','preparing':'Em preparo','ready':'Pronto','out_for_delivery':'Saiu para entrega','completed':'Concluído','cancelled':'Cancelado','rejected':'Recusado'}, true) %}<link rel="stylesheet" href="/static/pro-panel-navigation.css?v=60">
+{% extends 'base.html' %}{% block title %}Painel do lojista | NowUp{% endblock %}{% block body_class %}professional-area{% endblock %}{% block content %}<link rel="stylesheet" href="/static/order-items166.css?v=166"><link rel="stylesheet" href="/static/pro-compact.css?v=67">{% set status_labels = status_labels|default({'new':'Pedido recebido','confirmed':'Pedido aceito','preparing':'Em preparo','ready':'Pronto','out_for_delivery':'Saiu para entrega','completed':'Concluído','cancelled':'Cancelado','rejected':'Recusado'}, true) %}<link rel="stylesheet" href="/static/pro-panel-navigation.css?v=60">
 <style>
 body.professional-area .pro-dashboard .order-alert-control{display:flex!important}
 body.professional-area .pro-dashboard .new-order-alert:not([hidden]){display:flex!important}
@@ -17,10 +17,24 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <div class="container dashboard pro-dashboard" data-panel-day="{{today_day}}">
 <header class="v60-top"><button class="btn" type="button" data-pro-menu-toggle aria-expanded="false" aria-controls="pro-edit-menu" aria-label="Abrir menu">☰</button><div><b>{{pro.display_name}}</b><small>{{shop_status.label}}</small></div><a class="btn soft merchant-profile-link" href="/p/{{pro.slug}}" target="_blank" rel="noopener" aria-label="Ver meu perfil público na NowUp">↗ Meu perfil</a><a class="btn v61-bell" href="#notificacoes" aria-label="Notificações">🔔<span class="v61-badge" data-notification-badge hidden>0</span></a></header>
 <button class="v60-shade" type="button" data-close-pro-menu aria-label="Fechar menu" hidden></button>
-<aside class="sidebar pro-sidebar" id="pro-edit-menu"><h2>Menu da loja</h2><a href="#comandas">🧾 Comandas abertas</a><a href="#whatsapp">✍ Vendas WhatsApp</a><a href="/painel/vendas-manuais/relatorios">📊 Vendas consolidadas</a>
+<aside class="sidebar pro-sidebar" id="pro-edit-menu"><h2>Menu da loja</h2><button type="button" class="btn soft" data-close-pro-menu>Fechar menu ✕</button><a href="#inicio">⌂ Início</a><a href="#produtos-loja">▦ Produtos</a><a href="#novo-produto">＋ Cadastrar produto</a><a href="#categorias-loja">▤ Categorias</a><a href="#acompanhamentos-combos">＋ Acompanhamentos e combos</a><a href="#comandas">🧾 Comandas abertas</a><a href="#whatsapp">✍ Vendas WhatsApp</a><a href="/painel/vendas-manuais/relatorios">📊 Vendas consolidadas</a>
 <a href="#hoje">📅 Pedidos de hoje</a><a href="#resumo">📊 Visão geral</a><a href="#pedidos">🧾 Pedidos</a><a href="#cardapio">🛍 {{'Catálogo de produtos' if pro.offer_mode=='catalog' else 'Cardápio'}}</a><a href="#adicionais">➕ Adicionais</a><a href="#clientes">👥 Clientes</a><a href="#relatorios">📈 Relatórios</a><a href="#plano">💳 Meu plano</a><a href="#perfil">🏪 Perfil da loja</a><a href="#configuracoes">⚙️ Configurações</a><a href="#publicar">➕ Publicações</a><a href="/p/{{pro.slug}}" target="_blank" rel="noopener">↗ Ver perfil público</a>
 <form action="/sair" method="post"><button class="btn danger">Sair</button></form></aside>
 <main>
+<section id="inicio" class="nu198-home" aria-label="Início do painel">
+<h1 class="nu198-title">Painel da loja</h1><p class="nu198-subtitle">O que vamos fazer agora?</p>
+<nav class="nu198-grid" aria-label="Atalhos da loja">
+<a class="nu198-tile" href="#pedidos-ativos" data-nav198><span aria-hidden="true">▤</span>Pedidos</a>
+<a class="nu198-tile" href="#produtos-loja" data-nav198><span aria-hidden="true">▦</span>Produtos</a>
+<a class="nu198-tile" href="#novo-produto" data-nav198><span aria-hidden="true">＋</span>Cadastrar produto</a>
+<a class="nu198-tile" href="#categorias-loja" data-nav198><span aria-hidden="true">☷</span>Categorias</a>
+<a class="nu198-tile" href="#acompanhamentos-combos" data-nav198><span aria-hidden="true">⊕</span>Acompanhamentos e combos</a>
+<a class="nu198-tile" href="#relatorios" data-nav198><span aria-hidden="true">▥</span>Relatórios</a>
+</nav>
+{% set daily=namespace(total=0) %}{% for order in today_orders if order.status not in ['cancelled','rejected'] %}{% set daily.total=daily.total+order.total_cents %}{% endfor %}
+<div class="nu198-metrics"><div><small>Total de pedidos hoje</small><strong>{{today_orders|length}}</strong></div><div><small>Valor dos pedidos hoje*</small><strong>R$ {{'%.2f'|format(daily.total/100)|replace('.',',')}}</strong></div></div><p class="muted"><small>*Sem cancelados e recusados. Inclui pedidos em andamento.</small></p>
+</section>
+
 {% if request.query_params.get('erro')=='pedido-encerrado' %}<p role="alert">Pedido encerrado ou alteração de status inválida. O registro foi preservado.</p>{% elif request.query_params.get('erro')=='ultimo-item' %}<p role="alert">Não é possível retirar o último item. Cancele o pedido com motivo, se necessário.</p>{% endif %}
 
 <link rel="stylesheet" href="/static/sales109.css?v=109">
@@ -34,7 +48,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 {% if request.query_params.get('ok') %}<div class="alert success">Alterações salvas com sucesso.</div>{% endif %}
 {% if request.query_params.get('erro')=='limite-promocoes' %}<div class="alert">Você já atingiu o limite de 3 produtos em promoção. Retire um destaque antes de adicionar outro.</div>{% endif %}
 {% if request.query_params.get('erro')=='motivo-obrigatorio' %}<div class="alert danger">Informe o motivo do cancelamento ou da recusa.</div>{% endif %}
-<section class="panel" data-push75 aria-label="Avisos neste aparelho">
+<section class="panel" id="avisos-aparelho" data-push75 aria-label="Avisos neste aparelho">
 <h2>Avisos de pedidos neste aparelho</h2>
 <p>Receba avisos mesmo com o painel fechado. A loja aberta ou pausada é controlada separadamente.</p>
 <button type="button" class="btn" data-push-enable>🔔 Ativar avisos neste aparelho</button>
@@ -94,7 +108,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </div>
 </section>
 <section class="panel" id="plano"><h2>Meu plano</h2><p>Atual: <b>{{{'cardapio':'Só cardápio/catálogo · R$ 49,90','vitrine':'Só vitrine: WhatsApp ou link próprio · R$ 49,90','ambos':'Vitrine + cardápio/catálogo · R$ 99,90','none':'Aguardando liberação'}.get(pro.plan_active,'Aguardando liberação')}}</b></p>{% if pro.plan_requested %}<p role="status">Mudança solicitada: {{pro.plan_requested}}. Aguardando aprovação do ADM.</p>{% endif %}<p>Na troca de plano, os produtos e pedidos permanecem salvos. A vitrine é publicada ou retirada após aprovação.</p><form action="/painel/plano" method="post"><label>Solicitar plano<select name="plan" required><option value="cardapio">Só cardápio/catálogo — R$ 49,90/mês</option><option value="vitrine">Só vitrine: WhatsApp ou link próprio — R$ 49,90/mês</option><option value="ambos">Vitrine + cardápio/catálogo — R$ 99,90/mês</option></select></label><label>Tipo de conteúdo<select name="offer_mode" required><option value="services">Somente vitrine sem produtos</option><option value="menu">Cardápio</option><option value="catalog">Catálogo</option></select></label><button class="btn primary">Solicitar mudança</button></form>{% if pro.plan_active == 'vitrine' %}<label>Link do perfil da loja<input class="input" value="{{request.base_url}}p/{{pro.slug}}" readonly onclick="this.select()"></label><p>O perfil permanece dentro do NowUp. Para receber pedidos, solicite um plano com cardápio.</p>{% elif pro.plan_active in ['cardapio','ambos'] %}<label>Link próprio do {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}<input class="input" value="{{request.url_for('native_menu',slug=pro.slug)}}" readonly onclick="this.select()"></label><label>Link para divulgar no WhatsApp ou Instagram<input class="input" value="{{request.url_for('native_menu',slug=pro.slug)}}?origem=externo" readonly onclick="this.select()"></label><p>Todo pedido exige conta de cliente e chega à sala de pedidos do NowUp. O cadastro é rápido, feito uma vez; não existe compra sem cadastro. O link externo usa o mesmo cardápio e identifica este canal nos relatórios do ADM.</p><p><a class="btn soft" href="/p/{{pro.slug}}/menu" target="_blank" rel="noopener">Abrir link do meu {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}</a></p>{% endif %}</section>
-<section class="panel" id="configuracoes"><div class="section-title"><div><span class="kicker">Ajustes da loja</span><h2>Configurações</h2></div></div><p>Escolha o que deseja alterar:</p><nav class="merchant-shortcuts" aria-label="Configurações da loja"><a class="btn soft" href="#horarios">Horários e situação</a><a class="btn soft" href="#perfil">Dados e WhatsApp</a>{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}<a class="btn soft" href="#cardapio">Entrega, retirada e pagamento</a>{% endif %}<a class="btn soft" href="#identidade">Fotos e capa</a></nav></section>
+<section class="panel" id="configuracoes"><div class="section-title"><div><span class="kicker">Ajustes da loja</span><h2>Configurações</h2></div></div><p>Escolha o que deseja alterar:</p><nav class="merchant-shortcuts" aria-label="Configurações da loja"><a class="btn soft" href="#avisos-aparelho">Avisos neste aparelho</a><a class="btn soft" href="#horarios">Horários e situação</a><a class="btn soft" href="#perfil">Dados e WhatsApp</a>{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}<a class="btn soft" href="#cardapio">Entrega, retirada e pagamento</a>{% endif %}<a class="btn soft" href="#identidade">Fotos e capa</a></nav></section>
 <section class="panel hours-panel" id="horarios">
 <div class="section-title"><div><span class="kicker">Relógio real de São Paulo</span><h2>Horários e situação da loja</h2></div><span class="status-pill {% if shop_status.open %}ok{% endif %}">{{shop_status.label}}</span></div>
 <p class="muted">O NowUp abre e fecha a loja automaticamente. Horários que passam da meia-noite, como 09:00–00:00, também são reconhecidos.</p>
@@ -166,7 +180,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </form>
 </details>
 <nav class="menu-category-nav pro-product-filters" aria-label="Filtrar produtos do painel"><button type="button" class="active" data-pro-category="all">Todos</button><button type="button" data-pro-category="promocoes">Promoções</button>{% for category in product_categories %}<button type="button" data-pro-category="{{category.name}}">{{category.name}}</button>{% endfor %}</nav>
-<div class="product-admin-grid" data-pro-products>{% for product in products %}<details class="product-admin-card" data-pro-product data-category="{{product.category}}" data-featured="{{1 if product.featured else 0}}">
+<div class="product-admin-grid" id="produtos-loja" data-pro-products>{% for product in products %}<details class="product-admin-card" data-pro-product data-category="{{product.category}}" data-featured="{{1 if product.featured else 0}}">
 <summary>{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" onerror="this.onerror=null;this.src='/static/product-placeholder.svg'" alt="">{% else %}<span class="product-placeholder">🍽</span>{% endif %}<div>
 <b>{{product.name}}</b><small>Código: {{product.id}}</small>
 <small>{{product.category}} · R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</small>
@@ -545,6 +559,8 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <script src="/static/panel-back-top.js?v=70" defer></script>
 
 <link rel="manifest" href="/static/nowup-lojista.webmanifest"><script src="/static/pro-push75.js?v=112" defer></script>
-<link rel="stylesheet" href="/static/order-review127.css?v=127"><script src="/static/order-review127.js?v=127" defer></script><link rel="stylesheet" href="/static/custom196.css?v=196"><script type="application/json" id="included-catalog195">{{included_catalog195|tojson}}</script><script defer src="/static/custom196.js?v=196"></script>{% endblock %}
+<link rel="stylesheet" href="/static/order-review127.css?v=127"><script src="/static/order-review127.js?v=127" defer></script><link rel="stylesheet" href="/static/custom196.css?v=196"><script type="application/json" id="included-catalog195">{{included_catalog195|tojson}}</script><script defer src="/static/custom196.js?v=196"></script><link rel="stylesheet" href="/static/pro198.css?v=198"><script defer src="/static/pro198.js?v=198"></script>
+<nav class="nu198-bottom" aria-label="Navegação do lojista"><a href="#inicio" data-nav198><span aria-hidden="true">⌂</span>Início</a><a href="#produtos-loja" data-nav198><span aria-hidden="true">▦</span>Produtos</a><a href="#pedidos-ativos" data-nav198><span aria-hidden="true">▤</span>Pedidos</a><a href="#configuracoes" data-nav198><span aria-hidden="true">☷</span>Mais</a></nav>
+{% endblock %}
 
 
