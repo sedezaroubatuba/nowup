@@ -1,0 +1,38 @@
+NOWUP V196 — CORREÇÃO DE ARQUIVOS AUSENTES E NOVA MARCA
+
+Este pacote atualiza o projeto existente. Não é um projeto independente.
+
+COMO APLICAR
+1. Extraia este ZIP no computador ou no gerenciador de arquivos.
+2. Abra o MESMO repositório e a MESMA branch usados pelo serviço atual do Render.
+3. Copie app.py, nowup_custom192.py e nowup_included195.py para a raiz do projeto.
+4. Mescle a pasta static deste pacote com a pasta static existente no projeto.
+5. Mescle a pasta templates deste pacote com a pasta templates existente.
+6. Substitua somente os arquivos com os mesmos nomes. Preserve os demais.
+7. Envie as alterações ao GitHub e publique o commit no serviço atual do Render.
+
+Não envie apenas os arquivos Python. As pastas static e templates também são
+necessárias. Não coloque este pacote dentro de static ou de templates e não
+crie um segundo serviço ou banco. Nenhum banco de dados está incluído.
+
+O QUE CORRIGE
+- Inclui o arquivo de personalização que estava ausente no servidor.
+- Usa custom196.js e custom196.css em ambos os templates que os carregam.
+- Mantém as cópias custom192 para compatibilidade com referências antigas.
+- O cabeçalho e rodapé passam a apontar diretamente para a nova logo.
+- Reativa brand185.css e brand185.js e inclui as imagens necessárias.
+- Restaura manifesto e ícone de tela inicial com referências atualizadas.
+- Atualiza os textos de entrada para Cliente e Lojista, preservando os campos,
+  rotas, tipo de conta e lógica de autenticação existentes.
+- Inclui cadastros de acompanhamentos, bebidas de combo e seleção por produto
+  da V195. Mantém ingredientes, adicionais, talheres, observações e carrinho.
+
+VERIFICAÇÃO APÓS PUBLICAR
+Abra https://nowup-i9n4.onrender.com/entrar?verificacao=196
+A tela deve mostrar a nova logo e a opção Lojista.
+No Render, confirme que foi publicado o commit que contém todos estes arquivos.
+No painel da loja, confira os cadastros de acompanhamentos e bebidas para combos.
+
+A pasta foi testada localmente com as dependências do projeto atual. Não foi
+publicada nem conferida visualmente em um iPhone real. Ícones já instalados podem
+continuar mostrando a imagem antiga até uma atualização do sistema ou reinstalação.
