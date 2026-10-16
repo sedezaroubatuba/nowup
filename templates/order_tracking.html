@@ -1,9 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Pedido {{order.order_code}} | NowUp<script src="/static/order-chat.js?v=58"></script>
+{% block title %}Pedido {{order.order_code}} | NowUp
 {% endblock %}
 {% block content %}
+{% if clear_cart200 %}<script id="cart-confirmation200" type="application/json">{{ {'path':'/p/' ~ order.slug,'customerId':order.customer_id}|tojson }}</script><script src="/static/cart-confirm200.js?v=200"></script>{% endif %}
+
 <main class="container order-track" data-status-url="/pedido/{{order.tracking_token}}/status" data-current-status="{{order.status}}">
-  <section class="order-hero"><div class="order-check">✓</div><p class="eyebrow">PEDIDO ENVIADO PELO NOWUP</p><h1>{{order.order_code}}</h1><p>Seu pedido chegou à sala de pedidos de <strong>{{order.display_name}}</strong>.</p><div class="order-live-status status-{{order.status}}" id="orderLiveStatus">{{status_labels.get(order.status,order.status)}}</div><p class="muted">Esta página atualiza automaticamente quando a loja movimentar o pedido.</p></section>
+  <section class="order-hero"><div class="order-check">✓</div><p class="eyebrow">PEDIDO ENVIADO À LOJA</p><h1>{{order.order_code}}</h1><p>Seu pedido chegou à sala de pedidos de <strong>{{order.display_name}}</strong>.</p><div class="order-live-status status-{{order.status}}" id="orderLiveStatus">{{status_labels.get(order.status,order.status)}}</div><p class="muted">Acompanhe aqui. Pedido recebido pelo sistema não significa aceite da loja; o status será atualizado quando ela aceitar.</p></section>
   {% set review_customer=true %}{% include 'order_revision.html' %}
   <div class="order-layout">
     <section class="panel order-card"><h2>Resumo do pedido</h2>
@@ -16,4 +18,5 @@
 <script>(()=>{const root=document.querySelector('.order-track');if(!root)return;const box=document.getElementById('orderLiveStatus');let current=root.dataset.currentStatus;setInterval(async()=>{try{const r=await fetch(root.dataset.statusUrl,{cache:'no-store'});if(!r.ok)return;const data=await r.json();if(data.status!==current){current=data.status;box.textContent=data.label;box.className='order-live-status status-'+data.status;location.reload();}}catch(e){}},8000);})();</script>
 <script src="/static/order-chat.js?v=58"></script>
 <link rel="stylesheet" href="/static/order-review127.css?v=127"><script src="/static/order-review127.js?v=127" defer></script>{% endblock %}
+
 

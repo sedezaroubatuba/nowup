@@ -238,7 +238,7 @@ html body.public-profile-area [data-native-menu] .nu83-catalog-heading .nu83-sea
 <script>setTimeout(()=>{if(document.body&&!document.body.dataset.store187Ready)document.body.classList.remove("nu187-store-home");},3000);</script>
 <link rel="stylesheet" href="/static/showcase190.css?v=197">
 <link rel="stylesheet" href="/static/category191.css?v=197">
-</head><body class="{% if request is defined and request.url.path.startswith('/p/') and pro is defined and (request.url.path.rstrip('/').endswith('/menu') or (pro.plan_active in ['cardapio','ambos'] and pro.is_premium and pro.offer_mode in ['menu','catalog'])) %}nu169-products-view nu170-fixed-catalog nu172-catalog-pending nu187-store-home {% endif %}{% block body_class %}{% endblock %}">
+<link rel="stylesheet" href="/static/compact200.css?v=200"></head><body class="{% if request is defined and request.url.path.startswith('/p/') and pro is defined and (request.url.path.rstrip('/').endswith('/menu') or (pro.plan_active in ['cardapio','ambos'] and pro.is_premium and pro.offer_mode in ['menu','catalog'])) %}nu169-products-view nu170-fixed-catalog nu172-catalog-pending nu187-store-home {% endif %}{% block body_class %}{% endblock %}">
 {% if settings.ticker_enabled=='1' and settings.ticker_text %}<div class="notice-ticker ticker-{{settings.ticker_animation or 'continuous'}}" role="status" aria-label="Aviso"><div class="notice-ticker-track"><span>{{settings.ticker_text}}</span><i>•</i><span aria-hidden="true">{{settings.ticker_text}}</span><i aria-hidden="true">•</i><span aria-hidden="true">{{settings.ticker_text}}</span><i aria-hidden="true">•</i><span aria-hidden="true">{{settings.ticker_text}}</span></div></div>{% endif %}
 <header class="top"><div class="container nav"><a class="brand" href="/" aria-label="Página inicial"><img class="nowup-official-logo" src="/static/nowup-logo185.png?v=196" alt="NowUp Brasil" width="150" height="118"></a>
 <nav class="mainnav"><a href="/profissionais">Profissionais</a><a href="/cadastro/profissional">Anunciar</a><a href="/noticias">Notícias</a><a href="/contato">Contato</a><a href="/quem-somos">Quem somos</a></nav><div class="navlinks">{% if user %}<span class="muted hello">Olá, {{user.name}}</span>{% if user.role=='professional' %}<a class="btn soft" href="/painel">Painel profissional</a>{% elif user.role=='customer' %}<a class="btn soft" href="/cliente">Área do cliente</a>{% elif user.role=='admin' %}<a class="btn dark" href="/admin">Painel administrativo</a>{% endif %}<form action="/sair" method="post"><button class="btn ghost">Sair</button></form>{% else %}<a class="btn ghost" href="/entrar">Entrar</a><a class="btn orange" href="/cadastro/cliente">Cadastrar</a>{% endif %}</div>{% if user and user.role=='customer' %}<button class="nu174-bell" type="button" data-bell174 aria-label="Avisos de pedidos" aria-controls="nu174-alert-dialog" aria-haspopup="dialog" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></button>{% endif %}<button class="mobile-menu" type="button" aria-label="Abrir menu" data-nowup-menu-open aria-controls="nowup-navigation" aria-expanded="false">☰</button></div></header>
@@ -306,7 +306,7 @@ html body.public-profile-area [data-native-menu] .nu83-catalog-heading .nu83-sea
     if (opener && opener.isConnected) opener.focus();
   });
 })();
-</script><script src="/static/logout-confirm.js?v=65"></script><script src="/static/resume-cart88.js?v=89" defer></script><script src="/static/internal-contact106.js?v=106" defer></script><script src="/static/quantity131.js?v=131" defer></script><script src="/static/pro-next138.js?v=141" defer></script><script src="/static/categories142.js?v=197" defer></script><link rel="stylesheet" href="/static/custom196.css?v=196"><script defer src="/static/custom196.js?v=196"></script><script src="/static/dishes151.js?v=192" defer></script><script src="/static/catalog162.js?v=163" defer></script><script src="/static/scroll-return167.js?v=167" defer></script><script id="nowup-catalog171-init">
+</script><script src="/static/logout-confirm.js?v=65"></script><script src="/static/resume-cart88.js?v=89" defer></script><script src="/static/internal-contact106.js?v=106" defer></script><script src="/static/quantity131.js?v=131" defer></script><script src="/static/pro-next138.js?v=141" defer></script><script src="/static/categories142.js?v=197" defer></script><link rel="stylesheet" href="/static/custom196.css?v=196"><script defer src="/static/custom196.js?v=200"></script><script src="/static/dishes151.js?v=192" defer></script><script src="/static/catalog162.js?v=163" defer></script><script src="/static/scroll-return167.js?v=167" defer></script><script id="nowup-catalog171-init">
 document.addEventListener("DOMContentLoaded",()=>{
 try {
 (() => {
@@ -500,6 +500,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 {% endif %}
 </body></html>
+
 
 
 
