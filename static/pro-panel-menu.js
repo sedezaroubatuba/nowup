@@ -136,6 +136,11 @@
     function dayChanged(){ return dashboard.dataset.panelDay && dashboard.dataset.panelDay!==localDay(); }
     window.setInterval(()=>{ const hash=location.hash.slice(1); if(!document.hidden && (!hash || hash==='hoje') && dayChanged()) location.replace('/painel'); },30000);
     function navigate(){
+      // V198 owns section navigation; keep legacy order actions and filters.
+      if(dashboard.dataset.nav198==='ready'){
+        window.dispatchEvent(new Event('nowup:panelnavigate'));
+        return;
+      }
       const hash=location.hash.slice(1);
       let group=Object.keys(groups).find(key=>key===hash || groups[key].includes(hash))||'hoje';
       if(/^pedido-\d+$/.test(hash))group='pedidos';
