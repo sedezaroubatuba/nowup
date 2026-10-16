@@ -1,0 +1,48 @@
+NOWUP V200 — CADASTRO COMPACTO, PEDIDOS E STATUS
+
+Atualização para o projeto existente com o painel V198 e correção V199.
+Não é um projeto completo. Faça backup antes de substituir os arquivos.
+
+INSTALAÇÃO
+1. Extraia o ZIP e copie app.py para a raiz do MESMO projeto/repositório.
+2. Mescle templates e static com as pastas existentes, substituindo os arquivos
+   iguais. Não apague as pastas nem os arquivos que não estão neste pacote.
+3. Envie ao GitHub na branch usada pelo Render e publique o novo commit.
+4. Atualize o navegador e confira os fluxos abaixo.
+Não há banco incluído nem alteração de variáveis ou migração de dados.
+
+O QUE MUDA
+- Cadastro e configurações iniciam recolhidos. Ao abrir Cadastrar produto,
+  ficam visíveis nome, preço, categoria, foto e a pergunta sobre adicionais.
+  Informações secundárias permanecem em Mais informações do produto.
+- Não: salva como produto simples. Sim: abre os recursos de personalização.
+  Produtos já configurados preservam seus dados até o lojista salvar alterações.
+- O dono autenticado visualiza sua própria loja sem controles de compra.
+  A rota de criação também recusa pedidos feitos pelo dono da mesma loja.
+- Após o servidor salvar a compra, a página de confirmação limpa o carrinho
+  dessa loja e desse cliente. Outros carrinhos não são removidos.
+  Falhas no pedido não emitem confirmação de sucesso nem apagam o carrinho.
+- A página de acompanhamento mostra PEDIDO ENVIADO À LOJA. Aguardando aceite
+  é diferente de Pedido aceito, Em preparo e Concluído.
+- Notificações vinculadas a pedidos mostram código e status atual, com destaque
+  para Aguardando aceite, Concluído, Recusado e Cancelado. O status é consultado
+  automaticamente enquanto a página estiver aberta; o texto do alerta é histórico.
+
+VALIDAÇÃO LOCAL
+Sintaxe Python, JavaScript e templates. Testes isolados da função de criação
+para o bloqueio do dono, SQL em SQLite para estados e isolamento de lojas,
+flag de limpeza exigindo token de sucesso e cliente correto, testes DOM dos
+campos Sim/Não, envio de produto simples, limpeza isolada do armazenamento e
+atualização das etiquetas das notificações. Fixtures usam dados de exemplo.
+Não houve teste visual em navegador real, gravação no banco de produção,
+publicação ou teste autenticado no servidor durante esta entrega.
+
+CONFERIR APÓS DEPLOY
+- Abrir cadastro, alternar Sim/Não e salvar um produto simples.
+- Editar um produto personalizado e conferir as escolhas existentes.
+- Acessar a própria loja como lojista: produtos visíveis e compra desativada.
+- Como cliente, enviar pedido: conferir número/status e voltar ao cardápio,
+  inclusive usando Voltar do navegador. O carrinho enviado deve estar vazio.
+- Simular erro de envio: os itens devem continuar disponíveis para tentar novamente.
+- Aceitar, concluir, recusar e cancelar pedidos de teste: conferir as etiquetas
+  correspondentes nas notificações. Pedido enviado não comprova pagamento.

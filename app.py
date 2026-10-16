@@ -1108,6 +1108,8 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
     logged=current_user(request)
     conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved' AND plan_active IN ('cardapio','ambos')",(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404)
+    if logged and logged['id']==p['user_id']:
+        conn.close(); raise HTTPException(403,"Você pode visualizar sua loja, mas não fazer pedidos nela.")
     if not logged or logged['role'] != 'customer':
         conn.close()
         return RedirectResponse('/p/'+quote(slug,safe='')+'/menu?conta=1',303)
@@ -1173,10 +1175,12 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
     conn.commit(); conn.close()
     response=RedirectResponse(f"/pedido/{tracking_token}",303)
     response.set_cookie("nowup_cart_completed",slug,max_age=120,samesite="lax",secure=request.url.scheme=="https")
+    response.set_cookie("nowup_cart_completed_token",tracking_token,max_age=600,httponly=True,samesite="lax",secure=request.url.scheme=="https")
     return response
 
 ORDER_STATUS_LABELS={
-  "new":"Pedido recebido", "confirmed":"Pedido aceito", "preparing":"Em preparo",
+  "new":"Aguardando aceite", "confirmed":"Pedido aceito", "preparing":"Em preparo",
+  "reviewing":"Em conferência", "awaiting_approval":"Aguardando aprovação do cliente", "revision_approved":"Alteração aprovada",
   "ready":"Pronto", "out_for_delivery":"Saiu para entrega", "completed":"Concluído",
   "cancelled":"Cancelado", "rejected":"Recusado"
 }
@@ -1204,7 +1208,14 @@ def order_tracking(request: Request, token: str):
     for option in conn.execute("""SELECT oio.* FROM order_item_options oio JOIN order_items oi ON oi.id=oio.order_item_id
       WHERE oi.order_id=? ORDER BY oio.id""",(order["id"],)).fetchall(): options.setdefault(option["order_item_id"],[]).append(option)
     history=conn.execute("SELECT * FROM order_status_history WHERE order_id=? ORDER BY id",(order["id"],)).fetchall(); conn.close()
-    return templates.TemplateResponse("order_tracking.html",context(request,order=order,items=items,options=options,history=history,status_labels=ORDER_STATUS_LABELS))
+    viewer=current_user(request)
+    clear_cart200=bool(viewer and viewer['id']==order['customer_id'] and request.cookies.get('nowup_cart_completed_token')==token)
+    response=templates.TemplateResponse("order_tracking.html",context(request,order=order,items=items,options=options,history=history,status_labels=ORDER_STATUS_LABELS,clear_cart200=clear_cart200))
+    if clear_cart200:
+        response.delete_cookie('nowup_cart_completed_token')
+        response.delete_cookie('nowup_cart_completed')
+    response.headers['Cache-Control']='no-store'
+    return response
 
 @app.get("/pedido/{token}/status")
 def order_tracking_status(token: str):
@@ -1525,6 +1536,8 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
       GROUP BY lower(oi.product_name) ORDER BY quantity DESC,revenue_cents DESC LIMIT 15""",
       (p["id"],start.isoformat(),end.isoformat())).fetchall()
     store_notifications=conn.execute("SELECT * FROM notifications WHERE user_id=? ORDER BY id DESC LIMIT 30",(u["id"],)).fetchall()
+    notice_orders200=notification_orders200(conn,u["id"])
+    store_notifications=[dict(n,order200=notice_orders200.get(n['id'])) for n in store_notifications]
     latest_notification_id=store_notifications[0]["id"] if store_notifications else 0
     store_client_orders=conn.execute("SELECT id,customer_id,order_code,status,total_cents,created_at FROM orders WHERE professional_id=? ORDER BY id DESC",(p["id"],)).fetchall()
     store_clients=conn.execute("""SELECT customer_id,customer_name,COUNT(*) AS order_count,
@@ -1565,6 +1578,21 @@ def pro_new_orders(request: Request, after: int=0):
     pending_order=conn.execute("SELECT id,order_code,customer_name,total_cents,created_at,status FROM orders WHERE professional_id=? AND status='new' ORDER BY id DESC LIMIT 1",(p["id"],)).fetchone()
     conn.close()
     return JSONResponse({"latest_id":latest,"pending_count":pending,"pending_order":dict(pending_order) if pending_order else None,"orders":[{"id":r["id"],"customer_name":r["customer_name"] or "Cliente","total_cents":r["total_cents"],"created_at":r["created_at"]} for r in rows]})
+
+def notification_orders200(conn, user_id):
+    rows=conn.execute("""SELECT n.id AS notification_id,o.id AS order_id,o.order_code,o.status
+      FROM notifications n JOIN professionals p ON p.user_id=n.user_id
+      JOIN orders o ON o.professional_id=p.id AND
+        (n.link='/painel#pedido-' || o.id OR n.link='/painel?abrir_pedido=' || o.id || '#pedido-' || o.id)
+      WHERE n.user_id=? ORDER BY n.id DESC LIMIT 100""",(user_id,)).fetchall()
+    return {r['notification_id']:{'order_id':r['order_id'],'order_code':r['order_code'],
+        'status':r['status'],'label':ORDER_STATUS_LABELS.get(r['status'],r['status'])} for r in rows}
+
+@app.get("/painel/notificacoes/status200")
+def notification_status200(request: Request):
+    u=require_user(request,"professional");conn=db()
+    try: return JSONResponse({'orders':notification_orders200(conn,u['id'])},headers={'Cache-Control':'no-store'})
+    finally: conn.close()
 
 @app.get("/painel/notificacoes/recentes")
 def pro_recent_notifications(request: Request, after: int=0):
@@ -2720,3 +2748,4 @@ from nowup_pwa182 import register as register_pwa182
 register_pwa182(app, current_user)
 
 nowup_included195.register(app, db, require_user, require_premium_catalog)
+
