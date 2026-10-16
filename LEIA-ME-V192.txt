@@ -1,0 +1,46 @@
+NOWUP V192 — PERSONALIZAÇÃO POR PRODUTO E COMBOS
+
+Atualização para aplicar sobre o projeto atual do NowUp (base V191).
+Extraia o ZIP na raiz do projeto, mantendo as pastas static e templates,
+substitua os arquivos correspondentes e faça o deploy pelo seu fluxo habitual.
+O pacote não foi aplicado ao site de produção.
+
+O QUE MUDA
+- Cadastro e edição de ingredientes, um por um; o lojista define quais podem ser retirados.
+- Cliente desmarca os ingredientes que não deseja; retiradas não alteram o preço.
+- Grupos incluídos no produto/ combo: bebida, acompanhamentos, molho, ponto da carne etc.
+- Grupos opcionais ou obrigatórios, com mínimo e máximo de escolhas.
+- Adicionais pagos continuam separados dos itens incluídos.
+- Adicionais grátis são opcionais, desligados em novos produtos; o lojista ativa e informa a quantidade.
+- Os adicionais mais caros selecionados recebem a gratuidade; os demais seguem o preço cadastrado.
+- Máximo de adicionais por produto, até 20, com uma porção de cada.
+- Pergunta de talheres ativada pelo lojista por produto; cliente marca se deseja receber.
+- Observação individual do produto, com até 300 caracteres.
+- Escolhas por unidade, resumo no carrinho e edição da personalização preservados.
+- Escolhas, retiradas, talheres e observações acompanham cada item recebido pelo lojista.
+
+CADASTRO PRÁTICO
+Ative apenas o necessário no bloco Personalização deste produto.
+Ingredientes e grupos têm botões para incluir e remover itens.
+Ao selecionar Sem adicionais, a configuração de adicionais grátis fica escondida.
+
+DADOS
+A inicialização adiciona apenas a coluna customization192 à tabela products,
+se ainda não existir. Não remove lojas, produtos nem pedidos.
+Produtos antigos mantêm seus adicionais e o comportamento de observações/talheres.
+Nenhum banco de dados está incluído neste ZIP.
+
+VALIDAÇÃO
+- 15 testes de regras: gratuidade, limites, escolhas obrigatórias, retiradas,
+  opções indisponíveis/de outra loja, observações e persistência da configuração.
+- Testes de interação no DOM: cadastro, campos condicionais, combo obrigatório,
+  cálculo, carrinho, edição e reinício de escolhas para nova unidade.
+- Teste HTTP com banco temporário: cadastro e edição de produto, telas do
+  cardápio e painel, pedido com 2 unidades a R$28,00 = R$56,00 e persistência
+  das escolhas e dos descontos; pedido sem bebida obrigatória rejeitado.
+- Importação da aplicação, migração repetida do banco e compilação dos templates.
+- Não foi feita validação visual em navegador real nem teste no site publicado.
+
+APÓS O DEPLOY
+Cadastre um combo de teste, configure uma bebida obrigatória, ingredientes e
+adicionais; confira o pedido no seu celular e na sala de pedidos do lojista.

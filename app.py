@@ -1,4 +1,5 @@
 from __future__ import annotations
+from nowup_custom192 import parse_config, save_config, charge_options, validate_customization
 import html
 import os, re, io, hmac, hashlib, secrets, sqlite3, unicodedata, json
 from datetime import datetime, timedelta, timezone
@@ -605,6 +606,7 @@ def init_db():
     ensure_column(conn, "orders", "neighborhood", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "orders", "address_reference", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "orders", "change_for_cents", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "products", "customization192", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "orders", "customer_id", "INTEGER REFERENCES users(id) ON DELETE SET NULL")
     ensure_column(conn, "orders", "tracking_token", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "orders", "order_origin", "TEXT NOT NULL DEFAULT 'legacy'")
@@ -872,12 +874,13 @@ def zone_key89(name):
     return " ".join("".join(c for c in unicodedata.normalize("NFD",name.strip()) if not unicodedata.combining(c)).casefold().split())
 
 def validate_choices89(conn, product_id, chosen):
-    if len(chosen)>3:raise HTTPException(400,"Escolha até 3 adicionais, uma porção de cada.")
+
     mode=conn.execute("SELECT extras_mode FROM products WHERE id=?",(product_id,)).fetchone()
     if mode and mode["extras_mode"]=='none':return
     for group in conn.execute("SELECT * FROM product_option_groups WHERE product_id=?",(product_id,)):
         if mode and mode["extras_mode"] in ('all','selected') and group["name"]!='Adicionais':continue
         count=sum(option["group_id"]==group["id"] for option in chosen)
+        if count>group["max_choices"]:raise HTTPException(400,f"{group['name']}: selecione até {group['max_choices']} opções.")
         if count<group["min_choices"]:raise HTTPException(400,f"{group['name']}: selecione pelo menos {group['min_choices']} opções.")
 
 def delivery_quote89(conn, pro, neighborhood):
@@ -1088,13 +1091,15 @@ def options_single158(conn, product_id, raw_options):
         try:oid=int(raw)
         except (TypeError,ValueError):raise HTTPException(400,"Adicional inválido.")
         if oid not in ids:ids.append(oid)
-    if len(ids)>3:raise HTTPException(400,"Escolha até 3 adicionais.")
+    product=conn.execute("SELECT extras_mode,customization192 FROM products WHERE id=?",(product_id,)).fetchone()
+    limit=conn.execute("SELECT MAX(max_choices) FROM product_option_groups WHERE product_id=?",(product_id,)).fetchone()[0] or 3
+    if len(ids)>limit or (ids and product["extras_mode"]=="none"):raise HTTPException(400,"Confira o limite de adicionais deste produto.")
     chosen=[]
     for oid in ids:
         row=conn.execute("SELECT * FROM product_options WHERE id=? AND product_id=? AND available=1",(oid,product_id)).fetchone()
         if not row:raise HTTPException(400,"Um adicional ficou indisponível. Atualize o item no carrinho.")
         chosen.append(row)
-    return chosen,sum(row['price_cents'] for row in chosen)
+    return charge_options(chosen,parse_config(product['customization192']))
 
 @app.post("/p/{slug}/menu/pedido")
 def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...), save_address: Optional[str]=Form(None), order_channel: str=Form("internal")):
@@ -1124,7 +1129,8 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
             try:chosen,extras=options_single158(conn,pid,raw.get("options",[]))
             except HTTPException:conn.close();raise
             utensils=raw.get("utensils",False)
-            if utensils is True:item_notes=(item_notes[:240]+(" · " if item_notes else "")+"Enviar talheres (garfo e faca)")
+            try:item_notes=validate_customization(parse_config(product["customization192"]),raw.get("customization",{}),item_notes,utensils)
+            except HTTPException:conn.close();raise
             try: validate_choices89(conn,pid,chosen)
             except HTTPException: conn.close(); raise
             unit=(product["promo_price_cents"] if product["promo_price_cents"]>0 else product["price_cents"])+extras
@@ -1712,17 +1718,22 @@ def configure_personalization153(conn, product_id, enabled, max_choices):
     conn.execute("UPDATE product_options SET group_id=? WHERE product_id=? AND group_id=0",(gid,product_id))
 
 @app.post("/painel/cardapio/produtos")
-def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([])):
+def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form("")):
+    custom192=parse_config(customization192) if customization192 else None
+    if custom192 and custom192["free_count"]>max_choices:raise HTTPException(400,"A quantidade grátis não pode superar o máximo de adicionais.")
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); fn=""
     if photo and photo.filename: fn=save_image(photo)
     if personalizable and not 1<=max_choices<=20:conn.close();raise HTTPException(400,"Escolha de 1 a 20 adicionais.")
     created=now_iso(); cur=conn.execute("INSERT INTO products(professional_id,name,description,category,price_cents,image_filename,available,created_at,updated_at,promo_price_cents,featured,max_quantity) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",(p["id"],name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,created,created,price_to_cents(promo_price) if promo_price.strip() else 0,1 if featured else 0,max(1,min(99,max_quantity))))
     if extras_mode=="legacy":configure_personalization153(conn,cur.lastrowid,bool(personalizable),max_choices)
     else:configure_shared155(conn,p["id"],cur.lastrowid,extras_mode,extra_ids,max_choices)
+    if custom192 is not None:save_config(conn,cur.lastrowid,custom192)
     conn.commit(); conn.close(); return RedirectResponse("/painel?ok=produto#novo-produto",303)
 
 @app.post("/painel/cardapio/produtos/{product_id}")
-def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([])):
+def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form("")):
+    custom192=parse_config(customization192) if customization192 else None
+    if custom192 and custom192["free_count"]>max_choices:raise HTTPException(400,"A quantidade grátis não pode superar o máximo de adicionais.")
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=?",(product_id,p["id"])).fetchone()
     if not product: conn.close(); raise HTTPException(404)
     if personalizable and not 1<=max_choices<=20:conn.close();raise HTTPException(400,"Escolha de 1 a 20 adicionais.")
@@ -1733,7 +1744,9 @@ def pro_product_edit(request: Request, product_id: int, name: str=Form(...), des
             try: (UPLOAD_DIR/fn).unlink(missing_ok=True)
             except OSError: pass
         fn=new_fn
-    conn.execute("UPDATE products SET name=?,description=?,category=?,price_cents=?,image_filename=?,available=?,updated_at=?,promo_price_cents=?,featured=?,max_quantity=? WHERE id=?",(name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,now_iso(),price_to_cents(promo_price) if promo_price.strip() else 0,1 if featured else 0,max(1,min(99,max_quantity)),product_id)); configure_personalization153(conn,product_id,bool(personalizable),max_choices) if extras_mode=="legacy" else configure_shared155(conn,p["id"],product_id,extras_mode,extra_ids,max_choices); conn.commit(); conn.close()
+    conn.execute("UPDATE products SET name=?,description=?,category=?,price_cents=?,image_filename=?,available=?,updated_at=?,promo_price_cents=?,featured=?,max_quantity=? WHERE id=?",(name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,now_iso(),price_to_cents(promo_price) if promo_price.strip() else 0,1 if featured else 0,max(1,min(99,max_quantity)),product_id)); configure_personalization153(conn,product_id,bool(personalizable),max_choices) if extras_mode=="legacy" else configure_shared155(conn,p["id"],product_id,extras_mode,extra_ids,max_choices)
+    if custom192 is not None:save_config(conn,product_id,custom192)
+    conn.commit(); conn.close()
     return RedirectResponse("/painel?ok=produto#cardapio",303)
 
 @app.post("/painel/cardapio/aviso-carrinho")
