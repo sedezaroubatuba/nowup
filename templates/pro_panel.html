@@ -171,6 +171,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <label class="full">Descrição completa do produto<textarea name="description" maxlength="600" placeholder="Ingredientes, tamanho ou informações importantes">
 </textarea>
 </label>
+<label class="check"><input type="checkbox" name="sold_cold" value="1"> ❄ Este produto é vendido gelado?</label>
 <label class="check">
 <input type="checkbox" name="available" value="1" checked> Produto disponível</label>
 <label class="check"><input type="checkbox" name="featured" value="1"> Colocar em promoção/destaque (máximo 3)</label>
@@ -201,6 +202,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </label>
 <label class="full">Descrição completa do produto<textarea name="description">{{product.description}}</textarea>
 </label>
+<label class="check"><input type="checkbox" name="sold_cold" value="1" {% if product.sold_cold %}checked{% endif %}> ❄ Este produto é vendido gelado?</label>
 <label class="check">
 <input type="checkbox" name="available" value="1" {% if product.available %}checked{% endif %}> Disponível para pedidos (desmarque quando esgotar)</label>
 <label class="check"><input type="checkbox" name="featured" value="1" {% if product.featured %}checked{% endif %}> Produto em promoção/destaque (máximo 3)</label>
