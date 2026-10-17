@@ -1954,6 +1954,29 @@ def pro_update(request: Request, display_name: str=Form(...), business_type: str
     for cid in category_ids[:1]: conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(p["id"],cid))
     conn.commit(); conn.close(); return RedirectResponse("/painel?ok=perfil",303)
 
+def customer_order_summary202(conn, customer_id):
+    active=("new","reviewing","awaiting_approval","revision_approved","confirmed","preparing","ready","out_for_delivery")
+    cutoff=(datetime.now(timezone.utc)-timedelta(hours=24)).isoformat()
+    rows=conn.execute("""SELECT o.id,o.order_code,o.status,o.fulfillment_type,o.tracking_token,
+      o.updated_at,p.display_name FROM orders o JOIN professionals p ON p.id=o.professional_id
+      WHERE o.customer_id=? AND o.tracking_token!='' AND
+      (o.status IN ('new','reviewing','awaiting_approval','revision_approved','confirmed','preparing','ready','out_for_delivery')
+       OR (o.status IN ('completed','cancelled','rejected') AND o.updated_at>=?))
+      ORDER BY CASE WHEN o.status IN ('completed','cancelled','rejected') THEN 1 ELSE 0 END,o.id DESC""",(customer_id,cutoff)).fetchall()
+    result=[]
+    for row in rows:
+        label=ORDER_STATUS_LABELS.get(row["status"],"Acompanhar pedido")
+        if row["status"]=="ready":label="Pronto para retirada" if row["fulfillment_type"]=="pickup" else "Pronto para entrega"
+        result.append({"id":row["id"],"code":row["order_code"],"status":row["status"],"label":label,
+          "store":row["display_name"],"active":row["status"] in active,"url":"/pedido/"+quote(row["tracking_token"],safe="")})
+    return result
+
+@app.get("/cliente/pedidos/resumo202")
+def customer_order_status202(request: Request):
+    u=require_user(request,"customer");conn=db()
+    try:return JSONResponse({"orders":customer_order_summary202(conn,u["id"])},headers={"Cache-Control":"private, no-store","Vary":"Cookie"})
+    finally:conn.close()
+
 @app.get("/cliente", response_class=HTMLResponse)
 def customer_panel(request: Request):
     u=require_user(request,"customer"); conn=db()

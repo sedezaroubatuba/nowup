@@ -1,0 +1,19 @@
+NOWUP V202 — ACOMPANHAMENTO VISÍVEL NA HOME DO CLIENTE
+
+Copie os arquivos para a raiz do projeto existente, substituindo os correspondentes e preservando os demais. Publique o commit no Render. Pacote de atualização, não instalação completa. Inclui as mudanças da V201; pode aplicar sobre V200 ou V201. Não apague banco ou uploads.
+
+O QUE MUDA
+- Faixa fixa abaixo da busca na home do cliente autenticado.
+- Nome da loja, código, status e link Acompanhar pedido.
+- Atualização a cada 10 segundos enquanto a página estiver visível, e ao voltar à tela ou recuperar conexão.
+- Mais de um pedido: resumo com lista expansível.
+- Pedido concluído, recusado ou cancelado: aviso por até 24 horas após atualização, com botão para dispensar nesta sessão do navegador.
+- Sem pedido: faixa oculta. Cada conta consulta somente os próprios pedidos.
+- Funciona independentemente da permissão de notificações.
+- Mantém os controles e a indicação de gelado da V201.
+
+VALIDAÇÃO
+Sintaxe Python e JavaScript verificadas. Consulta testada com duas contas, vários pedidos, retirada/entrega, cancelamento, pedido antigo e cliente sem pedidos. O ambiente não possui navegador de testes instalado; a aparência final no celular ainda precisa ser conferida após publicar.
+
+TESTE APÓS PUBLICAR
+Faça um pedido com uma conta de cliente, volte ao início e confira a faixa. Altere o status no painel lojista e aguarde até 10 segundos. Toque em Acompanhar pedido. Confira também outra conta sem pedidos. Pedidos sem login não aparecem nessa faixa, que é vinculada à conta do cliente.
