@@ -33,23 +33,24 @@ document.addEventListener('DOMContentLoaded',()=>{
   refreshers.forEach(fn=>fn());cartRefreshers.forEach(fn=>fn());resize();window.scrollTo({top:homeScroll,behavior:'instant'});
  }
  function compact(card){
-  const item=make('article','nu190-card'),image=card.querySelector('.nu163-media img, img');
+  const item=make('article','nu190-card nu201-card'),image=card.querySelector('.nu163-media img, img');
   if(image){const photo=make('img');photo.src=image.currentSrc||image.getAttribute('src');photo.alt='';photo.loading='lazy';photo.addEventListener('error',()=>{photo.src='/static/product-placeholder.svg';},{once:true});item.append(photo);}
   else item.append(make('div','nu190-no-image','🍽'));
-  const content=make('div','nu190-card-content');content.append(make('h3','',card.dataset.name||card.querySelector('h3')?.textContent||'Produto'),make('strong','',money(Number(card.dataset.price)||0)));
-  const add=make('button','nu190-add','Adicionar');add.type='button';
-  const controls=make('div','nu190-amount'),minus=make('button','','−'),plus=make('button','','+'),amount=make('input');
-  minus.type=plus.type='button';minus.setAttribute('aria-label','Diminuir '+card.dataset.name);plus.setAttribute('aria-label','Aumentar '+card.dataset.name);
-  amount.type='number';amount.min='0';amount.step='1';amount.inputMode='numeric';amount.setAttribute('aria-label','Quantidade de '+card.dataset.name);controls.append(minus,amount,plus);
-  function key(){const opts=Array.from(card.querySelectorAll('[data-product-option]:checked')).map(o=>o.value).sort().join('-');const notes=(card.querySelector('[data-product-notes]')?.value||'').trim();return `${card.dataset.id}:${opts}:utensils${card.querySelector('[data-utensils158]')?.checked?1:0}:notes${encodeURIComponent(notes)}`;}
-  const personalized=()=>!!card.querySelector('.nu151-choose');
-  function sync(){const quantity=window.NOWUP_CART160?.get(key())?.quantity||0;const blocked=!!card.querySelector('[data-add]')?.disabled;add.disabled=blocked;add.textContent=blocked?'Indisponível':'Adicionar';add.hidden=quantity>0&&!personalized();controls.hidden=!quantity||personalized();amount.value=String(quantity);amount.max=String(Number(card.dataset.max)||99);plus.disabled=blocked||quantity>=(Number(card.dataset.max)||99);minus.disabled=blocked;amount.disabled=blocked;}
-  function increment(){const originalAdd=card.querySelector('[data-add]');if(!originalAdd||originalAdd.disabled)return;const choose=card.querySelector('.nu151-choose');if(choose){choose.click();return;}const originalQty=card.querySelector('[data-product-quantity]');if(originalQty)originalQty.value='1';originalAdd.click();sync();}
-  // Reuse the cart's controls so quantities persist and totals update immediately.
-  function decrement(){const control=Array.from(root.querySelectorAll('[data-minus]')).find(e=>e.dataset.minus===key());control?.click();sync();}
-  function setQuantity(){const value=Math.max(0,Math.min(Number(card.dataset.max)||99,Math.trunc(Number(amount.value)||0)));if(!value){Array.from(root.querySelectorAll('[data-remove]')).find(e=>e.dataset.remove===key())?.click();sync();return;}const input=Array.from(root.querySelectorAll('[data-cart-quantity]')).find(e=>e.dataset.cartQuantity===key());if(input){input.value=String(value);input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));}sync();}
-  add.addEventListener('click',increment);plus.addEventListener('click',increment);minus.addEventListener('click',decrement);amount.addEventListener('input',()=>{if(amount.value!==''&&Number(amount.value)>0)setQuantity();});amount.addEventListener('change',setQuantity);
-  content.append(add,controls);item.append(content);cartRefreshers.push(sync);sync();return item;
+  if(card.dataset.cold==='1'){const ice=make('span','nu201-ice','❄');ice.title='Vendido gelado';ice.setAttribute('aria-label','Vendido gelado');item.append(ice);}
+  const content=make('div','nu190-card-content');content.append(make('h3','',card.dataset.name||'Produto'),make('strong','',money(Number(card.dataset.price)||0)));
+  const toggle=make('button','nu201-open','Escolher');toggle.type='button';toggle.setAttribute('aria-label','Escolher '+card.dataset.name);toggle.setAttribute('aria-expanded','false');
+  const panel=make('div','nu201-panel');panel.hidden=true;
+  const controls=make('div','nu190-amount'),minus=make('button','','−'),plus=make('button','','+'),amount=make('input');minus.type=plus.type='button';
+  minus.setAttribute('aria-label','Diminuir quantidade');plus.setAttribute('aria-label','Aumentar quantidade');amount.type='number';amount.min='1';amount.max=String(Number(card.dataset.max)||99);amount.value='1';amount.step='1';amount.inputMode='numeric';amount.setAttribute('aria-label','Quantidade de '+card.dataset.name);controls.append(minus,amount,plus);
+  const add=make('button','nu190-add','Adicionar');add.type='button';const back=make('button','nu201-back','Voltar');back.type='button';
+  function normalize(){const n=Math.max(1,Math.min(Number(amount.max),Math.trunc(Number(amount.value)||1)));amount.value=String(n);minus.disabled=n<=1;plus.disabled=n>=Number(amount.max);return n;}
+  function close(){panel.hidden=true;toggle.hidden=false;toggle.setAttribute('aria-expanded','false');item.classList.remove('nu201-selected');}
+  function sync(){const blocked=!!card.querySelector('[data-add]')?.disabled;toggle.disabled=blocked;add.disabled=blocked;toggle.textContent=blocked?'Indisponível':'Escolher';normalize();}
+  function open(){if(toggle.disabled)return;panel.hidden=false;toggle.hidden=true;toggle.setAttribute('aria-expanded','true');item.classList.add('nu201-selected');normalize();}
+  toggle.addEventListener('click',open);item.addEventListener('click',e=>{if(!e.target.closest('button,input,a,label')&&panel.hidden)open();});
+  minus.addEventListener('click',()=>{amount.value=String(normalize()-1);normalize();});plus.addEventListener('click',()=>{amount.value=String(normalize()+1);normalize();});amount.addEventListener('change',normalize);
+  add.addEventListener('click',()=>{const original=card.querySelector('[data-add]');if(!original||original.disabled)return;const choose=card.querySelector('.nu151-choose');if(choose){choose.click();return;}const quantity=card.querySelector('[data-product-quantity]');if(quantity)quantity.value=String(normalize());original.click();close();});back.addEventListener('click',()=>{close();toggle.focus();});
+  panel.append(controls,add,back);content.append(toggle,panel);item.append(content);cartRefreshers.push(sync);sync();return item;
  }
  const buttons=nav?Array.from(nav.querySelectorAll('[data-category-filter]')):[],groups=new Map();
  buttons.filter(b=>b.dataset.categoryFilter!=='all').forEach(b=>groups.set(b.dataset.categoryFilter,{name:b.textContent.trim(),cards:[]}));
