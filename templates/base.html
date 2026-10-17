@@ -499,7 +499,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 },{once:true});
 </script>
 {% endif %}
-{% if user and user.role=='customer' %}<section id="nu202-orders" data-customer202="{{user.id}}" aria-label="Acompanhamento de pedidos" hidden></section><script defer src="/static/order-banner202.js?v=202"></script>{% endif %}</body></html>
+{% if user and user.role=='customer' %}<section id="nu202-orders" data-customer202="{{user.id}}" aria-label="Acompanhamento de pedidos" hidden></section><script defer src="/static/order-banner202.js?v=202"></script>{% endif %}{% if user and user.role in ('customer','professional') %}<link rel="stylesheet" href="/static/alerts203.css?v=203"><section id="nu203-alerts" data-user="{{user.id}}" aria-label="Sons de mensagens"><button type="button" class="btn" data-sound203>🔊 Ativar som das mensagens</button><small data-sound-status203>Ative neste aparelho para ouvir os avisos.</small><a data-notice203 hidden role="status" aria-live="polite"></a></section><script src="/static/alerts203.js?v=203" defer></script>{% endif %}</body></html>
 
 
 
