@@ -2775,3 +2775,22 @@ register_pwa182(app, current_user)
 
 nowup_included195.register(app, db, require_user, require_premium_catalog)
 
+
+# V203: authenticated notification feed for foreground message/delivery sounds.
+@app.get("/avisos203")
+def alerts203(request: Request, after: int = 0):
+    u=current_user(request)
+    if not u or u["role"] not in ("customer","professional"):
+        raise HTTPException(401,"Entre para receber avisos")
+    conn=db()
+    try:
+        latest=conn.execute("SELECT COALESCE(MAX(id),0) FROM notifications WHERE user_id=?",(u["id"],)).fetchone()[0]
+        rows=[] if after<0 else conn.execute("SELECT id,title,message,link FROM notifications WHERE user_id=? AND id>? ORDER BY id LIMIT 100",(u["id"],max(0,after))).fetchall()
+        notices=[]
+        for row in rows:
+            n=dict(row)
+            n['kind']='chat' if n['title']=='Nova mensagem no pedido' else ('delivery' if u['role']=='customer' and 'saiu para entrega' in n['message'].lower() else 'other')
+            notices.append(n)
+        return JSONResponse({'latest_id':latest,'notifications':notices},headers={'Cache-Control':'no-store'})
+    finally:
+        conn.close()

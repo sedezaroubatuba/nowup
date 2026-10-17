@@ -1,0 +1,27 @@
+NOWUP V203 — ENDEREÇO E AVISOS
+
+Pacote de atualização sobre o projeto NowUp existente. Não é projeto completo.
+Copie os arquivos mantendo as pastas e substitua os de mesmo nome. Preserve todos os outros módulos, templates, imagens, banco de dados e variáveis de ambiente do projeto. Faça backup antes do deploy.
+Inclui as alterações da V202.
+
+- Endereço destacado antes dos itens no painel do lojista, com bairro e referência. Retirada aparece identificada.
+- Mensagens novas: campainha mais forte, dois toques por sequência, repetida três vezes (seis toques no total), para cliente e lojista.
+- Saiu para entrega: duas buzinadas e aviso visual com motinha; ícone também no acompanhamento da home.
+- Consulta autenticada de notificações a cada cinco segundos em todas as páginas que usam base.html; não exige conversa aberta.
+- Histórico anterior à abertura não toca. Novos avisos são agrupados por sequência, sem repetir a cada consulta.
+- O alarme anterior de novos pedidos é preservado.
+
+ATIVAÇÃO E LIMITES
+Toque em “Ativar som das mensagens” em cada aparelho. O navegador exige interação para liberar áudio. O volume é controlado pelo aparelho. Com o site fechado, celular bloqueado ou navegador suspenso, o sistema pode impedir áudio personalizado; este pacote não altera o service worker nem garante som em segundo plano.
+O sistema anterior de avisos permanece e pode também emitir seu próprio som nas atualizações de status; validar no aparelho real.
+
+VALIDAÇÃO FEITA
+Sintaxe Python e JavaScript; teste isolado do endpoint com SQLite: separação por usuário, cursor, classificação e ausência de avisos históricos na inicialização.
+Não foi possível executar o projeto completo: esta atualização não contém todos os módulos/dependências da aplicação. Teste em ambiente de homologação antes de usar na loja.
+
+TESTE APÓS DEPLOY
+1. Abra duas contas (cliente e lojista) em aparelhos diferentes e ative o som.
+2. Com a conversa fechada, envie mensagem do cliente. Confira campainha em três sequências e aviso visual na loja. Repita no sentido inverso.
+3. Marque um pedido de entrega como “Saiu para entrega”. Confira duas buzinadas no cliente e motinha.
+4. Confira endereço, bairro e referência acima dos itens. Confira um pedido de retirada.
+5. Confira que uma consulta posterior não repete o mesmo aviso e que novos pedidos continuam acionando o alarme existente.
