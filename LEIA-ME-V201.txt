@@ -1,0 +1,13 @@
+NOWUP V201 — PRODUTOS MAIORES E INDICAÇÃO DE GELADO
+
+Atualização sobre a V200. Copie os arquivos deste pacote para a raiz do projeto existente, preservando todos os demais arquivos, e publique o commit no Render. Este ZIP é uma atualização, não uma instalação completa. Não apague o banco nem a pasta de uploads.
+
+- Cartões e fotos maiores, com duas colunas e carrossel lateral.
+- Toque no produto para exibir quantidade −/+ e Adicionar.
+- Alterar a quantidade prepara a compra; Adicionar envia ao carrinho.
+- Produtos personalizados continuam usando o fluxo atual de personalização.
+- Cadastro e edição: marque “Este produto é vendido gelado?” para mostrar ❄.
+- Produtos anteriores começam sem o indicador; podem ser editados normalmente.
+- A coluna sold_cold é acrescentada automaticamente na inicialização, sem remover dados.
+
+Validação: sintaxe Python/JavaScript e persistência SQLite verificadas. O teste visual automatizado não pôde executar porque o navegador de testes não está instalado neste ambiente. Após publicar, testar no celular: abrir cartão, quantidade, adicionar, produtos personalizados, loja fechada e salvar/remover indicador de gelado.
