@@ -2809,3 +2809,9 @@ import nowup_receipts206
 nowup_receipts206.configure(globals())
 app.include_router(nowup_receipts206.router)
 app.add_event_handler("startup",nowup_receipts206.initialize)
+
+# V207: banners opcionais configuráveis no painel do lojista.
+import nowup_banners207
+nowup_banners207.configure(globals())
+app.include_router(nowup_banners207.router)
+app.add_event_handler('startup',nowup_banners207.initialize)

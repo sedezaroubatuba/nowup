@@ -1,32 +1,26 @@
-NOWUP — COMPROVANTE NO CHAT V206
+NOWUP — BANNERS DA LOJA — V207
 
-APLICAR SOBRE A V205
-Este é um pacote de atualização. Copie app.py e nowup_receipts206.py para a raiz do projeto, templates/order_chat.html para templates e os dois arquivos order-chat206 para static. Mescle as pastas e preserve os demais arquivos do projeto. Publique novamente no Render e atualize as páginas do cliente e do lojista.
-O app.py preserva o ADM compacto V205 e a buzinada V204.
+Aplicar sobre o projeto atual, mantendo todos os outros arquivos.
+1. Faça backup do código e do banco.
+2. Copie app.py e nowup_banners207.py para a raiz.
+3. Copie templates/ e static/ para as pastas correspondentes, substituindo os arquivos deste pacote.
+4. Publique e reinicie a aplicação. As tabelas adicionais são criadas automaticamente, sem apagar dados existentes.
+5. Reabra o site e atualize a página para carregar os scripts novos.
 
-FUNÇÕES
-- Cliente: botão Anexar comprovante, seleção de imagem/PDF e envio explícito.
-- JPG, PNG, WebP ou PDF de até 5 MB. Imagens com até 12 milhões de pixels são normalizadas para JPG e têm os metadados removidos.
-- Comprovante aparece na conversa para cliente e loja. Imagens têm prévia; PDFs são baixados, sem visualizador incorporado.
-- Cliente: aviso de que pagamento e entrega são combinados com a loja, o NowUp não recebe nem confere o Pix e é necessário conferir valor e destinatário antes de pagar.
-- Lojista: aviso de conferência no banco, inclusive junto de cada comprovante recebido.
-- Anexar um comprovante NÃO confirma o pagamento e NÃO muda o status do pedido.
-- Texto do chat preservado, com opção de copiar mensagens, útil para chaves Pix enviadas pela loja.
-- Somente cliente e loja responsáveis pelo pedido acessam o arquivo. O arquivo não é publicado em static ou uploads. O endpoint exige autenticação em cada acesso.
-- Comprovantes são guardados no banco existente e acompanham os backups desse banco.
-- Envio bloqueado após conclusão, cancelamento ou recusa; consulta dos comprovantes anteriores continua disponível às partes autorizadas.
-- Repetir uma tentativa de envio após falha de conexão não duplica o comprovante quando mantida a mesma seleção do arquivo.
-- Aviso de nova mensagem gerado para a loja. Notificações e sons dependem das permissões, da conexão e dos serviços já configurados.
+No painel, abra “Banners da loja”.
+- Uso opcional: cada banner tem a opção “Exibir este banner na loja”.
+- Tempo entre banners: 1 a 120 segundos, padrão de 2 segundos.
+- Imagem horizontal recomendada: 1200 x 450, JPG/PNG/WebP até 5 MB.
+- Até 10 banners por loja, na ordem de cadastro.
+- Seleção de produtos: abre os itens escolhidos no cardápio existente.
+- Produto específico: selecione exatamente um item; abre a escolha do produto.
+- Produtos vinculados pertencem exclusivamente à própria loja.
+- Banner sem produtos restantes deixa de aparecer.
+- Um único banner fica fixo; dois ou mais passam lateralmente.
+- Controles anterior/próximo e pausa; pausa também durante interação e com aba em segundo plano.
+- Sem banners ativos, a loja permanece sem esse bloco.
 
-VALIDAÇÃO
-18 testes automatizados locais passaram: 10 de regressão do ADM V205 e 8 de comprovantes/templates. Incluem envio, download privado, isolamento entre contas, limites, rejeição de tipos inválidos, PDF para download, metadados removidos, pedidos encerrados, repetição sem duplicar e preservação do status de pagamento/pedido.
-Também passou o teste de execução JavaScript em DOM simulado: seleção de arquivo, envio, exibição na conversa, aviso do lojista e texto sem execução de HTML.
-O template compartilhado de conversa foi confirmado nas telas de acompanhamento do cliente e no painel do lojista disponíveis nesta conversa.
-Não foi possível executar o projeto completo, pois os demais módulos não foram todos enviados. Conferência visual no navegador real, push externo e teste após publicar ainda precisam ser feitos.
+Inclui a base app.py V206, preservando o comprovante no chat e o registro V205. Os módulos anteriores precisam continuar no projeto. Este ZIP é uma atualização, não o projeto completo.
 
-TESTE APÓS PUBLICAR
-1. Faça um pedido usando sua conta de teste do cliente.
-2. Abra a conversa e toque em Anexar comprovante.
-3. Escolha uma imagem ou PDF pequeno e toque em Enviar comprovante.
-4. Abra o mesmo pedido no painel da loja e confira o anexo e o aviso de conferência.
-5. Confira o recebimento no banco antes de confirmar qualquer pagamento real.
+Validação: sintaxe Python/JavaScript; templates Jinja; testes em banco temporário para migração repetida, salvamento, destinos, limites de tempo, pausa, exclusão e rejeição de produtos de outra loja.
+Não houve teste visual integrado no servidor publicado. Após o deploy, teste no celular: ativar banner, aguardar troca, abrir seleção, abrir produto com adicionais, adicionar ao carrinho e voltar à loja.
