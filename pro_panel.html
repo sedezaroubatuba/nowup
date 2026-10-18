@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% block title %}Painel do profissional | NowUp{% endblock %}{% block body_class %}professional-area{% endblock %}{% block content %}<link rel="stylesheet" href="/static/pro-compact.css?v=67">{% set status_labels = status_labels|default({'new':'Pedido recebido','confirmed':'Pedido aceito','preparing':'Em preparo','ready':'Pronto','out_for_delivery':'Saiu para entrega','completed':'Concluído','cancelled':'Cancelado','rejected':'Recusado'}, true) %}<link rel="stylesheet" href="/static/pro-panel-navigation.css?v=60">
+{% extends 'base.html' %}{% block title %}Painel do lojista | NowUp{% endblock %}{% block body_class %}professional-area{% endblock %}{% block content %}<link rel="stylesheet" href="/static/order-items166.css?v=166"><link rel="stylesheet" href="/static/pro-compact.css?v=67">{% set status_labels = status_labels|default({'new':'Pedido recebido','confirmed':'Pedido aceito','preparing':'Em preparo','ready':'Pronto','out_for_delivery':'Saiu para entrega','completed':'Concluído','cancelled':'Cancelado','rejected':'Recusado'}, true) %}<link rel="stylesheet" href="/static/pro-panel-navigation.css?v=60">
 <style>
 body.professional-area .pro-dashboard .order-alert-control{display:flex!important}
 body.professional-area .pro-dashboard .new-order-alert:not([hidden]){display:flex!important}
@@ -17,10 +17,26 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <div class="container dashboard pro-dashboard" data-panel-day="{{today_day}}">
 <header class="v60-top"><button class="btn" type="button" data-pro-menu-toggle aria-expanded="false" aria-controls="pro-edit-menu" aria-label="Abrir menu">☰</button><div><b>{{pro.display_name}}</b><small>{{shop_status.label}}</small></div><a class="btn soft merchant-profile-link" href="/p/{{pro.slug}}" target="_blank" rel="noopener" aria-label="Ver meu perfil público na NowUp">↗ Meu perfil</a><a class="btn v61-bell" href="#notificacoes" aria-label="Notificações">🔔<span class="v61-badge" data-notification-badge hidden>0</span></a></header>
 <button class="v60-shade" type="button" data-close-pro-menu aria-label="Fechar menu" hidden></button>
-<aside class="sidebar pro-sidebar" id="pro-edit-menu"><h2>Menu da loja</h2><a href="#comandas">🧾 Comandas abertas</a><a href="#whatsapp">✍ Vendas WhatsApp</a><a href="/painel/vendas-manuais/relatorios">📊 Vendas consolidadas</a>
+<aside class="sidebar pro-sidebar" id="pro-edit-menu"><h2>Menu da loja</h2><button type="button" class="btn soft" data-close-pro-menu>Fechar menu ✕</button><a href="#inicio">⌂ Início</a><a href="#produtos-loja">▦ Produtos</a><a href="#novo-produto">＋ Cadastrar produto</a><a href="#categorias-loja">▤ Categorias</a><a href="#acompanhamentos-combos">＋ Acompanhamentos e combos</a><a href="#comandas">🧾 Comandas abertas</a><a href="#whatsapp">✍ Vendas WhatsApp</a><a href="/painel/vendas-manuais/relatorios">📊 Vendas consolidadas</a>
 <a href="#hoje">📅 Pedidos de hoje</a><a href="#resumo">📊 Visão geral</a><a href="#pedidos">🧾 Pedidos</a><a href="#cardapio">🛍 {{'Catálogo de produtos' if pro.offer_mode=='catalog' else 'Cardápio'}}</a><a href="#adicionais">➕ Adicionais</a><a href="#clientes">👥 Clientes</a><a href="#relatorios">📈 Relatórios</a><a href="#plano">💳 Meu plano</a><a href="#perfil">🏪 Perfil da loja</a><a href="#configuracoes">⚙️ Configurações</a><a href="#publicar">➕ Publicações</a><a href="/p/{{pro.slug}}" target="_blank" rel="noopener">↗ Ver perfil público</a>
 <form action="/sair" method="post"><button class="btn danger">Sair</button></form></aside>
 <main>
+<section id="inicio" class="nu198-home" aria-label="Início do painel">
+<h1 class="nu198-title">Painel da loja</h1><p class="nu198-subtitle">O que vamos fazer agora?</p>
+<nav class="nu198-grid" aria-label="Atalhos da loja">
+<a class="nu198-tile" href="#pedidos-ativos" data-nav198><span aria-hidden="true">▤</span>Pedidos</a>
+<a class="nu198-tile" href="#produtos-loja" data-nav198><span aria-hidden="true">▦</span>Produtos</a>
+<a class="nu198-tile" href="#novo-produto" data-nav198><span aria-hidden="true">＋</span>Cadastrar produto</a>
+<a class="nu198-tile" href="#categorias-loja" data-nav198><span aria-hidden="true">☷</span>Categorias</a>
+<a class="nu198-tile" href="#acompanhamentos-combos" data-nav198><span aria-hidden="true">⊕</span>Acompanhamentos e combos</a>
+<a class="nu198-tile" href="#relatorios" data-nav198><span aria-hidden="true">▥</span>Relatórios</a>
+</nav>
+{% set daily=namespace(total=0) %}{% for order in today_orders if order.status not in ['cancelled','rejected'] %}{% set daily.total=daily.total+order.total_cents %}{% endfor %}
+<div class="nu198-metrics"><div><small>Total de pedidos hoje</small><strong>{{today_orders|length}}</strong></div><div><small>Valor dos pedidos hoje*</small><strong>R$ {{'%.2f'|format(daily.total/100)|replace('.',',')}}</strong></div></div><p class="muted"><small>*Sem cancelados e recusados. Inclui pedidos em andamento.</small></p>
+</section>
+
+{% if request.query_params.get('erro')=='pedido-encerrado' %}<p role="alert">Pedido encerrado ou alteração de status inválida. O registro foi preservado.</p>{% elif request.query_params.get('erro')=='ultimo-item' %}<p role="alert">Não é possível retirar o último item. Cancele o pedido com motivo, se necessário.</p>{% endif %}
+
 <link rel="stylesheet" href="/static/sales109.css?v=109">
 <nav class="sales109-tabs" aria-label="Vendas da loja"><a href="#comandas">Comandas abertas</a><a href="#hoje">Vendas NowUp</a><a href="#whatsapp">Vendas WhatsApp</a></nav>
 <section id="comandas" class="sales109">{% set sale_channel='presential' %}{% include 'sales109.html' %}</section>
@@ -32,7 +48,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 {% if request.query_params.get('ok') %}<div class="alert success">Alterações salvas com sucesso.</div>{% endif %}
 {% if request.query_params.get('erro')=='limite-promocoes' %}<div class="alert">Você já atingiu o limite de 3 produtos em promoção. Retire um destaque antes de adicionar outro.</div>{% endif %}
 {% if request.query_params.get('erro')=='motivo-obrigatorio' %}<div class="alert danger">Informe o motivo do cancelamento ou da recusa.</div>{% endif %}
-<section class="panel" data-push75 aria-label="Avisos neste aparelho">
+<section class="panel" id="avisos-aparelho" data-push75 aria-label="Avisos neste aparelho">
 <h2>Avisos de pedidos neste aparelho</h2>
 <p>Receba avisos mesmo com o painel fechado. A loja aberta ou pausada é controlada separadamente.</p>
 <button type="button" class="btn" data-push-enable>🔔 Ativar avisos neste aparelho</button>
@@ -41,19 +57,11 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <p data-push-message role="status">Ative e permita as notificações. Ao sair da conta, os avisos deste aparelho serão desativados.</p>
 <small>No iPhone, use o NowUp adicionado à Tela de Início. O recebimento depende das permissões e da conexão do aparelho.</small>
 </section>
-<div class="order-alert-control" data-order-alerts data-latest-order-id="{{latest_order_id}}" data-latest-notification-id="{{latest_notification_id}}">
-<button class="btn order-alert-enable" type="button" data-enable-order-alerts>🔊 Ativar som com painel aberto</button>
-<small data-alert-status>O som funciona enquanto este painel estiver aberto.</small>
-</div>
-<div class="new-order-alert" data-new-order-alert hidden role="alert">
-<div><b>🔔 Novo pedido recebido!</b><span data-new-order-message>Abra a central de pedidos para conferir.</span></div>
-<button class="btn" type="button" data-open-new-order>Ver pedido</button>
-</div>
 <section class="panel active-orders-inbox" id="pedidos-ativos">
 <div class="active-orders-title"><div><span class="kicker">{{today_day[8:10]}}/{{today_day[5:7]}}/{{today_day[:4]}}</span><h2>Pedidos de hoje</h2><p>Pedidos de outros dias ficam em Menu ☰ → Pedidos.</p></div><span class="active-orders-count">{{today_orders|length}}</span></div>
 <div class="active-orders-list">{% for order in today_orders %}<article class="active-order-row status-{{order.status}}">
 <a class="active-order-main" href="/painel?abrir_pedido={{order.id}}#pedido-{{order.id}}" data-open-order="{{order.id}}"><span class="active-order-avatar">{{(order.customer_name or 'C')[:1]|upper}}</span><span><b>{{order.customer_name or 'Cliente'}}</b><small>{{order.order_code}} · {{order.created_at[11:16]}} · {{order.item_count}} item(ns)</small><em>{{status_labels.get(order.status,order.status)}}</em></span><strong>R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</strong></a>
-<div class="active-order-actions">{% if order.status=='new' %}<form action="/painel/pedidos/{{order.id}}/status" method="post"><input type="hidden" name="status" value="confirmed"><button class="btn primary">✓ Aceitar pedido</button></form><form action="/painel/pedidos/{{order.id}}/status" method="post" data-cancel-form><input type="hidden" name="status" value="rejected"><input type="hidden" name="reason"><button class="btn danger">Recusar</button></form>{% else %}<a class="btn soft" href="/painel?abrir_pedido={{order.id}}#pedido-{{order.id}}" data-open-order="{{order.id}}">Ver pedido</a>{% endif %}</div>
+<div class="active-order-actions"><a class="btn soft" style="background:#e98416;color:white" href="/painel?abrir_pedido={{order.id}}#pedido-{{order.id}}" data-open-order="{{order.id}}">Revisar / ver itens</a>{% if order.status=='new' %}<form action="/painel/pedidos/{{order.id}}/status" method="post"><input type="hidden" name="status" value="confirmed"><button class="btn primary">✓ Confirmar pedido</button></form><form action="/painel/pedidos/{{order.id}}/status" method="post" data-cancel-form><input type="hidden" name="status" value="rejected"><input type="hidden" name="reason"><button class="btn danger">Recusar</button></form>{% else %}<a class="btn soft" href="/painel?abrir_pedido={{order.id}}#pedido-{{order.id}}" data-open-order="{{order.id}}">Ver pedido</a>{% endif %}</div>
 </article>{% else %}<p class="muted">Nenhum pedido recebido hoje.</p>{% endfor %}</div></section>
 <section class="panel pro-welcome" id="resumo">
 <div>
@@ -100,7 +108,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </div>
 </section>
 <section class="panel" id="plano"><h2>Meu plano</h2><p>Atual: <b>{{{'cardapio':'Só cardápio/catálogo · R$ 49,90','vitrine':'Só vitrine: WhatsApp ou link próprio · R$ 49,90','ambos':'Vitrine + cardápio/catálogo · R$ 99,90','none':'Aguardando liberação'}.get(pro.plan_active,'Aguardando liberação')}}</b></p>{% if pro.plan_requested %}<p role="status">Mudança solicitada: {{pro.plan_requested}}. Aguardando aprovação do ADM.</p>{% endif %}<p>Na troca de plano, os produtos e pedidos permanecem salvos. A vitrine é publicada ou retirada após aprovação.</p><form action="/painel/plano" method="post"><label>Solicitar plano<select name="plan" required><option value="cardapio">Só cardápio/catálogo — R$ 49,90/mês</option><option value="vitrine">Só vitrine: WhatsApp ou link próprio — R$ 49,90/mês</option><option value="ambos">Vitrine + cardápio/catálogo — R$ 99,90/mês</option></select></label><label>Tipo de conteúdo<select name="offer_mode" required><option value="services">Somente vitrine sem produtos</option><option value="menu">Cardápio</option><option value="catalog">Catálogo</option></select></label><button class="btn primary">Solicitar mudança</button></form>{% if pro.plan_active == 'vitrine' %}<label>Link do perfil da loja<input class="input" value="{{request.base_url}}p/{{pro.slug}}" readonly onclick="this.select()"></label><p>O perfil permanece dentro do NowUp. Para receber pedidos, solicite um plano com cardápio.</p>{% elif pro.plan_active in ['cardapio','ambos'] %}<label>Link próprio do {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}<input class="input" value="{{request.url_for('native_menu',slug=pro.slug)}}" readonly onclick="this.select()"></label><label>Link para divulgar no WhatsApp ou Instagram<input class="input" value="{{request.url_for('native_menu',slug=pro.slug)}}?origem=externo" readonly onclick="this.select()"></label><p>Todo pedido exige conta de cliente e chega à sala de pedidos do NowUp. O cadastro é rápido, feito uma vez; não existe compra sem cadastro. O link externo usa o mesmo cardápio e identifica este canal nos relatórios do ADM.</p><p><a class="btn soft" href="/p/{{pro.slug}}/menu" target="_blank" rel="noopener">Abrir link do meu {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}</a></p>{% endif %}</section>
-<section class="panel" id="configuracoes"><div class="section-title"><div><span class="kicker">Ajustes da loja</span><h2>Configurações</h2></div></div><p>Escolha o que deseja alterar:</p><nav class="merchant-shortcuts" aria-label="Configurações da loja"><a class="btn soft" href="#horarios">Horários e situação</a><a class="btn soft" href="#perfil">Dados e WhatsApp</a>{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}<a class="btn soft" href="#cardapio">Entrega, retirada e pagamento</a>{% endif %}<a class="btn soft" href="#identidade">Fotos e capa</a></nav></section>
+<section class="panel" id="configuracoes"><div class="section-title"><div><span class="kicker">Ajustes da loja</span><h2>Configurações</h2></div></div><p>Escolha o que deseja alterar:</p><nav class="merchant-shortcuts" aria-label="Configurações da loja"><a class="btn soft" href="#avisos-aparelho">Avisos neste aparelho</a><a class="btn soft" href="#horarios">Horários e situação</a><a class="btn soft" href="#perfil">Dados e WhatsApp</a>{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}<a class="btn soft" href="#cardapio">Entrega, retirada e pagamento</a>{% endif %}<a class="btn soft" href="#identidade">Fotos e capa</a></nav></section>
 <section class="panel hours-panel" id="horarios">
 <div class="section-title"><div><span class="kicker">Relógio real de São Paulo</span><h2>Horários e situação da loja</h2></div><span class="status-pill {% if shop_status.open %}ok{% endif %}">{{shop_status.label}}</span></div>
 <p class="muted">O NowUp abre e fecha a loja automaticamente. Horários que passam da meia-noite, como 09:00–00:00, também são reconhecidos.</p>
@@ -124,8 +132,12 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <a class="btn soft" href="/p/{{pro.slug}}/menu" target="_blank">Ver {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}} público</a>
 </div>
 <p class="muted">Cadastre categorias e produtos. O cliente monta o carrinho e envia o pedido pelo NowUp.</p>
-<details class="menu-settings" open><summary><b>⚙️ Entrega, retirada e pagamento</b></summary><form action="/painel/cardapio/configuracoes" method="post" class="product-form"><label>Taxa de entrega<input class="input" name="delivery_fee" value="{{'%.2f'|format(pro.delivery_fee_cents/100)|replace('.',',')}}" inputmode="decimal"></label><label>Pedido mínimo<input class="input" name="minimum_order" value="{{'%.2f'|format(pro.minimum_order_cents/100)|replace('.',',')}}" inputmode="decimal"></label><label>Tempo médio de preparo (minutos)<input class="input" type="number" min="5" max="240" name="prep_minutes" value="{{pro.prep_minutes}}"></label><label>Chave Pix<input class="input" name="pix_key" value="{{pro.pix_key}}" placeholder="Telefone, e-mail, CPF/CNPJ ou aleatória"></label><label class="check"><input type="checkbox" name="allows_delivery" value="1" {% if pro.allows_delivery %}checked{% endif %}> Aceitar entrega</label><label class="check"><input type="checkbox" name="allows_pickup" value="1" {% if pro.allows_pickup %}checked{% endif %}> Aceitar retirada</label><button class="btn primary">Salvar configurações</button></form></details>
-<div class="menu-category-manager">
+<details class="menu-settings"><summary><b>⚙️ Entrega, retirada e pagamento</b></summary><form action="/painel/cardapio/configuracoes" method="post" class="product-form"><label>Taxa de entrega<input class="input" name="delivery_fee" value="{{'%.2f'|format(pro.delivery_fee_cents/100)|replace('.',',')}}" inputmode="decimal"></label><label>Pedido mínimo<input class="input" name="minimum_order" value="{{'%.2f'|format(pro.minimum_order_cents/100)|replace('.',',')}}" inputmode="decimal"></label><label>Tempo médio de preparo (minutos)<input class="input" type="number" min="5" max="240" name="prep_minutes" value="{{pro.prep_minutes}}"></label><label>Chave Pix<input class="input" name="pix_key" value="{{pro.pix_key}}" placeholder="Telefone, e-mail, CPF/CNPJ ou aleatória"></label><label class="check"><input type="checkbox" name="allows_delivery" value="1" {% if pro.allows_delivery %}checked{% endif %}> Aceitar entrega</label><label class="check"><input type="checkbox" name="allows_pickup" value="1" {% if pro.allows_pickup %}checked{% endif %}> Aceitar retirada</label><button class="btn primary">Salvar configurações</button></form></details>
+<details class="menu-settings" id="aviso-carrinho"><summary><b>Mensagem no carrinho do cliente</b></summary>
+<form action="/painel/cardapio/aviso-carrinho" method="post" class="product-form">
+<label class="full">Aviso breve<textarea class="input" name="cart_notice" maxlength="150" rows="3" placeholder="Ex.: Hoje os pedidos podem demorar um pouco mais. Obrigado pela compreensão!">{{pro.cart_notice or ''}}</textarea><small>Até 150 caracteres. Deixe vazio para ocultar o aviso.</small></label>
+<button class="btn primary">Salvar mensagem</button></form></details>
+<details class="menu-category-manager nu-categories138" id="categorias-loja"><summary class="btn primary">＋ Adicionar / editar categorias <small>{{product_categories|length}} cadastradas</small></summary>
 <h3>Categorias do {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}</h3>
 <form action="/painel/cardapio/categorias" method="post" class="category-add-form">
 <label>Nova categoria<input class="input" name="name" maxlength="80" placeholder="Ex.: Lanches, Bebidas, Porções" required></label>
@@ -137,10 +149,13 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <label class="check"><input type="checkbox" name="active" value="1" {% if category.active %}checked{% endif %}> Pública</label>
 <button class="btn soft tiny">Salvar</button>
 </form>
+<label class="nu-position142">Posição<input class="input" type="number" min="1" max="{{product_categories|length}}" value="{{loop.index}}" data-category-position142="{{category.id}}" aria-label="Posição de {{category.name}}"></label>
 <form action="/painel/cardapio/categorias/{{category.id}}/excluir" method="post" data-confirm-delete><button class="btn danger tiny">Excluir</button></form>
 </div>{% endfor %}</div>
-</div>
-<details class="product-create" id="novo-produto" {% if not products %}open{% endif %}>
+<p class="muted">Numere de 1 a {{product_categories|length}} sem repetir posições e salve todas de uma vez.</p><button type="button" class="btn primary" data-save-order142>Salvar ordem</button><p data-order-status142 role="status" aria-live="polite"></p>
+</details>
+{% include "included195.html" %}
+<details class="product-create" id="novo-produto">
 <summary class="btn primary" role="button">＋ Adicionar produto</summary>
 <form action="/painel/cardapio/produtos" method="post" enctype="multipart/form-data" class="product-form">
 <label>Nome do produto<input class="input" name="name" maxlength="140" required>
@@ -153,17 +168,20 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <label>Máximo por pedido<input class="input" type="number" name="max_quantity" min="1" max="99" value="99"></label>
 <label>Foto<input class="input" type="file" name="photo" accept="image/*">
 </label>
-<label class="full">Descrição<textarea name="description" maxlength="600" placeholder="Ingredientes, tamanho ou informações importantes">
+<label class="full">Descrição completa do produto<textarea name="description" maxlength="600" placeholder="Ingredientes, tamanho ou informações importantes">
 </textarea>
 </label>
+<label class="check"><input type="checkbox" name="sold_cold" value="1"> ❄ Este produto é vendido gelado?</label>
 <label class="check">
 <input type="checkbox" name="available" value="1" checked> Produto disponível</label>
 <label class="check"><input type="checkbox" name="featured" value="1"> Colocar em promoção/destaque (máximo 3)</label>
-<button class="btn primary">Salvar produto</button>
+<label>Adicionais deste produto<select name="extras_mode" data-extras-mode155><option value="none">Sem adicionais</option><option value="all">Permitir todos os adicionais da loja</option><option value="selected">Selecionar adicionais</option></select></label><div class="full" data-shared-picker155>{% for extra in shared_extras %}<label class="check"><input type="checkbox" name="extra_ids" value="{{extra.id}}"> {{extra.name}} · + R$ {{'%.2f'|format(extra.price_cents/100)|replace('.',',')}}{% if not extra.available %} (indisponível){% endif %}</label>{% else %}<p>Cadastre primeiro seus complementos na aba Adicionais.</p>{% endfor %}</div>
+<div class="nu192-editor full" data-editor192="" data-max192="3"><h3>Personalização deste produto</h3></div>
+<button class="btn primary">Salvar e cadastrar próximo</button>
 </form>
 </details>
 <nav class="menu-category-nav pro-product-filters" aria-label="Filtrar produtos do painel"><button type="button" class="active" data-pro-category="all">Todos</button><button type="button" data-pro-category="promocoes">Promoções</button>{% for category in product_categories %}<button type="button" data-pro-category="{{category.name}}">{{category.name}}</button>{% endfor %}</nav>
-<div class="product-admin-grid" data-pro-products>{% for product in products %}<details class="product-admin-card" data-pro-product data-category="{{product.category}}" data-featured="{{1 if product.featured else 0}}">
+<div class="product-admin-grid" id="produtos-loja" data-pro-products>{% for product in products %}<details class="product-admin-card" data-pro-product data-category="{{product.category}}" data-featured="{{1 if product.featured else 0}}">
 <summary>{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" onerror="this.onerror=null;this.src='/static/product-placeholder.svg'" alt="">{% else %}<span class="product-placeholder">🍽</span>{% endif %}<div>
 <b>{{product.name}}</b><small>Código: {{product.id}}</small>
 <small>{{product.category}} · R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</small>
@@ -172,7 +190,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </summary>
 <form action="/painel/cardapio/produtos/{{product.id}}/disponibilidade" method="post" class="v67-availability"><input type="hidden" name="available" value="{{0 if product.available else 1}}"><button class="btn soft" type="submit">{{'Marcar indisponível' if product.available else 'Marcar disponível'}}</button></form>
 <form action="/painel/cardapio/produtos/{{product.id}}" method="post" enctype="multipart/form-data" class="product-form">
-<label>Nome<input class="input" name="name" value="{{product.name}}" required>
+<input type="hidden" name="personalizable" value="{{1 if product.is_dish else ''}}"><label>Adicionais deste produto<select name="extras_mode" data-extras-mode155><option value="none" {% if product.extras_mode=='none' %}selected{% endif %}>Sem adicionais</option><option value="all" {% if product.extras_mode=='all' %}selected{% endif %}>Permitir todos os adicionais da loja</option><option value="selected" {% if product.extras_mode=='selected' %}selected{% endif %}>Selecionar adicionais</option>{% if product.extras_mode=='legacy' %}<option value="legacy" selected>Manter adicionais atuais deste produto</option>{% endif %}</select></label><div class="full" data-shared-picker155>{% for extra in shared_extras %}<label class="check"><input type="checkbox" name="extra_ids" value="{{extra.id}}" {% if extra.id in shared_selected.get(product.id,[]) %}checked{% endif %}> {{extra.name}} · + R$ {{'%.2f'|format(extra.price_cents/100)|replace('.',',')}}{% if not extra.available %} (indisponível){% endif %}</label>{% else %}<p>Cadastre primeiro seus complementos na aba Adicionais.</p>{% endfor %}</div><label>Nome<input class="input" name="name" value="{{product.name}}" required>
 </label>
 <label>Categoria<select name="category" required>{% for category in product_categories if category.active %}<option value="{{category.name}}" {% if category.name==product.category %}selected{% endif %}>{{category.name}}</option>{% endfor %}</select>
 </label>
@@ -182,14 +200,16 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <label>Máximo por pedido<input class="input" type="number" name="max_quantity" min="1" max="99" value="{{product.max_quantity}}"></label>
 <label>Trocar foto<input class="input" type="file" name="photo" accept="image/*">
 </label>
-<label class="full">Descrição<textarea name="description">{{product.description}}</textarea>
+<label class="full">Descrição completa do produto<textarea name="description">{{product.description}}</textarea>
 </label>
+<label class="check"><input type="checkbox" name="sold_cold" value="1" {% if product.sold_cold %}checked{% endif %}> ❄ Este produto é vendido gelado?</label>
 <label class="check">
 <input type="checkbox" name="available" value="1" {% if product.available %}checked{% endif %}> Disponível para pedidos (desmarque quando esgotar)</label>
 <label class="check"><input type="checkbox" name="featured" value="1" {% if product.featured %}checked{% endif %}> Produto em promoção/destaque (máximo 3)</label>
+<div class="nu192-editor full" data-editor192="{{product.customization192}}" data-max192="{% for g in product_groups.get(product.id,[]) if g.name=='Adicionais' %}{{g.max_choices}}{% endfor %}"><h3>Personalização deste produto</h3></div>
 <button class="btn primary">Salvar alterações</button>
 </form>
-<div class="option-manager"><b>Personalizações deste produto</b><div class="option-list">{% for option in product_options.get(product.id,[]) %}<form action="/painel/cardapio/adicionais/{{option.id}}/excluir" method="post"><span>{{option.name}}{% if option.price_cents %} (+ R$ {{'%.2f'|format(option.price_cents/100)|replace('.',',')}}){% endif %}</span><button class="btn danger tiny">Excluir</button></form>{% else %}<small class="muted">Nenhuma personalização cadastrada.</small>{% endfor %}</div><form action="/painel/cardapio/produtos/{{product.id}}/adicionais" method="post" class="option-add"><select name="option_kind" aria-label="Tipo de personalização"><option value="add">Adicionar ingrediente</option><option value="remove">Retirar ingrediente (sem custo)</option></select><input class="input" name="option_name" placeholder="Ex.: cebola, alho, bacon" required><input class="input" name="option_price" placeholder="Preço: 4,00" inputmode="decimal"><button class="btn soft">Adicionar</button></form></div>
+<p class="muted">Os adicionais são escolhidos no formulário acima. Cadastre e edite os complementos na aba <a href="#adicionais">Adicionais da loja</a>.</p>
 <form action="/painel/cardapio/produtos/{{product.id}}/excluir" method="post" data-confirm-delete>
 <button class="btn danger tiny">Excluir produto</button>
 </form>
@@ -200,12 +220,11 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </div>{% endfor %}</div>
 {% endif %}
 </section>
-<section class="panel" id="adicionais"><h2>Adicionais</h2><p>Escolha o produto e cadastre extras, como bacon, queijo ou molhos. O cliente seleciona os adicionais no próprio produto.</p>
-{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}
-<form action="/painel/cardapio/adicionais" method="post" class="product-form"><label>Produto<select name="product_id" required>{% for product in products %}<option value="{{product.id}}">{{product.name}}</option>{% endfor %}</select></label><label>Tipo<select name="option_kind"><option value="add">Adicionar ingrediente</option><option value="remove">Retirar ingrediente sem custo</option></select></label><label>Nome<input class="input" name="option_name" placeholder="Ex.: Bacon extra" maxlength="100" required></label><label>Preço adicional<input class="input" name="option_price" value="0,00" inputmode="decimal" required></label><button class="btn primary" type="submit" {% if not products %}disabled{% endif %}>Cadastrar adicional</button></form>
-{% for product in products %}{% if product_options.get(product.id) %}<details class="v67-extra-group"><summary>{{product.name}} · {{product_options.get(product.id)|length}} adicional(is)</summary>{% for option in product_options.get(product.id,[]) %}<article><b>{{option.name}}</b><span>R$ {{'%.2f'|format(option.price_cents/100)|replace('.',',')}} · {{'Disponível' if option.available else 'Indisponível'}}</span><form action="/painel/cardapio/adicionais/{{option.id}}/disponibilidade" method="post"><input type="hidden" name="available" value="{{0 if option.available else 1}}"><button class="btn soft" type="submit">{{'Indisponibilizar' if option.available else 'Disponibilizar'}}</button></form><form action="/painel/cardapio/adicionais/{{option.id}}/excluir" method="post" data-confirm-delete><button class="btn danger" type="submit">Excluir</button></form></article>{% endfor %}</details>{% endif %}{% endfor %}
-{% if not products %}<p>Cadastre um produto antes de adicionar extras.</p>{% endif %}
-{% else %}<p>Adicionais disponíveis para cardápio ou catálogo Premium.</p>{% endif %}</section>
+<section class="panel" id="adicionais"><h2>Adicionais da loja</h2><p>Cadastre uma vez e selecione no cadastro de cada produto. Permitir todos também inclui os novos adicionais que você cadastrar depois.</p>{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}
+<form action="/painel/adicionais-loja" method="post" class="product-form"><label>Nome<input class="input" name="name" maxlength="100" placeholder="Bacon, cheddar, salada…" required></label><label>Preço<input class="input" name="price" value="0,00" inputmode="decimal" required></label><label class="check"><input type="checkbox" name="available" value="1" checked> Disponível</label><button class="btn primary">Cadastrar adicional</button></form>
+{% for extra in shared_extras %}<details><summary>{{extra.name}} · R$ {{'%.2f'|format(extra.price_cents/100)|replace('.',',')}} · {{'Disponível' if extra.available else 'Indisponível'}}</summary><form action="/painel/adicionais-loja" method="post" class="product-form"><input type="hidden" name="extra_id" value="{{extra.id}}"><label>Nome<input class="input" name="name" value="{{extra.name}}" maxlength="100" required></label><label>Preço<input class="input" name="price" value="{{'%.2f'|format(extra.price_cents/100)|replace('.',',')}}" inputmode="decimal" required></label><label class="check"><input type="checkbox" name="available" value="1" {% if extra.available %}checked{% endif %}> Disponível</label><button class="btn primary">Salvar em todos os produtos vinculados</button></form></details>{% else %}<p>Nenhum adicional compartilhado cadastrado.</p>{% endfor %}
+<details><summary>Adicionais antigos por produto</summary><p>Os complementos antigos continuam preservados. Para reutilizar, cadastre-os na lista da loja e selecione no produto.</p>{% for product in products %}{% if product_options.get(product.id) and product.extras_mode=='legacy' %}<h3>{{product.name}}</h3>{% for option in product_options.get(product.id,[]) %}<p>{{option.name}} · R$ {{'%.2f'|format(option.price_cents/100)|replace('.',',')}}</p>{% endfor %}{% endif %}{% endfor %}</details>
+{% else %}<p>Disponível para planos com cardápio ou catálogo.</p>{% endif %}</section>
 <section class="panel analytics-panel" id="relatorios"><p><a class="btn soft" href="/painel/vendas-manuais/relatorios">Relatório consolidado: NowUp, presenciais e delivery manual</a></p><small>As estatísticas originais abaixo consideram pedidos online. Para incluir vendas manuais, abra o relatório consolidado.</small>
 <div class="section-title">
 <div>
@@ -314,9 +333,9 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <b>{{day_order_summary.completed or 0}}</b>
 </article>
 </div>
-<div class="orders-list">{% for order in orders %}<article id="pedido-{{order.id}}" class="order-card {% if order.status in ['new','confirmed','preparing','ready','out_for_delivery'] %}active-order-card{% endif %}" data-order-status="{{order.status}}">
+<div class="orders-list">{% for order in orders %}<article id="pedido-{{order.id}}" class="order-card {% if order.status in ['new','reviewing','awaiting_approval','revision_approved','confirmed','preparing','ready','out_for_delivery'] %}active-order-card{% endif %}" data-order-status="{{order.status}}">
 <section class="v69-receipt" hidden><h1>{{pro.display_name}}</h1><h2>Pedido {{order.order_code or ('#' ~ order.id)}}</h2><p>{{order.created_at[:16]|replace('T',' ')}}</p><p><b>Cliente:</b> {{order.customer_name}}<br><b>Telefone:</b> {{order.customer_phone}}</p><p><b>{{'Entrega' if order.fulfillment_type=='delivery' else 'Retirada no local'}}</b>{% if order.address %}<br>{{order.address}}{% endif %}{% if order.neighborhood %}<br>Bairro: {{order.neighborhood}}{% endif %}{% if order.address_reference %}<br>Referência: {{order.address_reference}}{% endif %}</p><hr>
-{% for item in order_items_by_order.get(order.id,[]) %}<p><b>{{item.quantity}} × {{item.product_name}}</b><br>R$ {{'%.2f'|format(item.unit_price_cents/100)|replace('.',',')}} cada · R$ {{'%.2f'|format(item.quantity*item.unit_price_cents/100)|replace('.',',')}}{% if order_item_options.get(item.id) %}<br>{{order_item_options.get(item.id)|map(attribute='option_name')|join(', ')}}{% endif %}{% if item.notes %}<br>Obs.: {{item.notes}}{% endif %}</p>{% endfor %}<hr><p>Subtotal: R$ {{'%.2f'|format(order.subtotal_cents/100)|replace('.',',')}}<br>Entrega: R$ {{'%.2f'|format(order.delivery_fee_cents/100)|replace('.',',')}}</p><h2>Total: R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</h2><p>Pagamento: {{ {'pix':'Pix','cash':'Dinheiro','credit':'Cartão de crédito','debit':'Cartão de débito','on_delivery':'Combinar no atendimento'}.get(order.payment_method,order.payment_method) }}{% if order.change_for_cents %}<br>Troco para R$ {{'%.2f'|format(order.change_for_cents/100)|replace('.',',')}}{% endif %}</p>{% if order.notes %}<p><b>Observações:</b> {{order.notes}}</p>{% endif %}</section>
+{% for item in order_items_by_order.get(order.id,[]) %}<p><b>{{item.quantity}} × {{item.product_name}}</b><br>R$ {{'%.2f'|format(item.unit_price_cents/100)|replace('.',',')}} cada · R$ {{'%.2f'|format(item.quantity*item.unit_price_cents/100)|replace('.',',')}}{% if order_item_options.get(item.id) %}<br>{{order_item_options.get(item.id)|map(attribute='option_name')|join(', ')}}{% endif %}{% if item.notes %}<br>Obs.: {{item.notes}}{% endif %}</p>{% endfor %}<hr><p>Subtotal: R$ {{'%.2f'|format(order.subtotal_cents/100)|replace('.',',')}}<br>Entrega: R$ {{'%.2f'|format(order.delivery_fee_cents/100)|replace('.',',')}}</p><h2>Total: R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</h2>{% if order.payment_method=='pix' and pro.pix_key and order.status in ['confirmed','preparing','ready','out_for_delivery','completed'] %}<p>Chave Pix da loja: {{pro.pix_key}}</p>{% endif %}<p>Pagamento: {{ {'pix':'Pix','cash':'Dinheiro','credit':'Cartão de crédito','debit':'Cartão de débito','on_delivery':'Combinar no atendimento'}.get(order.payment_method,order.payment_method) }}{% if order.change_for_cents %}<br>Troco para R$ {{'%.2f'|format(order.change_for_cents/100)|replace('.',',')}}{% endif %}</p>{% if order.notes %}<p><b>Observações:</b> {{order.notes}}</p>{% endif %}</section>
 <div class="order-head">
 <div>
 <b>Pedido {{order.order_code or ('#' ~ order.id)}}</b>
@@ -329,11 +348,10 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <span>📱 {{order.customer_phone or 'Sem telefone'}}</span>
 <span>{% if order.fulfillment_type=='delivery' %}🛵 Entrega{% else %}🏪 Retirada{% endif %}</span>
 <span>💳 {% if order.payment_method=='cash' %}Dinheiro{% elif order.payment_method=='credit' %}Cartão de crédito{% elif order.payment_method=='debit' %}Cartão de débito{% elif order.payment_method=='on_delivery' %}Combinar no atendimento{% else %}Pix{% endif %}</span>
-</div>{% if order.address %}<p class="tiny">
-<b>Endereço:</b> {{order.address}}</p>{% endif %}{% if order.notes %}<p class="tiny">
-<b>Observações:</b> {{order.notes}}</p>{% endif %}<div class="order-products">{% for item in order_items_by_order.get(order.id,[]) %}<form action="/painel/pedidos/{{order.id}}/itens/{{item.id}}" method="post" class="order-item-edit"><div><b>{{item.product_name}}</b>{% if order_item_options.get(item.id) %}<small>{{order_item_options.get(item.id)|map(attribute='option_name')|join(', ')}}</small>{% endif %}</div><label>Qtd.<input class="input" type="number" min="1" max="99" name="quantity" value="{{item.quantity}}"></label><label>Observação<input class="input" name="notes" value="{{item.notes}}"></label><label class="check"><input type="checkbox" name="remove" value="1"> Remover</label><button class="btn soft tiny">Salvar item</button></form>{% endfor %}</div>
-<details class="order-edit"><summary class="btn soft tiny">✏️ Editar pedido</summary><form action="/painel/pedidos/{{order.id}}/editar" method="post" class="product-form"><label>Cliente<input class="input" name="customer_name" value="{{order.customer_name}}" required></label><label>WhatsApp<input class="input" name="customer_phone" value="{{order.customer_phone}}" required></label><label>Recebimento<select name="fulfillment_type"><option value="pickup" {% if order.fulfillment_type=='pickup' %}selected{% endif %}>Retirada</option><option value="delivery" {% if order.fulfillment_type=='delivery' %}selected{% endif %}>Entrega</option></select></label><label>Pagamento<select name="payment_method"><option value="pix" {% if order.payment_method=='pix' %}selected{% endif %}>Pix</option><option value="cash" {% if order.payment_method=='cash' %}selected{% endif %}>Dinheiro</option><option value="credit" {% if order.payment_method=='credit' %}selected{% endif %}>Crédito</option><option value="debit" {% if order.payment_method=='debit' %}selected{% endif %}>Débito</option><option value="on_delivery" {% if order.payment_method=='on_delivery' %}selected{% endif %}>Combinar</option></select></label><label class="full">Endereço<input class="input" name="address" value="{{order.address}}"></label><label class="full">Observações<textarea name="notes">{{order.notes}}</textarea></label><button class="btn primary">Salvar edição</button></form></details>
-{% set chat_order_id=order.id %}{% include 'order_chat.html' %}<form action="/painel/pedidos/{{order.id}}/status" method="post" class="order-status-form">
+</div>{% if order.fulfillment_type=='delivery' %}<section class="nu203-address" aria-label="Endereço de entrega"><small>📍 ENDEREÇO DE ENTREGA</small><strong>{{order.address or 'Endereço não informado — confirme com o cliente'}}</strong>{% if order.neighborhood %}<div>Bairro: {{order.neighborhood}}</div>{% endif %}{% if order.address_reference %}<div><b>Referência:</b> {{order.address_reference}}</div>{% endif %}</section>{% else %}<section class="nu203-address"><strong>🏪 Retirada no local</strong></section>{% endif %}{% include 'order_items166.html' %}{% if order.notes %}<p class="tiny">
+<b>Observações:</b> {{order.notes}}</p>{% endif %}{% set review_customer=false %}{% include 'order_revision.html' %}
+{% if order.status not in ('completed','cancelled','rejected') %}<details class="order-edit"><summary class="btn soft tiny">✏️ Editar pedido</summary><form action="/painel/pedidos/{{order.id}}/editar" method="post" class="product-form"><label>Cliente<input class="input" name="customer_name" value="{{order.customer_name}}" required></label><label>WhatsApp<input class="input" name="customer_phone" value="{{order.customer_phone}}" required></label><label>Recebimento<select name="fulfillment_type"><option value="pickup" {% if order.fulfillment_type=='pickup' %}selected{% endif %}>Retirada</option><option value="delivery" {% if order.fulfillment_type=='delivery' %}selected{% endif %}>Entrega</option></select></label><label>Pagamento<select name="payment_method"><option value="pix" {% if order.payment_method=='pix' %}selected{% endif %}>Pix</option><option value="cash" {% if order.payment_method=='cash' %}selected{% endif %}>Dinheiro</option><option value="credit" {% if order.payment_method=='credit' %}selected{% endif %}>Crédito</option><option value="debit" {% if order.payment_method=='debit' %}selected{% endif %}>Débito</option><option value="on_delivery" {% if order.payment_method=='on_delivery' %}selected{% endif %}>Combinar</option></select></label><label class="full">Endereço<input class="input" name="address" value="{{order.address}}"></label><label class="full">Observações<textarea name="notes">{{order.notes}}</textarea></label><button class="btn primary">Salvar edição</button></form></details>
+{% endif %}<details class="nu166-chat"><summary>Conversa com o cliente</summary>{% set chat_order_id=order.id %}{% include 'order_chat.html' %}</details>{% if order.status not in ('new','reviewing','revision_approved','awaiting_approval','completed','cancelled','rejected') %}<form action="/painel/pedidos/{{order.id}}/status" method="post" class="order-status-form">
 <label>Status<select name="status">
 <option value="new" {% if order.status=='new' %}selected{% endif %}>Novo</option>
 <option value="confirmed" {% if order.status=='confirmed' %}selected{% endif %}>Confirmado</option>
@@ -348,14 +366,14 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <label>Motivo ao cancelar/recusar<input class="input" name="reason" value="{{order.cancellation_reason or ''}}" placeholder="Obrigatório somente ao cancelar"></label>
 <button class="btn soft tiny">Salvar status</button>
 <button class="btn soft tiny" type="button" data-print-order>🖨 Imprimir</button>
-</form>
+</form>{% else %}{% if order.status in ('completed','cancelled','rejected') %}<p>Pedido encerrado — registro protegido.</p>{% endif %}<button class="btn soft tiny" type="button" data-print-order>🖨 Imprimir</button>{% endif %}
 </article>{% else %}<div class="empty-state">
 <span>🧾</span>
 <h3>Nenhum pedido neste período</h3>
 <p class="muted">Quando o {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}} NowUp começar a receber pedidos, o histórico aparecerá aqui.</p>
 </div>{% endfor %}</div>
 </section>
-<section class="panel" id="notificacoes" data-live-notifications><div class="section-title"><div><span class="kicker">Atualização automática</span><h2>Notificações da loja</h2></div><span class="edit-chip">Ao vivo</span></div><div data-notification-list>{% for notification in store_notifications %}<article data-notification-id="{{notification.id}}"><b>{{notification.title}}</b><p>{{notification.message}}</p><a class="btn soft" href="{{notification.link}}" data-notification-link>Abrir pedido</a></article>{% else %}<p data-empty-notifications>Nenhuma notificação por enquanto.</p>{% endfor %}</div></section>
+<section class="panel" id="notificacoes" data-live-notifications><div class="section-title"><div><span class="kicker">Atualização automática</span><h2>Notificações da loja</h2></div><span class="edit-chip">Ao vivo</span></div><div data-notification-list>{% for notification in store_notifications %}<article data-notification-id="{{notification.id}}"><b>{{notification.title}}</b><p>{{notification.message}}</p>{% if notification.order200 %}<span class="nu200-order-status status-{{notification.order200.status}}" data-notification-status200 role="status">{{notification.order200.order_code}} · {{notification.order200.label}}</span>{% endif %}<a class="btn soft" href="{{notification.link}}" data-notification-link>Abrir pedido</a></article>{% else %}<p data-empty-notifications>Nenhuma notificação por enquanto.</p>{% endfor %}</div></section>
 <section class="panel" id="clientes"><h2>Clientes da loja</h2><p>{{store_clients|length}} cliente(s) com pedidos nesta loja.</p><p class="muted">O total comprado considera somente pedidos finalizados.</p><div class="v60-clients">{% for client in store_clients %}<article><b>{{client.customer_name}}</b><p>{{client.order_count}} pedido(s) · Último: {{client.last_order[:10]}}</p><strong>R$ {{'%.2f'|format(client.completed_cents/100)|replace('.',',')}}</strong><details><summary>Histórico de pedidos</summary>{% for purchase in store_client_orders if purchase.customer_id==client.customer_id %}<p>{{purchase.order_code}} · {{status_labels.get(purchase.status,purchase.status)}} · R$ {{'%.2f'|format(purchase.total_cents/100)|replace('.',',')}}</p>{% endfor %}</details></article>{% else %}<p>Os clientes aparecerão aqui após o primeiro pedido.</p>{% endfor %}</div></section>
 <section class="panel" id="mais-pedidos">
 <div class="section-title">
@@ -535,11 +553,16 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </section>{% endif %}
 </main>
 </div>
-<script src="/static/order-chat.js?v=61"></script><script src="/static/pro-panel-menu.js?v=99"></script><script src="/static/order-alerts.js?v=61"></script>
+<script src="/static/order-chat.js?v=61"></script><script src="/static/pro-panel-menu.js?v=153"></script>
 
 <link rel="stylesheet" href="/static/panel-back-top.css?v=70">
 <footer class="nowup-panel-bottom"><button type="button" class="nowup-back-top" data-panel-back-top aria-label="Voltar ao topo do painel">↑ Voltar ao topo</button></footer>
 <script src="/static/panel-back-top.js?v=70" defer></script>
 
-<link rel="manifest" href="/static/nowup-lojista.webmanifest"><script src="/static/pro-push75.js?v=75" defer></script>
-{% endblock %}
+<link rel="manifest" href="/static/nowup-lojista.webmanifest"><script src="/static/pro-push75.js?v=112" defer></script>
+<link rel="stylesheet" href="/static/order-review127.css?v=127"><script src="/static/order-review127.js?v=127" defer></script><link rel="stylesheet" href="/static/custom196.css?v=196"><script type="application/json" id="included-catalog195">{{included_catalog195|tojson}}</script><script defer src="/static/custom196.js?v=200"></script><link rel="stylesheet" href="/static/pro198.css?v=198"><script defer src="/static/pro198.js?v=198"></script>
+<nav class="nu198-bottom" aria-label="Navegação do lojista"><a href="#inicio" data-nav198><span aria-hidden="true">⌂</span>Início</a><a href="#produtos-loja" data-nav198><span aria-hidden="true">▦</span>Produtos</a><a href="#pedidos-ativos" data-nav198><span aria-hidden="true">▤</span>Pedidos</a><a href="#configuracoes" data-nav198><span aria-hidden="true">☷</span>Mais</a></nav>
+<link rel="stylesheet" href="/static/compact200.css?v=200"><script defer src="/static/compact200.js?v=200"></script><script defer src="/static/notification-status200.js?v=200"></script>{% endblock %}
+
+
+
