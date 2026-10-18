@@ -1,7 +1,14 @@
-NOWUP V162 — cartões compactos
+NOWUP — BUZINADA DO CLIENTE V204
 
-Atualize app.py, templates e static com os arquivos deste pacote. O pacote inclui as alterações de personalização V160. Não substitui arquivos que não estão no ZIP.
+Substitua no projeto os arquivos deste pacote, respeitando as pastas:
+app.py
+static/alerts203.js
+templates/base.html
 
-Produtos em cartões horizontais com foto menor, preço roxo, botão + e observação discreta. Carrinho no topo do catálogo e barra inferior preservada. Categorias de produtos continuam somente com texto. Personalização e edição no carrinho preservadas.
+Publique novamente no Render. Depois atualize a página do cliente e toque em "Ativar som dos pedidos e mensagens". O botão permite testar a buzina.
 
-Após o deploy, confira no celular: busca, categorias, produto comum, personalização de duas unidades diferentes e edição no carrinho. Quantidade de cartões visíveis depende do tamanho da tela e das descrições. Verificação local: sintaxe JS, referências aos novos arquivos, integridade do ZIP e lógica do carrinho. Aparência no site publicado ainda precisa ser conferida.
+O cliente recebe buzina nas mudanças de status do pedido; mensagens mantêm a campainha. O áudio depende do NowUp aberto e do som liberado no navegador. Com o aplicativo fechado ou celular bloqueado, o som depende das notificações do sistema e não é garantido por esta correção.
+
+Teste: entre como cliente, ative o som e faça um pedido. Em outro aparelho, aceite o pedido no painel lojista e altere para preparo e entrega. Confira os avisos e o áudio no cliente.
+
+Validação realizada: sintaxe Python e JavaScript; testes isolados de classificação, cursor e separação por usuário; teste simulado do áudio, atualização e prevenção de repetição. Aplicação completa e áudio físico no celular ainda precisam ser verificados após publicar.

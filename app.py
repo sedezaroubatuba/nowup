@@ -2789,7 +2789,7 @@ def alerts203(request: Request, after: int = 0):
         notices=[]
         for row in rows:
             n=dict(row)
-            n['kind']='chat' if n['title']=='Nova mensagem no pedido' else ('delivery' if u['role']=='customer' and 'saiu para entrega' in n['message'].lower() else 'other')
+            n['kind']='chat' if n['title']=='Nova mensagem no pedido' else ('delivery' if u['role']=='customer' and 'saiu para entrega' in n['message'].lower() else ('order_status' if u['role']=='customer' and n['title']=='Atualização do pedido' else 'other'))
             notices.append(n)
         return JSONResponse({'latest_id':latest,'notifications':notices},headers={'Cache-Control':'no-store'})
     finally:
