@@ -89,6 +89,15 @@ document.addEventListener('DOMContentLoaded',()=>{
   categoryTitle.textContent=group.name;search.value='';search.placeholder='Buscar em '+group.name;search.setAttribute('aria-label','Buscar em '+group.name);filterCategory();
   resize();window.scrollTo({top:0,behavior:'instant'});
  }
+ window.addEventListener('nowup-banner207',event=>{
+  const ids=new Set(event.detail.ids.map(String)),key='banner207-'+ids.size+'-'+[...ids].join('-');
+  const cards=originals.filter(c=>ids.has(c.dataset.id));if(!cards.length)return;
+  groups.set(key,{name:event.detail.title,cards});showCategory(key);
+  if(event.detail.mode==='single'){
+   const entry=categoryCache.get(key),source=cards[0],choose=source.querySelector('.nu151-choose');
+   if(choose)choose.click();else entry.cards[0].node.querySelector('.nu201-open')?.click();
+  }
+ });
  root.addEventListener('input',event=>{if(event.target===search&&selectedCategory){event.stopImmediatePropagation();filterCategory();}},true);
  root.addEventListener('search',event=>{if(event.target===search&&selectedCategory){event.stopImmediatePropagation();filterCategory();}},true);
  if(!originals.length)showcase.append(make('p','nu190-empty','Esta loja ainda não publicou produtos.'));
