@@ -1,0 +1,18 @@
+html body #nu202-orders[hidden]{display:none!important}
+html body.v50-directory-home #nu202-orders{position:fixed;top:calc(var(--nu175-header-height,64px) + var(--nu175-search-height,72px));left:0;right:0;z-index:104;background:#fff;padding:6px 12px 8px;box-sizing:border-box;color:#263247}
+html body.v50-directory-home.nu202-has-orders{padding-top:calc(var(--nu175-header-height,64px) + var(--nu175-search-height,72px) + var(--nu202-height,106px))!important}
+.nu202-wrap{max-width:1100px;margin:0 auto;background:#f7f0ff;border:1px solid #d8b9f6;border-radius:13px;overflow:hidden}
+.nu202-row{display:flex;align-items:center;position:relative}
+html body .nu202-link{display:flex;align-items:center;gap:10px;min-width:0;flex:1;padding:10px 12px;text-decoration:none!important;color:#263247!important;box-sizing:border-box}
+.nu202-icon{display:grid;place-items:center;flex:0 0 36px;width:36px;height:42px;border-radius:10px;background:#eee1fc;font-size:23px}
+.nu202-copy{display:grid;gap:3px;min-width:0}
+html body .nu202-copy strong{font-size:14px!important;line-height:1.25!important;color:#263247!important;margin:0!important}
+html body .nu202-copy small{font-size:12px!important;color:#647084!important;line-height:1.3;overflow-wrap:anywhere}
+html body .nu202-action{color:#7535c5!important;font-size:13px;font-weight:700;line-height:1.3}
+.nu202-more summary{padding:8px 12px;min-height:36px;box-sizing:border-box;font-size:12px;color:#7535c5;cursor:pointer;border-top:1px solid #e4d4f4;font-weight:650}
+.nu202-list{max-height:25dvh;overflow-y:auto;overscroll-behavior:contain}.nu202-list .nu202-row{border-top:1px solid #e4d4f4}
+.nu202-dismiss{flex:none;width:40px;height:44px;border:0;background:transparent;color:#7535c5;font-size:24px;cursor:pointer}
+.nu202-warning{display:block;padding:0 12px 8px;color:#795d36;font-size:11px}.nu202-warning[hidden]{display:none}
+.nu202-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.nu202-link:focus-visible,.nu202-dismiss:focus-visible,.nu202-more summary:focus-visible{outline:3px solid #aa80da;outline-offset:-3px}
+@media(min-width:1024px){html body.v50-directory-home.nu202-has-orders .v50-home>.nu173-categories{top:calc(var(--nu175-header-height,64px) + var(--nu175-search-height,72px) + var(--nu202-height,106px) + 12px)!important;max-height:calc(100dvh - var(--nu175-header-height,64px) - var(--nu175-search-height,72px) - var(--nu202-height,106px) - 24px)!important}}
