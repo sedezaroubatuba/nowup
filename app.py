@@ -2649,8 +2649,19 @@ def authorized_order_chat(request, order_id):
 @app.get("/pedidos/{order_id}/conversa")
 def order_chat_read(request: Request, order_id: int, after: int=0):
     conn,u,order=authorized_order_chat(request,order_id)
-    rows=conn.execute("SELECT id,sender_role,body,created_at FROM order_messages WHERE order_id=? AND id>? ORDER BY id LIMIT 100",(order_id,max(0,after))).fetchall()
-    conn.close(); return JSONResponse({"messages":[dict(r) for r in rows],"role":u["role"]})
+    try:
+        rows=conn.execute("""SELECT m.id,m.sender_role,m.body,m.created_at,
+          r.id receipt_id,r.filename,r.content_type,r.size_bytes FROM order_messages m
+          LEFT JOIN order_receipts206 r ON r.message_id=m.id AND r.order_id=m.order_id
+          WHERE m.order_id=? AND m.id>? ORDER BY m.id LIMIT 100""",(order_id,max(0,after))).fetchall()
+        messages=[]
+        for row in rows:
+            item=dict(row);rid=item.pop('receipt_id')
+            filename=item.pop('filename');mime=item.pop('content_type');size=item.pop('size_bytes')
+            if rid:item['attachment']={'id':rid,'filename':filename,'content_type':mime,'size_bytes':size}
+            messages.append(item)
+        return JSONResponse({'messages':messages,'role':u['role'],'status':order['status'],'closed':order['status'] in {'completed','cancelled','rejected'}},headers={'Cache-Control':'private, no-store'})
+    finally:conn.close()
 
 @app.post("/pedidos/{order_id}/conversa")
 def order_chat_send(request: Request, order_id: int, message: str=Form(...)):
@@ -2791,3 +2802,10 @@ import nowup_admin205
 nowup_admin205.configure(globals())
 app.include_router(nowup_admin205.router)
 app.add_event_handler("startup", nowup_admin205.initialize)
+
+
+# V206: comprovantes privados no chat; sem confirmação automática de pagamento.
+import nowup_receipts206
+nowup_receipts206.configure(globals())
+app.include_router(nowup_receipts206.router)
+app.add_event_handler("startup",nowup_receipts206.initialize)

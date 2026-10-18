@@ -1,44 +1,32 @@
-NOWUP — PRIMEIRO PACOTE DO ADM V205
+NOWUP — COMPROVANTE NO CHAT V206
 
-INSTALAÇÃO
-Este ZIP contém arquivos de atualização, não é o projeto completo.
-Base utilizada: V204 desta conversa, para preservar a buzinada e as melhorias recentes do cardápio. O app.py reenviado às 18:19 era anterior a essas melhorias.
-Copie os arquivos e pastas sobre o projeto existente, mantendo os nomes e caminhos. Não substitua a pasta inteira: mescle o conteúdo de templates e static. Preserve os demais módulos, configurações e dados do projeto.
-Faça um backup do banco antes de publicar. Publique novamente no Render. Acesse /admin. O acesso exige uma sessão de administrador válida.
-As novas tabelas e colunas são criadas automaticamente na inicialização. Nenhum cadastro ou pedido é apagado. Não é necessário recriar o banco.
+APLICAR SOBRE A V205
+Este é um pacote de atualização. Copie app.py e nowup_receipts206.py para a raiz do projeto, templates/order_chat.html para templates e os dois arquivos order-chat206 para static. Mescle as pastas e preserve os demais arquivos do projeto. Publique novamente no Render e atualize as páginas do cliente e do lojista.
+O app.py preserva o ADM compacto V205 e a buzinada V204.
 
-INCLUÍDO
-- ADM compacto com atalhos para clientes, lojistas, categorias, suporte, denúncias, configuração e relatórios.
-- Listas com nome e bairro; edição e demais informações ao abrir o cadastro.
-- Paginação de 25 cadastros. Filtros combináveis por nome, bairro, cidade, UF, datas, situação, pedidos e cancelamentos/recusas.
-- Lojistas novos (últimos 30 dias), pendentes, aprovados, inativos, recusados, inadimplentes, em dia, a vencer e por plano.
-- Edição de dados e categoria da loja. Financeiro e análise utilizam as validações já existentes, incluindo confirmação de pagamento ou cortesia.
-- Endereço, bairro, cidade, UF e e-mail obrigatórios em novos cadastros de clientes e lojistas. Confirmação de e-mail preservada. Contas anteriores permanecem; dados ausentes não são inventados.
-- Troca de e-mail pelo ADM exige nova confirmação e encerra sessões anteriores. A alteração pelo formulário antigo é direcionada para o novo fluxo.
-- Inativação com justificativa, sem excluir contas, pedidos ou conversas. Exclusões de clientes e lojas, inclusive fictícias, ficam desativadas.
-- Mensagem do ADM a uma conta por atendimento interno NowUp; resposta do usuário em /suporte. Link de suporte incluído para clientes e lojistas.
-- Suporte com histórico e situações aberto/em atendimento/resolvido. Atendimentos antigos continuam acessíveis no módulo anterior; não são apagados.
-- Painel de denúncias com relato, situação e acesso à loja.
-- Configuração de contato público e acesso às demais configurações existentes.
-- Registro das alterações realizadas pelos novos fluxos administrativos. Histórico completo de funcionários, cargos e aprovações hierárquicas fica para o próximo pacote.
-- Categorias com nome, ícone, posição e disponibilidade editáveis.
-- Buzinada V204 preservada. Mensagens da equipe entram no feed de avisos já existente.
-
-CRITÉRIOS DOS RELATÓRIOS
-Vendas concluídas no período pela data da conclusão, usando a última atualização nos registros sem histórico. A visão por localização da loja inclui entregas e retiradas. A visão por bairro de entrega inclui apenas entregas e usa o bairro guardado no pedido; cidade e UF vêm do cadastro atual do cliente. Informações antigas ausentes aparecem como não informadas. A cidade/UF do cliente não é um retrato histórico do endereço na data do pedido. Cadastro por bairro considera as datas de adesão. Horários do suporte exibidos com indicação UTC.
-Cobrança é baseada nas datas já registradas no sistema, nos três planos pagos. Este pacote não adiciona nova integração bancária nem verifica pagamentos externos automaticamente.
+FUNÇÕES
+- Cliente: botão Anexar comprovante, seleção de imagem/PDF e envio explícito.
+- JPG, PNG, WebP ou PDF de até 5 MB. Imagens com até 12 milhões de pixels são normalizadas para JPG e têm os metadados removidos.
+- Comprovante aparece na conversa para cliente e loja. Imagens têm prévia; PDFs são baixados, sem visualizador incorporado.
+- Cliente: aviso de que pagamento e entrega são combinados com a loja, o NowUp não recebe nem confere o Pix e é necessário conferir valor e destinatário antes de pagar.
+- Lojista: aviso de conferência no banco, inclusive junto de cada comprovante recebido.
+- Anexar um comprovante NÃO confirma o pagamento e NÃO muda o status do pedido.
+- Texto do chat preservado, com opção de copiar mensagens, útil para chaves Pix enviadas pela loja.
+- Somente cliente e loja responsáveis pelo pedido acessam o arquivo. O arquivo não é publicado em static ou uploads. O endpoint exige autenticação em cada acesso.
+- Comprovantes são guardados no banco existente e acompanham os backups desse banco.
+- Envio bloqueado após conclusão, cancelamento ou recusa; consulta dos comprovantes anteriores continua disponível às partes autorizadas.
+- Repetir uma tentativa de envio após falha de conexão não duplica o comprovante quando mantida a mesma seleção do arquivo.
+- Aviso de nova mensagem gerado para a loja. Notificações e sons dependem das permissões, da conexão e dos serviços já configurados.
 
 VALIDAÇÃO
-10 testes automatizados locais passaram com banco SQLite isolado: todas as áreas e detalhes, filtros combinados, plano vitrine pago, cadastro obrigatório, persistência da localização, confirmação de e-mail, inativação sem perda de pedidos, permissões de ADM, isolamento de conversas, respostas/reabertura, categorias, relatórios e proteção de origem no financeiro. Sintaxe Python e JavaScript conferida; templates compilados e páginas do novo painel renderizadas pelo servidor de testes.
-A aplicação completa não pôde ser inicializada aqui porque os demais módulos do projeto não foram todos enviados. Envio real de e-mail e push depende dos serviços já configurados. Conferência visual em navegador e teste após publicar ainda são necessários.
+18 testes automatizados locais passaram: 10 de regressão do ADM V205 e 8 de comprovantes/templates. Incluem envio, download privado, isolamento entre contas, limites, rejeição de tipos inválidos, PDF para download, metadados removidos, pedidos encerrados, repetição sem duplicar e preservação do status de pagamento/pedido.
+Também passou o teste de execução JavaScript em DOM simulado: seleção de arquivo, envio, exibição na conversa, aviso do lojista e texto sem execução de HTML.
+O template compartilhado de conversa foi confirmado nas telas de acompanhamento do cliente e no painel do lojista disponíveis nesta conversa.
+Não foi possível executar o projeto completo, pois os demais módulos não foram todos enviados. Conferência visual no navegador real, push externo e teste após publicar ainda precisam ser feitos.
 
 TESTE APÓS PUBLICAR
-1. Entre como ADM e percorra os atalhos; filtre clientes e lojistas.
-2. Abra um cadastro e confira edição, situação e categoria.
-3. Envie uma mensagem de teste para sua própria conta de cliente e responda por /suporte.
-4. Confira novos cadastros e recebimento do e-mail de confirmação.
-5. Confira plano, vencimento e financeiro em uma conta de teste.
-6. Confira os relatórios com um período conhecido e teste em celular.
-
-PAINEL ANTERIOR
-O painel anterior permanece em /admin/legado; as ferramentas detalhadas continuam disponíveis por atalhos. Recursos de cargos e aprovação de alterações por superiores não fazem parte desta etapa.
+1. Faça um pedido usando sua conta de teste do cliente.
+2. Abra a conversa e toque em Anexar comprovante.
+3. Escolha uma imagem ou PDF pequeno e toque em Enviar comprovante.
+4. Abra o mesmo pedido no painel da loja e confira o anexo e o aviso de conferência.
+5. Confira o recebimento no banco antes de confirmar qualquer pagamento real.
