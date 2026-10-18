@@ -22,7 +22,7 @@ def editor(request:Request):
         banners=[dict(b) for b in c.execute('SELECT * FROM store_banners207 WHERE professional_id=? ORDER BY id',(p['id'],))]
         products=c.execute('SELECT id,name FROM products WHERE professional_id=? ORDER BY name',(p['id'],)).fetchall()
         for b in banners:b['ids']=json.loads(b['product_ids'])
-        return G['templates'].TemplateResponse('banners207.html',{'request':request,'user':G['current_user'](request),'pro':p,'banners':banners,'products':products,'seconds':s[0] if s else 2})
+        return G['templates'].TemplateResponse('banners207.html',G['context'](request,pro=p,banners=banners,products=products,seconds=s[0] if s else 2))
     finally:c.close()
 @router.post('/painel/banners/tempo')
 async def timing(request:Request):
