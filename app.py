@@ -532,6 +532,9 @@ def init_db():
     ensure_column(conn, "users", "verification_token", "TEXT DEFAULT ''")
     ensure_column(conn, "users", "verification_expires_at", "TEXT DEFAULT ''")
     ensure_column(conn, "users", "address", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "users", "city", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "users", "state", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "professionals", "state", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "users", "address_reference", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "professionals", "admission_status", "TEXT NOT NULL DEFAULT 'approved'")
     ensure_column(conn, "professionals", "admission_reason", "TEXT NOT NULL DEFAULT ''")
@@ -1255,7 +1258,9 @@ def social_click(slug: str, network: str):
 def signup_customer_page(request: Request): return templates.TemplateResponse("signup_customer.html", context(request))
 
 @app.post("/cadastro/cliente")
-def signup_customer(name: str=Form(...), email: str=Form(...), phone: str=Form(""), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None)):
+def signup_customer(name: str=Form(...), email: str=Form(...), phone: str=Form(""), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), address: str=Form(""), neighborhood: str=Form(""), city: str=Form(""), state: str=Form("")):
+    if not all(v.strip() for v in (name,address,neighborhood,city)) or state not in nowup_admin205.UFS:
+        return RedirectResponse("/cadastro/cliente?erro=endereco",303)
     normalized_email=normalize_email(email)
     admin_email=os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
     if not normalized_email:
@@ -1279,7 +1284,9 @@ def signup_customer(name: str=Form(...), email: str=Form(...), phone: str=Form("
             "INSERT INTO users(role,name,email,phone,password_hash,email_verified,verification_token,verification_expires_at,created_at) VALUES('customer',?,?,?,?,?,?,?,?)",
             (name.strip(),normalized_email,phone.strip(),hash_password(password),0,token,expires,now_iso())
         )
-        conn.commit(); uid=cur.lastrowid
+        uid=cur.lastrowid
+        conn.execute("UPDATE users SET address=?,neighborhood=?,city=?,state=? WHERE id=?",(address.strip()[:300],neighborhood.strip()[:120],city.strip()[:120],state,uid))
+        conn.commit()
     except sqlite3.IntegrityError:
         conn.close(); return RedirectResponse("/cadastro/cliente?erro=email",303)
     conn.close()
@@ -1292,7 +1299,9 @@ def signup_pro_page(request: Request):
     return templates.TemplateResponse("signup_professional.html", context(request, active_cities=active_cities()))
 
 @app.post("/cadastro/profissional")
-def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Form(...), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), doc_type: str=Form(...), document: str=Form(...), business_type: str=Form("professional"), offer_mode: str=Form("services"), plan: str=Form(...), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[])):
+def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Form(...), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), doc_type: str=Form(...), document: str=Form(...), business_type: str=Form("professional"), offer_mode: str=Form("services"), plan: str=Form(...), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[]), address: str=Form(""), state: str=Form("")):
+    if not all(v.strip() for v in (name,address,neighborhood,city)) or state not in nowup_admin205.UFS:
+        return RedirectResponse("/cadastro/profissional?erro=endereco",303)
     if plan not in ('cardapio','vitrine','ambos'):
         return RedirectResponse('/cadastro/profissional?erro=plano',303)
     if (plan=='vitrine' and offer_mode!='services') or (plan!='vitrine' and offer_mode not in ('menu','catalog')):
@@ -1328,6 +1337,8 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
         offer_mode=offer_mode if offer_mode in ("services","menu","catalog") else "services"
         cur=conn.execute("INSERT INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,description,services,business_type,offer_mode,plan_active,plan_requested,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                          (uid,slug,name.strip(),doc_type,document.strip(),phone.strip(),city.strip(),neighborhood.strip(),cep.strip(),description.strip(),services.strip(),business_type,offer_mode,'none',plan,now_iso())); pid=cur.lastrowid
+        conn.execute("UPDATE professionals SET address=?,state=? WHERE id=?",(address.strip()[:300],state,pid))
+        conn.execute("UPDATE users SET address=?,neighborhood=?,city=?,state=? WHERE id=?",(address.strip()[:300],neighborhood.strip()[:120],city,state,uid))
         for cid in category_ids[:1]:
             conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(pid,cid))
         conn.execute("UPDATE professionals SET blocked=1,admission_status='pending' WHERE id=?",(pid,))
@@ -2160,7 +2171,7 @@ def privacy(request: Request): return templates.TemplateResponse("privacy.html",
 @app.get("/termos", response_class=HTMLResponse)
 def terms(request: Request): return templates.TemplateResponse("terms.html", context(request))
 
-@app.get("/admin", response_class=HTMLResponse)
+@app.get("/admin/legado", response_class=HTMLResponse)
 def admin(request: Request, inicio: str="", fim: str=""):
     require_user(request,"admin"); conn=db()
     stats={
@@ -2344,13 +2355,8 @@ def admin_toggle_client(request: Request, uid:int):
 
 @app.post("/admin/clientes/{uid}/editar")
 def admin_edit_client(request: Request, uid:int, name:str=Form(...), email:str=Form(...), phone:str=Form("")):
-    require_user(request,"admin"); normalized=normalize_email(email)
-    if not name.strip() or not normalized: return RedirectResponse("/admin#clientes",303)
-    conn=db()
-    try:
-        conn.execute("UPDATE users SET name=?,email=?,phone=? WHERE id=? AND role='customer'",(name.strip()[:120],normalized,phone.strip()[:30],uid)); conn.commit()
-    except sqlite3.IntegrityError: conn.rollback()
-    conn.close(); return RedirectResponse("/admin#clientes",303)
+    require_user(request,"admin")
+    return RedirectResponse("/admin/central?secao=clientes&conta="+str(uid),303)
 
 @app.post("/admin/clientes/{uid}/excluir")
 def admin_delete_client(request: Request, uid:int):
@@ -2509,6 +2515,8 @@ def admin_edit_professional(request: Request, pid:int, display_name:str=Form(...
     try:
         if not pro or not display_name.strip(): return RedirectResponse("/admin?erro=editar-perfil#profissionais",303)
         normalized=pro["email"] if pro["is_demo"] else normalize_email(email)
+        if not pro["is_demo"] and normalized != pro["email"]:
+            return RedirectResponse("/admin/central?secao=lojistas&conta="+str(pro["user_id"]),303)
         phone=(whatsapp.strip() or "00000000000") if pro["is_demo"] else whatsapp.strip()
         if not normalized or (pro["is_demo"] and not normalize_phone(phone)): return RedirectResponse("/admin?erro=editar-perfil#profissionais",303)
         if pro["is_demo"] and category_id:
@@ -2537,31 +2545,13 @@ def admin_edit_professional(request: Request, pid:int, display_name:str=Form(...
 
 @app.post("/admin/profissionais/{pid}/excluir")
 def admin_delete_professional(request: Request, pid:int):
-    require_user(request,"admin"); conn=db()
-    pro=conn.execute("SELECT user_id,is_demo,avatar_filename,cover_filename FROM professionals WHERE id=?",(pid,)).fetchone()
-    if not pro or not pro["is_demo"]:
-        conn.close(); return RedirectResponse("/admin?erro=apenas-perfil-ficticio#profissionais",303)
-    files=[pro["avatar_filename"],pro["cover_filename"]]
-    files += [r[0] for r in conn.execute("SELECT filename FROM photos WHERE professional_id=?",(pid,)).fetchall()]
-    conn.execute("DELETE FROM users WHERE id=?",(pro["user_id"],)); conn.commit(); conn.close()
-    for filename in set(f for f in files if f):
-        try: (UPLOAD_DIR/filename).unlink(missing_ok=True)
-        except OSError: pass
-    return RedirectResponse("/admin?ok=perfil-excluido#profissionais",303)
+    require_user(request,"admin")
+    return RedirectResponse("/admin/central?secao=lojistas&erro=exclusao-desativada",303)
 
 @app.post("/admin/perfis/demonstracao/excluir-todos")
 def admin_delete_all_demo_profiles(request: Request):
-    require_user(request,"admin"); conn=db()
-    rows=conn.execute("SELECT user_id,avatar_filename,cover_filename FROM professionals WHERE is_demo=1").fetchall()
-    files=[]
-    for row in rows:
-        files.extend([row["avatar_filename"],row["cover_filename"]])
-        conn.execute("DELETE FROM users WHERE id=?",(row["user_id"],))
-    conn.commit(); conn.close()
-    for filename in set(f for f in files if f):
-        try: (UPLOAD_DIR/filename).unlink(missing_ok=True)
-        except OSError: pass
-    return RedirectResponse("/admin?ok=perfis-ficticios-excluidos#profissionais",303)
+    require_user(request,"admin")
+    return RedirectResponse("/admin/central?secao=lojistas&erro=exclusao-desativada",303)
 
 @app.post("/admin/denuncias/{rid}/{status}")
 def admin_report_action(request: Request, rid:int, status:str):
@@ -2789,8 +2779,15 @@ def alerts203(request: Request, after: int = 0):
         notices=[]
         for row in rows:
             n=dict(row)
-            n['kind']='chat' if n['title']=='Nova mensagem no pedido' else ('delivery' if u['role']=='customer' and 'saiu para entrega' in n['message'].lower() else ('order_status' if u['role']=='customer' and n['title']=='Atualização do pedido' else 'other'))
+            n['kind']='chat' if n['title'] in ('Nova mensagem no pedido','Mensagem da equipe NowUp') else ('delivery' if u['role']=='customer' and 'saiu para entrega' in n['message'].lower() else ('order_status' if u['role']=='customer' and n['title']=='Atualização do pedido' else 'other'))
             notices.append(n)
         return JSONResponse({'latest_id':latest,'notifications':notices},headers={'Cache-Control':'no-store'})
     finally:
         conn.close()
+
+
+# V205: compact administrative center; existing ordering modules remain intact.
+import nowup_admin205
+nowup_admin205.configure(globals())
+app.include_router(nowup_admin205.router)
+app.add_event_handler("startup", nowup_admin205.initialize)

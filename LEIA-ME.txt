@@ -1,14 +1,44 @@
-NOWUP — BUZINADA DO CLIENTE V204
+NOWUP — PRIMEIRO PACOTE DO ADM V205
 
-Substitua no projeto os arquivos deste pacote, respeitando as pastas:
-app.py
-static/alerts203.js
-templates/base.html
+INSTALAÇÃO
+Este ZIP contém arquivos de atualização, não é o projeto completo.
+Base utilizada: V204 desta conversa, para preservar a buzinada e as melhorias recentes do cardápio. O app.py reenviado às 18:19 era anterior a essas melhorias.
+Copie os arquivos e pastas sobre o projeto existente, mantendo os nomes e caminhos. Não substitua a pasta inteira: mescle o conteúdo de templates e static. Preserve os demais módulos, configurações e dados do projeto.
+Faça um backup do banco antes de publicar. Publique novamente no Render. Acesse /admin. O acesso exige uma sessão de administrador válida.
+As novas tabelas e colunas são criadas automaticamente na inicialização. Nenhum cadastro ou pedido é apagado. Não é necessário recriar o banco.
 
-Publique novamente no Render. Depois atualize a página do cliente e toque em "Ativar som dos pedidos e mensagens". O botão permite testar a buzina.
+INCLUÍDO
+- ADM compacto com atalhos para clientes, lojistas, categorias, suporte, denúncias, configuração e relatórios.
+- Listas com nome e bairro; edição e demais informações ao abrir o cadastro.
+- Paginação de 25 cadastros. Filtros combináveis por nome, bairro, cidade, UF, datas, situação, pedidos e cancelamentos/recusas.
+- Lojistas novos (últimos 30 dias), pendentes, aprovados, inativos, recusados, inadimplentes, em dia, a vencer e por plano.
+- Edição de dados e categoria da loja. Financeiro e análise utilizam as validações já existentes, incluindo confirmação de pagamento ou cortesia.
+- Endereço, bairro, cidade, UF e e-mail obrigatórios em novos cadastros de clientes e lojistas. Confirmação de e-mail preservada. Contas anteriores permanecem; dados ausentes não são inventados.
+- Troca de e-mail pelo ADM exige nova confirmação e encerra sessões anteriores. A alteração pelo formulário antigo é direcionada para o novo fluxo.
+- Inativação com justificativa, sem excluir contas, pedidos ou conversas. Exclusões de clientes e lojas, inclusive fictícias, ficam desativadas.
+- Mensagem do ADM a uma conta por atendimento interno NowUp; resposta do usuário em /suporte. Link de suporte incluído para clientes e lojistas.
+- Suporte com histórico e situações aberto/em atendimento/resolvido. Atendimentos antigos continuam acessíveis no módulo anterior; não são apagados.
+- Painel de denúncias com relato, situação e acesso à loja.
+- Configuração de contato público e acesso às demais configurações existentes.
+- Registro das alterações realizadas pelos novos fluxos administrativos. Histórico completo de funcionários, cargos e aprovações hierárquicas fica para o próximo pacote.
+- Categorias com nome, ícone, posição e disponibilidade editáveis.
+- Buzinada V204 preservada. Mensagens da equipe entram no feed de avisos já existente.
 
-O cliente recebe buzina nas mudanças de status do pedido; mensagens mantêm a campainha. O áudio depende do NowUp aberto e do som liberado no navegador. Com o aplicativo fechado ou celular bloqueado, o som depende das notificações do sistema e não é garantido por esta correção.
+CRITÉRIOS DOS RELATÓRIOS
+Vendas concluídas no período pela data da conclusão, usando a última atualização nos registros sem histórico. A visão por localização da loja inclui entregas e retiradas. A visão por bairro de entrega inclui apenas entregas e usa o bairro guardado no pedido; cidade e UF vêm do cadastro atual do cliente. Informações antigas ausentes aparecem como não informadas. A cidade/UF do cliente não é um retrato histórico do endereço na data do pedido. Cadastro por bairro considera as datas de adesão. Horários do suporte exibidos com indicação UTC.
+Cobrança é baseada nas datas já registradas no sistema, nos três planos pagos. Este pacote não adiciona nova integração bancária nem verifica pagamentos externos automaticamente.
 
-Teste: entre como cliente, ative o som e faça um pedido. Em outro aparelho, aceite o pedido no painel lojista e altere para preparo e entrega. Confira os avisos e o áudio no cliente.
+VALIDAÇÃO
+10 testes automatizados locais passaram com banco SQLite isolado: todas as áreas e detalhes, filtros combinados, plano vitrine pago, cadastro obrigatório, persistência da localização, confirmação de e-mail, inativação sem perda de pedidos, permissões de ADM, isolamento de conversas, respostas/reabertura, categorias, relatórios e proteção de origem no financeiro. Sintaxe Python e JavaScript conferida; templates compilados e páginas do novo painel renderizadas pelo servidor de testes.
+A aplicação completa não pôde ser inicializada aqui porque os demais módulos do projeto não foram todos enviados. Envio real de e-mail e push depende dos serviços já configurados. Conferência visual em navegador e teste após publicar ainda são necessários.
 
-Validação realizada: sintaxe Python e JavaScript; testes isolados de classificação, cursor e separação por usuário; teste simulado do áudio, atualização e prevenção de repetição. Aplicação completa e áudio físico no celular ainda precisam ser verificados após publicar.
+TESTE APÓS PUBLICAR
+1. Entre como ADM e percorra os atalhos; filtre clientes e lojistas.
+2. Abra um cadastro e confira edição, situação e categoria.
+3. Envie uma mensagem de teste para sua própria conta de cliente e responda por /suporte.
+4. Confira novos cadastros e recebimento do e-mail de confirmação.
+5. Confira plano, vencimento e financeiro em uma conta de teste.
+6. Confira os relatórios com um período conhecido e teste em celular.
+
+PAINEL ANTERIOR
+O painel anterior permanece em /admin/legado; as ferramentas detalhadas continuam disponíveis por atalhos. Recursos de cargos e aprovação de alterações por superiores não fazem parte desta etapa.
