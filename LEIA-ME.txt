@@ -1,26 +1,19 @@
-NOWUP — BANNERS DA LOJA — V207
+NOWUP — BANNERS INFORMATIVOS E AVISOS — V209
+Aplicar sobre a V207/V208. Substitua os arquivos nas mesmas pastas e publique novamente no Render. Não precisa trocar app.py. O módulo continua com o nome nowup_banners207.py.
 
-Aplicar sobre o projeto atual, mantendo todos os outros arquivos.
-1. Faça backup do código e do banco.
-2. Copie app.py e nowup_banners207.py para a raiz.
-3. Copie templates/ e static/ para as pastas correspondentes, substituindo os arquivos deste pacote.
-4. Publique e reinicie a aplicação. As tabelas adicionais são criadas automaticamente, sem apagar dados existentes.
-5. Reabra o site e atualize a página para carregar os scripts novos.
+Arquivos:
+nowup_banners207.py (raiz)
+templates/banners207.html
+static/banners207.js
+static/banner-editor209.js
 
-No painel, abra “Banners da loja”.
-- Uso opcional: cada banner tem a opção “Exibir este banner na loja”.
-- Tempo entre banners: 1 a 120 segundos, padrão de 2 segundos.
-- Imagem horizontal recomendada: 1200 x 450, JPG/PNG/WebP até 5 MB.
-- Até 10 banners por loja, na ordem de cadastro.
-- Seleção de produtos: abre os itens escolhidos no cardápio existente.
-- Produto específico: selecione exatamente um item; abre a escolha do produto.
-- Produtos vinculados pertencem exclusivamente à própria loja.
-- Banner sem produtos restantes deixa de aparecer.
-- Um único banner fica fixo; dois ou mais passam lateralmente.
-- Controles anterior/próximo e pausa; pausa também durante interação e com aba em segundo plano.
-- Sem banners ativos, a loja permanece sem esse bloco.
+Agora existem três opções:
+- Só exibir imagem, sem abrir produtos: para apresentação do NowUp e homenagem à primeira loja parceira. Não exige produtos.
+- Abrir seleção de produtos: marque pelo menos um item.
+- Abrir produto específico: marque exatamente um item.
 
-Inclui a base app.py V206, preservando o comprovante no chat e o registro V205. Os módulos anteriores precisam continuar no projeto. Este ZIP é uma atualização, não o projeto completo.
+Preencha sempre o título e envie uma imagem no cadastro novo.
+Os avisos de erro aparecem no formulário com os campos preservados, sem navegar para uma página de texto JSON.
+Inclui a correção V208 para o contexto da página.
 
-Validação: sintaxe Python/JavaScript; templates Jinja; testes em banco temporário para migração repetida, salvamento, destinos, limites de tempo, pausa, exclusão e rejeição de produtos de outra loja.
-Não houve teste visual integrado no servidor publicado. Após o deploy, teste no celular: ativar banner, aguardar troca, abrir seleção, abrir produto com adicionais, adicionar ao carrinho e voltar à loja.
+Testado: renderização com base real, sintaxe JS, salvamento dos três modos, banner informativo na resposta pública sem produtos, limites de tempo e isolamento por loja. Conferência visual no servidor depende do deploy.
