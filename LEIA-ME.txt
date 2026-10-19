@@ -1,19 +1,17 @@
-NOWUP — BANNERS INFORMATIVOS E AVISOS — V209
-Aplicar sobre a V207/V208. Substitua os arquivos nas mesmas pastas e publique novamente no Render. Não precisa trocar app.py. O módulo continua com o nome nowup_banners207.py.
+NOWUP — PÁGINA INICIAL COM BANNERS — V210
 
-Arquivos:
-nowup_banners207.py (raiz)
-templates/banners207.html
-static/banners207.js
-static/banner-editor209.js
+Inclui a primeira opção aprovada: slogan “Tudo perto. Tudo na NowUp.”, banner de Ubatuba e fundo suave. A arte já está incluída.
+ADM: /admin/banners-inicio — adicionar, editar título, trocar imagem, ordenar, ativar/desativar e excluir, com confirmação.
+Troca automática: padrão de 1 segundo, ajustável de 1 a 120 segundos. Com um banner, a imagem fica fixa. Adicione outras imagens no ADM para iniciar o slide. Há controles manuais e pausa; a troca pausa durante interação.
 
-Agora existem três opções:
-- Só exibir imagem, sem abrir produtos: para apresentação do NowUp e homenagem à primeira loja parceira. Não exige produtos.
-- Abrir seleção de produtos: marque pelo menos um item.
-- Abrir produto específico: marque exatamente um item.
+INSTALAÇÃO
+1. Extraia os arquivos na raiz do projeto existente, mantendo static/ e templates/.
+2. Execute UMA VEZ, na raiz: python aplicar_v210.py
+3. Publique os arquivos adicionados e os dois arquivos alterados (app.py e templates/base.html) no Render, como costuma fazer.
+O instalador acrescenta a integração e cria cópias app.py.antes-v210 e templates/base.html.antes-v210. Não substitui seu app.py inteiro por uma versão antiga. Pode ser executado novamente sem duplicar a integração.
+As tabelas são criadas automaticamente no banco existente ao iniciar a aplicação. Não apague nem substitua seu banco ou uploads.
 
-Preencha sempre o título e envie uma imagem no cadastro novo.
-Os avisos de erro aparecem no formulário com os campos preservados, sem navegar para uma página de texto JSON.
-Inclui a correção V208 para o contexto da página.
+A imagem é incluída em static/nowup-ubatuba210.png e aparece automaticamente na primeira instalação. Se você excluir o banner pelo ADM, ele não reaparecerá ao reiniciar.
+Para mudar o texto que está desenhado na arte, envie outra imagem. O campo título serve como identificação e descrição acessível.
 
-Testado: renderização com base real, sintaxe JS, salvamento dos três modos, banner informativo na resposta pública sem produtos, limites de tempo e isolamento por loja. Conferência visual no servidor depende do deploy.
+Verificado: sintaxe Python/JS; autorização de ADM; origem das gravações; limites do tempo; adição, edição, ordenação e exclusão; não recriar banner excluído; instalação idempotente sobre os arquivos fornecidos. Aparência e funcionamento no site publicado dependem do deploy. Este pacote não publica automaticamente no Render.
