@@ -16,7 +16,12 @@ document.addEventListener('DOMContentLoaded',()=>{
  let homeScroll=0,selectedCategory=null;
  const categoryView=make('section','nu191-category-view');categoryView.hidden=true;layout.before(categoryView);
  const categoryTitle=make('h2'),categoryCount=make('p','nu191-count'),categoryEmpty=make('p','nu191-empty','Nenhum produto encontrado nesta categoria.');categoryEmpty.hidden=true;
- categoryView.append(categoryTitle,categoryCount,categoryEmpty);const categoryCache=new Map();
+ const categoryHeader=make('header','nu219-category-header'),less=make('button','nu219-less','Ver menos ⌃');
+ less.type='button';less.setAttribute('aria-label','Recolher produtos e voltar aos carrosséis');
+ categoryHeader.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap';
+ categoryTitle.style.margin='0';less.style.cssText='border:1px solid #e6dcf2;background:#f5effc;color:#7132bf;border-radius:10px;padding:10px 14px;min-height:44px;font:inherit;font-size:14px;font-weight:700;cursor:pointer';
+ less.addEventListener('click',()=>{const key=selectedCategory;showHome();const section=sections.get(key);if(section){section.scrollIntoView({block:'start',behavior:'auto'});section.querySelector('header button')?.focus({preventScroll:true});}});
+ categoryHeader.append(categoryTitle,less);categoryView.append(categoryHeader,categoryCount,categoryEmpty);const categoryCache=new Map();
  const money=cents=>(cents/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
  const resize=()=>window.dispatchEvent(new Event('resize'));
  function showProducts(focus=false){
@@ -89,15 +94,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   categoryTitle.textContent=group.name;search.value='';search.placeholder='Buscar em '+group.name;search.setAttribute('aria-label','Buscar em '+group.name);filterCategory();
   resize();window.scrollTo({top:0,behavior:'instant'});
  }
- window.addEventListener('nowup-banner207',event=>{
-  const ids=new Set(event.detail.ids.map(String)),key='banner207-'+ids.size+'-'+[...ids].join('-');
-  const cards=originals.filter(c=>ids.has(c.dataset.id));if(!cards.length)return;
-  groups.set(key,{name:event.detail.title,cards});showCategory(key);
-  if(event.detail.mode==='single'){
-   const entry=categoryCache.get(key),source=cards[0],choose=source.querySelector('.nu151-choose');
-   if(choose)choose.click();else entry.cards[0].node.querySelector('.nu201-open')?.click();
-  }
- });
  root.addEventListener('input',event=>{if(event.target===search&&selectedCategory){event.stopImmediatePropagation();filterCategory();}},true);
  root.addEventListener('search',event=>{if(event.target===search&&selectedCategory){event.stopImmediatePropagation();filterCategory();}},true);
  if(!originals.length)showcase.append(make('p','nu190-empty','Esta loja ainda não publicou produtos.'));
