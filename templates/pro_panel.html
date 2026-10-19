@@ -15,22 +15,21 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </style>
 
 <div class="container dashboard pro-dashboard" data-panel-day="{{today_day}}">
-<a class="btn soft" href="/painel/banners">▧ Banners da loja</a><header class="v60-top"><button class="btn" type="button" data-pro-menu-toggle aria-expanded="false" aria-controls="pro-edit-menu" aria-label="Abrir menu">☰</button><div><b>{{pro.display_name}}</b><small>{{shop_status.label}}</small></div><a class="btn soft merchant-profile-link" href="/p/{{pro.slug}}" target="_blank" rel="noopener" aria-label="Ver meu perfil público na NowUp">↗ Meu perfil</a><a class="btn v61-bell" href="#notificacoes" aria-label="Notificações">🔔<span class="v61-badge" data-notification-badge hidden>0</span></a></header>
+<header class="v60-top"><button class="btn" type="button" data-pro-menu-toggle aria-expanded="false" aria-controls="pro-edit-menu" aria-label="Abrir menu">☰</button><div><b>{{pro.display_name}}</b><small>{{shop_status.label}}</small></div><a class="btn soft merchant-profile-link" href="/p/{{pro.slug}}" target="_blank" rel="noopener" aria-label="Ver meu perfil público na NowUp">↗ Ver minha loja</a><a class="btn v61-bell" href="#notificacoes" aria-label="Notificações">🔔<span class="v61-badge" data-notification-badge hidden>0</span></a></header>
 <button class="v60-shade" type="button" data-close-pro-menu aria-label="Fechar menu" hidden></button>
-<aside class="sidebar pro-sidebar" id="pro-edit-menu"><h2>Menu da loja</h2><a href="/painel/banners">▧ Banners da loja</a><button type="button" class="btn soft" data-close-pro-menu>Fechar menu ✕</button><a href="#inicio">⌂ Início</a><a href="#produtos-loja">▦ Produtos</a><a href="#novo-produto">＋ Cadastrar produto</a><a href="#categorias-loja">▤ Categorias</a><a href="#acompanhamentos-combos">＋ Acompanhamentos e combos</a><a href="#comandas">🧾 Comandas abertas</a><a href="#whatsapp">✍ Vendas WhatsApp</a><a href="/painel/vendas-manuais/relatorios">📊 Vendas consolidadas</a>
+<aside class="sidebar pro-sidebar" id="pro-edit-menu"><h2>Menu da loja</h2><button type="button" class="btn soft" data-close-pro-menu>Fechar menu ✕</button><a href="#inicio">⌂ Início</a><a href="#produtos-loja">▦ Produtos</a><a href="#novo-produto">＋ Cadastrar produto</a><a href="#categorias-loja">▤ Categorias</a><a href="#acompanhamentos-combos">＋ Acompanhamentos e combos</a><a href="#comandas">🧾 Comandas abertas</a><a href="#whatsapp">✍ Vendas WhatsApp</a><a href="/painel/vendas-manuais/relatorios">📊 Vendas consolidadas</a>
 <a href="#hoje">📅 Pedidos de hoje</a><a href="#resumo">📊 Visão geral</a><a href="#pedidos">🧾 Pedidos</a><a href="#cardapio">🛍 {{'Catálogo de produtos' if pro.offer_mode=='catalog' else 'Cardápio'}}</a><a href="#adicionais">➕ Adicionais</a><a href="#clientes">👥 Clientes</a><a href="#relatorios">📈 Relatórios</a><a href="#plano">💳 Meu plano</a><a href="#perfil">🏪 Perfil da loja</a><a href="#configuracoes">⚙️ Configurações</a><a href="#publicar">➕ Publicações</a><a href="/p/{{pro.slug}}" target="_blank" rel="noopener">↗ Ver perfil público</a>
 <form action="/sair" method="post"><button class="btn danger">Sair</button></form></aside>
 <main>
 <section id="inicio" class="nu198-home" aria-label="Início do painel">
 <h1 class="nu198-title">Painel da loja</h1><p class="nu198-subtitle">O que vamos fazer agora?</p>
-<nav class="nu198-grid" aria-label="Atalhos da loja">
+<a class="nu221-store-link" href="/p/{{pro.slug}}" target="_blank" rel="noopener">↗ Ver minha loja</a><p class="nu221-store-hint">Veja como o cliente vê sua loja.</p>
+<nav class="nu198-grid" aria-label="Acessos principais da loja">
 <a class="nu198-tile" href="#pedidos-ativos" data-nav198><span aria-hidden="true">▤</span>Pedidos</a>
 <a class="nu198-tile" href="#produtos-loja" data-nav198><span aria-hidden="true">▦</span>Produtos</a>
-<a class="nu198-tile" href="#novo-produto" data-nav198><span aria-hidden="true">＋</span>Cadastrar produto</a>
-<a class="nu198-tile" href="#categorias-loja" data-nav198><span aria-hidden="true">☷</span>Categorias</a>
-<a class="nu198-tile" href="#acompanhamentos-combos" data-nav198><span aria-hidden="true">⊕</span>Acompanhamentos e combos</a>
-<a class="nu198-tile" href="#relatorios" data-nav198><span aria-hidden="true">▥</span>Relatórios</a>
-</nav>
+<a class="nu198-tile" href="#perfil" data-nav198><span aria-hidden="true">⌂</span>Minha loja</a>
+<a class="nu198-tile" href="#relatorios" data-nav198><span aria-hidden="true">▥</span>Relatórios</a></nav>
+<details class="nu221-extra"><summary>Mais acessos de produtos</summary><nav><a class="btn soft" href="#novo-produto" data-nav198>＋ Cadastrar produto</a><a class="btn soft" href="#categorias-loja" data-nav198>Categorias e posições</a><a class="btn soft" href="#acompanhamentos-combos" data-nav198>Acompanhamentos e combos</a></nav></details>
 {% set daily=namespace(total=0) %}{% for order in today_orders if order.status not in ['cancelled','rejected'] %}{% set daily.total=daily.total+order.total_cents %}{% endfor %}
 <div class="nu198-metrics"><div><small>Total de pedidos hoje</small><strong>{{today_orders|length}}</strong></div><div><small>Valor dos pedidos hoje*</small><strong>R$ {{'%.2f'|format(daily.total/100)|replace('.',',')}}</strong></div></div><p class="muted"><small>*Sem cancelados e recusados. Inclui pedidos em andamento.</small></p>
 </section>
@@ -81,7 +80,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </div>
 <div class="row">
 <a class="btn soft" href="#perfil">✏️ Editar perfil</a>
-<a class="btn primary" href="/p/{{pro.slug}}" target="_blank">Visualizar perfil público</a>
+<a class="btn primary" href="/p/{{pro.slug}}" target="_blank">Ver minha loja</a>
 <button class="btn soft" type="button" data-copy-profile data-profile-url="/p/{{pro.slug}}">🔗 Copiar link</button>
 </div>
 </section>
@@ -416,7 +415,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <label>Imagem da capa<input class="input" type="file" name="cover" accept="image/*">
 </label>
 <button class="btn primary">Salvar foto e capa</button>
-<a class="btn soft" href="/p/{{pro.slug}}" target="_blank">Visualizar perfil público</a>
+<a class="btn soft" href="/p/{{pro.slug}}" target="_blank">Ver minha loja</a>
 </form>
 <div class="row image-remove-actions">{% if pro.avatar_filename %}<form action="/painel/identidade/perfil/excluir" method="post" data-confirm-delete>
 <button class="btn danger tiny">Excluir foto de perfil</button>
@@ -444,7 +443,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <div class="section-title">
 <div>
 <span class="kicker">Dados públicos</span>
-<h2>Perfil da empresa</h2>
+<h2>Minha loja</h2><a class="btn soft" href="/p/{{pro.slug}}" target="_blank" rel="noopener">↗ Ver minha loja</a>
 </div>
 <span class="edit-chip">✏️ Editar tudo</span>
 </div>
@@ -501,7 +500,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </label>
 <div class="row">
 <button class="btn primary">Salvar dados do perfil</button>
-<a class="btn soft" href="/p/{{pro.slug}}" target="_blank">Visualizar perfil público</a>
+<a class="btn soft" href="/p/{{pro.slug}}" target="_blank">Ver minha loja</a>
 </div>
 </form>
 </section>
@@ -562,7 +561,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <link rel="manifest" href="/static/nowup-lojista.webmanifest"><script src="/static/pro-push75.js?v=112" defer></script>
 <link rel="stylesheet" href="/static/order-review127.css?v=127"><script src="/static/order-review127.js?v=127" defer></script><link rel="stylesheet" href="/static/custom196.css?v=196"><script type="application/json" id="included-catalog195">{{included_catalog195|tojson}}</script><script defer src="/static/custom196.js?v=200"></script><link rel="stylesheet" href="/static/pro198.css?v=198"><script defer src="/static/pro198.js?v=198"></script>
 <nav class="nu198-bottom" aria-label="Navegação do lojista"><a href="#inicio" data-nav198><span aria-hidden="true">⌂</span>Início</a><a href="#produtos-loja" data-nav198><span aria-hidden="true">▦</span>Produtos</a><a href="#pedidos-ativos" data-nav198><span aria-hidden="true">▤</span>Pedidos</a><a href="#configuracoes" data-nav198><span aria-hidden="true">☷</span>Mais</a></nav>
-<link rel="stylesheet" href="/static/compact200.css?v=200"><script defer src="/static/compact200.js?v=200"></script><script defer src="/static/notification-status200.js?v=200"></script>{% endblock %}
+<link rel="stylesheet" href="/static/compact200.css?v=200"><script defer src="/static/compact200.js?v=200"></script><script defer src="/static/notification-status200.js?v=200"></script><link rel="stylesheet" href="/static/pro221.css?v=221"><script defer src="/static/pro221.js?v=221"></script>{% endblock %}
 
 
 
