@@ -2815,3 +2815,8 @@ import nowup_banners207
 nowup_banners207.configure(globals())
 app.include_router(nowup_banners207.router)
 app.add_event_handler('startup',nowup_banners207.initialize)
+
+# V211: banners da página inicial, com gestão no ADM.
+import nowup_home210
+nowup_home210.configure(globals())
+app.include_router(nowup_home210.router)
