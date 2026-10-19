@@ -1,0 +1,38 @@
+VALIDAÇÃO LOCAL V223
+
+Ambiente: Python 3.12, PostgreSQL 16.15 local, psycopg 3, dependências de requirements.txt.
+O Render do usuário está em PostgreSQL 18; conexão, Docker build e homologação nesse serviço não executados.
+
+Resultados:
+- Snapshot enviado: integrity_check OK; foreign_key_check sem violações; hash confere com manifest.json.
+- Importação real para PostgreSQL local: 63 tabelas, 3.709 registros; comparação de todas as linhas por hash,
+  contagens, chaves estrangeiras e reposicionamento de sequências; origem SQLite preservada byte a byte.
+- Destino não vazio recusado, sem sobrescrever dados.
+- Páginas públicas: início, login, recuperação, perfil/menu da loja, busca de produtos/lojas.
+- Autenticado: cliente, resumo de pedidos, avisos, painel lojista, novos pedidos/notificações,
+  vendas manuais, ADM legado, vendas/avisos, gestão e oito seções da central administrativa.
+- Filtros administrativos: novos, inadimplentes, em dia e a vencer.
+- Confirmação de e-mail e login por senha; pedido com itens/histórico/fila de aviso;
+  acompanhamento, chat e aceite do lojista.
+- Erro de unicidade tratado sem perder a transação anterior; rollback desfaz as gravações pendentes.
+- Redefinição de senha consome o token e revoga as sessões do cliente.
+- pg_dump completo restaurado em outro PostgreSQL: hashes de todas as tabelas conferidos.
+- Backup com foto sintética: criptografia, descompactação, hashes e restauração PostgreSQL passaram.
+- Foto ausente impede confirmação de backup completo.
+- Backup/restauração SQLite legados preservados; inicialização e navegação SQLite em cópia passaram.
+- 10 testes administrativos existentes passaram; avisos de depreciação FastAPI/Starlette preexistentes.
+- Todos os arquivos Python alterados compilados.
+
+Limites:
+- Nenhum envio real Brevo, Web Push, Asaas ou R2, nem alteração em produção.
+- Fotos reais não vieram completas: manifesto lista 337 arquivos; eles não estão neste pacote de código.
+- Sem teste de carga, Docker build ou teste visual em aparelhos. Não há promessa de número de acessos.
+- Compatibilidade conserva travas transacionais das operações que usavam BEGIN IMMEDIATE:
+  uma trava consultiva coordena essas operações críticas. Leituras e demais transações PostgreSQL
+  permanecem independentes; otimizar essas travas por loja/fila é uma etapa de desempenho posterior.
+- Contadores síncronos de visualização/cliques e arquivos de imagens no disco mantidos.
+  Redis/filas para métricas e armazenamento externo de imagens não foram implementados.
+
+Referências de implementação:
+https://www.psycopg.org/psycopg3/docs/basic/transactions.html
+https://www.postgresql.org/docs/18/app-pgdump.html

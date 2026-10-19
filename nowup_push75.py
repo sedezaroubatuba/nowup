@@ -1,3 +1,4 @@
+import os
 """Private per-session Web Push subscriptions; durable order delivery queue."""
 from contextlib import contextmanager
 import base64, hashlib, json, logging, re, threading, time
@@ -89,6 +90,7 @@ def unsubscribe(request:Request):
     _auth(request,'professional'); disable_session(request.cookies.get('nowup_session','')); return {'ok':True}
 
 def send(row,payload):
+    if os.getenv("NOWUP_TEST_MODE")=="1":return False
     try:
         # Password reset, logout and account blocking also revoke device alerts.
         with _db() as c:
@@ -148,7 +150,9 @@ def run():
 
 def start():
     global _thread
-    initialize(); _stop.clear(); _thread=threading.Thread(target=run,daemon=True); _thread.start()
+    initialize()
+    if os.getenv("NOWUP_TEST_MODE")=="1":return
+    _stop.clear(); _thread=threading.Thread(target=run,daemon=True); _thread.start()
 def stop():_stop.set()
 
 @router.get('/nowup-push-sw.js')

@@ -1,3 +1,4 @@
+import nowup_database
 import os, secrets, sqlite3
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -13,7 +14,7 @@ templates=Jinja2Templates(directory=str(BASE/"templates"))
 router=APIRouter()
 
 def db():
-    conn=sqlite3.connect(DB_PATH)
+    conn=nowup_database.connect(DB_PATH)
     conn.row_factory=sqlite3.Row
     return conn
 

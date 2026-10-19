@@ -87,28 +87,38 @@ def sha256(path):
 
 def create_archive(directory):
     directory=Path(directory)
-    if not _db.is_file() or not _uploads.is_dir():
-        raise RuntimeError('Banco de dados ou pasta de fotos não encontrados. Confira os caminhos.')
-    snapshot=directory/'nowup.db'
-    source=sqlite3.connect(_db.resolve().as_uri()+'?mode=ro',uri=True,timeout=30)
-    destination=sqlite3.connect(snapshot)
-    try:
-        deadline=time.monotonic()+180
-        def progress(*_):
-            if time.monotonic()>deadline: raise RuntimeError('Tempo de cópia do banco excedido.')
-        source.backup(destination,pages=256,progress=progress,sleep=0.05)
-        if destination.execute('PRAGMA integrity_check').fetchone()[0]!='ok':
-            raise RuntimeError('A cópia do banco não passou na verificação de integridade.')
-        # All upload filename columns in the DB snapshot must be present.
-        referenced=set()
-        tables=[r[0] for r in destination.execute("SELECT name FROM sqlite_master WHERE type='table'")]
-        for table in tables:
-            quoted='"'+table.replace('"','""')+'"'
-            columns=[r[1] for r in destination.execute('PRAGMA table_info('+quoted+')') if 'filename' in r[1]]
-            for column in columns:
-                col='"'+column.replace('"','""')+'"'
-                referenced.update(str(r[0]) for r in destination.execute('SELECT '+col+' FROM '+quoted) if r[0])
-    finally: destination.close(); source.close()
+    from nowup_database import postgres_enabled
+    if postgres_enabled():
+        if not _uploads.is_dir(): raise RuntimeError('Pasta de fotos não encontrada.')
+        from nowup_pg_backup import snapshot as pg_snapshot
+        snapshot,referenced=pg_snapshot(directory)
+        db_entry='database/nowup.pgdump'
+        backup_format='nowup-backup-pg-v2'
+    else:
+        if not _db.is_file() or not _uploads.is_dir():
+            raise RuntimeError('Banco de dados ou pasta de fotos não encontrados. Confira os caminhos.')
+        snapshot=directory/'nowup.db'
+        source=sqlite3.connect(_db.resolve().as_uri()+'?mode=ro',uri=True,timeout=30)
+        destination=sqlite3.connect(snapshot)
+        try:
+            deadline=time.monotonic()+180
+            def progress(*_):
+                if time.monotonic()>deadline: raise RuntimeError('Tempo de cópia do banco excedido.')
+            source.backup(destination,pages=256,progress=progress,sleep=0.05)
+            if destination.execute('PRAGMA integrity_check').fetchone()[0]!='ok':
+                raise RuntimeError('A cópia do banco não passou na verificação de integridade.')
+            # All upload filename columns in the DB snapshot must be present.
+            referenced=set()
+            tables=[r[0] for r in destination.execute("SELECT name FROM sqlite_master WHERE type='table'")]
+            for table in tables:
+                quoted='"'+table.replace('"','""')+'"'
+                columns=[r[1] for r in destination.execute('PRAGMA table_info('+quoted+')') if 'filename' in r[1]]
+                for column in columns:
+                    col='"'+column.replace('"','""')+'"'
+                    referenced.update(str(r[0]) for r in destination.execute('SELECT '+col+' FROM '+quoted) if r[0])
+        finally: destination.close(); source.close()
+        db_entry='database/nowup.db'
+        backup_format='nowup-backup-v1'
     files={}
     for name in referenced:
         p=_uploads/name
@@ -118,9 +128,9 @@ def create_archive(directory):
         if p.is_symlink(): raise RuntimeError('A pasta de fotos contém um link simbólico não permitido.')
         if p.is_file(): files[p.relative_to(_uploads).as_posix()]=p
     archive=directory/'nowup-backup.zip'
-    manifest={'format':'nowup-backup-v1','created_at':datetime.now(timezone.utc).isoformat(),'database':'database/nowup.db','files':{}}
+    manifest={'format':backup_format,'created_at':datetime.now(timezone.utc).isoformat(),'database':db_entry,'files':{}}
     with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED,allowZip64=True) as z:
-        z.write(snapshot,'database/nowup.db');manifest['files']['database/nowup.db']=sha256(snapshot)
+        z.write(snapshot,db_entry);manifest['files'][db_entry]=sha256(snapshot)
         for name,p in sorted(files.items()):
             entry='uploads/'+name
             before=p.stat()
@@ -190,6 +200,7 @@ def upload_backup(client,bucket,path,key):
         raise RuntimeError('Não foi possível confirmar o envio do backup.')
 
 def external_backup():
+    if os.getenv("NOWUP_TEST_MODE")=="1":raise RuntimeError("Envio externo desativado no ambiente de teste.")
     with backup_lock():
         save_state(running=True,last_attempt=datetime.now(timezone.utc).isoformat(),error='')
         try:
@@ -224,7 +235,7 @@ def notify_failure():
             save_state(last_alert_day=day)
     except Exception:pass
 
-def automatic_enabled():return os.getenv('NOWUP_BACKUP_ENABLED','0')=='1'
+def automatic_enabled():return os.getenv('NOWUP_TEST_MODE')!='1' and os.getenv('NOWUP_BACKUP_ENABLED','0')=='1'
 
 def loop():
     while not _stop.is_set():
@@ -236,6 +247,7 @@ def loop():
 
 def start():
     global _thread
+    if os.getenv("NOWUP_TEST_MODE")=="1":return
     if _thread and _thread.is_alive():return
     _stop.clear();_thread=threading.Thread(target=loop,name='nowup-backup',daemon=True);_thread.start()
 

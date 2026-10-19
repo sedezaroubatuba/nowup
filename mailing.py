@@ -4,6 +4,7 @@ from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
 def configured():
+    if os.getenv("NOWUP_TEST_MODE")=="1": return False
     return bool(
         os.getenv("BREVO_API_KEY","").strip()
         and os.getenv("NOWUP_EMAIL_FROM","").strip()
@@ -11,6 +12,7 @@ def configured():
     )
 
 def send_email(to_email: str, to_name: str, subject: str, html: str):
+    if os.getenv("NOWUP_TEST_MODE")=="1": return False
     api_key=os.getenv("BREVO_API_KEY","").strip()
     sender_email=os.getenv("NOWUP_EMAIL_FROM","").strip()
     if not api_key or not sender_email:

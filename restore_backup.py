@@ -1,5 +1,5 @@
 """Restore only into a NEW folder, never directly over a running NowUp."""
-import argparse,base64,getpass,hashlib,json,os,shutil,sqlite3,tempfile,zipfile
+import argparse,base64,getpass,hashlib,json,os,shutil,sqlite3,tempfile,zipfile,subprocess
 from pathlib import Path,PurePosixPath
 from nowup_backup import decrypt_archive
 
@@ -9,12 +9,14 @@ def stage_backup(archive,output):
     with zipfile.ZipFile(archive) as z:
         if z.testzip():raise ValueError('Arquivo ZIP danificado.')
         manifest=json.loads(z.read('manifest.json'))
-        if manifest.get('format')!='nowup-backup-v1':raise ValueError('Formato desconhecido.')
+        if manifest.get('format') not in {'nowup-backup-v1','nowup-backup-pg-v2'}:raise ValueError('Formato desconhecido.')
+        db_entry='database/nowup.pgdump' if manifest['format']=='nowup-backup-pg-v2' else 'database/nowup.db'
+        if manifest.get('database')!=db_entry or db_entry not in manifest['files']:raise ValueError('Banco ausente no manifesto.')
         expected=manifest['files']
         if len(z.namelist())!=len(set(z.namelist())) or set(z.namelist())!=set(expected)|{'manifest.json'}:raise ValueError('Lista de arquivos inconsistente.')
         for name in expected:
             path=PurePosixPath(name)
-            if path.is_absolute() or '..' in path.parts or not (name=='database/nowup.db' or name.startswith('uploads/')):raise ValueError('Caminho não permitido.')
+            if path.is_absolute() or '..' in path.parts or not (name==db_entry or name.startswith('uploads/')):raise ValueError('Caminho não permitido.')
         output.mkdir(parents=True,mode=0o700)
         try:
             for name,digest in expected.items():
@@ -24,10 +26,15 @@ def stage_backup(archive,output):
                     for chunk in iter(lambda:src.read(1024*1024),b''):h.update(chunk);dst.write(chunk)
                 os.chmod(target,0o600)
                 if h.hexdigest()!=digest:raise ValueError('A verificação de integridade falhou.')
-            conn=sqlite3.connect((output/'database/nowup.db').resolve().as_uri()+'?mode=ro',uri=True)
-            try:
-                if conn.execute('PRAGMA integrity_check').fetchone()[0]!='ok':raise ValueError('Banco inválido.')
-            finally:conn.close()
+            if db_entry.endswith('.pgdump'):
+                if not shutil.which('pg_restore'):raise ValueError('Instale pg_restore compatível para validar o backup.')
+                result=subprocess.run(['pg_restore','--list',str(output/db_entry)],capture_output=True,timeout=30)
+                if result.returncode:raise ValueError('Arquivo PostgreSQL inválido.')
+            else:
+                conn=sqlite3.connect((output/'database/nowup.db').resolve().as_uri()+'?mode=ro',uri=True)
+                try:
+                    if conn.execute('PRAGMA integrity_check').fetchone()[0]!='ok':raise ValueError('Banco inválido.')
+                finally:conn.close()
             (output/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False))
         except Exception:shutil.rmtree(output);raise
     return len(expected)-1

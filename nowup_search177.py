@@ -35,7 +35,8 @@ def register(app, db, public_business_scope, shop_status):
             return JSONResponse({'products':[],'stores':[]},headers={'Cache-Control':'no-store'})
         conn=db()
         try:
-            conn.create_function('nu177_normalize',1,normalize,deterministic=True)
+            if hasattr(conn,'create_function'):
+                conn.create_function('nu177_normalize',1,normalize,deterministic=True)
             if not city.strip():
                 city_row=conn.execute("SELECT city FROM professionals WHERE city!='' AND blocked=0 AND admission_status='approved' ORDER BY id LIMIT 1").fetchone()
                 city=city_row['city'] if city_row else 'Ubatuba'

@@ -1,3 +1,4 @@
+import os
 """Customer alerts: private incremental polling and persistent push jobs."""
 import json,time,threading,logging,hashlib
 from contextlib import contextmanager
@@ -81,5 +82,7 @@ def run():
 
 def start():
     global _thread
-    initialize();_stop.clear();_thread=threading.Thread(target=run,daemon=True);_thread.start()
+    initialize()
+    if os.getenv("NOWUP_TEST_MODE")=="1":return
+    _stop.clear();_thread=threading.Thread(target=run,daemon=True);_thread.start()
 def stop():_stop.set()

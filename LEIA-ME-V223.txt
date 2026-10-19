@@ -1,0 +1,78 @@
+NOWUP — POSTGRESQL V223 — PACOTE PARA TESTE SEPARADO
+
+A adaptação do código está implementada e passou nos testes locais descritos em VALIDACAO-V223.txt.
+Não aplicada ao GitHub, Render ou banco remoto. A homologação no PostgreSQL 18 do Render ainda falta.
+Este ZIP contém somente código e instruções. Não contém seu banco, fotos, senhas ou chaves.
+Base: nowup-main (10).zip enviado em 19/10/2026; é idêntico ao ZIP (9).
+
+PRÓXIMO PASSO NO GITHUB
+1. Crie uma branch separada chamada teste-postgres-v223 a partir da versão atual.
+2. Extraia este ZIP. Coloque os arquivos na RAIZ do projeto dessa branch, substituindo os de mesmo nome.
+3. Preserve templates, static, uploads e todos os outros arquivos. Não envie nowup.db, manifest.json,
+   o ZIP de backup, .env ou chaves ao GitHub. Não faça merge na branch de produção agora.
+
+ORDEM DO TESTE
+A importação deve ocorrer ANTES de iniciar o aplicativo nesse banco: o inicializador cria tabelas;
+o importador recusa um destino que já contenha tabelas. Não faça o primeiro deploy apontando ao
+banco vazio sem antes concluir a importação abaixo.
+
+Em um computador ou ambiente de manutenção com Python e acesso autorizado ao PostgreSQL de TESTE:
+- Instale requirements.txt.
+- Configure DATABASE_URL no ambiente com a URL do banco de TESTE. Nunca no código nem no chat.
+  Fora do Render, será necessário o endereço externo; dentro da mesma região, o interno.
+- Execute: python check_postgres.py
+- Execute: python migrate_postgres.py CAMINHO/nowup.db --manifest CAMINHO/manifest.json --confirm-empty-test-database
+- Espere a mensagem de importação confirmada. O programa confere todas as linhas, contagens,
+  referências e sequências antes de confirmar. Não modifica o arquivo SQLite de origem.
+- Se o destino não estiver vazio, ele recusa a operação; não apague tabelas para contornar o aviso.
+
+DEPOIS DA IMPORTAÇÃO
+Crie um serviço WEB DE TESTE separado, Docker, ligado à branch teste-postgres-v223, em Oregon.
+Não altere o serviço NowUp atual. O novo Dockerfile inclui os clientes PostgreSQL 18 para backups.
+No serviço de teste configure:
+  DATABASE_URL = conexão do banco de TESTE importado (campo secreto do Render)
+  NOWUP_DB_BACKEND = postgresql
+  NOWUP_TEST_MODE = 1
+  NOWUP_BACKUP_ENABLED = 0
+  NOWUP_UPLOAD_DIR = caminho da pasta de imagens da cópia de teste
+  NOWUP_BASE_URL = endereço do próprio serviço de teste, nunca o endereço de produção
+Use diretório de status/recibos próprio no teste, se essas opções forem configuradas.
+Não copie as credenciais Brevo/R2 de produção para esse teste.
+NOWUP_TEST_MODE bloqueia e-mails, envio push e backup externo; não inicia esses trabalhadores.
+As filas de avisos podem receber registros de teste, mas não os enviam aos aparelhos.
+
+FOTOS
+O banco tem os nomes das fotos, não seus bytes. Para uma cópia completa de teste, use a pasta uploads
+inteira do backup, no caminho NOWUP_UPLOAD_DIR. Sem ela, produtos/dados podem ser testados, mas as fotos
+ficarão ausentes. O backup completo é recusado quando uma foto cadastrada está ausente.
+A migração de imagens para R2/S3 é outra etapa; este pacote não a realiza.
+
+O QUE CONFERIR NO SERVIÇO DE TESTE
+- Login cliente/lojista/ADM; entrar e sair; confirmação e recuperação de senha.
+- Loja pública, pesquisa, categorias e produtos/adicionais.
+- Pedido do cliente, chat, aceite e atualização de status pelo lojista.
+- Relatórios e filtros regionais/financeiros; compare totais com o site atual.
+- Backup manual e restauração em um OUTRO destino vazio.
+- Testes de envio de e-mail/push exigem contas controladas e configuração própria posterior;
+  o modo de teste bloqueia os envios intencionalmente.
+
+PRODUÇÃO — SOMENTE APÓS A HOMOLOGAÇÃO
+O banco gratuito criado é de teste. Não trocar o site ativo agora.
+Na troca real será necessário parar novas gravações por uma janela curta, baixar um backup NOVO,
+importá-lo para um destino adequado vazio, conferir os totais e só então conectar o aplicativo.
+O snapshot enviado hoje serve para testar; não contém pedidos/cadastros feitos depois dele.
+Preserve o SQLite, fotos e disco persistente. Sem DATABASE_URL o código continua compatível com SQLite;
+NOWUP_DB_BACKEND=postgresql impede uma queda silenciosa para SQLite se a URL PostgreSQL faltar.
+Após gravar novos pedidos em PostgreSQL, remover DATABASE_URL não os copia de volta ao SQLite.
+Uma reversão precisa preservar e reconciliar essas novas gravações.
+
+BACKUPS
+Com PostgreSQL o backup manual/externo contém database/nowup.pgdump e formato nowup-backup-pg-v2.
+Com SQLite mantém database/nowup.db e formato nowup-backup-v1.
+Criptografia, hashes e retenção R2 foram preservados. O modo de teste bloqueia envio externo.
+restore_backup.py verifica/descompacta em pasta NOVA; não restaura sobre o site ativo.
+Para recuperar .pgdump, é necessário pg_restore compatível e um PostgreSQL separado vazio;
+use transação única e as opções --no-owner --no-acl --exit-on-error. Valide antes de qualquer troca.
+Não execute pg_restore sobre o banco de produção.
+
+NÃO COPIE VARIÁVEIS DO BANCO NOVO PARA O SERVIÇO NOWUP ATUAL NESTA ETAPA.

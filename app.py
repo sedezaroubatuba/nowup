@@ -1,4 +1,5 @@
 from __future__ import annotations
+import nowup_database
 import nowup_included195
 from nowup_custom192 import parse_config, save_config, charge_options, validate_customization
 import html
@@ -181,7 +182,7 @@ def slugify(value: str):
     return value or secrets.token_hex(4)
 
 def db():
-    conn = sqlite3.connect(DB_PATH, timeout=15)
+    conn = nowup_database.connect(DB_PATH, timeout=15)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
@@ -718,15 +719,17 @@ def init_db():
 
 @app.on_event("startup")
 def startup():
+    nowup_database.initialize_postgres()
     init_db()
     init_cms_db()
-    # Cópia SQLite consistente; o disco persistente deve incluir a pasta data.
-    backup_dir=DB_PATH.parent/"backups"; backup_dir.mkdir(parents=True,exist_ok=True)
-    destination=backup_dir/f"nowup-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}.db"
-    source=sqlite3.connect(DB_PATH, timeout=15); target=sqlite3.connect(destination)
-    try: source.backup(target)
-    finally: target.close(); source.close()
-    for old in sorted(backup_dir.glob("nowup-*.db"),reverse=True)[7:]: old.unlink(missing_ok=True)
+    if not nowup_database.postgres_enabled():
+        # Cópia SQLite consistente; o disco persistente deve incluir a pasta data.
+        backup_dir=DB_PATH.parent/"backups"; backup_dir.mkdir(parents=True,exist_ok=True)
+        destination=backup_dir/f"nowup-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}.db"
+        source=nowup_database.connect(DB_PATH, timeout=15); target=sqlite3.connect(destination)
+        try: source.backup(target)
+        finally: target.close(); source.close()
+        for old in sorted(backup_dir.glob("nowup-*.db"),reverse=True)[7:]: old.unlink(missing_ok=True)
 
 def select_home_stores90(conn, rows, visitor_key, visit_date):
     """Keep existing sections; rank eligible stores by completed orders and fair rotation.
@@ -1489,7 +1492,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
       WHERE professional_id=? AND date(created_at) BETWEEN ? AND ? GROUP BY event_type""",
       (p["id"],start.isoformat(),end.isoformat())).fetchall()
     counts={r["event_type"]:r["total"] for r in event_rows}
-    daily_rows=conn.execute("""SELECT date(created_at) day,
+    daily_rows=conn.execute("""SELECT date(created_at) AS day,
       SUM(CASE WHEN event_type='profile_view' THEN 1 ELSE 0 END) views,
       SUM(CASE WHEN event_type!='profile_view' THEN 1 ELSE 0 END) clicks
       FROM analytics_events WHERE professional_id=? AND date(created_at) BETWEEN ? AND ?
@@ -1540,7 +1543,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
       SUM(CASE WHEN status='cancelled' THEN 1 ELSE 0 END) cancelled
       FROM orders WHERE professional_id=? AND date(created_at) BETWEEN ? AND ?""",
       (p["id"],start.isoformat(),end.isoformat())).fetchone()
-    top_products=conn.execute("""SELECT oi.product_name,
+    top_products=conn.execute("""SELECT MIN(oi.product_name) AS product_name,
       SUM(oi.quantity) quantity, SUM(oi.quantity*oi.unit_price_cents) revenue_cents,
       COUNT(DISTINCT oi.order_id) order_count
       FROM order_items oi JOIN orders o ON o.id=oi.order_id
@@ -1552,7 +1555,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     store_notifications=[dict(n,order200=notice_orders200.get(n['id'])) for n in store_notifications]
     latest_notification_id=store_notifications[0]["id"] if store_notifications else 0
     store_client_orders=conn.execute("SELECT id,customer_id,order_code,status,total_cents,created_at FROM orders WHERE professional_id=? ORDER BY id DESC",(p["id"],)).fetchall()
-    store_clients=conn.execute("""SELECT customer_id,customer_name,COUNT(*) AS order_count,
+    store_clients=conn.execute("""SELECT customer_id,MIN(customer_name) AS customer_name,COUNT(*) AS order_count,
       MAX(created_at) AS last_order,
       SUM(CASE WHEN status='completed' THEN total_cents ELSE 0 END) AS completed_cents
       FROM orders WHERE professional_id=? AND customer_id IS NOT NULL
