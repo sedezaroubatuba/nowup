@@ -1,4 +1,41 @@
-{% extends 'base.html' %}{% block title %}{{pro.display_name}} | NowUp{% endblock %}{% block body_class %}public-profile-area public-menu-area{% endblock %}{% block content %}<script defer src="/static/banners207.js?v=207"></script><style>
+{% extends 'base.html' %}{% block title %}{{pro.display_name}} | NowUp{% endblock %}{% block body_class %}public-profile-area public-menu-area{% endblock %}{% block content %}<script id="nowup-store-banners214">(() => {
+ 'use strict';
+ async function start(){
+  const match=location.pathname.match(/^\/p\/([^/]+)(?:\/menu)?\/?$/);if(!match)return;
+  const root=document.querySelector('[data-native-menu]');if(!root||document.querySelector('.nu207-banners'))return;
+  try{
+   const response=await fetch('/api/loja/'+encodeURIComponent(decodeURIComponent(match[1]))+'/banners207',{cache:'no-store'});if(!response.ok)return;
+   const data=await response.json();if(!data.items?.length)return;
+   // Wait for the existing storefront to build its home view.
+   let tries=0;while(!document.body.dataset.store187Ready&&tries++<50)await new Promise(r=>setTimeout(r,100));
+   if(!document.body.dataset.store187Ready)return;
+   const section=document.createElement('section');section.className='nu207-banners';section.setAttribute('aria-label','Destaques da loja');
+   const style=document.createElement('style');style.textContent='.nu207-banners{margin:16px 0;max-width:100%;position:relative}.nu207-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;border-radius:16px}.nu207-card{flex:0 0 100%;min-width:0;scroll-snap-align:start;border:0;padding:0;background:#f5f3fa;cursor:pointer}.nu207-card img{display:block;width:100%;aspect-ratio:8/3;object-fit:cover}.nu207-controls{display:flex;justify-content:center;align-items:center;gap:10px;margin:8px}.nu207-controls button{min-width:44px;min-height:44px;border:1px solid #ddd;border-radius:12px;background:white;color:#59359c}html body.public-profile-area .nu-menu-sticky>.nu207-banners{display:block!important;width:100%;max-width:850px;margin:6px auto 0!important;background:#fff;box-sizing:border-box}html body.public-profile-area .nu207-banners .nu207-track{width:100%;border-radius:16px}html body.public-profile-area .nu207-banners .nu207-card img{aspect-ratio:8/3;max-height:210px;object-fit:contain;background:#f5f1fa}html body.public-profile-area .nu207-controls{gap:6px;margin:4px 0!important;font-size:12px}html body.public-profile-area .nu207-controls button{min-width:32px;min-height:32px;height:32px;padding:4px 10px;font-size:12px}html body.public-profile-area .nu207-controls[hidden]{display:none!important}';document.head.append(style);
+   const track=document.createElement('div');track.className='nu207-track';const controls=document.createElement('div');controls.className='nu207-controls';let index=0,timer,paused=matchMedia('(prefers-reduced-motion: reduce)').matches,touching=false;
+   data.items.forEach(item=>{const b=document.createElement('button');b.type='button';b.className='nu207-card';if(item.mode==='info'){b.disabled=true;b.style.cursor='default';b.style.opacity='1';}b.setAttribute('aria-label',item.title);const img=document.createElement('img');img.src=item.image;img.alt=item.title;img.addEventListener('error',()=>{img.hidden=true;b.textContent=item.title;});b.append(img);b.onclick=()=>item.mode!=='info'&&window.dispatchEvent(new CustomEvent('nowup-banner207',{detail:item}));track.append(b);});
+   const button=(label,text,fn)=>{const b=document.createElement('button');b.type='button';b.textContent=text;b.setAttribute('aria-label',label);b.onclick=fn;return b;};
+   const counter=document.createElement('span');counter.textContent='1 / '+data.items.length;
+   function go(n){index=(n+data.items.length)%data.items.length;track.scrollTo({left:index*track.clientWidth,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
+   const pause=button('Controlar troca automática',paused?'Reproduzir':'Pausar',()=>{paused=!paused;pause.textContent=paused?'Reproduzir':'Pausar';pause.setAttribute('aria-label',paused?'Reproduzir troca automática':'Pausar troca automática');schedule();});
+   function schedule(){clearInterval(timer);if(data.items.length>1&&!paused&&!touching&&!document.hidden&&!section.matches(':hover')&&!section.contains(document.activeElement))timer=setInterval(()=>{go(index+1);},Math.max(1,Math.min(120,Number(data.seconds)||2))*1000);}
+   controls.append(button('Banner anterior','‹',()=>go(index-1)),counter,button('Próximo banner','›',()=>go(index+1)),pause);if(data.items.length===1)controls.hidden=true;
+   track.addEventListener('scroll',()=>{index=Math.round(track.scrollLeft/Math.max(1,track.clientWidth));counter.textContent=(index+1)+' / '+data.items.length;},{passive:true});
+   section.append(track,controls);
+   const sticky=root.querySelector('.nu-menu-sticky'),heading=root.querySelector('.nu83-catalog-heading');
+   if(!sticky||!heading)return;
+   // Search first, banner second, category navigation below. The existing bar
+   // ResizeObserver updates the page spacer to include the banner's height.
+   heading.after(section);
+   function measure214(){document.body.style.setProperty('--nu170-bar-height',Math.ceil(sticky.getBoundingClientRect().height)+'px');}
+   if(typeof ResizeObserver==='function')new ResizeObserver(measure214).observe(sticky);
+   track.querySelectorAll('img').forEach(img=>img.addEventListener('load',measure214));
+   window.addEventListener('resize',measure214,{passive:true});measure214();
+   section.addEventListener('touchstart',()=>{touching=true;schedule();},{passive:true});for(const event of ['touchend','touchcancel'])section.addEventListener(event,()=>{touching=false;schedule();},{passive:true});section.addEventListener('mouseenter',schedule);section.addEventListener('mouseleave',schedule);section.addEventListener('focusin',schedule);section.addEventListener('focusout',()=>setTimeout(schedule,0));document.addEventListener('visibilitychange',schedule);window.addEventListener('pagehide',()=>clearInterval(timer));schedule();
+  }catch(e){console.warn('Banners temporariamente indisponíveis');}
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+})();
+</script><style>
 html body.public-profile-area .nu85-note{margin:8px 0!important;padding:0!important;border:0!important;background:transparent!important;}
 html body.public-profile-area .nu85-note summary{display:inline-flex;align-items:center;gap:5px;min-height:36px;padding:3px 7px;cursor:pointer;list-style:none;color:#536477!important;font-size:12px!important;border-radius:8px;}
 .nu85-note summary::-webkit-details-marker{display:none}.nu85-note summary:focus-visible{outline:2px solid #087db5;outline-offset:2px}.nu85-note summary svg{width:16px;height:16px;flex-shrink:0}
