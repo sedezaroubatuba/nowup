@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% block title %}{{pro.display_name}} | NowUp{% endblock %}{% block body_class %}public-profile-area public-menu-area{% endblock %}{% block content %}<script id="nowup-store-banners214">(() => {
+{% extends 'base.html' %}{% block title %}{{pro.display_name}} | NowUp{% endblock %}{% block body_class %}public-profile-area public-menu-area{% endblock %}{% block content %}<script id="nowup-store-banners215">(() => {
  'use strict';
  async function start(){
   const match=location.pathname.match(/^\/p\/([^/]+)(?:\/menu)?\/?$/);if(!match)return;
@@ -17,20 +17,19 @@
    const counter=document.createElement('span');counter.textContent='1 / '+data.items.length;
    function go(n){index=(n+data.items.length)%data.items.length;track.scrollTo({left:index*track.clientWidth,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
    const pause=button('Controlar troca automática',paused?'Reproduzir':'Pausar',()=>{paused=!paused;pause.textContent=paused?'Reproduzir':'Pausar';pause.setAttribute('aria-label',paused?'Reproduzir troca automática':'Pausar troca automática');schedule();});
-   function schedule(){clearInterval(timer);if(data.items.length>1&&!paused&&!touching&&!document.hidden&&!section.matches(':hover')&&!section.contains(document.activeElement))timer=setInterval(()=>{go(index+1);},Math.max(1,Math.min(120,Number(data.seconds)||2))*1000);}
+   function schedule(){clearInterval(timer);if(document.body.classList.contains('nu187-store-home')&&data.items.length>1&&!paused&&!touching&&!document.hidden&&!section.matches(':hover')&&!section.contains(document.activeElement))timer=setInterval(()=>{go(index+1);},Math.max(1,Math.min(120,Number(data.seconds)||2))*1000);}
    controls.append(button('Banner anterior','‹',()=>go(index-1)),counter,button('Próximo banner','›',()=>go(index+1)),pause);if(data.items.length===1)controls.hidden=true;
    track.addEventListener('scroll',()=>{index=Math.round(track.scrollLeft/Math.max(1,track.clientWidth));counter.textContent=(index+1)+' / '+data.items.length;},{passive:true});
-   section.append(track,controls);
+   section.append(track,controls);style.textContent+='html body.public-profile-area .nu207-banners{position:relative!important;inset:auto!important;width:100%;max-width:850px;margin:12px auto 16px!important;background:#fff;box-sizing:border-box}html body.public-profile-area:not(.nu187-store-home) .nu207-banners{display:none!important}html body.public-profile-area.nu187-store-home .nu207-banners{display:block!important}html body.public-profile-area .nu207-track{gap:0!important;padding:0!important}html body.public-profile-area .nu207-card{box-sizing:border-box!important;flex:0 0 100%!important;width:100%!important;max-width:100%!important;margin:0!important;padding:0!important;scroll-snap-stop:always}';
    const sticky=root.querySelector('.nu-menu-sticky'),heading=root.querySelector('.nu83-catalog-heading');
-   if(!sticky||!heading)return;
-   // Search first, banner second, category navigation below. The existing bar
-   // ResizeObserver updates the page spacer to include the banner's height.
-   heading.after(section);
+   const showcase=root.querySelector('.nu190-showcase');if(!sticky||!heading||!showcase)return;
+   // Banner follows the store profile in normal document flow; only search stays fixed.
+   showcase.before(section);
    function measure214(){document.body.style.setProperty('--nu170-bar-height',Math.ceil(sticky.getBoundingClientRect().height)+'px');}
    if(typeof ResizeObserver==='function')new ResizeObserver(measure214).observe(sticky);
    track.querySelectorAll('img').forEach(img=>img.addEventListener('load',measure214));
    window.addEventListener('resize',measure214,{passive:true});measure214();
-   section.addEventListener('touchstart',()=>{touching=true;schedule();},{passive:true});for(const event of ['touchend','touchcancel'])section.addEventListener(event,()=>{touching=false;schedule();},{passive:true});section.addEventListener('mouseenter',schedule);section.addEventListener('mouseleave',schedule);section.addEventListener('focusin',schedule);section.addEventListener('focusout',()=>setTimeout(schedule,0));document.addEventListener('visibilitychange',schedule);window.addEventListener('pagehide',()=>clearInterval(timer));schedule();
+   section.addEventListener('touchstart',()=>{touching=true;schedule();},{passive:true});for(const event of ['touchend','touchcancel'])section.addEventListener(event,()=>{touching=false;schedule();},{passive:true});section.addEventListener('mouseenter',schedule);section.addEventListener('mouseleave',schedule);section.addEventListener('focusin',schedule);section.addEventListener('focusout',()=>setTimeout(schedule,0));new MutationObserver(()=>{schedule();if(document.body.classList.contains('nu187-store-home'))requestAnimationFrame(()=>go(index));}).observe(document.body,{attributes:true,attributeFilter:['class']});document.addEventListener('visibilitychange',schedule);window.addEventListener('pagehide',()=>clearInterval(timer));schedule();
   }catch(e){console.warn('Banners temporariamente indisponíveis');}
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
