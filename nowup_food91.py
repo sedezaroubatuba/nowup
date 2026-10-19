@@ -8,6 +8,8 @@ ASSETS = '<link rel="stylesheet" href="/static/nowup-food91.css?v=91"><script de
 
 def attach_food_assets(response):
     body = response.body
+    if b'data-home-products217' in body:
+        return response
     if b'nowup-food91.js' not in body:
         assets = ASSETS.encode()
         body = body.replace(b'</body>', assets + b'</body>', 1) if b'</body>' in body else body + assets
@@ -46,7 +48,7 @@ def register_food_feed(app, db, get_settings, active_cities, shop_status, public
             city = city.strip() or cities[0]
             stores = conn.execute(f"""SELECT p.* FROM professionals p
                 WHERE p.blocked=0 AND p.admission_status='approved'
-                AND p.is_premium=1 AND p.offer_mode='menu'
+                AND p.is_premium=1 AND p.offer_mode IN ('menu','catalog')
                 AND p.city LIKE ? AND {public_scope()}
                 ORDER BY p.id""", ('%' + city + '%',)).fetchall()
             groups = {}

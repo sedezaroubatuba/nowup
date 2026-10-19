@@ -1,12 +1,7 @@
-NOWUP V211 — BANNERS DA PÁGINA INICIAL
+NOWUP V218 — CORREÇÃO DO CÓDIGO NA TELA
 
-Extraia e envie todos os arquivos deste pacote para o GitHub, substituindo os arquivos nas mesmas pastas. Aguarde o deploy do Render. NÃO precisa executar instalador ou comandos.
+Substitua os arquivos deste pacote nos mesmos caminhos do projeto: nowup_food91.py na raiz e home.html, profile.html e menu.html dentro de templates. Aguarde o deploy do Render.
 
-Raiz: app.py, nowup_home210.py
-templates/: base.html, home.html, admin205.html, home210.html
-static/: home210.js, home210.css, nowup-ubatuba210.png
+Corrige o trecho de estilos e JavaScript que estava dentro do atributo de classes da página inicial no V217. Mantém as telas compactas, os destaques de produtos e o comportamento do banner da loja do pacote anterior.
 
-Depois abra ADM > Banners da página inicial, no menu principal. Endereço: /admin/banners-inicio
-Arte de Ubatuba incluída. Padrão de 1 segundo entre slides, ajustável no ADM. Com apenas um banner, ele fica fixo. Adicione outros para iniciar o slide. Pode adicionar, trocar imagem, editar título, ordenar, ativar/desativar e excluir. Para mudar o texto desenhado na arte, troque a imagem.
-
-Pacote criado sobre nowup-main (8).zip enviado nesta conversa. Inclui apenas arquivos novos ou alterados. Não exclua outras pastas. Não substitua banco, uploads nem configurações do Render. Ainda precisa publicar para aparecer no site.
+Validado: sintaxe dos três templates e dos scripts sem expressões de template; campo de classes sem HTML. A validação no site publicado depende do novo deploy.
