@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% block title %}{{pro.display_name}} | NowUp{% endblock %}{% block body_class %}public-profile-area public-menu-area{% endblock %}{% block content %}<script id="nowup-store-banners215">(() => {
+{% extends 'base.html' %}{% block title %}{{pro.display_name}} | NowUp{% endblock %}{% block body_class %}public-profile-area public-menu-area{% endblock %}{% block content %}<script id="nowup-store-banners216">(() => {
  'use strict';
  async function start(){
   const match=location.pathname.match(/^\/p\/([^/]+)(?:\/menu)?\/?$/);if(!match)return;
@@ -16,9 +16,9 @@
    const button=(label,text,fn)=>{const b=document.createElement('button');b.type='button';b.textContent=text;b.setAttribute('aria-label',label);b.onclick=fn;return b;};
    const counter=document.createElement('span');counter.textContent='1 / '+data.items.length;
    function go(n){index=(n+data.items.length)%data.items.length;track.scrollTo({left:index*track.clientWidth,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
-   const pause=button('Controlar troca automática',paused?'Reproduzir':'Pausar',()=>{paused=!paused;pause.textContent=paused?'Reproduzir':'Pausar';pause.setAttribute('aria-label',paused?'Reproduzir troca automática':'Pausar troca automática');schedule();});
+   const pause=button('Controlar troca automática',paused?'▶':'Ⅱ',()=>{paused=!paused;pause.textContent=paused?'▶':'Ⅱ';pause.setAttribute('aria-label',paused?'Reproduzir troca automática':'Pausar troca automática');schedule();});
    function schedule(){clearInterval(timer);if(document.body.classList.contains('nu187-store-home')&&data.items.length>1&&!paused&&!touching&&!document.hidden&&!section.matches(':hover')&&!section.contains(document.activeElement))timer=setInterval(()=>{go(index+1);},Math.max(1,Math.min(120,Number(data.seconds)||2))*1000);}
-   controls.append(button('Banner anterior','‹',()=>go(index-1)),counter,button('Próximo banner','›',()=>go(index+1)),pause);if(data.items.length===1)controls.hidden=true;
+   const dots=document.createElement('div');dots.className='nu216-banner-dots';data.items.forEach((_,i)=>{const d=button('Ir ao banner '+(i+1),'',()=>go(i));d.className='nu216-banner-dot';dots.append(d);});function mark216(){[...dots.children].forEach((d,i)=>d.setAttribute('aria-current',String(i===index)));}track.addEventListener('scroll',mark216,{passive:true});mark216();controls.append(button('Banner anterior','‹',()=>go(index-1)),dots,button('Próximo banner','›',()=>go(index+1)),pause);if(data.items.length===1)controls.hidden=true;
    track.addEventListener('scroll',()=>{index=Math.round(track.scrollLeft/Math.max(1,track.clientWidth));counter.textContent=(index+1)+' / '+data.items.length;},{passive:true});
    section.append(track,controls);style.textContent+='html body.public-profile-area .nu207-banners{position:relative!important;inset:auto!important;width:100%;max-width:850px;margin:12px auto 16px!important;background:#fff;box-sizing:border-box}html body.public-profile-area:not(.nu187-store-home) .nu207-banners{display:none!important}html body.public-profile-area.nu187-store-home .nu207-banners{display:block!important}html body.public-profile-area .nu207-track{gap:0!important;padding:0!important}html body.public-profile-area .nu207-card{box-sizing:border-box!important;flex:0 0 100%!important;width:100%!important;max-width:100%!important;margin:0!important;padding:0!important;scroll-snap-stop:always}';
    const sticky=root.querySelector('.nu-menu-sticky'),heading=root.querySelector('.nu83-catalog-heading');
@@ -34,7 +34,40 @@
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
-</script><style>
+</script><style id="nu216-compact">
+html body.public-profile-area .nu187-cover{height:clamp(112px,28vw,170px)!important}
+html body.public-profile-area .nu187-avatar{width:60px!important;height:60px!important;margin:-30px auto 4px!important;border-width:3px!important}
+html body.public-profile-area .nu187-identity h1{font-size:20px!important;line-height:1.15!important;margin:5px 0!important}
+html body.public-profile-area .nu187-description{font-size:12px!important;line-height:1.3!important;margin:3px 0!important}
+html body.public-profile-area .nu187-status{font-size:13px!important;margin:5px 0!important}
+html body.public-profile-area .nu187-information{font-size:12px!important;line-height:1.35!important;text-align:center;padding:0 10px!important}
+html body.public-profile-area .nu187-information p{margin:4px 0!important}
+html body.public-profile-area .nu187-information summary{justify-content:center;min-height:36px!important;font-size:13px!important}
+html body.public-profile-area .nu187-intro{padding-bottom:0!important;margin-bottom:0!important}
+html body.public-profile-area .nu207-banners{margin:4px auto 6px!important}
+html body.public-profile-area .nu207-banners .nu207-track{border-radius:12px;overflow-y:hidden}
+html body.public-profile-area .nu207-banners .nu207-card img{width:100%!important;height:auto!important;max-height:none!important;aspect-ratio:auto!important;object-fit:contain!important;border-radius:12px}
+html body.public-profile-area .nu207-controls{margin:2px 0!important;gap:6px;min-height:32px}
+html body.public-profile-area .nu207-controls button{min-height:32px;min-width:32px;height:32px;border:0;background:transparent;padding:3px;color:#7132bf}
+.nu216-banner-dots{display:flex;align-items:center;gap:3px}
+html body.public-profile-area .nu207-controls .nu216-banner-dot{width:24px;min-width:24px;position:relative;font-size:0}
+.nu216-banner-dot:after{content:'';display:block;width:8px;height:8px;border-radius:50%;background:#dcd8e3;margin:auto}.nu216-banner-dot[aria-current=true]:after{background:#7132bf}
+html body.public-profile-area .nu190-category{margin:4px 0 12px!important;padding-bottom:8px!important}
+html body.public-profile-area .nu190-category>header{margin-bottom:5px!important}
+html body.public-profile-area .nu190-page{gap:8px!important;padding:0 2px!important;align-items:start}
+html body.public-profile-area .nu201-card{grid-template-columns:clamp(43px,13vw,58px) minmax(0,1fr)!important;min-height:128px!important;height:auto!important;padding:9px 7px!important;gap:7px!important;align-items:center!important}
+html body.public-profile-area .nu201-card>img,html body.public-profile-area .nu201-card>.nu190-no-image{width:100%!important;height:91px!important;object-fit:contain!important}
+html body.public-profile-area .nu201-card h3{font-size:12px!important;line-height:1.25!important;margin:0 0 5px!important;-webkit-line-clamp:3!important;padding-right:0!important}
+html body.public-profile-area .nu201-card strong{font-size:14px!important;margin-bottom:7px!important}
+html body.public-profile-area .nu201-open{position:static!important;inset:auto!important;display:block;width:100%;height:auto;min-height:36px;border:0;border-radius:8px;background:#7132bf;color:#fff;font-size:11px;font-weight:650;padding:6px 3px;box-sizing:border-box}
+html body.public-profile-area .nu201-open:disabled{background:#ece8f1;color:#776c83;font-size:10px}
+html body.public-profile-area .nu201-open:disabled:after{display:none!important}
+html body.public-profile-area .nu201-card.nu201-selected{grid-template-columns:minmax(0,1fr)!important;min-height:128px!important;padding:9px!important}
+html body.public-profile-area .nu201-selected>img,html body.public-profile-area .nu201-selected>.nu190-no-image{display:none!important}
+html body.public-profile-area .nu201-panel[hidden],html body.public-profile-area .nu201-open[hidden]{display:none!important}
+html body.public-profile-area .nu201-panel{gap:4px!important}.nu201-panel .nu190-add{min-height:36px}.nu201-back{min-height:28px}
+@media(min-width:800px){html body.public-profile-area .nu201-card{grid-template-columns:70px minmax(0,1fr)!important;min-height:142px!important}html body.public-profile-area .nu201-card h3{font-size:14px!important}}
+html body.public-profile-area.nu187-store-home .nu207-banners{position:sticky!important;top:var(--nu170-bar-height,64px)!important;z-index:70!important;background:#fff!important;box-shadow:0 4px 8px #34204608}html body.public-profile-area:not(.nu187-store-home) .nu207-banners{display:none!important}</style><script>(()=>{function start(){const root=document.querySelector('[data-native-menu]');if(!root)return;function sync(){root.querySelectorAll('.nu201-open').forEach(b=>{const label=b.disabled?'Indisponível':'Adicionar';if(b.textContent!==label)b.textContent=label;const old=b.getAttribute('aria-label')||'';if(old.startsWith('Escolher '))b.setAttribute('aria-label',old.replace('Escolher ','Adicionar '));});const info=root.querySelector('.nu187-information'),details=info?.querySelector('details');if(details)[...info.children].filter(n=>n.tagName==='P'&&n.textContent.includes('Horário ainda não configurado')).forEach(n=>details.append(n));}sync();new MutationObserver(sync).observe(root,{childList:true,subtree:true});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();})();</script><style>
 html body.public-profile-area .nu85-note{margin:8px 0!important;padding:0!important;border:0!important;background:transparent!important;}
 html body.public-profile-area .nu85-note summary{display:inline-flex;align-items:center;gap:5px;min-height:36px;padding:3px 7px;cursor:pointer;list-style:none;color:#536477!important;font-size:12px!important;border-radius:8px;}
 .nu85-note summary::-webkit-details-marker{display:none}.nu85-note summary:focus-visible{outline:2px solid #087db5;outline-offset:2px}.nu85-note summary svg{width:16px;height:16px;flex-shrink:0}
