@@ -39,7 +39,10 @@ async def save(request:Request):
     try:bid=int(f.get('id',0));ids=list(dict.fromkeys(int(v) for v in f.getlist('products')))
     except (ValueError,TypeError):raise HTTPException(400,'Seleção de produtos inválida')
     title=str(f.get('title','')).strip()[:100];mode=f.get('mode');active=int(f.get('active')=='1')
-    if not title or mode not in ('single','selection') or not ids or len(ids)>200 or (mode=='single' and len(ids)!=1):raise HTTPException(400,'Informe um título e selecione um produto no modo direto, ou vários na seleção')
+    if not title:raise HTTPException(400,'Informe o título do banner')
+    if mode not in ('info','single','selection'):raise HTTPException(400,'Escolha o destino do banner')
+    if mode=='info':ids=[]
+    elif not ids or len(ids)>200 or (mode=='single' and len(ids)!=1):raise HTTPException(400,'Selecione exatamente um produto no modo direto ou pelo menos um na seleção')
     with closing(G['db']()) as c, c:
         p=owner(request,c);old=c.execute('SELECT * FROM store_banners207 WHERE id=? AND professional_id=?',(bid,p['id'])).fetchone() if bid else None
         if bid and not old:raise HTTPException(404,'Banner não encontrado')
@@ -68,6 +71,6 @@ def public(slug:str):
         allowed={r[0] for r in c.execute('SELECT id FROM products WHERE professional_id=?',(p['id'],))};items=[]
         for b in c.execute('SELECT * FROM store_banners207 WHERE professional_id=? AND active=1 ORDER BY id',(p['id'],)):
             ids=[v for v in json.loads(b['product_ids']) if v in allowed]
-            if ids:items.append({'title':b['title'],'image':'/uploads/'+b['image'],'mode':b['mode'],'ids':ids})
+            if ids or b['mode']=='info':items.append({'title':b['title'],'image':'/uploads/'+b['image'],'mode':b['mode'],'ids':ids})
         return JSONResponse({'seconds':s[0] if s else 2,'items':items},headers={'Cache-Control':'no-store'})
     finally:c.close()
