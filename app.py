@@ -2820,3 +2820,9 @@ app.add_event_handler('startup',nowup_banners207.initialize)
 import nowup_home210
 nowup_home210.configure(globals())
 app.include_router(nowup_home210.router)
+
+# V227: novo ADM conectado; usa o banco e a sessão atuais.
+import nowup_admin227
+nowup_admin227.configure(globals())
+app.include_router(nowup_admin227.router)
+app.add_event_handler('startup', nowup_admin227.initialize)
