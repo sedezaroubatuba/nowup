@@ -93,7 +93,9 @@ def people(c,params,merchant=False):
     return rows,count,page
 
 @router.get('/admin')
-def entry(request:Request):auth(request);return redirect()
+def entry(request:Request):
+    auth(request)
+    return RedirectResponse('/admin/super',303)
 @router.get('/admin/central')
 def dashboard(request:Request):
     auth(request);p=request.query_params;sec=p.get('secao','inicio')
