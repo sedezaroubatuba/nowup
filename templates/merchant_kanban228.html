@@ -1,0 +1,28 @@
+<div class="mk228-metrics">
+<div><small>Pedidos hoje</small><strong>{{kanban.count}}</strong></div>
+<div><small>Em andamento</small><strong>{{kanban.active}}</strong></div>
+<div><small>Valor dos pedidos hoje*</small><strong>R$ {{'%.2f'|format(kanban.total/100)|replace('.',',')}}</strong></div>
+<div><small>Ticket médio hoje*</small><strong>R$ {{'%.2f'|format(kanban.average/100)|replace('.',',')}}</strong></div>
+</div>
+<p class="mk228-note">*Inclui pedidos em andamento; exclui cancelados e recusados. Pedidos abertos de outros dias continuam no quadro.</p>
+<div class="mk228-tabs" role="tablist" aria-label="Etapas dos pedidos">
+{% for stage in kanban.stages %}<button type="button" role="tab" id="mk228-tab-{{stage.key}}" aria-controls="mk228-col-{{stage.key}}" aria-selected="{{'true' if loop.first else 'false'}}" data-stage228="{{stage.key}}">{{stage.title}} <span>{{stage.orders|length}}</span></button>{% endfor %}
+</div>
+<div class="mk228-board">
+{% for stage in kanban.stages %}
+<section class="mk228-column mk228-{{stage.key}}" id="mk228-col-{{stage.key}}" aria-labelledby="mk228-tab-{{stage.key}}" data-column228="{{stage.key}}">
+<header><h3>{{stage.title}}</h3><span>{{stage.orders|length}}</span></header>
+{% for order in stage.orders %}
+<article class="mk228-card" data-card228 data-search228="{{order.order_code}} {{order.id}} {{order.customer_name}}" data-status228="{{order.status}}">
+<div class="mk228-card-top"><b>{{order.order_code or ('#' ~ order.id)}}</b><time datetime="{{order.created_at}}">{{order.local_time}}</time></div>
+<h4>{{order.customer_name or 'Cliente'}}</h4>
+<p>{{'Entrega' if order.fulfillment_type=='delivery' else 'Retirada no local'}}{% if order.neighborhood and order.fulfillment_type=='delivery' %} • {{order.neighborhood}}{% endif %}</p>
+<span class="mk228-status">{{{'reviewing':'Em revisão','awaiting_approval':'Aguardando cliente','revision_approved':'Revisão aprovada'}.get(order.status,status_labels.get(order.status,order.status))}}</span>{% if order.previous_day %}<span class="mk228-previous">De outro dia</span>{% endif %}
+<div class="mk228-value"><small>{{order.item_count}} item(ns)</small><strong>R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</strong></div>
+<a class="mk228-details" href="/painel?abrir_pedido={{order.id}}#pedido-{{order.id}}">Ver itens / conversar <span aria-hidden="true">↗</span></a>
+{% if order.next_status %}<form action="/painel/pedidos/{{order.id}}/status" method="post" data-change228><input type="hidden" name="status" value="{{order.next_status}}"><button class="mk228-primary" type="submit">{{order.next_label}}</button></form>{% elif order.status in ['reviewing','awaiting_approval'] %}<p class="mk228-wait">{{'Aguardando aprovação do cliente' if order.status=='awaiting_approval' else 'Em revisão • abra os itens para conferir'}}</p>{% endif %}
+</article>
+{% else %}<p class="mk228-empty">Nenhum pedido nesta etapa.</p>{% endfor %}
+<p class="mk228-no-match" hidden>Nenhum pedido corresponde à busca.</p>
+</section>{% endfor %}
+</div>

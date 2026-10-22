@@ -11,7 +11,7 @@
    const shade=root.querySelector('.v60-shade');if(shade)shade.hidden=true;
   }
   function navigate(hash,scroll=true){
-   let key;try{key=decodeURIComponent((hash||'#inicio').slice(1));}catch(_){return false;}
+   let key;try{key=decodeURIComponent((hash||(root.hasAttribute('data-merchant228')?'#pedidos-ativos':'#inicio')).slice(1));}catch(_){return false;}
    key=key||'inicio';if(key==='hoje')key='pedidos-ativos';if(key==='pratos')key='cardapio';
    let target=document.getElementById(key);
    if(!target&&['produtos-loja','novo-produto','categorias-loja','acompanhamentos-combos'].includes(key))target=document.getElementById('cardapio');
@@ -21,7 +21,7 @@
    const visibleIds=groups[key]||[parent.id];
    sections.forEach(s=>{const visible=visibleIds.includes(s.id);s.dataset.visible198=String(visible);s.hidden=!visible;s.style.setProperty('display',visible?(s.id==='estatisticas'?'grid':'block'):'none','important');});
    for(let e=target;e&&e!==main;e=e.parentElement)if(e.tagName==='DETAILS')e.open=true;
-   document.querySelectorAll('a[data-nav198]').forEach(a=>{const active=a.hash==='#'+key||(a.hash==='#produtos-loja'&&parent.id==='cardapio');if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
+   document.querySelectorAll('a[data-nav198],.pro-sidebar a[href^="#"]').forEach(a=>{const active=a.hash==='#'+key||(a.hash==='#produtos-loja'&&parent.id==='cardapio');if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
    close();if(scroll)requestAnimationFrame(()=>target.scrollIntoView({block:'start',behavior:'auto'}));
    return true;
   }
@@ -43,7 +43,7 @@
   window.addEventListener('nowup:panelnavigate',()=>navigate(location.hash));
   window.addEventListener('keydown',event=>{if(event.key==='Escape')close();});
   root.dataset.nav198='ready';
-  if(!navigate(location.hash||'#inicio',false))navigate('#inicio',false);
+  if(!navigate(location.hash||(root.hasAttribute('data-merchant228')?'#pedidos-ativos':'#inicio'),false))navigate('#inicio',false);
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
