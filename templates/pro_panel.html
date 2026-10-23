@@ -15,7 +15,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </style>
 
 <div class="container dashboard pro-dashboard" data-panel-day="{{today_day}}" data-merchant228>
-<header class="v60-top"><button class="btn" type="button" data-pro-menu-toggle aria-expanded="false" aria-controls="pro-edit-menu" aria-label="Abrir menu">☰</button><div><b>{{pro.display_name}}</b><small>{{shop_status.label}}</small></div><a class="btn soft merchant-profile-link" href="/p/{{pro.slug}}" target="_blank" rel="noopener" aria-label="Ver meu perfil público na NowUp">↗ Ver minha loja</a><a class="btn v61-bell" href="#notificacoes" aria-label="Notificações">🔔<span class="v61-badge" data-notification-badge hidden>0</span></a></header>
+<header class="v60-top"><button class="btn" type="button" data-pro-menu-toggle aria-expanded="false" aria-controls="pro-edit-menu" aria-label="Abrir menu">☰</button><div><b>{{pro.display_name}}</b><small>{{shop_status.label}}</small></div><a class="btn soft merchant-profile-link" href="/p/{{pro.slug}}" rel="noopener" aria-label="Ver meu perfil público na NowUp">↗ Ver minha loja</a><a class="btn v61-bell" href="#notificacoes" aria-label="Notificações">🔔<span class="v61-badge" data-notification-badge hidden>0</span></a></header>
 <button class="v60-shade" type="button" data-close-pro-menu aria-label="Fechar menu" hidden></button>
 <aside class="sidebar pro-sidebar" id="pro-edit-menu" aria-label="Menu da loja">
 <a class="mk228-brand" href="#inicio" data-nav198><img src="/static/nowup-logo185.png?v=196" alt="NowUp Brasil"></a>
@@ -42,12 +42,12 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <a href="#clientes">♙ Clientes</a><a href="#plano">▣ Meu plano</a>
 <a href="#publicar">＋ Publicações</a><a href="#avisos-aparelho">♧ Avisos neste aparelho</a>
 </details>
-<a href="/p/{{pro.slug}}" target="_blank" rel="noopener">↗ Ver minha loja</a>
+<a href="/p/{{pro.slug}}" rel="noopener">↗ Ver minha loja</a>
 <form action="/sair" method="post"><button class="btn danger">Sair</button></form></aside>
 <main>
 <section id="inicio" class="nu198-home" aria-label="Início do painel">
 <h1 class="nu198-title">Painel da loja</h1><p class="nu198-subtitle">O que vamos fazer agora?</p>
-<a class="nu221-store-link" href="/p/{{pro.slug}}" target="_blank" rel="noopener">↗ Ver minha loja</a><p class="nu221-store-hint">Veja como o cliente vê sua loja.</p>
+<a class="nu221-store-link" href="/p/{{pro.slug}}" rel="noopener">↗ Ver minha loja</a><p class="nu221-store-hint">Veja como o cliente vê sua loja.</p>
 <nav class="nu198-grid" aria-label="Acessos principais da loja">
 <a class="nu198-tile" href="#pedidos-ativos" data-nav198><span aria-hidden="true">▤</span>Pedidos</a>
 <a class="nu198-tile" href="#produtos-loja" data-nav198><span aria-hidden="true">▦</span>Produtos</a>
@@ -66,7 +66,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <section id="whatsapp" class="sales109">{% set sale_channel='delivery' %}{% include 'sales109.html' %}</section>
 <script src="/static/sales109.js?v=110" defer></script>
 
-<nav class="merchant-shortcuts" aria-label="Acesso rápido da loja"><a class="btn soft" href="/p/{{pro.slug}}" target="_blank" rel="noopener">↗ Ver minha loja</a><a class="btn soft" href="#relatorios">📈 Ver relatórios</a><a class="btn soft" href="#configuracoes">⚙️ Configurações</a></nav>
+<nav class="merchant-shortcuts" aria-label="Acesso rápido da loja"><a class="btn soft" href="/p/{{pro.slug}}" rel="noopener">↗ Ver minha loja</a><a class="btn soft" href="#relatorios">📈 Ver relatórios</a><a class="btn soft" href="#configuracoes">⚙️ Configurações</a></nav>
 {% if pro.admission_status=='pending' %}<div class="alert">Seu cadastro está em análise pelo ADM. Você pode preparar seu painel, mas a loja ainda não aparece aos clientes.</div>{% elif pro.admission_status=='rejected' %}<div class="alert danger">Seu cadastro não foi aprovado.{% if pro.admission_reason %} {{pro.admission_reason}}{% endif %} Entre em contato com o NowUp para esclarecer informações.</div>{% endif %}
 {% if request.query_params.get('ok') %}<div class="alert success">Alterações salvas com sucesso.</div>{% endif %}
 {% if request.query_params.get('erro')=='limite-promocoes' %}<div class="alert">Você já atingiu o limite de 3 produtos em promoção. Retire um destaque antes de adicionar outro.</div>{% endif %}
@@ -103,7 +103,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </div>
 <div class="row">
 <a class="btn soft" href="#perfil">✏️ Editar perfil</a>
-<a class="btn primary" href="/p/{{pro.slug}}" target="_blank">Ver minha loja</a>
+<a class="btn primary" href="/p/{{pro.slug}}">Ver minha loja</a>
 <button class="btn soft" type="button" data-copy-profile data-profile-url="/p/{{pro.slug}}">🔗 Copiar link</button>
 </div>
 </section>
@@ -129,7 +129,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <small>Fotos publicadas</small>
 </div>
 </section>
-<section class="panel" id="plano"><h2>Meu plano</h2><p>Atual: <b>{{{'cardapio':'Só cardápio/catálogo · R$ 49,90','vitrine':'Só vitrine: WhatsApp ou link próprio · R$ 49,90','ambos':'Vitrine + cardápio/catálogo · R$ 99,90','none':'Aguardando liberação'}.get(pro.plan_active,'Aguardando liberação')}}</b></p>{% if pro.plan_requested %}<p role="status">Mudança solicitada: {{pro.plan_requested}}. Aguardando aprovação do ADM.</p>{% endif %}<p>Na troca de plano, os produtos e pedidos permanecem salvos. A vitrine é publicada ou retirada após aprovação.</p><form action="/painel/plano" method="post"><label>Solicitar plano<select name="plan" required><option value="cardapio">Só cardápio/catálogo — R$ 49,90/mês</option><option value="vitrine">Só vitrine: WhatsApp ou link próprio — R$ 49,90/mês</option><option value="ambos">Vitrine + cardápio/catálogo — R$ 99,90/mês</option></select></label><label>Tipo de conteúdo<select name="offer_mode" required><option value="services">Somente vitrine sem produtos</option><option value="menu">Cardápio</option><option value="catalog">Catálogo</option></select></label><button class="btn primary">Solicitar mudança</button></form>{% if pro.plan_active == 'vitrine' %}<label>Link do perfil da loja<input class="input" value="{{request.base_url}}p/{{pro.slug}}" readonly onclick="this.select()"></label><p>O perfil permanece dentro do NowUp. Para receber pedidos, solicite um plano com cardápio.</p>{% elif pro.plan_active in ['cardapio','ambos'] %}<label>Link próprio do {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}<input class="input" value="{{request.url_for('native_menu',slug=pro.slug)}}" readonly onclick="this.select()"></label><label>Link para divulgar no WhatsApp ou Instagram<input class="input" value="{{request.url_for('native_menu',slug=pro.slug)}}?origem=externo" readonly onclick="this.select()"></label><p>Todo pedido exige conta de cliente e chega à sala de pedidos do NowUp. O cadastro é rápido, feito uma vez; não existe compra sem cadastro. O link externo usa o mesmo cardápio e identifica este canal nos relatórios do ADM.</p><p><a class="btn soft" href="/p/{{pro.slug}}/menu" target="_blank" rel="noopener">Abrir link do meu {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}</a></p>{% endif %}</section>
+<section class="panel" id="plano"><h2>Meu plano</h2><p>Atual: <b>{{{'cardapio':'Só cardápio/catálogo · R$ 49,90','vitrine':'Só vitrine: WhatsApp ou link próprio · R$ 49,90','ambos':'Vitrine + cardápio/catálogo · R$ 99,90','none':'Aguardando liberação'}.get(pro.plan_active,'Aguardando liberação')}}</b></p>{% if pro.plan_requested %}<p role="status">Mudança solicitada: {{pro.plan_requested}}. Aguardando aprovação do ADM.</p>{% endif %}<p>Na troca de plano, os produtos e pedidos permanecem salvos. A vitrine é publicada ou retirada após aprovação.</p><form action="/painel/plano" method="post"><label>Solicitar plano<select name="plan" required><option value="cardapio">Só cardápio/catálogo — R$ 49,90/mês</option><option value="vitrine">Só vitrine: WhatsApp ou link próprio — R$ 49,90/mês</option><option value="ambos">Vitrine + cardápio/catálogo — R$ 99,90/mês</option></select></label><label>Tipo de conteúdo<select name="offer_mode" required><option value="services">Somente vitrine sem produtos</option><option value="menu">Cardápio</option><option value="catalog">Catálogo</option></select></label><button class="btn primary">Solicitar mudança</button></form>{% if pro.plan_active == 'vitrine' %}<label>Link do perfil da loja<input class="input" value="{{request.base_url}}p/{{pro.slug}}" readonly onclick="this.select()"></label><p>O perfil permanece dentro do NowUp. Para receber pedidos, solicite um plano com cardápio.</p>{% elif pro.plan_active in ['cardapio','ambos'] %}<label>Link próprio do {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}<input class="input" value="{{request.url_for('native_menu',slug=pro.slug)}}" readonly onclick="this.select()"></label><label>Link para divulgar no WhatsApp ou Instagram<input class="input" value="{{request.url_for('native_menu',slug=pro.slug)}}?origem=externo" readonly onclick="this.select()"></label><p>Todo pedido exige conta de cliente e chega à sala de pedidos do NowUp. O cadastro é rápido, feito uma vez; não existe compra sem cadastro. O link externo usa o mesmo cardápio e identifica este canal nos relatórios do ADM.</p><p><a class="btn soft" href="/p/{{pro.slug}}/menu" rel="noopener">Abrir link do meu {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}</a></p>{% endif %}</section>
 <section class="panel" id="configuracoes"><div class="section-title"><div><span class="kicker">Ajustes da loja</span><h2>Configurações</h2></div></div><p>Escolha o que deseja alterar:</p><nav class="merchant-shortcuts" aria-label="Configurações da loja"><a class="btn soft" href="#avisos-aparelho">Avisos neste aparelho</a><a class="btn soft" href="#horarios">Horários e situação</a><a class="btn soft" href="#perfil">Dados e WhatsApp</a>{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}<a class="btn soft" href="#cardapio">Entrega, retirada e pagamento</a>{% endif %}<a class="btn soft" href="#identidade">Fotos e capa</a></nav></section>
 <section class="panel hours-panel" id="horarios">
 <div class="section-title"><div><span class="kicker">Relógio real de São Paulo</span><h2>Horários e situação da loja</h2></div><span class="status-pill {% if shop_status.open %}ok{% endif %}">{{shop_status.label}}</span></div>
@@ -151,7 +151,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <span class="kicker">Venda pelo NowUp</span>
 <h2>{{'Meu catálogo' if pro.offer_mode=='catalog' else 'Meu cardápio'}}</h2>
 </div>
-<a class="btn soft" href="/p/{{pro.slug}}/menu" target="_blank">Ver {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}} público</a>
+<a class="btn soft" href="/p/{{pro.slug}}/menu">Ver {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}} público</a>
 </div>
 <p class="muted">Cadastre categorias e produtos. O cliente monta o carrinho e envia o pedido pelo NowUp.</p>
 <details class="menu-settings"><summary><b>⚙️ Entrega, retirada e pagamento</b></summary><form action="/painel/cardapio/configuracoes" method="post" class="product-form"><label>Taxa de entrega<input class="input" name="delivery_fee" value="{{'%.2f'|format(pro.delivery_fee_cents/100)|replace('.',',')}}" inputmode="decimal"></label><label>Pedido mínimo<input class="input" name="minimum_order" value="{{'%.2f'|format(pro.minimum_order_cents/100)|replace('.',',')}}" inputmode="decimal"></label><label>Tempo médio de preparo (minutos)<input class="input" type="number" min="5" max="240" name="prep_minutes" value="{{pro.prep_minutes}}"></label><label>Chave Pix<input class="input" name="pix_key" value="{{pro.pix_key}}" placeholder="Telefone, e-mail, CPF/CNPJ ou aleatória"></label><label class="check"><input type="checkbox" name="allows_delivery" value="1" {% if pro.allows_delivery %}checked{% endif %}> Aceitar entrega</label><label class="check"><input type="checkbox" name="allows_pickup" value="1" {% if pro.allows_pickup %}checked{% endif %}> Aceitar retirada</label><button class="btn primary">Salvar configurações</button></form></details>
@@ -440,7 +440,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <label>Imagem da capa<input class="input" type="file" name="cover" accept="image/*">
 </label>
 <button class="btn primary">Salvar foto e capa</button>
-<a class="btn soft" href="/p/{{pro.slug}}" target="_blank">Ver minha loja</a>
+<a class="btn soft" href="/p/{{pro.slug}}">Ver minha loja</a>
 </form>
 <div class="row image-remove-actions">{% if pro.avatar_filename %}<form action="/painel/identidade/perfil/excluir" method="post" data-confirm-delete>
 <button class="btn danger tiny">Excluir foto de perfil</button>
@@ -468,7 +468,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <div class="section-title">
 <div>
 <span class="kicker">Dados públicos</span>
-<h2>Minha loja</h2><a class="btn soft" href="/p/{{pro.slug}}" target="_blank" rel="noopener">↗ Ver minha loja</a>
+<h2>Minha loja</h2><a class="btn soft" href="/p/{{pro.slug}}" rel="noopener">↗ Ver minha loja</a>
 </div>
 <span class="edit-chip">✏️ Editar tudo</span>
 </div>
@@ -525,7 +525,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </label>
 <div class="row">
 <button class="btn primary">Salvar dados do perfil</button>
-<a class="btn soft" href="/p/{{pro.slug}}" target="_blank">Ver minha loja</a>
+<a class="btn soft" href="/p/{{pro.slug}}">Ver minha loja</a>
 </div>
 </form>
 </section>
