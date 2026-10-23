@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let queued = false;
   function measure() {
     queued = false;
-    if (!mobile.matches) return;
     const home = body.classList.contains('nu187-store-home');
     if (home) {
       if (bar.previousElementSibling !== intro) bar.before(intro);
@@ -34,7 +33,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!queued) {queued = true; requestAnimationFrame(measure);}
   }
   function enable() {
+    body.classList.add('nu233-store');
     body.classList.toggle('nu232-store', mobile.matches);
+    body.classList.toggle('nu233-desktop', !mobile.matches);
+    const cover = intro.querySelector('.nu187-cover');
+    intro.classList.toggle('nu233-has-cover', !!cover?.style.backgroundImage && cover.style.backgroundImage !== 'none');
     schedule();
   }
   new MutationObserver(schedule).observe(root, {childList: true, subtree: true});
