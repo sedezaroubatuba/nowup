@@ -1563,9 +1563,11 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
         product_categories=conn.execute("SELECT * FROM product_categories WHERE professional_id=? ORDER BY sort_order,id",(p["id"],)).fetchall()
     product_groups,delivery_zones=menu_rules89(conn,p["id"])
     merchant_overview=merchant_overview89(conn,p)
+    lower228,upper228=order_day_bounds(today)
+    kanban=nowup_merchant228.board(conn,p["id"],lower228,upper228,SAO_PAULO_TZ)
     conn.close()
     status=shop_status(p); business_hours=parse_business_hours(p["business_hours"])
-    return templates.TemplateResponse("pro_panel.html", context(request, manual=nowup_sales107.panel_data(request,conta), included_catalog195=included_catalog195, shared_extras=shared_extras, shared_selected=shared_selected, pro=p, photos=photos, posts=posts, products=products, product_groups=product_groups, delivery_zones=delivery_zones, merchant_overview=merchant_overview, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, today_orders=today_orders, day_order_summary=day_order_summary, order_day=order_day.isoformat(), today_day=today.isoformat(), order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
+    return templates.TemplateResponse("pro_panel.html", context(request, kanban=kanban, manual=nowup_sales107.panel_data(request,conta), included_catalog195=included_catalog195, shared_extras=shared_extras, shared_selected=shared_selected, pro=p, photos=photos, posts=posts, products=products, product_groups=product_groups, delivery_zones=delivery_zones, merchant_overview=merchant_overview, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, today_orders=today_orders, day_order_summary=day_order_summary, order_day=order_day.isoformat(), today_day=today.isoformat(), order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
 
 @app.post('/painel/plano')
 def request_store_plan(request: Request, plan: str=Form(...), offer_mode: str=Form('services')):
@@ -2826,3 +2828,21 @@ import nowup_admin227
 nowup_admin227.configure(globals())
 app.include_router(nowup_admin227.router)
 app.add_event_handler('startup', nowup_admin227.initialize)
+
+
+# Merchant Kanban: authenticated board refresh using the current store only.
+import nowup_merchant228
+
+@app.get("/painel/kanban228", response_class=HTMLResponse)
+def pro_kanban228(request: Request):
+    u=require_user(request,"professional")
+    conn=db()
+    try:
+        p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+        if not p:
+            raise HTTPException(404,"Loja não encontrada")
+        lower,upper=order_day_bounds(datetime.now(SAO_PAULO_TZ).date())
+        kanban=nowup_merchant228.board(conn,p["id"],lower,upper,SAO_PAULO_TZ)
+        return templates.TemplateResponse("merchant_kanban228.html",{"request":request,"kanban":kanban,"status_labels":ORDER_STATUS_LABELS},headers={"Cache-Control":"private, no-store"})
+    finally:
+        conn.close()
