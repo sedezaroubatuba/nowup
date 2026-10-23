@@ -86,6 +86,13 @@ async def renew_saved_login(request: Request, call_next):
     return response
 
 
+@app.exception_handler(sqlite3.OperationalError)
+async def database_unavailable(request: Request, exc):
+    import logging
+    logging.exception("NowUp database operation failed", exc_info=exc)
+    return JSONResponse({"detail":"O serviço está temporariamente indisponível. Tente novamente em instantes."},status_code=503,headers={"Retry-After":"5","Cache-Control":"no-store"})
+
+
 def now_iso():
     return datetime.now(timezone.utc).isoformat()
 
@@ -227,10 +234,8 @@ def current_user(request: Request):
     token = request.cookies.get("nowup_session")
     if not token: return None
     conn = db()
-    row = conn.execute("""
-      SELECT u.* FROM sessions s JOIN users u ON u.id=s.user_id
-      WHERE s.token=? AND s.expires_at > ? AND u.is_active=1
-    """, (token, now_iso())).fetchone()
+    from nowup_security import session_user
+    row = session_user(conn, token)
     conn.close()
     return dict(row) if row else None
 
@@ -629,6 +634,7 @@ def init_db():
     ensure_column(conn, "products", "promo_price_cents", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "products", "featured", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "products", "max_quantity", "INTEGER NOT NULL DEFAULT 99")
+    conn.execute("CREATE TABLE IF NOT EXISTS checkout_requests229(customer_id INTEGER NOT NULL,professional_id INTEGER NOT NULL,request_key TEXT NOT NULL,payload_hash TEXT NOT NULL,order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,created_at TEXT NOT NULL,PRIMARY KEY(customer_id,professional_id,request_key))")
     defaults = {
       "brand_name": "NowUp",
       "primary_color": "#08131F",
@@ -699,13 +705,18 @@ def init_db():
             if cid: conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(pid,cid))
         conn.execute("INSERT INTO site_settings(key,value) VALUES(?,?)",(demo_showcase_key,now_iso()))
     admin_email = os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
-    admin_pass = os.getenv("NOWUP_ADMIN_PASSWORD", "nowup2026")
+    admin_pass = os.getenv("NOWUP_ADMIN_PASSWORD", "")
     admin = conn.execute("SELECT id FROM users WHERE email=?", (admin_email,)).fetchone()
     if admin:
-        conn.execute("UPDATE users SET role='admin', is_active=1, email_verified=1, password_hash=? WHERE id=?",
-                     (hash_password(admin_pass), admin["id"]))
+        existing=conn.execute("SELECT role,is_active FROM users WHERE id=?",(admin["id"],)).fetchone()
+        if existing["role"]!='admin':
+            conn.close()
+            raise RuntimeError("NOWUP_ADMIN_EMAIL deve identificar um administrador existente; não é permitido promover outra conta no startup.")
         admin_id=admin["id"]
     else:
+        if len(admin_pass)<12 or not os.getenv("NOWUP_ADMIN_EMAIL", "").strip():
+            conn.close()
+            raise RuntimeError("Configure NOWUP_ADMIN_EMAIL e uma NOWUP_ADMIN_PASSWORD de pelo menos 12 caracteres para criar o administrador inicial.")
         cur=conn.execute("INSERT INTO users(role,name,email,password_hash,email_verified,created_at) VALUES('admin','Administrador NowUp',?,?,1,?)",
                          (admin_email, hash_password(admin_pass), now_iso()))
         admin_id=cur.lastrowid
@@ -1108,7 +1119,7 @@ def options_single158(conn, product_id, raw_options):
     return charge_options(chosen,parse_config(product['customization192']))
 
 @app.post("/p/{slug}/menu/pedido")
-def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...), save_address: Optional[str]=Form(None), order_channel: str=Form("internal")):
+def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...), save_address: Optional[str]=Form(None), order_channel: str=Form("internal"), request_key: str=Form("")):
     logged=current_user(request)
     conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved' AND plan_active IN ('cardapio','ambos')",(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404)
@@ -1121,6 +1132,14 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
         conn.close(); raise HTTPException(400,'Informe nome e WhatsApp válidos')
     if not p["is_premium"] or p["offer_mode"] not in ("menu","catalog"):
         conn.close(); raise HTTPException(403,"Cardápio ou catálogo disponível somente no plano Premium")
+    from nowup_checkout229 import begin_checkout, completed_response
+    existing,checkout_key229,checkout_hash229=begin_checkout(conn,logged['id'],p['id'],request_key,{
+        'cart':cart_json,'name':customer_name,'phone':customer_phone,'fulfillment':fulfillment_type,
+        'payment':payment_method,'address':address,'neighborhood':neighborhood,
+        'reference':address_reference,'change':change_for,'notes':notes,'channel':order_channel})
+    if existing:
+        conn.close()
+        return completed_response(slug,existing)
     if not shop_status(p)["open"]: conn.close(); return RedirectResponse(f"/p/{slug}/menu?fechado=1",303)
     try: raw_items=json.loads(cart_json)
     except Exception: conn.close(); raise HTTPException(400,"Carrinho inválido")
@@ -1176,6 +1195,8 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
                      (address.strip()[:300],neighborhood.strip()[:120],address_reference.strip()[:220],logged["id"]))
     conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(p["user_id"],"Novo pedido no NowUp",f"{order_code} — {customer_name.strip()[:120]}",f"/painel#pedido-{order_id}",created))
     nowup_push75.enqueue_on_connection(conn,p["user_id"],order_id)
+    from nowup_checkout229 import remember_checkout
+    remember_checkout(conn,logged['id'],p['id'],checkout_key229,checkout_hash229,order_id,created)
     conn.commit(); conn.close()
     response=RedirectResponse(f"/pedido/{tracking_token}",303)
     response.set_cookie("nowup_cart_completed",slug,max_age=120,samesite="lax",secure=request.url.scheme=="https")
@@ -1405,14 +1426,6 @@ def reset_password(token: str=Form(...), password: str=Form(...), password_confi
     if len(password)<8 or password!=password_confirm: return RedirectResponse("/redefinir-senha?erro=1&token="+quote(token),303)
     conn=db(); conn.execute("UPDATE users SET password_hash=? WHERE id=?",(hash_password(password),row["user_id"])); conn.execute("UPDATE password_reset_tokens SET used=1 WHERE token_hash=?",(row["token_hash"],)); conn.execute("DELETE FROM sessions WHERE user_id=?",(row["user_id"],)); conn.commit(); conn.close()
     return RedirectResponse("/entrar?senha_redefinida=1",303)
-
-@app.post("/entrar")
-def login(email: str=Form(...), password: str=Form(...)):
-    conn=db(); u=conn.execute("SELECT * FROM users WHERE email=? AND is_active=1",(email.strip().lower(),)).fetchone(); conn.close()
-    if not u or not verify_password(password,u["password_hash"]): return RedirectResponse("/entrar?erro=1",303)
-    if u["role"]!="admin" and not u["email_verified"]: return RedirectResponse("/entrar?erro=verificacao",303)
-    dest="/admin" if u["role"]=="admin" else ("/painel" if u["role"]=="professional" else "/cliente")
-    return create_session_response(u["id"],dest)
 
 @app.post("/sair")
 def logout(request: Request):
@@ -2271,21 +2284,6 @@ NOWUP_THEMES = {
     "neon": ("#312E81", "#22C55E"),
 }
 
-@app.post("/admin/aparencia")
-def admin_appearance(request: Request, brand_name:str=Form("NowUp"), font_family:str=Form("Inter"), primary_color:str=Form("#08131F"), accent_color:str=Form("#08BCEB"), theme_name:str=Form("noturno"), hero_title:str=Form(""), hero_subtitle:str=Form(""), public_email:str=Form(""), support_whatsapp:str=Form(""), active_cities:str=Form("Ubatuba")):
-    require_user(request,"admin")
-    allowed_fonts={"Inter","Arial","Georgia","Trebuchet MS","Verdana"}; font_family=font_family if font_family in allowed_fonts else "Inter"
-    cities=", ".join(dict.fromkeys(c.strip()[:80] for c in active_cities.split(",") if c.strip())) or "Ubatuba"
-    if theme_name in NOWUP_THEMES:
-        primary_color, accent_color = NOWUP_THEMES[theme_name]
-    else:
-        theme_name = "personalizado"
-        if not re.fullmatch(r"#[0-9a-fA-F]{6}", primary_color): primary_color="#2457e6"
-        if not re.fullmatch(r"#[0-9a-fA-F]{6}", accent_color): accent_color="#ff8a32"
-    values={"brand_name":brand_name.strip()[:80] or "NowUp","font_family":font_family,"primary_color":primary_color,"accent_color":accent_color,"theme_name":theme_name,"hero_title":hero_title.strip()[:180],"hero_subtitle":hero_subtitle.strip()[:500],"public_email":public_email.strip()[:160],"support_whatsapp":support_whatsapp.strip()[:40],"active_cities":cities}
-    conn=db()
-    for key,value in values.items(): conn.execute("INSERT INTO site_settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",(key,value))
-    conn.commit(); conn.close(); return RedirectResponse("/admin?ok=aparencia#aparencia",303)
 
 @app.post("/admin/faixa-e-slides")
 def admin_ticker_and_slides(request: Request, ticker_color:str=Form("#e30613"), ticker_text:str=Form(""), ticker_enabled:str=Form("0"), ticker_animation:str=Form("continuous"), slide_interval_seconds:str=Form("3")):

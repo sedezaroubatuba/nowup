@@ -79,43 +79,57 @@ def parts(v):
  try:
   t=datetime.fromisoformat(v.replace('Z','+00:00'));t=t.replace(tzinfo=timezone.utc) if t.tzinfo is None else t;t=t.astimezone(TZ);return t.date().isoformat(),t.hour
  except (ValueError,TypeError):return '',0
+def localminute(value):
+ try:
+  dt=datetime.fromisoformat(value.replace('Z','+00:00'));dt=dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt
+  return dt.astimezone(TZ).minute
+ except (ValueError,TypeError,AttributeError):return 0
 def localday():return datetime.now(TZ).date().isoformat()
 def metadata(c,kind):return {v['id']:v for v in rows(c,kind)}
 def public_staff(v):return {k:v.get(k) for k in ('id','name','email','role','photo','enabled','permissions')}
 def snapshot(c,a):
  permissions=set(a['permissions']);super_=a['super'];need=lambda *args:bool(permissions.intersection(args))
- raw_stores=[dict(r) for r in c.execute('SELECT p.*,u.name owner,u.email,u.is_active FROM professionals p JOIN users u ON u.id=p.user_id ORDER BY p.id')]
+ raw_stores=[dict(r) for r in c.execute("""SELECT p.*,u.name owner,u.email,u.is_active,
+ COALESCE(cat.name,'') category229,COALESCE(rating.value,0) rating229
+ FROM professionals p JOIN users u ON u.id=p.user_id
+ LEFT JOIN (SELECT pc.professional_id,MIN(c.name) name FROM professional_categories pc JOIN categories c ON c.id=pc.category_id GROUP BY pc.professional_id) cat ON cat.professional_id=p.id
+ LEFT JOIN (SELECT professional_id,AVG(stars) value FROM reviews GROUP BY professional_id) rating ON rating.professional_id=p.id
+ ORDER BY p.id""")]
  sm=metadata(c,'storemeta');stores=[];settings=json.loads(c.execute('SELECT settings FROM adm227_state WHERE id=1').fetchone()[0]);plans=rows(c,'plans')
  # Existing prices remain unknown unless explicitly registered. Never assign R$79 to an old contract.
  for p in raw_stores:
-  m=sm.get(p['id'],{});st={'id':p['id'],'name':p['display_name'],'city':p['city'],'neighborhood':p['neighborhood'],'category':'','approval':p['admission_status'],'online':p['business_status']=='open','paused':p['business_status']!='open','blocked':bool(p['blocked']),'demo':bool(p['is_demo']),'featured':bool(p['featured']),'plan':m.get('plan','legacy'),'price':m.get('price',0),'due':p['billing_due_date'],'trialUntil':m.get('trialUntil',''),'cancelledAt':m.get('cancelledAt',''),'subscribedAt':m.get('subscribedAt',p['created_at'][:10]),'method':m.get('method','Pix'),'menu':[],'stage':m.get('stage',{'approved':'Aprovados','pending':'Em Análise','rejected':'Reprovados'}.get(p['admission_status'],'Em Análise')),'prep':p['prep_minutes'],'rating':0,'hoursByDay':m.get('hoursByDay',['']*7),'resources':m.get('resources',[]),'kyc':m.get('kyc',{}),'documents':{},'radius':m.get('radius',0)}
+  m=sm.get(p['id'],{});st={'id':p['id'],'name':p['display_name'],'city':p['city'],'neighborhood':p['neighborhood'],'category':'','approval':p['admission_status'],'online':bool(p['is_active'] and not p['blocked'] and p['admission_status']=='approved' and G['shop_status'](p)['open']),'paused':p['business_status']!='open','blocked':bool(p['blocked'] or not p['is_active']),'demo':bool(p['is_demo']),'featured':bool(p['featured']),'plan':m.get('plan','legacy'),'price':m.get('price',0),'due':p['billing_due_date'],'trialUntil':m.get('trialUntil',''),'cancelledAt':m.get('cancelledAt',''),'subscribedAt':m.get('subscribedAt',p['created_at'][:10]),'method':m.get('method','Pix'),'menu':[],'stage':m.get('stage',{'approved':'Aprovados','pending':'Em Análise','rejected':'Reprovados'}.get(p['admission_status'],'Em Análise')),'prep':p['prep_minutes'],'rating':0,'hoursByDay':m.get('hoursByDay',['']*7),'resources':m.get('resources',[]),'kyc':m.get('kyc',{}),'documents':{},'radius':m.get('radius',0)}
   if need('stores'):
    st.update(owner=p['owner'],email=p['email'],phone=p['whatsapp'],document=p['document'],address=p['address'],hours=p['opening_hours'],photo='/uploads/'+p['avatar_filename'] if p['avatar_filename'] else '',slug=p['slug'],publicUrl='/p/'+p['slug'])
   else:st.update(owner='',email='',phone='',document='',address='',hours='',photo='')
-  cr=c.execute('SELECT name FROM categories c JOIN professional_categories pc ON c.id=pc.category_id WHERE pc.professional_id=? LIMIT 1',(p['id'],)).fetchone();st['category']=cr[0] if cr else ''
-  rating=c.execute('SELECT AVG(stars) FROM reviews WHERE professional_id=?',(p['id'],)).fetchone()[0];st['rating']=round(rating,1) if rating else 0
+  st['category']=p['category229'];st['rating']=round(p['rating229'],1)
+  if not need('stores'):st.update(kyc={},documents={})
   if not need('finance','dashboard'):st.update(price=0,due='',trialUntil='',cancelledAt='',subscribedAt='')
   stores.append(st)
  if need('stores'):
   for lead in rows(c,'leads'):stores.append({'city':'','neighborhood':'','category':'','owner':'','email':'','phone':'','document':'','address':'','hours':'','photo':'','radius':0,'prep':30,'rating':0,'hoursByDay':['']*7,'resources':[],'kyc':{},'documents':{},'plan':'legacy','price':0,'due':'','trialUntil':'','cancelledAt':'','subscribedAt':'','method':'Pix','online':False,'paused':False,'blocked':False,'featured':False,**lead})
- products=[];raw_products=[dict(r) for r in c.execute('SELECT * FROM products ORDER BY id')];pm=metadata(c,'productmeta')
+ products=[];store_by_id={s['id']:s for s in stores};raw_products=[dict(r) for r in c.execute('SELECT * FROM products ORDER BY id')] if need('products','stores') else [];pm=metadata(c,'productmeta') if raw_products else {}
  for r in raw_products:
   if not need('products','stores'):break
-  date_,hour=parts(r['created_at']);store=next((s for s in stores if s['id']==r['professional_id']),{})
+  date_,hour=parts(r['created_at']);store=store_by_id.get(r['professional_id'],{})
   products.append({'id':r['id'],'store':r['professional_id'],'name':r['name'],'price':r['price_cents'],'photo':bool(r['image_filename']),'category':r['category'],'status':pm.get(r['id'],{}).get('status','Aprovado' if r['available'] else 'Pausado'),'date':date_,'hour':hour,'city':store.get('city',''),'image':'/uploads/'+r['image_filename'] if r['image_filename'] else ''})
   store.get('menu',[]).append({'name':r['name'],'price':r['price_cents']})
  orders=[];store_by_id={s['id']:s for s in stores};item_map={}
- if need('dashboard','orders','customers','marketing','stores'):
+ if need('dashboard','orders','customers','stores'):
   # Full real order history, without a hidden truncation that would falsify totals.
   for i in c.execute('SELECT * FROM order_items ORDER BY id'):item_map.setdefault(i['order_id'],[]).append({'name':i['product_name'],'qty':i['quantity'],'price':i['unit_price_cents']})
+  assignments=metadata(c,'order_assignment')
   for r in c.execute('SELECT * FROM orders ORDER BY id DESC'):
-   d,h=parts(r['created_at']);o={'id':r['id'],'store':r['professional_id'],'customer':r['customer_id'],'date':d,'hour':h,'minute':0,'total':r['total_cents'],'delivery':r['delivery_fee_cents'],'status':r['status'],'live':r['status'] not in FINALS,'createdAt':r['created_at'],'items':item_map.get(r['id'],[]),'courier':get(c,'order_assignment',r['id']) and get(c,'order_assignment',r['id']).get('courier'),'coupon':''}
+   d,h=parts(r['created_at']);o={'id':r['id'],'store':r['professional_id'],'customer':r['customer_id'],'date':d,'hour':h,'minute':localminute(r['created_at']),'total':r['total_cents'],'delivery':r['delivery_fee_cents'],'status':r['status'],'live':r['status'] not in FINALS,'createdAt':r['created_at'],'items':item_map.get(r['id'],[]),'courier':assignments.get(r['id'],{}).get('courier'),'coupon':''}
    orders.append(o)
  customers=[];cm=metadata(c,'customermeta')
  if need('customers'):
   for u in c.execute("SELECT * FROM users WHERE role='customer' ORDER BY id"):
    m=cm.get(u['id'],{});customers.append({'id':u['id'],'name':u['name'],'phone':u['phone'],'cpf':m.get('cpf',''),'birth':m.get('birth',''),'ageVerified':m.get('ageVerified',False),'city':u['city'],'neighborhood':u['neighborhood'],'address':u['address'],'blocked':not bool(u['is_active']),'joined':u['created_at'][:10]})
  elif need('orders','dashboard','marketing'):customers=[{'id':r['id'],'name':'Cliente #'+str(r['id']),'city':r['city'],'neighborhood':r['neighborhood']} for r in c.execute("SELECT id,city,neighborhood FROM users WHERE role='customer'")]
+ if need('marketing'):
+  purchases={r['customer_id']:r['last_purchase'] for r in c.execute("SELECT customer_id,MAX(created_at) last_purchase FROM orders WHERE status='completed' GROUP BY customer_id")}
+  for customer in customers:customer['lastPurchase229']=purchases.get(customer['id'],'')[:10]
  current_settings=dict(c.execute('SELECT key,value FROM site_settings').fetchall());categories=[r['name'] for r in c.execute('SELECT name FROM categories ORDER BY sort_order,id')]
  cities=sorted({s['city'] for s in stores if s['city']}|{v.strip() for v in current_settings.get('active_cities','Ubatuba').split(',') if v.strip()})
  config={'autoBlock':False,'deliveryPerKm':0,'minOrder':0,'platformHours':'','globalMessage':'','homeTitle':current_settings.get('hero_title',''),'homeText':current_settings.get('hero_subtitle',''),'cities':cities,'activeCities':current_settings.get('active_cities','Ubatuba').split(','),**settings}
@@ -423,7 +437,7 @@ async def change(request:Request):
    elif kind=='sessions':
     if not a['super'] or creating or set(v)-{'end','state'}:fail(403,'Ação de sessão não permitida.')
     row=c.execute('SELECT * FROM adm227_access WHERE id=?',(oid,)).fetchone()
-    c.execute("UPDATE adm227_access SET end=?,state='Revogada' WHERE id=?",(stamp(),oid));c.execute('DELETE FROM adm227_team_sessions WHERE token_hash=?',(row['session_hash'],))
+    c.execute("UPDATE adm227_access SET end=?,state='Revogada' WHERE id=?",(stamp(),oid));__import__('nowup_security').revoke_session(c,row['session_hash'])
     # Super-admin session is also denied at auth(), even if the original opaque token remains.
    elif kind=='profile':fail(400,'Use /admin/perfil para alterar o perfil com o fluxo atual de segurança.')
    elif kind=='productCategories':
@@ -501,5 +515,5 @@ def code_submit(request:Request,code:str=Form(...)):
 def logout(request:Request):
  csrf(request)
  with connection() as c:
-  a=auth(request,c);c.execute("UPDATE adm227_access SET end=?,state='Deslogado' WHERE session_hash=?",(stamp(),a['session']));c.execute('DELETE FROM adm227_team_sessions WHERE token_hash=?',(a['session'],));audit(c,a,'Saída do Super ADM');c.commit()
+  a=auth(request,c);c.execute("UPDATE adm227_access SET end=?,state='Deslogado' WHERE session_hash=?",(stamp(),a['session']));__import__('nowup_security').revoke_session(c,a['session']);audit(c,a,'Saída do Super ADM');c.commit()
  resp=JSONResponse({'ok':True,'next':'/admin/super/equipe/entrar'});resp.delete_cookie('nowup_team227',path='/admin/super');return resp

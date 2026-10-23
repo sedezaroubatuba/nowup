@@ -1,7 +1,7 @@
 import sys,ast,sqlite3,secrets,types
 from pathlib import Path
 from datetime import datetime,timezone,timedelta
-ROOT=Path(__file__).resolve().parents[1]
+ROOT=Path(__file__).resolve().parent
 if not (ROOT/'app.py').exists():ROOT=ROOT/'adm205'
 sys.path.insert(0,str(ROOT))
 import pytest
@@ -41,7 +41,7 @@ def env(tmp_path):
   c.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(1,'completed','2026-10-18T13:00:00+00:00')")
  templates=Jinja2Templates(directory=str(ROOT/'templates'))
  def context(r,**kw):return dict({'request':r,'user':auth(r),'settings':{},'categories':[],'banners':[],'business_slides':[]},**kw)
- m.configure(dict(db=db,require_user=auth,templates=templates,context=context,normalize_email=lambda x:x.strip().lower() if '@' in x else '',verification_token=lambda:('token','2026-10-19T12:00:00+00:00'),send_verification=lambda *a:True,slugify=lambda s:s.lower().replace(' ','-')))
+ m.configure(dict(nowup_alerts112=None,db=db,require_user=auth,templates=templates,context=context,normalize_email=lambda x:x.strip().lower() if '@' in x else '',verification_token=lambda:('token','2026-10-19T12:00:00+00:00'),send_verification=lambda *a:True,slugify=lambda s:s.lower().replace(' ','-')))
  legacy.configure(db,auth,templates,context);legacy.init_support();m.initialize();m.initialize()
  app=FastAPI();app.include_router(m.router)
  client=TestClient(app,headers={'x-role':'admin','x-user':'1'},follow_redirects=False)

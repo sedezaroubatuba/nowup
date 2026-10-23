@@ -21,11 +21,8 @@ def require_admin(request: Request):
     if not token:
         raise HTTPException(401,"Faça login novamente")
     conn=db()
-    row=conn.execute("""
-      SELECT u.id,u.role FROM sessions s
-      JOIN users u ON u.id=s.user_id
-      WHERE s.token=? AND s.expires_at>? AND u.is_active=1
-    """,(token,datetime.now(timezone.utc).isoformat())).fetchone()
+    from nowup_security import session_user
+    row=session_user(conn,token)
     conn.close()
     if not row or row["role"]!="admin":
         raise HTTPException(403,"Acesso administrativo necessário")

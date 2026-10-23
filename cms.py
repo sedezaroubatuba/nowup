@@ -24,7 +24,8 @@ def hash_password(p):
 def current_user(request):
     token=request.cookies.get("nowup_session")
     if not token:return None
-    c=db(); r=c.execute("SELECT u.* FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token=? AND s.expires_at>? AND u.is_active=1",(token,now_iso())).fetchone(); c.close(); return dict(r) if r else None
+    from nowup_security import session_user
+    c=db(); r=session_user(c,token); c.close(); return dict(r) if r else None
 def cms_role(request):
     u=current_user(request)
     if not u or u["role"]!="admin": raise HTTPException(403,"Acesso administrativo necessário")

@@ -10,6 +10,21 @@
   const completed=document.cookie.match(/(?:^|;\s*)nowup_cart_completed=([^;]+)/);
   if(completed){try{const slug=decodeURIComponent(completed[1]);if(path.endsWith('/p/'+slug)){localStorage.removeItem(key);localStorage.removeItem(infoKey);document.cookie='nowup_cart_completed=; Max-Age=0; Path=/';}}catch(_){}}
   const money=c=>(c/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),esc=v=>String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  const checkoutForm229=dialog.querySelector('form');
+  if(checkoutForm229){
+    const requestInput=document.createElement('input');requestInput.type='hidden';requestInput.name='request_key';checkoutForm229.append(requestInput);
+    let lastPayload='',token='';
+    checkoutForm229.addEventListener('submit',event=>{
+      const fields=[...new FormData(checkoutForm229)].filter(([name])=>name!=='request_key');const payload=JSON.stringify(fields);
+      if(!token||payload!==lastPayload){token=crypto.randomUUID();lastPayload=payload;}
+      requestInput.value=token;
+      if(checkoutForm229.dataset.submitting229==='1'){event.preventDefault();return;}
+      checkoutForm229.dataset.submitting229='1';
+      const button=event.submitter;if(button){button.disabled=true;button.textContent='Enviando pedido…';}
+      setTimeout(()=>{checkoutForm229.dataset.submitting229='';if(button){button.disabled=false;button.textContent='Tentar enviar novamente';}},15000);
+    });
+    window.addEventListener('pageshow',()=>{checkoutForm229.dataset.submitting229='';checkoutForm229.querySelectorAll('[type=submit]').forEach(b=>b.disabled=false);});
+  }
   const cartField=dialog.querySelector('[data-cart-json]'),dialogTotal=dialog.querySelector('[data-dialog-total]'),fulfillment=dialog.querySelector('[data-fulfillment]'),payment=dialog.querySelector('[data-payment]'),dockTotal=root.querySelector('[data-dock-total]'),cartCount=root.querySelector('[data-cart-count]'),dockCheckout=root.querySelector('[data-dock-checkout]');
   const qty=v=>Math.max(1,Math.min(99,parseInt(v,10)||1));
   function baseSubtotal(){let sum=0;cart.forEach(v=>sum+=v.unitPrice*v.quantity);return sum}
