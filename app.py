@@ -1,4 +1,5 @@
 from __future__ import annotations
+from nowup_checkout_errors230 import checkout_errors
 import nowup_included195
 from nowup_custom192 import parse_config, save_config, charge_options, validate_customization
 import html
@@ -1130,6 +1131,7 @@ def options_single158(conn, product_id, raw_options):
     return charge_options(chosen,parse_config(product['customization192']))
 
 @app.post("/p/{slug}/menu/pedido")
+@checkout_errors
 def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...), save_address: Optional[str]=Form(None), order_channel: str=Form("internal"), request_key: str=Form("")):
     logged=current_user(request)
     conn=db()
