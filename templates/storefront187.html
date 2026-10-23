@@ -5,17 +5,21 @@
   <div class="nu187-avatar">{% if pro.avatar_filename %}<img src="/uploads/{{pro.avatar_filename}}" alt="Perfil de {{pro.display_name}}">{% else %}<span>🏪</span>{% endif %}</div>
   <h1>{{pro.display_name}}</h1>
   {% if pro.description and pro.description|trim not in ['.', '-', '…'] %}<p class="nu187-description">{{pro.description}}</p>{% endif %}
-  <p class="nu187-status {% if shop_status.open %}is-open{% endif %}"><span class="nu190-status-dot" aria-hidden="true"></span>{{shop_status.label}}</p>
+
  </div>
- <div class="nu187-information">
+ <div class="nu232-info-row">
+  <p class="nu187-status {% if shop_status.open %}is-open{% endif %}"><span class="nu190-status-dot" aria-hidden="true"></span>{{shop_status.label}}</p>
+  <span class="nu232-location">{% if not pro.hide_address and pro.neighborhood %}{{pro.neighborhood}} · {% endif %}{{pro.city}}</span>
+  <button type="button" class="nu232-info-toggle" aria-controls="nu232-information" aria-expanded="false">Informações ›</button>
+ </div>
+ <details class="nu187-information" id="nu232-information"><summary>Informações da loja</summary>
   {% if shop_status.detail %}<p>◷ {{shop_status.detail}}</p>{% endif %}
   {% if pro.allows_delivery or pro.allows_pickup %}<p>{% if pro.allows_delivery %}Entrega{% endif %}{% if pro.allows_delivery and pro.allows_pickup %} e {% endif %}{% if pro.allows_pickup %}Retirada no local{% endif %}</p>{% endif %}
   {% if not pro.hide_address and pro.address %}<p>📍 {{pro.address}}{% if pro.neighborhood %} · {{pro.neighborhood}}{% endif %}{% if pro.city %} · {{pro.city}}{% endif %}</p>{% elif pro.city %}<p>📍 {{pro.city}}{% if pro.neighborhood %} · {{pro.neighborhood}}{% endif %}</p>{% endif %}
-  <details><summary>Ver informações da loja</summary>
+
    {% if hours_lines %}<h2>Horários de funcionamento</h2>{% for line in hours_lines %}<p>{{line}}</p>{% endfor %}{% elif pro.opening_hours %}<h2>Horários de funcionamento</h2><p class="nu187-hours">{{pro.opening_hours}}</p>{% else %}<p>Horários não informados pela loja.</p>{% endif %}
    {% if pro.address and not pro.hide_address %}<p><a href="https://www.google.com/maps/search/?api=1&query={{pro.address|urlencode}}" target="_blank" rel="noopener">Como chegar</a></p>{% endif %}
-  </details>
- </div>
+ </details>
  {% set promotions=namespace(count=0) %}{% for product in products %}{% if product.available and product.promo_price_cents > 0 and product.promo_price_cents < product.price_cents %}{% set promotions.count=promotions.count+1 %}{% endif %}{% endfor %}
  {% if promotions.count %}<button class="nu187-promotion" type="button" data-store-promotion187><b>Promoções da loja</b><span>{{promotions.count}} {{'produto com preço especial' if promotions.count == 1 else 'produtos com preços especiais'}} · Ver produtos →</span></button>{% endif %}
  <h2 class="nu187-category-title">Categorias</h2>
