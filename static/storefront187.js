@@ -7,6 +7,13 @@ document.addEventListener('DOMContentLoaded',()=>{
  const search=heading?.querySelector('[data-product-search], [data-store-search]');
  if(!root||!template||!heading||!layout||!search){body.classList.remove('nu187-store-home');return;}
  const desktop228=matchMedia('(min-width:901px)');
+ const desktopStyle228=document.createElement('style');
+ desktopStyle228.textContent=`@media(min-width:901px){
+ html body.public-profile-area.nu228-desktop-catalog [data-native-menu] .nu187-intro{display:block!important}
+ html body.public-profile-area.nu228-desktop-catalog [data-native-menu] .nu207-banners{display:block!important;position:relative!important;top:auto!important;inset:auto!important;z-index:auto!important;box-shadow:none!important}
+ html body.public-profile-area.nu228-desktop-catalog [data-native-menu] .nu-menu-sticky{position:sticky!important;top:0!important;z-index:100!important;background:#fff!important}
+ }`;
+ document.head.append(desktopStyle228);
  const make=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;};
  const intro=template.content.firstElementChild.cloneNode(true),nav=root.querySelector('.menu-category-nav');
  const sticky=root.querySelector('.nu-menu-sticky')||heading.parentElement;
@@ -28,11 +35,12 @@ document.addEventListener('DOMContentLoaded',()=>{
  function showProducts(focus=false){
   if(body.classList.contains('nu187-store-home'))homeScroll=window.scrollY;
   selectedCategory=null;categoryView.hidden=true;body.classList.remove('nu191-category');
-  intro.hidden=true;showcase.hidden=true;back.setAttribute('aria-label','Voltar às informações da loja');
+  intro.hidden=!desktop228.matches;showcase.hidden=true;body.classList.toggle('nu228-desktop-catalog',desktop228.matches);back.setAttribute('aria-label','Voltar às informações da loja');
   if(nav)sticky.append(nav);body.classList.remove('nu187-store-home');search.placeholder='Buscar nesta loja';search.setAttribute('aria-label','Buscar produtos nesta loja');
   resize();window.scrollTo({top:0,behavior:'instant'});if(focus)search.focus({preventScroll:true});
  }
  function showHome(){
+  body.classList.remove('nu228-desktop-catalog');
   if(desktop228.matches){showProducts();return;}
   selectedCategory=null;categoryView.hidden=true;body.classList.remove('nu191-category');
   intro.hidden=false;showcase.hidden=false;body.classList.add('nu187-store-home');back.setAttribute('aria-label','Voltar ao início do NowUp');
