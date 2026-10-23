@@ -53,16 +53,16 @@
 <div class="section-title"><div><h2>📂 Categorias da página principal</h2><p class="muted">Crie uma categoria e escolha o ícone que aparecerá para os clientes.</p></div><span class="status-pill">{{admin_categories|length}} cadastradas</span></div>
 <form action="/admin/categorias" method="post" class="admin-create-box" id="nova-categoria">
 <label>Nome da nova categoria<input class="input" name="name" placeholder="Ex.: Carrinho de lanche" maxlength="120" required></label>
-<label>Ícone da categoria<input class="input category-icon-input" name="icon" placeholder="🍔" value="🍔" maxlength="12"></label>
+<label class="nu230-picker-field">Ícone<select name="icon" data-icon-picker230><option value="auto">Automático pelo nome</option>{% for item in category_catalog230 %}<option value="{{item.key}}"{% if chosen230|default('auto')==item.key %} selected{% endif %}>{{item.label}}</option>{% endfor %}</select></label>
 <button class="btn primary">＋ Adicionar categoria</button>
 </form>
 <p class="admin-help">Sugestões de ícones: 🍔 Restaurantes · 🛒 Mercados · 💊 Farmácias · 🐾 Pet shop · 🥖 Padarias · 🍻 Adegas · 🌭 Carrinho de lanche</p>
 <div class="v66-category-list">
 {% for c in admin_categories %}<article class="v66-category-card">
-<header><span class="v66-category-icon" aria-hidden="true">{{c.icon}}</span><h3>{{c.name}}</h3><span class="status-pill">{{'Ativa' if c.active else 'Inativa'}}</span></header>
+<header><span class="v66-category-icon" aria-hidden="true">{{category_icon230(c.name,c.icon)}}</span><h3>{{c.name}}</h3><span class="status-pill">{{'Ativa' if c.active else 'Inativa'}}</span></header>
 <form action="/admin/categorias/{{c.id}}/editar" method="post" class="v66-category-edit">
 <label>Nome da categoria<textarea class="input" name="name" rows="2" maxlength="120" required>{{c.name}}</textarea></label>
-<label>Ícone<input class="input" name="icon" value="{{c.icon}}" maxlength="12"></label>
+{% set chosen230=category_key230(c.icon) %}<label class="nu230-picker-field">Ícone<select name="icon" data-icon-picker230><option value="auto">Automático pelo nome</option>{% for item in category_catalog230 %}<option value="{{item.key}}"{% if chosen230|default('auto')==item.key %} selected{% endif %}>{{item.label}}</option>{% endfor %}</select></label>
 <button class="btn soft" type="submit">Salvar alterações</button></form>
 <div class="v66-category-actions">
 <form action="/admin/categorias/{{c.id}}/mover/up" method="post"><button class="btn soft" type="submit" aria-label="Mover {{c.name}} para cima">↑ Subir</button></form>
@@ -189,7 +189,7 @@
 <label>Nome da loja<input class="input" name="display_name" placeholder="Ex.: Quiosque Brisa do Mar" maxlength="120" required></label>
 <label>WhatsApp genérico<input class="input" name="whatsapp" type="tel" inputmode="tel" value="00000000000"><small>Pode deixar assim para demonstração ou trocar pelo seu número.</small></label>
 <details style="grid-column:1/-1"><summary style="cursor:pointer;padding:12px 0;font-weight:700">Mais opções (opcional)</summary><div class="grid-form">
-<label>Categoria<select class="input" name="category_id"><option value="0">Automática — primeira categoria da home</option>{% for cat in admin_categories %}{% if cat.active %}<option value="{{cat.id}}">{{cat.icon}} {{cat.name}}</option>{% endif %}{% endfor %}</select></label>
+<label>Categoria<select class="input" name="category_id"><option value="0">Automática — primeira categoria da home</option>{% for cat in admin_categories %}{% if cat.active %}<option value="{{cat.id}}">{{cat.name}}</option>{% endif %}{% endfor %}</select></label>
 <label>Cidade<input class="input" name="city" placeholder="Automática — cidade principal do site"></label>
 <label>Endereço<input class="input" name="address" placeholder="Opcional"></label>
 <label>Bairro<input class="input" name="neighborhood" placeholder="Opcional"></label>
@@ -232,7 +232,7 @@
 <input class="input" name="whatsapp" value="{{p.whatsapp}}" placeholder="WhatsApp" required>
 <input class="input" name="address" value="{{p.address}}" placeholder="Endereço (opcional)">
 <input class="input" name="neighborhood" value="{{p.neighborhood}}" placeholder="Bairro">
-<select class="input" name="category_id" required>{% for cat in admin_categories %}{% if cat.active %}<option value="{{cat.id}}" {% if p.category_id == cat.id %}selected{% endif %}>{{cat.icon}} {{cat.name}}</option>{% endif %}{% endfor %}</select>
+<select class="input" name="category_id" required>{% for cat in admin_categories %}{% if cat.active %}<option value="{{cat.id}}" {% if p.category_id == cat.id %}selected{% endif %}>{{cat.name}}</option>{% endif %}{% endfor %}</select>
 <textarea class="input" name="description" rows="2" placeholder="Descrição">{{p.description}}</textarea>
 <textarea class="input" name="services" rows="2" placeholder="Serviços ou produtos">{{p.services}}</textarea>
 <label class="demo-photo-field">Foto do perfil<input class="input" type="file" name="avatar" accept="image/jpeg,image/png,image/webp" data-simple-upload></label>

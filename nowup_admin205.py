@@ -2,6 +2,7 @@
 from datetime import datetime, timezone, date, timedelta
 from collections import defaultdict
 from urllib.parse import urlencode
+from nowup_categories230 import validate_key
 import sqlite3
 import inspect
 from fastapi import APIRouter, Request, Form, HTTPException
@@ -290,8 +291,8 @@ def category(request:Request,cid:int=Form(0),name:str=Form(...),icon:str=Form('ð
     try:
         if cid:
             if not c.execute('SELECT id FROM categories WHERE id=?',(cid,)).fetchone():raise HTTPException(404)
-            c.execute('UPDATE categories SET name=?,slug=?,icon=?,sort_order=?,active=? WHERE id=?',(name,slug,icon[:12],sort_order,active,cid))
-        else:c.execute('INSERT INTO categories(name,slug,icon,sort_order,active) VALUES(?,?,?,?,?)',(name,slug,icon[:12],sort_order,active))
+            c.execute('UPDATE categories SET name=?,slug=?,icon=?,sort_order=?,active=? WHERE id=?',(name,slug,validate_key(icon),sort_order,active,cid))
+        else:c.execute('INSERT INTO categories(name,slug,icon,sort_order,active) VALUES(?,?,?,?,?)',(name,slug,validate_key(icon),sort_order,active))
         audit(c,actor,'Categoria salva',cid or name);c.commit()
     except sqlite3.IntegrityError:raise HTTPException(409,'JÃ¡ existe uma categoria com esse nome')
     finally:c.close()

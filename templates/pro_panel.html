@@ -163,11 +163,13 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <h3>Categorias do {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}</h3>
 <form action="/painel/cardapio/categorias" method="post" class="category-add-form">
 <label>Nova categoria<input class="input" name="name" maxlength="80" placeholder="Ex.: Lanches, Bebidas, Porções" required></label>
+<label class="nu230-picker-field">Ícone<select name="icon_key" data-icon-picker230><option value="auto">Automático pelo nome</option>{% for item in category_catalog230 %}<option value="{{item.key}}"{% if chosen230|default('auto')==item.key %} selected{% endif %}>{{item.label}}</option>{% endfor %}</select></label>
 <button class="btn primary">Adicionar categoria</button>
 </form>
 <div class="category-admin-list">{% for category in product_categories %}<div class="category-admin-row">
 <form action="/painel/cardapio/categorias/{{category.id}}" method="post">
 <input class="input" name="name" value="{{category.name}}" required>
+{% set chosen230=category.icon_key %}<label class="nu230-picker-field">Ícone<select name="icon_key" data-icon-picker230><option value="auto">Automático pelo nome</option>{% for item in category_catalog230 %}<option value="{{item.key}}"{% if chosen230|default('auto')==item.key %} selected{% endif %}>{{item.label}}</option>{% endfor %}</select></label>
 <label class="check"><input type="checkbox" name="active" value="1" {% if category.active %}checked{% endif %}> Pública</label>
 <button class="btn soft tiny">Salvar</button>
 </form>
@@ -516,7 +518,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <h3>Categoria principal</h3>
 <p class="muted">Escolha uma categoria ampla. Escreva sua profissão e especialidades em “Serviços prestados”.</p>
 <div class="checkgrid">{% for c in categories %}<label class="check">
-<input type="radio" name="category_ids" value="{{c.id}}" {% if c.id in selected %}checked{% endif %} required> {{c.icon}} {{c.name}}</label>{% endfor %}</div>
+<input type="radio" name="category_ids" value="{{c.id}}" {% if c.id in selected %}checked{% endif %} required> {{category_icon230(c.name,c.icon)}} {{c.name}}</label>{% endfor %}</div>
 <label>Breve descrição<textarea name="description">{{pro.description}}</textarea>
 </label>
 <label>Serviços prestados<textarea name="services">{{pro.services}}</textarea>

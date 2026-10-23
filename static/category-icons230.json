@@ -1,0 +1,431 @@
+[
+  {
+    "key": "grid",
+    "label": "Geral e todas",
+    "aliases": [
+      "todos",
+      "todas",
+      "geral",
+      "outros"
+    ],
+    "svg": "<rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"2\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"2\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"2\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"2\"/>"
+  },
+  {
+    "key": "pack",
+    "label": "Fardos e caixas",
+    "aliases": [
+      "six pack",
+      "fardos",
+      "fardo",
+      "caixa"
+    ],
+    "svg": "<path d=\"M4 12h16v9H4zM6 12V6h3v6m6 0V6h3v6M7 6V3h1v3m8 0V3h1v3M4 16h16\"/>"
+  },
+  {
+    "key": "beer",
+    "label": "Cervejas e chopp",
+    "aliases": [
+      "cerveja",
+      "cervejas",
+      "chopp",
+      "geladas"
+    ],
+    "svg": "<path d=\"M5 8h12v13H5zM17 10h2a3 3 0 0 1 0 6h-2M8 11v7m5-7v7M5 8a3 3 0 0 1 0-6 3 3 0 0 1 5 0 3 3 0 0 1 5 0 3 3 0 0 1 2 6\"/>"
+  },
+  {
+    "key": "water",
+    "label": "Água",
+    "aliases": [
+      "agua",
+      "aguas"
+    ],
+    "svg": "<path d=\"M12 2S4 11 4 15a8 8 0 0 0 16 0c0-4-8-13-8-13ZM8 15a4 4 0 0 0 4 4\"/>"
+  },
+  {
+    "key": "soda",
+    "label": "Refrigerantes e sucos",
+    "aliases": [
+      "refrigerante",
+      "refrigerantes",
+      "suco",
+      "sucos",
+      "energetico",
+      "energeticos"
+    ],
+    "svg": "<path d=\"M6 8h12l-2 13H8L6 8Zm6 0 2-6h5M5 8h14M7 12h10\"/>"
+  },
+  {
+    "key": "paper",
+    "label": "Sedas e papéis",
+    "aliases": [
+      "seda",
+      "sedas",
+      "papel"
+    ],
+    "svg": "<rect x=\"5\" y=\"3\" width=\"14\" height=\"18\" rx=\"3\"/><path d=\"M8 7h8M8 11h8M8 15h5\"/>"
+  },
+  {
+    "key": "leaf",
+    "label": "Tabacos e folhas",
+    "aliases": [
+      "tabaco",
+      "tabacos"
+    ],
+    "svg": "<path d=\"M20 3C6 1 1 8 5 16c8 6 16 0 15-13ZM3 21 17 7M8 16v-6m5 1h5\"/>"
+  },
+  {
+    "key": "cigarette",
+    "label": "Cigarros",
+    "aliases": [
+      "cigarro",
+      "cigarros"
+    ],
+    "svg": "<path d=\"M3 16h18v5H3zM7 16v5m10-18c-3 3 3 4 0 7m4-9c-3 3 3 4 0 7\"/>"
+  },
+  {
+    "key": "basket",
+    "label": "Mercearia e mercados",
+    "aliases": [
+      "mercearia",
+      "mercado",
+      "mercados",
+      "alimento",
+      "alimentos",
+      "conveniencia"
+    ],
+    "svg": "<path d=\"m8 3-5 7m13-7 5 7M2 10h20l-3 11H5L2 10Zm6 4v4m4-4v4m4-4v4\"/>"
+  },
+  {
+    "key": "candy",
+    "label": "Balas e chicletes",
+    "aliases": [
+      "bala",
+      "balas",
+      "chiclete",
+      "chicletes",
+      "doces"
+    ],
+    "svg": "<path d=\"m8 7-5-3v6l3 2m10 5 5 3v-6l-3-2\"/><rect x=\"7\" y=\"6\" width=\"10\" height=\"12\" rx=\"4\" transform=\"rotate(35 12 12)\"/>"
+  },
+  {
+    "key": "chocolate",
+    "label": "Chocolates",
+    "aliases": [
+      "chocolate",
+      "chocolates"
+    ],
+    "svg": "<path d=\"m4 15 11-12 6 6-11 12-6-6Zm3-3 6 6m-3-9 6 6m-3-9 6 6M7 18 18 6\"/>"
+  },
+  {
+    "key": "cocktail",
+    "label": "Bebidas mistas e drinks",
+    "aliases": [
+      "mista",
+      "mistas",
+      "drink",
+      "drinks",
+      "coquetel"
+    ],
+    "svg": "<path d=\"m3 6 9 9 9-9H3Zm9 9v7m-4 0h8m-4-16 3-5h4\"/><path d=\"M6 9h12\"/>"
+  },
+  {
+    "key": "bottle",
+    "label": "Destilados e bebidas",
+    "aliases": [
+      "destilado",
+      "destilados",
+      "whisky",
+      "vodka",
+      "gin",
+      "bebida",
+      "bebidas",
+      "adega",
+      "adegas"
+    ],
+    "svg": "<path d=\"M10 2h4v5l3 4v10H7V11l3-4V2Zm-3 11h10M7 18h10M10 5h4\"/>"
+  },
+  {
+    "key": "wine",
+    "label": "Vinhos",
+    "aliases": [
+      "vinho",
+      "vinhos"
+    ],
+    "svg": "<path d=\"M8 2h8l2 8a6 6 0 0 1-12 0l2-8Zm4 14v6m-4 0h8M7 8h10\"/>"
+  },
+  {
+    "key": "burger",
+    "label": "Lanches e hambúrgueres",
+    "aliases": [
+      "hamburguer",
+      "hamburgueres",
+      "burger",
+      "lanche",
+      "lanches",
+      "lanchonete",
+      "lanchonetes"
+    ],
+    "svg": "<path d=\"M3 9a9 7 0 0 1 18 0H3Zm0 5h18M4 18h16l-1 4H5l-1-4ZM8 5h1m6 0h1M2 12l5 2 5-2 5 2 5-2\"/>"
+  },
+  {
+    "key": "pizza",
+    "label": "Pizzas",
+    "aliases": [
+      "pizza",
+      "pizzas",
+      "pizzaria",
+      "pizzarias"
+    ],
+    "svg": "<path d=\"m3 21 6-18c6 1 10 5 12 12L3 21ZM8 6c5 1 9 4 10 9\"/><circle cx=\"10\" cy=\"12\" r=\"1\"/><circle cx=\"8\" cy=\"17\" r=\"1\"/><circle cx=\"14\" cy=\"15\" r=\"1\"/>"
+  },
+  {
+    "key": "food",
+    "label": "Refeições e restaurantes",
+    "aliases": [
+      "restaurante",
+      "restaurantes",
+      "refeicao",
+      "refeicoes",
+      "prato",
+      "pratos",
+      "marmita",
+      "marmitas",
+      "acompanhamento",
+      "acompanhamentos"
+    ],
+    "svg": "<path d=\"M3 2v6a3 3 0 0 0 6 0V2M6 2v20M19 2c-5 4-5 9 0 10V2Zm0 10v10\"/>"
+  },
+  {
+    "key": "bread",
+    "label": "Padarias e pães",
+    "aliases": [
+      "padaria",
+      "padarias",
+      "pao",
+      "paes"
+    ],
+    "svg": "<path d=\"M4 18C0 10 6 5 12 5s12 5 8 13H4Zm3-9 2 4m3-6 2 5m3-3 1 3\"/>"
+  },
+  {
+    "key": "coffee",
+    "label": "Café e cafeterias",
+    "aliases": [
+      "cafe",
+      "cafes",
+      "cafeteria",
+      "cafeterias"
+    ],
+    "svg": "<path d=\"M3 8h14v7a6 6 0 0 1-12 0V8Zm14 1h2a3 3 0 0 1 0 6h-2M2 22h18M7 2v2m5-2v2\"/>"
+  },
+  {
+    "key": "pet",
+    "label": "Pet shops e animais",
+    "aliases": [
+      "pet",
+      "pets",
+      "racao",
+      "racoes",
+      "veterinario",
+      "veterinarios"
+    ],
+    "svg": "<ellipse cx=\"5\" cy=\"8\" rx=\"2\" ry=\"3\"/><ellipse cx=\"10\" cy=\"4\" rx=\"2\" ry=\"3\"/><ellipse cx=\"16\" cy=\"5\" rx=\"2\" ry=\"3\"/><ellipse cx=\"21\" cy=\"10\" rx=\"2\" ry=\"3\"/><path d=\"M5 19c0-3 4-8 7-8s7 5 7 8c0 4-4 1-7 1s-7 3-7-1Z\"/>"
+  },
+  {
+    "key": "medicine",
+    "label": "Farmácias e saúde",
+    "aliases": [
+      "farmacia",
+      "farmacias",
+      "remedio",
+      "remedios",
+      "medicamento",
+      "medicamentos",
+      "saude"
+    ],
+    "svg": "<path d=\"M9 3h6v6h6v6h-6v6H9v-6H3V9h6V3Z\"/>"
+  },
+  {
+    "key": "icecream",
+    "label": "Sorvetes e açaí",
+    "aliases": [
+      "sorvete",
+      "sorvetes",
+      "sorveteria",
+      "sorveterias",
+      "acai"
+    ],
+    "svg": "<path d=\"m7 13 5 9 5-9M5 11h14a4 4 0 0 0-3-6 4 4 0 0 0-8 0 4 4 0 0 0-3 6Z\"/>"
+  },
+  {
+    "key": "ice",
+    "label": "Gelo e congelados",
+    "aliases": [
+      "gelo",
+      "gelos",
+      "congelado",
+      "congelados"
+    ],
+    "svg": "<path d=\"M12 2v20M3 7l18 10M3 17 21 7M9 4l3 3 3-3M9 20l3-3 3 3M3 11l4-1-1-4m12 0-1 4 4 1M3 13l4 1-1 4m12 0-1-4 4-1\"/>"
+  },
+  {
+    "key": "snack",
+    "label": "Salgadinhos e porções",
+    "aliases": [
+      "salgadinho",
+      "salgadinhos",
+      "salgado",
+      "salgados",
+      "porcao",
+      "porcoes",
+      "batata",
+      "batatas"
+    ],
+    "svg": "<path d=\"M5 9h14l-2 13H7L5 9Zm2 0L6 2h3l1 7m2 0V1h3v8m1 0 2-6h3l-2 6\"/>"
+  },
+  {
+    "key": "cake",
+    "label": "Bolos e sobremesas",
+    "aliases": [
+      "bolo",
+      "bolos",
+      "sobremesa",
+      "sobremesas",
+      "confeitaria"
+    ],
+    "svg": "<path d=\"M4 12h16v10H4V12Zm0 4c3 3 5-3 8 0s5-3 8 0M12 12V6m0-5c4 4 0 6 0 6s-4-2 0-6Z\"/>"
+  },
+  {
+    "key": "fruit",
+    "label": "Frutas e hortifruti",
+    "aliases": [
+      "fruta",
+      "frutas",
+      "hortifruti",
+      "verdura",
+      "verduras",
+      "legumes"
+    ],
+    "svg": "<path d=\"M12 7c-8-5-13 8-6 14 3 2 4-1 6-1s3 3 6 1c7-6 2-19-6-14Zm0 0c-1-4 2-6 6-5-1 4-3 5-6 5Z\"/>"
+  },
+  {
+    "key": "milk",
+    "label": "Leite e laticínios",
+    "aliases": [
+      "leite",
+      "laticinio",
+      "laticinios",
+      "queijo",
+      "queijos"
+    ],
+    "svg": "<path d=\"M7 2h10v4l3 5v11H4V11l3-5V2Zm0 4h10M4 11h16M9 15h6v4H9z\"/>"
+  },
+  {
+    "key": "meat",
+    "label": "Carnes e açougue",
+    "aliases": [
+      "carne",
+      "carnes",
+      "acougue",
+      "churrasco"
+    ],
+    "svg": "<path d=\"M20 4C15-1 4 4 3 12c-1 7 7 12 12 7 2-2 0-5 4-7 4-2 4-5 1-8Z\"/><ellipse cx=\"13\" cy=\"9\" rx=\"4\" ry=\"3\"/>"
+  },
+  {
+    "key": "fish",
+    "label": "Peixes e frutos do mar",
+    "aliases": [
+      "peixe",
+      "peixes",
+      "pescado",
+      "pescados",
+      "frutos do mar"
+    ],
+    "svg": "<path d=\"M3 12c5-9 13-9 17 0-4 9-12 9-17 0Zm0 0L1 7v10l2-5Zm9-7 3-3 2 5\"/><circle cx=\"16\" cy=\"11\" r=\"1\"/>"
+  },
+  {
+    "key": "clean",
+    "label": "Limpeza",
+    "aliases": [
+      "limpeza",
+      "detergente",
+      "sabao"
+    ],
+    "svg": "<path d=\"M9 2h8v3H9zM10 5v4l-4 4v9h12V12l-4-3V5M6 16h12M17 3h4v4\"/>"
+  },
+  {
+    "key": "beauty",
+    "label": "Beleza e cosméticos",
+    "aliases": [
+      "beleza",
+      "cosmetico",
+      "cosmeticos",
+      "perfume",
+      "perfumes",
+      "higiene"
+    ],
+    "svg": "<path d=\"M8 10h8v12H8V10Zm1 0V4l6-3v9M8 16h8\"/>"
+  },
+  {
+    "key": "shirt",
+    "label": "Roupas e acessórios",
+    "aliases": [
+      "roupa",
+      "roupas",
+      "moda",
+      "vestuario",
+      "acessorio",
+      "acessorios"
+    ],
+    "svg": "<path d=\"m8 3-6 4 3 6 3-2v11h8V11l3 2 3-6-6-4a4 4 0 0 1-8 0Z\"/>"
+  },
+  {
+    "key": "gift",
+    "label": "Presentes",
+    "aliases": [
+      "presente",
+      "presentes",
+      "brinde",
+      "brindes"
+    ],
+    "svg": "<path d=\"M3 8h18v5H3zM5 13v9h14v-9M12 8v14M12 8C2 8 7-3 12 8Zm0 0c10 0 5-11 0 0Z\"/>"
+  },
+  {
+    "key": "phone",
+    "label": "Eletrônicos",
+    "aliases": [
+      "eletronico",
+      "eletronicos",
+      "celular",
+      "celulares",
+      "informatica"
+    ],
+    "svg": "<rect x=\"6\" y=\"1\" width=\"12\" height=\"22\" rx=\"3\"/><path d=\"M10 4h4M11 20h2\"/>"
+  },
+  {
+    "key": "tag",
+    "label": "Promoções",
+    "aliases": [
+      "promocao",
+      "promocoes",
+      "oferta",
+      "ofertas",
+      "desconto",
+      "descontos"
+    ],
+    "svg": "<path d=\"M3 3h9l10 10-9 9L3 12V3Z\"/><circle cx=\"8\" cy=\"8\" r=\"1\"/>"
+  },
+  {
+    "key": "star",
+    "label": "Destaques e combos",
+    "aliases": [
+      "destaque",
+      "destaques",
+      "favorito",
+      "favoritos",
+      "combo",
+      "combos",
+      "mais pedidos"
+    ],
+    "svg": "<path d=\"m12 2 3 6 7 1-5 5 1 8-6-4-6 4 1-8-5-5 7-1 3-6Z\"/>"
+  }
+]

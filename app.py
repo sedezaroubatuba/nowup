@@ -1,4 +1,5 @@
 from __future__ import annotations
+import nowup_categories230
 import nowup_included195
 from nowup_custom192 import parse_config, save_config, charge_options, validate_customization
 import html
@@ -41,6 +42,8 @@ app.include_router(cms_router)
 app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 templates = Jinja2Templates(directory=str(BASE / "templates"))
+templates.env.globals["category_icon230"] = nowup_categories230.icon
+templates.env.globals["category_key230"] = nowup_categories230.validate_key
 
 @app.middleware("http")
 async def security_headers_and_csrf(request: Request, call_next):
@@ -258,6 +261,11 @@ def context(request: Request, **kwargs):
     banners = conn.execute("SELECT * FROM banners WHERE active=1 AND image_filename!='' ORDER BY sort_order,id LIMIT 3").fetchall()
     business_slides = conn.execute("SELECT id,slug,display_name,slide_image_filename FROM professionals WHERE blocked=0 AND admission_status='approved' AND in_slider=1 AND slide_image_filename!='' ORDER BY id DESC LIMIT 10").fetchall()
     settings = get_settings(conn)
+    pro230 = kwargs.get('pro')
+    icon_choices230 = {}
+    if pro230 is not None:
+        icon_choices230 = {nowup_categories230.normalize(row['name']): row['icon_key']
+                           for row in conn.execute('SELECT name,icon_key FROM product_categories WHERE professional_id=?', (pro230['id'],))}
     conn.close()
     return {
         "request": request,
@@ -266,6 +274,8 @@ def context(request: Request, **kwargs):
         "banners": banners,
         "business_slides": business_slides,
         "settings": settings,
+        "category_catalog230": nowup_categories230.CATALOG,
+        "category_choices230": icon_choices230,
         "email_service_ready": email_service_configured(),
         **kwargs
     }
@@ -533,6 +543,7 @@ def init_db():
     CREATE INDEX IF NOT EXISTS idx_product_categories_professional
       ON product_categories(professional_id,active,sort_order,id);
     """)
+    ensure_column(conn, "product_categories", "icon_key", "TEXT NOT NULL DEFAULT 'auto'")
     ensure_column(conn, "users", "email_verified", "INTEGER NOT NULL DEFAULT 1")
     ensure_column(conn, "users", "verification_token", "TEXT DEFAULT ''")
     ensure_column(conn, "users", "verification_expires_at", "TEXT DEFAULT ''")
@@ -1644,21 +1655,21 @@ def require_premium_catalog(conn, user_id: int):
     return pro
 
 @app.post("/painel/cardapio/categorias")
-def pro_menu_category_add(request: Request, name: str=Form(...)):
+def pro_menu_category_add(request: Request, name: str=Form(...), icon_key: str=Form("auto")):
     u=require_user(request,"professional"); clean=name.strip()[:80]
     if not clean: return RedirectResponse("/painel?erro=categoria#cardapio",303)
     conn=db(); p=require_premium_catalog(conn,u["id"])
     next_order=conn.execute("SELECT COALESCE(MAX(sort_order),0)+1 FROM product_categories WHERE professional_id=?",(p["id"],)).fetchone()[0]
-    try: conn.execute("INSERT INTO product_categories(professional_id,name,sort_order,active,created_at) VALUES(?,?,?,?,?)",(p["id"],clean,next_order,1,now_iso())); conn.commit()
+    try: conn.execute("INSERT INTO product_categories(professional_id,name,sort_order,active,created_at,icon_key) VALUES(?,?,?,?,?,?)",(p["id"],clean,next_order,1,now_iso(),nowup_categories230.validate_key(icon_key))); conn.commit()
     except sqlite3.IntegrityError: pass
     conn.close(); return RedirectResponse("/painel?ok=categoria#cardapio",303)
 
 @app.post("/painel/cardapio/categorias/{category_id}")
-def pro_menu_category_edit(request: Request, category_id: int, name: str=Form(...), active: Optional[str]=Form(None)):
+def pro_menu_category_edit(request: Request, category_id: int, name: str=Form(...), active: Optional[str]=Form(None), icon_key: Optional[str]=Form(None)):
     u=require_user(request,"professional"); clean=name.strip()[:80]
     conn=db(); p=require_premium_catalog(conn,u["id"]); old=conn.execute("SELECT * FROM product_categories WHERE id=? AND professional_id=?",(category_id,p["id"])).fetchone()
     if old and clean:
-        conn.execute("UPDATE product_categories SET name=?,active=? WHERE id=?",(clean,1 if active else 0,category_id))
+        conn.execute("UPDATE product_categories SET name=?,active=?,icon_key=? WHERE id=? AND professional_id=?",(clean,1 if active else 0,nowup_categories230.validate_key(icon_key if icon_key is not None else old["icon_key"]),category_id,p["id"]))
         conn.execute("UPDATE products SET category=?,updated_at=? WHERE professional_id=? AND lower(category)=lower(?)",(clean,now_iso(),p["id"],old["name"])); conn.commit()
     conn.close(); return RedirectResponse("/painel?ok=categoria#cardapio",303)
 
@@ -2309,7 +2320,7 @@ def admin_add_category(request: Request, name:str=Form(...), icon:str=Form("🍔
     try:
         order=conn.execute("SELECT COALESCE(MAX(sort_order),0)+1 FROM categories").fetchone()[0]
         conn.execute("INSERT INTO categories(name,slug,icon,sort_order,active) VALUES(?,?,?,?,1)",
-                     (clean,slugify(clean),(icon.strip() or "🏪")[:12],order))
+                     (clean,slugify(clean),nowup_categories230.validate_key(icon),order))
         conn.commit()
     except sqlite3.IntegrityError:
         conn.rollback()
@@ -2328,7 +2339,7 @@ def admin_edit_category(request: Request, cid:int, name:str=Form(...), icon:str=
     if not clean: return RedirectResponse("/admin#categorias",303)
     conn=db()
     try:
-        conn.execute("UPDATE categories SET name=?,slug=?,icon=? WHERE id=?",(clean,slugify(clean),icon[:12],cid)); conn.commit()
+        conn.execute("UPDATE categories SET name=?,slug=?,icon=? WHERE id=?",(clean,slugify(clean),nowup_categories230.validate_key(icon),cid)); conn.commit()
     except sqlite3.IntegrityError:
         conn.rollback()
     conn.close(); return RedirectResponse("/admin#categorias",303)

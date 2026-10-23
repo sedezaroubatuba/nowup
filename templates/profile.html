@@ -213,7 +213,7 @@ body.public-profile-area :focus-visible {outline:3px solid #08a5d0;outline-offse
 <div class="panel" id="sobre">
 <h3>Sobre</h3>
 <p>{{pro.description or 'Este perfil ainda não adicionou uma descrição.'}}</p>
-<div>{% for c in pro_categories %}<span class="badge">{{c.icon}} {{c.name}}</span> {% endfor %}</div>
+<div>{% for c in pro_categories %}<span class="badge">{{category_icon230(c.name,c.icon)}} {{c.name}}</span> {% endfor %}</div>
 </div>
 <div class="panel" id="avaliacoes">
 <h3>Elogios e avaliações <span class="rating-trust">★ {{pro.rating}} · {{pro.review_count}} {{'avaliação' if pro.review_count == 1 else 'avaliações'}}</span></h3>{% if user and user.role=='customer' and can_review %}<form action="/p/{{pro.slug}}/avaliar" method="post" class="grid2">
