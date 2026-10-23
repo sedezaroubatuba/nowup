@@ -21,6 +21,10 @@ services:
         generateValue: true
       - key: NOWUP_KYC_DIR
         value: /app/persist/kyc-private
+      - key: NOWUP_BILLING_MODE
+        value: manual
+      - key: NOWUP_KYC_ENFORCE
+        value: "0"
       - key: NOWUP_BILLING_WORKER
         value: "0"
       - key: ASAAS_API_BASE

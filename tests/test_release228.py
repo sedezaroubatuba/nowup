@@ -17,7 +17,7 @@ def release(env):
   admin=c.execute("SELECT id FROM users WHERE role='admin'").fetchone()[0]
   buyer=c.execute("INSERT INTO users(role,name,email,password_hash,is_active,email_verified,created_at) VALUES('customer','Buyer',?,'invalid',1,1,?)",(secrets.token_hex(10)+'@test.invalid',now)).lastrowid
   for token,uid in ((admin_token,admin),(buyer_token,buyer)):c.execute('INSERT INTO sessions VALUES(?,?,?)',(token,uid,expires))
-  c.execute("UPDATE professionals SET is_demo=0,blocked=0,admission_status='approved',business_status='open',business_hours='',plan_active='ambos',is_premium=1,offer_mode='menu',subscription_status='active',subscription_paid=1,kyc_status='approved' WHERE id=?",(pid,))
+  c.execute("UPDATE professionals SET is_demo=0,blocked=0,admission_status='approved',business_status='open',business_hours='',plan_active='ambos',is_premium=1,offer_mode='menu',subscription_status='active',subscription_paid=1,kyc_status='approved',billing_mode='asaas' WHERE id=?",(pid,))
   slug=c.execute('SELECT slug FROM professionals WHERE id=?',(pid,)).fetchone()[0]
   product=c.execute("INSERT INTO products(professional_id,name,category,price_cents,available,max_quantity,created_at,updated_at) VALUES(?,'Produto','Geral',3000,1,99,?,?)",(pid,now,now)).lastrowid
   c.commit()
@@ -94,6 +94,7 @@ def test_kyc_checks_private_upload_review_and_expiry(release,monkeypatch):
   assert c.execute('SELECT kyc_status FROM professionals WHERE id=?',(pid,)).fetchone()[0]=='approved'
 
 def test_billing_duplicate_webhook_grace_block_and_reactivate(release,monkeypatch):
+ monkeypatch.setenv('NOWUP_BILLING_MODE','asaas')
  m,admin,buyer,pid,slug,_,_,_=release
  token='isolated-webhook-token-00000000000000000';monkeypatch.setenv('ASAAS_WEBHOOK_TOKEN',token)
  import nowup_billing228 as b
@@ -121,7 +122,7 @@ def test_billing_duplicate_webhook_grace_block_and_reactivate(release,monkeypatc
 
 def test_secret_boot_requirements(monkeypatch):
  from nowup_security import require_secrets
- monkeypatch.delenv('NOWUP_ADMIN_SECRET',raising=False)
+ monkeypatch.setenv('NOWUP_ADMIN_SECRET','short-invalid-secret')
  with pytest.raises(RuntimeError,match='NOWUP_ADMIN_SECRET'):require_secrets()
 
 def test_cart_sync_is_owned_by_customer(release):
@@ -132,6 +133,7 @@ def test_cart_sync_is_owned_by_customer(release):
  assert admin.get('/api/cart/'+str(pid)).status_code==401
 
 def test_approval_queues_subscription_and_provider_is_retry_safe(release,monkeypatch):
+ monkeypatch.setenv('NOWUP_BILLING_MODE','asaas')
  m,_,_,pid,_,_,_,_=release
  import nowup_billing228 as b
  monkeypatch.setenv('ASAAS_API_KEY','isolated-test-key');monkeypatch.setenv('ASAAS_WEBHOOK_TOKEN','isolated-test-hook-token-000000000000000')
@@ -200,6 +202,7 @@ def test_failed_db_responds_friendly_503(release,monkeypatch):
  assert 'secret-db-path' not in r.text and 'temporariamente' in r.text
 
 def test_current_refund_does_not_keep_store_active(release,monkeypatch):
+ monkeypatch.setenv('NOWUP_BILLING_MODE','asaas')
  m,admin,_,pid,_,_,_,_=release
  import nowup_billing228 as b
  token='isolated-refund-webhook-token-000000000000';monkeypatch.setenv('ASAAS_WEBHOOK_TOKEN',token)

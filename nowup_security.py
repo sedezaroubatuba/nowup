@@ -9,10 +9,47 @@ def now(): return datetime.now(timezone.utc).isoformat()
 def token_hash(token): return hashlib.sha256(token.encode()).hexdigest()
 
 def require_secrets():
-    for key in ('NOWUP_ADMIN_SECRET', 'NOWUP_JWT_SECRET'):
-        if len(os.getenv(key, '')) < 32:
-            raise RuntimeError(key + ' deve conter pelo menos 32 caracteres aleatórios.')
-    if os.environ['NOWUP_ADMIN_SECRET'] == os.environ['NOWUP_JWT_SECRET']:
+    """Use explicit environment keys, or generate private persistent runtime keys.
+
+    These are random encryption/signing keys, never default login credentials.
+    The file lives next to the persistent database, outside public uploads.
+    """
+    import fcntl,json,secrets,stat
+    from pathlib import Path
+    names=('NOWUP_ADMIN_SECRET','NOWUP_JWT_SECRET')
+    for key in names:
+        if key in os.environ and len(os.environ[key])<32:
+            raise RuntimeError(key+' deve conter pelo menos 32 caracteres aleatórios.')
+    missing=[key for key in names if key not in os.environ]
+    if missing:
+        database=Path(os.getenv('NOWUP_DB',Path(__file__).resolve().parent/'data'/'nowup.db'))
+        folder=database.parent;folder.mkdir(parents=True,exist_ok=True)
+        path=folder/'.runtime-secrets228.json';lock=folder/'.runtime-secrets228.lock'
+        fd=os.open(lock,os.O_CREAT|os.O_RDWR|os.O_NOFOLLOW,0o600)
+        with os.fdopen(fd,'a') as handle:
+            fcntl.flock(handle,fcntl.LOCK_EX)
+            if path.exists() or path.is_symlink():
+                source=os.open(path,os.O_RDONLY|os.O_NOFOLLOW)
+                with os.fdopen(source) as stream:
+                    if stat.S_IMODE(os.fstat(stream.fileno()).st_mode)&0o077:
+                        raise RuntimeError('O arquivo privado de segredos deve ter permissão 0600.')
+                    saved=json.load(stream)
+                if not isinstance(saved,dict):raise RuntimeError('Arquivo privado de segredos inválido.')
+            else:saved={}
+            changed=False
+            for key in missing:
+                if key not in saved:saved[key]=secrets.token_urlsafe(48);changed=True
+                if not isinstance(saved[key],str) or len(saved[key])<32:raise RuntimeError('Segredo persistente inválido.')
+            if changed:
+                temporary=folder/('.runtime-secrets228-'+secrets.token_hex(12)+'.tmp')
+                descriptor=os.open(temporary,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600)
+                try:
+                    with os.fdopen(descriptor,'w') as stream:
+                        json.dump(saved,stream);stream.flush();os.fsync(stream.fileno())
+                    os.replace(temporary,path)
+                finally:temporary.unlink(missing_ok=True)
+            for key in missing:os.environ[key]=saved[key]
+    if os.environ[names[0]]==os.environ[names[1]]:
         raise RuntimeError('Use segredos distintos para administração e assinatura.')
 
 

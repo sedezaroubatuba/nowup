@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Store, Wallet, ShoppingBag, TrendingUp } from "lucide-react";
 import { api } from "./server227.mjs";
-import { money } from "./model.mjs";
+import { money, today, shift } from "./model.mjs";
 function query(f, extra = {}) {
   return new URLSearchParams(Object.fromEntries(Object.entries({ from: f.start, to: f.end, city: f.city, store: f.store, neighborhood: f.neighborhood, hour_from: f.from, hour_to: f.to, status: f.status, q: f.q, ...extra }).filter(([, v]) => v !== "" && v != null))).toString();
 }
@@ -39,7 +39,7 @@ function Pager({ value, page, setPage, Button }) {
 function Executive(p) {
   const { filters: f, data: d, ui: { Panel, Tile, Button } } = p, metrics = useRead("metrics?" + query(f), d._meta.revision), hours = useRead("analytics/hourly?" + query(f), d._meta.revision);
   const m = metrics.value, active = d.stores.filter((s) => !s.demo && s.online), mrr = d.stores.filter((s) => !s.demo && s.subscriptionStatus === "active").reduce((sum, s) => sum + s.price, 0);
-  return <><Feedback state={metrics} Button={Button} />{m && <div className="metrics"><Tile label="Vendas concluídas no período" value={money(m.gmv)} icon={Wallet} /><Tile label="Pedidos concluídos" value={m.count} icon={ShoppingBag} /><Tile label="Ticket médio concluído" value={money(m.ticket)} icon={TrendingUp} /><Tile label="Lojas disponíveis agora" value={active.length} icon={Store} /></div>}<div className="two-columns"><Panel title="Mensalidades confirmadas" subtitle="Assinaturas ativas com pagamento registrado. Valores em carteira não são recebimentos."><div className="settings-form"><strong>MRR {money(mrr)}</strong><p>ARR projetado: {money(mrr * 12)}</p><p>Churn e LTV: aguardando histórico de contratos conciliados.</p></div></Panel><Panel title="Vendas por hora" subtitle="Agregação SQL · horário de Brasília"><Feedback state={hours} Button={Button} /><div className="table-scroll"><table><thead><tr><th>Hora</th><th>Concluídos</th><th>Vendas</th></tr></thead><tbody>{hours.value?.items.map((r) => <tr key={r.hour}><td>{String(r.hour).padStart(2, "0")}:00</td><td>{r.count}</td><td>{money(r.gmv)}</td></tr>)}</tbody></table></div>{hours.value && !hours.value.items.length && <p className="ops-empty">Nenhum pedido concluído neste filtro.</p>}</Panel></div></>;
+  return <><Feedback state={metrics} Button={Button} />{m && <div className="metrics"><Tile label="Vendas concluídas no período" value={money(m.gmv)} icon={Wallet} /><Tile label="Pedidos concluídos" value={m.count} icon={ShoppingBag} /><Tile label="Ticket médio concluído" value={money(m.ticket)} icon={TrendingUp} /><Tile label="Lojas disponíveis agora" value={active.length} icon={Store} /></div>}<div className="two-columns"><Panel title="Mensalidades confirmadas (manual ou Asaas)" subtitle="Recebimentos confirmados por administrador ou pelo Asaas. Acesso preservado de loja antiga não é confirmação de pagamento."><div className="settings-form"><strong>MRR {money(mrr)}</strong><p>ARR projetado: {money(mrr * 12)}</p><p>Churn e LTV: aguardando histórico de contratos conciliados.</p></div></Panel><Panel title="Vendas por hora" subtitle="Agregação SQL · horário de Brasília"><Feedback state={hours} Button={Button} /><div className="table-scroll"><table><thead><tr><th>Hora</th><th>Concluídos</th><th>Vendas</th></tr></thead><tbody>{hours.value?.items.map((r) => <tr key={r.hour}><td>{String(r.hour).padStart(2, "0")}:00</td><td>{r.count}</td><td>{money(r.gmv)}</td></tr>)}</tbody></table></div>{hours.value && !hours.value.items.length && <p className="ops-empty">Nenhum pedido concluído neste filtro.</p>}</Panel></div></>;
 }
 function LiveOrders(p) {
   const { data: d, filters: f, ui: { Panel, Button, Badge } } = p;
@@ -127,7 +127,19 @@ function Kyc(p) {
     } catch (e) {
       p.setToast(e.message);
     }
-  }}>Baixar com link de 10 minutos</Button></p>)}<div className="row-actions"><Button disabled={busy||!p.can("finance")} onClick={async()=>{const reason=prompt("Justificativa para criar a assinatura Asaas (mínimo 8 caracteres)");if(!reason)return;setBusy(true);try{await api("billing/"+store+"/provision",{reason});p.setToast("Solicitação registrada para o worker; pagamento ainda não confirmado.")}catch(e){p.setToast(e.message)}finally{setBusy(false)}}}>Preparar cobrança Asaas</Button><Button disabled={busy} onClick={() => review("approved")}>Aprovar KYC</Button><Button disabled={busy} variant="secondary" onClick={() => review("rejected")}>Rejeitar KYC</Button></div></>}</div></Panel>;
+  }}>Baixar com link de 10 minutos</Button></p>)}<div className="row-actions"><Button disabled={busy || !p.can("finance") || d._meta.billingMode !== "asaas"} onClick={async () => {
+    const reason = prompt("Justificativa para criar a assinatura Asaas (m\xEDnimo 8 caracteres)");
+    if (!reason) return;
+    setBusy(true);
+    try {
+      await api("billing/" + store + "/provision", { reason });
+      p.setToast("Solicita\xE7\xE3o registrada para o worker; pagamento ainda n\xE3o confirmado.");
+    } catch (e) {
+      p.setToast(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }}>Asaas opcional</Button><Button disabled={busy} onClick={() => review("approved")}>Aprovar KYC</Button><Button disabled={busy} variant="secondary" onClick={() => review("rejected")}>Rejeitar KYC</Button></div></>}</div></Panel>;
 }
 function Products(p) {
   const { data: d, filters: f, ui: { Panel, Button, Badge } } = p;
@@ -145,10 +157,48 @@ function Products(p) {
   }
   return <Panel title="Produtos e moderação" subtitle="Catálogo atual paginado; filtros de loja, cidade e busca. Datas de venda não limitam o catálogo."><Feedback state={state} Button={Button} /><Pager value={state.value} page={page} setPage={setPage} Button={Button} /><div className="table-scroll"><table><thead><tr><th>Produto</th><th>Loja</th><th>Categoria</th><th>Preço</th><th>Situação</th><th>Ação</th></tr></thead><tbody>{state.value?.items.map((product) => <tr key={product.id}><td>{product.name}</td><td>{product.store_name}</td><td>{product.category}</td><td>{money(product.price_cents)}</td><td><Badge>{product.available ? "Dispon\xEDvel" : "Pausado"}</Badge></td><td><Button onClick={() => p.confirm("Alterar disponibilidade?", product.name, () => toggle(product))}>{product.available ? "Pausar" : "Aprovar"}</Button></td></tr>)}</tbody></table></div>{state.value && !state.value.items.length && <p className="ops-empty">Nenhum produto encontrado.</p>}</Panel>;
 }
+function ManualBilling(p) {
+  const { data: d, ui: { Panel, Button } } = p;
+  const [store, setStore] = useState(""), [busy, setBusy] = useState(false), [refresh, setRefresh] = useState(0);
+  const sending = useRef(false), attempt = useRef({ payload: "", key: "" });
+  useEffect(() => {
+    const select = (e) => setStore(String(e.detail));
+    window.addEventListener("nowup-manual-billing", select);
+    return () => window.removeEventListener("nowup-manual-billing", select);
+  }, []);
+  const receipts = useRead("billing/manual-payments", d._meta.revision + ":" + refresh), selected = d.stores.find((s) => String(s.id) === store);
+  if (d._meta.billingMode !== "manual") return null;
+  async function confirm(event) {
+    event.preventDefault();
+    if (sending.current) return;
+    sending.current = true;
+    setBusy(true);
+    const form = event.currentTarget, values = Object.fromEntries(new FormData(form));
+    const body = { amount: Math.round(Number(values.amount) * 100), paidOn: values.paidOn, nextDue: values.nextDue, reference: values.reference.trim(), reason: values.reason.trim() };
+    const payload = JSON.stringify({ store, ...body });
+    if (attempt.current.payload !== payload) attempt.current = { payload, key: crypto.randomUUID() };
+    body.requestKey = attempt.current.key;
+    try {
+      await api("billing/" + store + "/manual-payment", body);
+      await p.reload();
+      setRefresh((n) => n + 1);
+      p.setToast("Recebimento manual confirmado e registrado na auditoria.");
+      form.reset();
+      attempt.current = { payload: "", key: "" };
+    } catch (error) {
+      p.setToast(error.message);
+    } finally {
+      sending.current = false;
+      setBusy(false);
+    }
+  }
+  return <section id="manual-billing228"><Panel title="Confirmar mensalidade manualmente" subtitle="Sem Asaas. Confirme somente depois de conferir o recebimento. A confirmação não remove bloqueios manuais da loja."><div className="settings-form"><label className="field"><span>Loja aprovada</span><select value={store} onChange={(e) => setStore(e.target.value)}><option value="">Selecione a loja</option>{d.stores.filter((s) => !s.demo && s.approval === "approved" && s.billingMode !== "asaas").map((s) => <option key={s.id} value={s.id}>{s.name} · {s.billingMode === "legacy" ? "Acesso anterior preservado" : s.subscriptionStatus}</option>)}</select></label>{selected && <form key={store + ":" + selected.price} onSubmit={confirm}><div className="form-grid"><label className="field"><span>Valor contratado (R$)</span><input name="amount" type="number" min="0.01" step="0.01" required defaultValue={selected.price / 100} /></label><label className="field"><span>Recebido em</span><input name="paidOn" type="date" max={today()} defaultValue={today()} required /></label><label className="field"><span>Próximo vencimento</span><input name="nextDue" type="date" min={shift(today(), 1)} defaultValue={shift(today(), 30)} required /></label></div><label className="field"><span>Referência única do pagamento (Pix, recibo ou controle interno)</span><input name="reference" minLength={3} maxLength={150} required /></label><label className="field"><span>Justificativa da confirmação</span><textarea name="reason" minLength={8} maxLength={500} required /></label>{!selected.price && <p role="status">Defina primeiro o plano e o valor no contrato da loja.</p>}<Button type="submit" loading={busy} disabled={!selected.price}>Confirmar recebimento e liberar mensalidade</Button></form>}</div></Panel><Panel title="Recebimentos confirmados manualmente" subtitle="Últimos 50 registros; cada confirmação identifica o responsável."><Feedback state={receipts} Button={Button} /><div className="table-scroll"><table><thead><tr><th>Loja</th><th>Valor</th><th>Recebido em</th><th>Próximo vencimento</th><th>Referência</th><th>Responsável</th></tr></thead><tbody>{receipts.value?.items.map((r) => <tr key={r.id}><td>{d.stores.find((s) => s.id === r.store_id)?.name || r.store_id}</td><td>{money(r.amount)}</td><td>{r.paid_on}</td><td>{r.next_due}</td><td>{r.reference}</td><td>{r.actor}</td></tr>)}</tbody></table></div>{receipts.value && !receipts.value.total && <p className="ops-empty">Nenhum recebimento manual confirmado. Acesso anterior preservado não é pagamento recebido.</p>}</Panel></section>;
+}
 export {
   Customers,
   Executive,
   Kyc,
   LiveOrders,
+  ManualBilling,
   Products
 };

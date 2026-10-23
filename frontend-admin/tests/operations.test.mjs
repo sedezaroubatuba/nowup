@@ -15,3 +15,8 @@ test('billing status follows confirmed provider state instead of a future due da
  assert.equal(saasStatus({...store,subscriptionStatus:'active'}),'Ativa');
  assert.equal(ruleStep({...store,due:'2026-10-19',subscriptionStatus:'past_due'},'2026-10-23'),'D+4 · bloqueio automático');
 });
+test('preserved legacy access never appears as a confirmed payment',()=>{
+ const legacy={demo:false,billingMode:'legacy',subscriptionStatus:'pending',price:14900};
+ assert.equal(saasStatus(legacy),'Acesso anterior preservado');
+ assert.equal(saasStatus({...legacy,billingMode:'manual'}),'Aguardando confirmação manual');
+});

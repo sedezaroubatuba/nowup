@@ -107,7 +107,7 @@ def snapshot(c,a,order_ids=(),customer_ids=(),product_ids=()):
    st.update(owner=p['owner'],email=p['email'],phone=p['whatsapp'],document=p['document'],address=p['address'],hours=p['opening_hours'],photo='/uploads/'+p['avatar_filename'] if p['avatar_filename'] else '',slug=p['slug'],publicUrl='/p/'+p['slug'])
   else:st.update(owner='',email='',phone='',document='',address='',hours='',photo='')
   if p['paid_price228'] is not None:st.update(price=p['paid_price228'],due=p['paid_due228'])
-  st['category']=p['category229'];st['rating']=round(p['rating229'],1);st['subscriptionStatus']=p['subscription_status'];st['kycStatus']=p['kyc_status']
+  st['category']=p['category229'];st['rating']=round(p['rating229'],1);st['subscriptionStatus']=p['subscription_status'];st['kycStatus']=p['kyc_status'];st['billingMode']=p['billing_mode']
   if not __import__('nowup_billing228').effective_status(p)['online']:st['online']=False
   if not need('stores'):st.update(kyc={},documents={})
   if not need('finance','dashboard'):st.update(price=0,due='',trialUntil='',cancelledAt='',subscribedAt='')
@@ -141,12 +141,12 @@ def snapshot(c,a,order_ids=(),customer_ids=(),product_ids=()):
  if super_:
   for s in c.execute("SELECT * FROM adm227_access WHERE actor_id LIKE 'staff:%' OR actor_id LIKE 'admin:%' ORDER BY id DESC LIMIT 200"):access.append({'id':s['id'],'employee':int(s['actor_id'].split(':')[1]) if s['actor_id'].startswith('staff:') else -int(s['actor_id'].split(':')[1]),'name':s['name'],'start':s['start'],'end':s['end'],'lastActivity':s['last_activity'],'state':s['state'],'device':'Sessão registrada no servidor'})
  logs=[{'id':r['id'],'actor':r['actor'],'action':r['action'],'date':r['created_at']} for r in c.execute('SELECT * FROM adm227_audit ORDER BY id DESC LIMIT 200')] if need('system') or super_ else []
- result={'version':1,'operationsVersion':2,'profile':{'name':a['name'],'email':a['email'],'phone':'','cpf':'','photo':''},'plans':plans if need('finance','dashboard','stores') else [],'stores':stores,'orders':orders,'customers':customers,'products':products,'categories':categories,'banners':banners,'settings':config,'sessions':access,'logs':logs,'staff':staff,'errors':[],'integrations':{'payments':'Asaas configurado' if __import__('nowup_billing228').configured() else 'Asaas aguardando credenciais','whatsapp':False,'push':False},'reports':[]}
+ result={'version':1,'operationsVersion':2,'profile':{'name':a['name'],'email':a['email'],'phone':'','cpf':'','photo':''},'plans':plans if need('finance','dashboard','stores') else [],'stores':stores,'orders':orders,'customers':customers,'products':products,'categories':categories,'banners':banners,'settings':config,'sessions':access,'logs':logs,'staff':staff,'errors':[],'integrations':{'payments':'Cobrança manual' if __import__('nowup_billing228').billing_mode()=='manual' else 'Asaas configurado' if __import__('nowup_billing228').configured() else 'Asaas aguardando credenciais','whatsapp':False,'push':False},'reports':[]}
  for kind,module in KINDS.items():
   if kind in ('leads','storemeta','productmeta','customermeta','staff'):continue
   if kind not in result:result[kind]=rows(c,kind) if module in permissions else []
  result['productCategories']=[x['name'] for x in rows(c,'productCategories')] if need('products') else []
- result['_meta']={'revision':c.execute('SELECT revision FROM adm227_state WHERE id=1').fetchone()[0],'actor':{k:a[k] for k in ('id','name','email','super','permissions')},'live':True,'unsupported':['whatsapp_api','push_campaign','public_coupons','referrals_credit','theme_scheduler','assisted_login','kyc_identity_provider'],'paginated':True,'fetchedAt':stamp()}
+ result['_meta']={'revision':c.execute('SELECT revision FROM adm227_state WHERE id=1').fetchone()[0],'actor':{k:a[k] for k in ('id','name','email','super','permissions')},'live':True,'unsupported':['whatsapp_api','push_campaign','public_coupons','referrals_credit','theme_scheduler','assisted_login','kyc_identity_provider'],'billingMode':__import__('nowup_billing228').billing_mode(),'paginated':True,'fetchedAt':stamp()}
  return result
 
 @router.get('/admin/super')
@@ -239,6 +239,7 @@ def update_store(c,a,oid,v,why):
  if 'price' in v and 'plan' not in v:m['price']=number(v['price'])
  for key in ('trialUntil','cancelledAt','subscribedAt'):
   if key in v:m[key]=validdate(v[key])
+  if key=='cancelledAt' and v.get(key):columns['subscription_status']='canceled'
  if 'method' in v:
   if v['method'] not in ('Pix','Cartão'):fail(400,'Forma de pagamento inválida.')
   m['method']=v['method']

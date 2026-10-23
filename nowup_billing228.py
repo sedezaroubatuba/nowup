@@ -11,6 +11,10 @@ router=APIRouter();G={};TZ=ZoneInfo('America/Sao_Paulo')
 def configure(g):G.update(g)
 def stamp():return datetime.now(timezone.utc).isoformat()
 def today():return datetime.now(TZ).date()
+def billing_mode():
+    mode=os.getenv('NOWUP_BILLING_MODE','manual')
+    if mode not in ('manual','asaas'):raise RuntimeError('NOWUP_BILLING_MODE inválido')
+    return mode
 def configured():return bool(os.getenv('ASAAS_API_KEY') and len(os.getenv('ASAAS_WEBHOOK_TOKEN',''))>=32)
 
 def valid_document(raw):
@@ -27,7 +31,12 @@ def initialize(c):
     columns={r[1] for r in c.execute('PRAGMA table_info(professionals)')}
     for key,decl in [('subscription_status',"TEXT NOT NULL DEFAULT 'pending'"),('kyc_status',"TEXT NOT NULL DEFAULT 'pending'"),('subscription_paid',"INTEGER NOT NULL DEFAULT 0")]:
         if key not in columns:c.execute('ALTER TABLE professionals ADD COLUMN '+key+' '+decl)
-    c.executescript('''CREATE TABLE IF NOT EXISTS asaas_customers(store_id INTEGER PRIMARY KEY REFERENCES professionals(id),asaas_customer_id TEXT NOT NULL UNIQUE);
+    if 'billing_mode' not in columns:
+        c.execute("ALTER TABLE professionals ADD COLUMN billing_mode TEXT NOT NULL DEFAULT 'manual'")
+        c.execute("UPDATE professionals SET billing_mode='legacy' WHERE admission_status='approved' AND plan_active!='none'")
+    c.executescript('''CREATE TABLE IF NOT EXISTS manual_payments228(id INTEGER PRIMARY KEY,store_id INTEGER NOT NULL REFERENCES professionals(id),request_key TEXT NOT NULL UNIQUE,payload_hash TEXT NOT NULL,amount INTEGER NOT NULL,paid_on TEXT NOT NULL,next_due TEXT NOT NULL,reference TEXT NOT NULL,actor TEXT NOT NULL,created_at TEXT NOT NULL,UNIQUE(store_id,reference));
+    CREATE INDEX IF NOT EXISTS idx_manual_payments_store ON manual_payments228(store_id,created_at);
+    CREATE TABLE IF NOT EXISTS asaas_customers(store_id INTEGER PRIMARY KEY REFERENCES professionals(id),asaas_customer_id TEXT NOT NULL UNIQUE);
     CREATE TABLE IF NOT EXISTS asaas_subscriptions(store_id INTEGER PRIMARY KEY REFERENCES professionals(id),subscription_id TEXT UNIQUE,status TEXT NOT NULL DEFAULT 'pending',price INTEGER NOT NULL,next_due TEXT NOT NULL,updated_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS webhook_events(event_id TEXT PRIMARY KEY,payload TEXT NOT NULL,processed_at TEXT);
     CREATE TABLE IF NOT EXISTS asaas_payments(payment_id TEXT PRIMARY KEY,store_id INTEGER NOT NULL,due_date TEXT NOT NULL,status TEXT NOT NULL,amount INTEGER NOT NULL,updated_at TEXT NOT NULL);
@@ -38,17 +47,29 @@ def initialize(c):
     CREATE INDEX IF NOT EXISTS idx_kyc_store ON kyc_docs(store_id,status);
     CREATE TABLE IF NOT EXISTS billing_audit(id INTEGER PRIMARY KEY,store_id INTEGER,actor TEXT NOT NULL,action TEXT NOT NULL,created_at TEXT NOT NULL);''')
 
+    if 'billing_mode' not in columns:
+        c.execute("UPDATE professionals SET billing_mode='asaas' WHERE id IN (SELECT store_id FROM asaas_subscriptions WHERE subscription_id IS NOT NULL)")
+
 def audit(c,store,actor,action):c.execute('INSERT INTO billing_audit(store_id,actor,action,created_at) VALUES(?,?,?,?)',(store,actor,action,stamp()))
 def effective_status(p):
-    p=dict(p)
-    allowed=not p.get('blocked') and p.get('is_active',1) and p.get('admission_status')=='approved' and p.get('business_status','open')=='open' and (p.get('subscription_status')=='active' or p.get('subscription_status')=='past_due' and p.get('subscription_paid')) and p.get('kyc_status')=='approved'
-    return {'online':bool(allowed),'subscription_status':p.get('subscription_status','pending'),'kyc_status':p.get('kyc_status','pending')}
+    p=dict(p);mode=p.get('billing_mode','asaas')
+    base=not p.get('blocked') and p.get('is_active',1) and p.get('admission_status')=='approved' and p.get('business_status','open')=='open' and p.get('plan_active','ambos')!='none'
+    paid=p.get('subscription_status')=='active' or p.get('subscription_status')=='past_due' and p.get('subscription_paid')
+    if mode=='legacy':paid=p.get('subscription_status') not in ('blocked','canceled') # Preserve already approved stores, without inventing a receipt.
+    enforce_kyc=mode=='asaas' or os.getenv('NOWUP_KYC_ENFORCE','0')=='1'
+    allowed=base and paid and (not enforce_kyc or p.get('kyc_status')=='approved')
+    return {'online':bool(allowed),'subscription_status':p.get('subscription_status','pending'),'kyc_status':p.get('kyc_status','pending'),'billing_mode':mode}
 
 def assert_available(c,store):
     row=c.execute('SELECT p.*,u.is_active FROM professionals p JOIN users u ON u.id=p.user_id WHERE p.id=?',(store,)).fetchone()
     if not row or not effective_status(row)['online']:raise HTTPException(403,'Loja temporariamente indisponível')
 
 def enqueue(c,store):
+    if billing_mode()=='manual':
+        c.execute("UPDATE professionals SET billing_mode='manual',subscription_status='pending',subscription_paid=0 WHERE id=?",(store,))
+        audit(c,store,'system','Cadastro aprovado; aguardando confirmação manual de mensalidade')
+        return
+    c.execute("UPDATE professionals SET billing_mode='asaas' WHERE id=?",(store,))
     row=c.execute('SELECT document FROM professionals WHERE id=?',(store,)).fetchone()
     if not row or not valid_document(row['document']):raise HTTPException(422,'CPF/CNPJ inválido. Corrija o cadastro antes da aprovação.')
     meta=c.execute("SELECT data FROM adm227_entities WHERE kind='storemeta' AND id=?",(store,)).fetchone();meta=json.loads(meta[0]) if meta else {}
@@ -57,6 +78,7 @@ def enqueue(c,store):
     c.execute("INSERT INTO billing_jobs(store_id) VALUES(?) ON CONFLICT(store_id) DO UPDATE SET state=CASE WHEN state='done' THEN 'done' ELSE 'pending' END",(store,))
 
 def api(method,path,data=None):
+    if billing_mode()!='asaas':raise RuntimeError('Asaas desativado no modo manual')
     key=os.getenv('ASAAS_API_KEY','')
     if not key:raise RuntimeError('Asaas não configurado')
     base=os.getenv('ASAAS_API_BASE','https://api-sandbox.asaas.com/v3').rstrip('/')
@@ -113,6 +135,7 @@ def apply_event(c,event):
     sid=payment.get('subscription') or subscription.get('id');sub=c.execute('SELECT * FROM asaas_subscriptions WHERE subscription_id=?',(sid,)).fetchone()
     if not sub:return False
     store=sub['store_id']
+    c.execute("UPDATE professionals SET billing_mode='asaas' WHERE id=?",(store,))
     if name in ('SUBSCRIPTION_CANCELED','SUBSCRIPTION_DELETED','SUBSCRIPTION_INACTIVATED'):
         c.execute("UPDATE asaas_subscriptions SET status='canceled',updated_at=? WHERE store_id=?",(stamp(),store));recompute(c,store);audit(c,store,'asaas',name);return True
     states={'PAYMENT_RECEIVED':'RECEIVED','PAYMENT_CONFIRMED':'CONFIRMED','PAYMENT_OVERDUE':'OVERDUE','PAYMENT_REFUNDED':'REFUNDED','PAYMENT_DELETED':'DELETED'}
@@ -131,6 +154,7 @@ def apply_event(c,event):
 
 @router.post('/webhooks/asaas')
 async def webhook(request:Request):
+    if billing_mode()!='asaas':raise HTTPException(503,'Asaas desativado: cobrança manual em uso')
     secret=os.getenv('ASAAS_WEBHOOK_TOKEN','')
     if len(secret)<32 or not hmac.compare_digest(request.headers.get('asaas-access-token',''),secret):raise HTTPException(401,'Webhook não autorizado')
     raw=await request.body()
@@ -169,6 +193,7 @@ def reconcile(store):
         c.execute('UPDATE asaas_subscriptions SET next_due=? WHERE store_id=?',(live['nextDueDate'],store));recompute(c,store)
 
 def tick():
+    if billing_mode()!='asaas':return
     # Run in a single scheduler process. A file lock is taken by the CLI/embedded worker.
     with connection() as c:
         jobs=[r['store_id'] for r in c.execute("SELECT store_id FROM billing_jobs WHERE state!='done' AND next_try<=? AND lease<=? LIMIT 25",(stamp(),stamp()))]
@@ -209,6 +234,7 @@ def connection():
 @router.post('/admin/super/api/billing/{store}/provision')
 async def activate_existing(request:Request,store:int):
     G['admin'].csrf(request)
+    if billing_mode()!='asaas':raise HTTPException(409,'Use a confirmação manual de mensalidade; Asaas está desativado')
     try:body=await request.json()
     except ValueError:raise HTTPException(422,'Conteúdo inválido')
     reason=body.get('reason','') if isinstance(body,dict) else ''
@@ -223,3 +249,47 @@ async def activate_existing(request:Request,store:int):
 
 # Stable business-rule entry point for callers and acceptance checks.
 get_effective_status=effective_status
+
+@router.post('/admin/super/api/billing/{store}/manual-payment')
+async def confirm_manual_payment(request:Request,store:int):
+    G['admin'].csrf(request)
+    if billing_mode()!='manual':raise HTTPException(409,'Cobrança automática em uso; concilie pelo Asaas')
+    try:
+        body=await request.json()
+        if not isinstance(body,dict):raise ValueError()
+        key=body['requestKey'];amount=body['amount'];paid=date.fromisoformat(body['paidOn']);due=date.fromisoformat(body['nextDue'])
+        reference=body['reference'].strip();reason=body['reason'].strip()
+        if not isinstance(key,str) or not re.fullmatch(r'[A-Za-z0-9_-]{16,128}',key):raise ValueError()
+        if type(amount) is not int or not 0<amount<=100000000:raise ValueError()
+        if paid>today() or due<=today() or due<=paid or not 3<=len(reference)<=150 or not 8<=len(reason)<=500:raise ValueError()
+    except (ValueError,KeyError,TypeError,AttributeError):raise HTTPException(422,'Confira valor, datas, referência e justificativa')
+    digest=hashlib.sha256(json.dumps({'store':store,'amount':amount,'paidOn':paid.isoformat(),'nextDue':due.isoformat(),'reference':reference,'reason':reason},sort_keys=True).encode()).hexdigest()
+    with connection() as c:
+        actor=G['admin'].auth(request,c,'finance')
+        if not actor['super'] and 'finance' not in actor['permissions']:raise HTTPException(403,'Permissão de escrita de Financeiro necessária')
+        c.execute('BEGIN IMMEDIATE')
+        old=c.execute('SELECT id,payload_hash FROM manual_payments228 WHERE request_key=?',(key,)).fetchone()
+        if old:
+            if old['payload_hash']!=digest:raise HTTPException(409,'Identificador já utilizado com outros dados')
+            return {'ok':True,'duplicate':True,'receipt':old['id']}
+        p=c.execute('SELECT * FROM professionals WHERE id=?',(store,)).fetchone()
+        if not p or p['admission_status']!='approved':raise HTTPException(409,'A loja precisa estar aprovada')
+        if p['billing_mode']=='asaas' or c.execute('SELECT 1 FROM asaas_subscriptions WHERE store_id=?',(store,)).fetchone():raise HTTPException(409,'Assinatura Asaas existente exige conciliação, não confirmação manual')
+        row=c.execute("SELECT data FROM adm227_entities WHERE kind='storemeta' AND id=?",(store,)).fetchone();meta=json.loads(row[0]) if row else {}
+        if meta.get('plan') not in ('start','pro','premium') or meta.get('price')!=amount:raise HTTPException(422,'Defina o plano e confirme o valor exato da mensalidade cadastrada')
+        try:
+            receipt=c.execute('INSERT INTO manual_payments228(store_id,request_key,payload_hash,amount,paid_on,next_due,reference,actor,created_at) VALUES(?,?,?,?,?,?,?,?,?)',(store,key,digest,amount,paid.isoformat(),due.isoformat(),reference,actor['actor_id'],stamp())).lastrowid
+        except sqlite3.IntegrityError:raise HTTPException(409,'Esta referência de pagamento já foi registrada para a loja')
+        c.execute("UPDATE professionals SET billing_mode='manual',subscription_status='active',subscription_paid=1,billing_due_date=? WHERE id=?",(due.isoformat(),store))
+        audit(c,store,actor['actor_id'],'Recebimento manual confirmado: '+reference+'; '+reason)
+        c.execute('UPDATE adm227_state SET revision=revision+1 WHERE id=1')
+    G.get('invalidate',lambda:None)();return {'ok':True,'receipt':receipt,'nextDue':due.isoformat(),'source':'manual'}
+
+@router.get('/admin/super/api/billing/manual-payments')
+def manual_receipts(request:Request,page:int=1,limit:int=50):
+    if page<1 or not 1<=limit<=50:raise HTTPException(422,'Página inválida')
+    with connection() as c:
+        G['admin'].auth(request,c,'finance')
+        rows=c.execute('SELECT id,store_id,amount,paid_on,next_due,reference,actor,created_at FROM manual_payments228 ORDER BY id DESC LIMIT ? OFFSET ?',(limit,(page-1)*limit)).fetchall()
+        total=c.execute('SELECT COUNT(*) FROM manual_payments228').fetchone()[0]
+        return {'items':[dict(r) for r in rows],'total':total,'page':page,'limit':limit}

@@ -1,11 +1,13 @@
 # NowUp Brasil — V228 P0/P1
 
-Preparado em 23/10/2026 sobre o código publicado fb5571536d4e84617756f702883428ad8f286cd3 (conteúdo local equivalente 5b0b80d, exceto arquivos antigos sem referência). Não publicado em produção nesta entrega.
+Preparado em 23/10/2026 sobre o código publicado fb5571536d4e84617756f702883428ad8f286cd3 (conteúdo local equivalente 5b0b80d, exceto arquivos antigos sem referência). Branch de entrega: `v228-auditoria-p0p1`. Modo manual habilitado por padrão; publicação da branch não executa o Manual Deploy do Render.
+
+Modo atual: **manual**, sem necessidade de conta Asaas. Validação desta revisão: **36 testes Python e 4 JavaScript passaram**, incluindo inicialização completa sem novas variáveis de segredo.
 
 ## O que mudou
 
 - Registro único de sessões em `adm227_access`, com migração aditiva dos campos antigos. Logout revoga, elimina a sessão original e limpa cookies. O frontend limpa armazenamento de autenticação e redireciona para `/entrar?logout=ok`. APIs negam sessão revogada com 401; páginas protegidas existentes continuam usando o mesmo leitor de sessão.
-- Inicialização exige `NOWUP_ADMIN_SECRET` e `NOWUP_JWT_SECRET` distintos e com pelo menos 32 caracteres. Senhas de administradores existentes não são redefinidas na inicialização. Sessões continuam opacas; o segundo segredo assina links temporários, não cria um JWT de autenticação no navegador.
+- Inicialização usa `NOWUP_ADMIN_SECRET` e `NOWUP_JWT_SECRET` distintos, com pelo menos 32 caracteres. Na ausência dessas variáveis, gera chaves aleatórias fortes uma única vez em `.runtime-secrets228.json`, com permissão 0600, junto ao banco persistente e fora de uploads públicos. Reinícios reutilizam as mesmas chaves. Variáveis explicitamente preenchidas com valores curtos ou iguais são recusadas. Senhas de administradores existentes não são redefinidas na inicialização. Sessões continuam opacas; o segundo segredo assina links temporários, não cria um JWT de autenticação no navegador.
 - `/admin/super/api/state` carrega configuração e cadastro de lojas, sem histórico de pedidos, clientes ou produtos. Esses três diretórios são paginados, com limite máximo de 50. Os valores monetários são centavos.
 - `/admin/super/api/metrics?from=2026-10-22&to=2026-10-22&city=&store=` soma apenas pedidos `completed`; cache privado em memória de 30 segundos. `/analytics/hourly` agrupa horas no SQL, em Brasília. O painel usa esses endpoints e preserva o Kanban.
 - Turnos usam intervalos semiabertos. Para 18h–02h: `hour_from=18&hour_to=2`. O intervalo inclui 01:59 do dia seguinte e exclui 02:00 e 02:59. Sem filtro de turno, 02:59 pertence ao dia civil correto. O bairro é o gravado no pedido (`delivery_neighborhood`), não o bairro atual da loja.
@@ -20,13 +22,17 @@ Asaas é acessado apenas no servidor. Ao aprovar uma loja nova, o sistema valida
 
 O webhook `/webhooks/asaas` exige `asaas-access-token` e deduplica pelo ID do evento. Pagamentos possuem ledger por ID de cobrança, sem somar duas vezes eventos repetidos. Eventos atrasados de vencimento não desfazem o recebimento da mesma cobrança. O código trata RECEIVED, CONFIRMED, OVERDUE, REFUNDED e DELETED; cancelamento aceita o nome solicitado `SUBSCRIPTION_CANCELED` e os eventos oficiais `SUBSCRIPTION_DELETED`/`SUBSCRIPTION_INACTIVATED`.
 
-D0 é o vencimento; D+1 a D+3 têm carência; bloqueio em D+4. Loja que já pagou mantém acesso na carência se KYC estiver aprovado; loja que nunca pagou permanece indisponível. Bloqueio manual de moderação é separado e não é removido por pagamento. Novos pedidos e vitrine são bloqueados no servidor com 403, preservando histórico e suporte. Conciliação diária consulta assinaturas e todas as páginas de cobranças. Worker executa a cada minuto, com lock de processo e leases de job; não depende de o painel estar aberto.
+No modo Asaas, D0 é o vencimento; D+1 a D+3 têm carência; bloqueio em D+4. Loja que já pagou mantém acesso na carência se KYC estiver aprovado; loja que nunca pagou permanece indisponível. Bloqueio manual de moderação é separado e não é removido por pagamento. Novos pedidos e vitrine são bloqueados no servidor com 403, preservando histórico e suporte. Conciliação diária consulta assinaturas e todas as páginas de cobranças. Worker executa a cada minuto, com lock de processo e leases de job; não depende de o painel estar aberto.
 
 KYC valida dígitos de CPF/CNPJ numérico, rejeitando sequências repetidas. Não verifica identidade nem situação cadastral na Receita. Upload máximo de 5 MB (PDF/PNG/JPG), privado, com conteúdo e identificador criptografados via AES-GCM. Downloads usam URL assinada de 10 minutos. A revisão requer documentos pessoal e do negócio, justificativa e permissão de escrita. Mudanças ficam em `billing_audit`. Os documentos privados também entram no backup. Conservar o segredo de criptografia com os backups: trocar `NOWUP_ADMIN_SECRET` sem migrar os documentos impede sua leitura.
 
 ## Antes de implantar
 
-**A migração não presume que lojas antigas estejam pagas ou verificadas.** Elas entram com KYC e assinatura pendentes; portanto podem ficar indisponíveis até revisão e conciliação. Preparar primeiro em homologação, validar os cadastros/contratos reais e definir a transição antes de aplicar ao banco de produção. Não falsificar aprovação ou pagamento para contornar esse requisito.
+**Não é preciso ter conta Asaas para este deploy.** Sem configuração adicional, `NOWUP_BILLING_MODE=manual`. A migração identifica lojas anteriormente aprovadas com plano habilitado e preserva seu acesso anterior (`billing_mode=legacy`), sem criar recibos, presumir pagamento ou aprovar KYC. Pausas, bloqueios e contas inativas continuam respeitados. Cadastros novos entram no modo manual e aguardam confirmação de mensalidade.
+
+No Super ADM, abra **Financeiro → Confirmar mensalidade manualmente**, escolha a loja, informe o valor exato do contrato, data recebida, próximo vencimento, referência única e justificativa. Somente Super Admin/Financeiro com escrita confirma; cada recebimento é auditado. Envio repetido com a mesma chave reutiliza o recibo, e referência repetida é recusada. Confirmar pagamento não desfaz bloqueio manual de moderação. A confirmação não consulta gateway nem exige KYC por padrão neste modo. O módulo privado de documentos continua disponível para coleta e revisão posterior.
+
+No modo manual, vencimento não executa bloqueio automático: o administrador decide quando bloquear ou pausar. Para tornar KYC obrigatório futuramente, configurar `NOWUP_KYC_ENFORCE=1` após revisar os documentos. Asaas só executa chamadas quando `NOWUP_BILLING_MODE=asaas`; apenas preencher uma chave não ativa cobranças. Preparar essa mudança em homologação antes de habilitar gateway/worker. Guardar o disco persistente e seu arquivo privado de chaves; o backup externo criptografado inclui esse arquivo.
 
 Configurar no Render, sem colocar segredos no código ou no chat:
 
@@ -34,13 +40,15 @@ Configurar no Render, sem colocar segredos no código ou no chat:
 | --- | --- |
 | `NOWUP_ADMIN_SECRET` | Segredo aleatório estável para criptografia privada; mínimo 32 caracteres |
 | `NOWUP_JWT_SECRET` | Outro segredo aleatório para links assinados; mínimo 32 caracteres |
-| `ASAAS_API_KEY` | Chave da conta correta no Asaas |
+| `NOWUP_BILLING_MODE` | `manual` por padrão; `asaas` somente quando houver conta homologada |
+| `NOWUP_KYC_ENFORCE` | `0` por padrão no modo manual; `1` exige documentos aprovados |
+| `ASAAS_API_KEY` | Opcional no modo manual; chave da conta correta no modo Asaas |
 | `ASAAS_WEBHOOK_TOKEN` | Token próprio de webhook, mínimo 32 caracteres; diferente da API key |
 | `ASAAS_API_BASE` | Homologação: `https://api-sandbox.asaas.com/v3`; produção: `https://api.asaas.com/v3` |
 | `NOWUP_BILLING_WORKER` | Manter `0` durante revisão; ativar `1` após configurar Asaas/webhook |
 | `NOWUP_KYC_DIR` | Diretório privado em disco persistente, por exemplo `/app/persist/kyc-private` |
 
-O blueprint gera os dois segredos em instalações novas. Serviços existentes configurados manualmente precisam recebê-los antes do deploy; sem eles a inicialização falha de propósito. Manter os caminhos atuais de banco e uploads no disco persistente. Não copiar bancos de testes, diretórios audit_work, node_modules ou credenciais. Fazer backup completo antes de migrar. Para cron externo com o mesmo banco, executar `python3 scripts/billing228_once.py` a cada minuto; não usar outro disco/container sem acesso ao mesmo SQLite persistente.
+O blueprint pode gerar os dois segredos em instalações novas. Serviços existentes sem essas variáveis usam o arquivo privado persistente criado pelo servidor; não é preciso preenchê-las para este Manual Deploy. Se já existem variáveis válidas, elas são mantidas. Não trocar chaves que protegem documentos existentes sem migração. Manter os caminhos atuais de banco e uploads no disco persistente. Não copiar bancos de testes, diretórios audit_work, node_modules ou credenciais. Fazer backup completo antes de migrar. Para cron externo com o mesmo banco, executar `python3 scripts/billing228_once.py` a cada minuto; não usar outro disco/container sem acesso ao mesmo SQLite persistente.
 
 ## Testes e build
 
@@ -54,7 +62,7 @@ npm --prefix frontend-admin run build
 python3 scripts/benchmark228.py
 ```
 
-A suíte usa bancos temporários e API Asaas simulada. Resultado: 31 testes Python e 3 JavaScript passaram, além da compilação Vite. Inclui 4 testes Kanban e 10 da central anterior; não se deve limitar a suíte a 14 só para reproduzir a contagem antiga.
+A suíte usa bancos temporários e API Asaas simulada. Resultado: testes Python e JavaScript passaram; consultar os arquivos TESTES do pacote para a contagem final, além da compilação Vite. Inclui 4 testes Kanban e 10 da central anterior; não se deve limitar a suíte a 14 só para reproduzir a contagem antiga.
 
 O bundle compilado já está em `static/adm227`. Ao alterar o fonte, reconstruir e copiar `frontend-admin/dist/` inteiro para `static/adm227/` antes de publicar.
 
@@ -62,7 +70,7 @@ Benchmark local descartável, 500 lojas e 30.000 pedidos: métrica sem cache ~28
 
 ## Homologação ainda necessária
 
-1. No Asaas sandbox, aprovar uma loja, verificar um único cliente e assinatura, pagar e conferir reativação. Repetir webhook, simular vencimento e conciliar. Alteração de preço de assinatura existente exige fluxo de contrato conciliado e é recusada, em vez de simular atualização de cobrança.
+1. Para ativar o Asaas futuramente, no sandbox, aprovar uma loja, verificar um único cliente e assinatura, pagar e conferir reativação. Repetir webhook, simular vencimento e conciliar. Alteração de preço de assinatura existente exige fluxo de contrato conciliado e é recusada, em vez de simular atualização de cobrança.
 2. Revisar visualmente home, loja, checkout e painéis em 375, 768 e 1440px; verificar foco, menus, categorias, banner e carrinho. Não foi executado Lighthouse nem teste visual completo nesta entrega.
 3. Medir carga com infraestrutura real, concorrência de escrita, conexões móveis, volume acumulado de meses, rotina de backup e restore em ambiente separado. SQLite tem um escritor; o benchmark não constitui garantia de escala.
 4. Campanhas externas, temas agendados, verificação externa de identidade e suporte a CNPJ alfanumérico não fazem parte desta implementação. A validação aqui é numérica conforme o escopo solicitado.

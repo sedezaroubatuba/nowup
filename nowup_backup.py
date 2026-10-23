@@ -138,6 +138,9 @@ def create_archive(directory):
             for doc in private.iterdir():
                 if doc.is_symlink() or not doc.is_file():raise RuntimeError('Arquivo privado inválido no backup')
                 entry='kyc-private/'+doc.name;z.write(doc,entry);manifest['files'][entry]=sha256(doc)
+        runtime_secret=_db.parent/'.runtime-secrets228.json'
+        if runtime_secret.is_file() and not runtime_secret.is_symlink():
+            z.write(runtime_secret,'runtime/runtime-secrets228.json');manifest['files']['runtime/runtime-secrets228.json']=sha256(runtime_secret)
         z.writestr('manifest.json',json.dumps(manifest,ensure_ascii=False))
     os.chmod(archive,0o600)
     with zipfile.ZipFile(archive) as z:
