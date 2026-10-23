@@ -15,6 +15,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Redirect
 
 router=APIRouter(); G={}; TZ=ZoneInfo('America/Sao_Paulo')
 MODULES={'dashboard','stores','finance','orders','customers','products','marketing','logistics','support','themes','settings','staff','system'}
+READ_PERMISSIONS={m+':read' for m in MODULES}
 KINDS={'plans':'finance','payments':'finance','billingCoupons':'finance','couriers':'logistics','deliveryRules':'logistics','coupons':'marketing','campaigns':'marketing','referrals':'marketing','themes':'themes','tickets':'support','staff':'staff','leads':'stores','storemeta':'stores','productCategories':'products','productmeta':'products','customermeta':'customers'}
 FINALS={'completed','cancelled','rejected'}
 
@@ -54,15 +55,17 @@ def auth(request,c,module=None):
  if u and u['role']=='admin':
   a={'id':u['id'],'actor_id':'admin:'+str(u['id']),'name':u['name'],'email':u['email'],'permissions':sorted(MODULES),'super':True,'session':tokenhash(request.cookies.get('nowup_session',''))}
  else:
-  raw=request.cookies.get('nowup_team227','');s=c.execute('SELECT staff_id FROM adm227_team_sessions WHERE token_hash=? AND expires_at>?',(tokenhash(raw),stamp())).fetchone() if raw else None
+  raw=request.cookies.get('nowup_team227','');s=c.execute('SELECT staff_id,expires_at FROM adm227_team_sessions WHERE token_hash=? AND expires_at>?',(tokenhash(raw),stamp())).fetchone() if raw else None
   member=get(c,'staff',s[0]) if s else None
   if not member or not member.get('enabled'):fail(401,'Entre novamente para acessar o painel.')
   a={**{k:member.get(k,'') for k in ('id','name','email')},'actor_id':'staff:'+str(member['id']),'permissions':member.get('permissions',[]),'super':False,'session':tokenhash(raw)}
- if module and module not in a['permissions']:fail(403,'Seu acesso não inclui este módulo.')
- access=c.execute('SELECT id,end FROM adm227_access WHERE session_hash=?',(a['session'],)).fetchone()
- if access and access['end']:fail(401,'Esta sessão foi encerrada pelo administrador. Entre novamente.')
+ if module and module not in a['permissions'] and module+':read' not in a['permissions'] and module+':write' not in a['permissions']:fail(403,'Seu acesso não inclui este módulo.')
+ access=c.execute('SELECT * FROM adm227_access WHERE session_hash=?',(a['session'],)).fetchone()
+ if access and (access['end'] or access['revoked_at'] or (access['expires_at'] and access['expires_at']<=stamp())):fail(401,'Esta sessão foi encerrada pelo administrador. Entre novamente.')
  if not access:
-  c.execute('INSERT INTO adm227_access(actor_id,name,session_hash,start,last_activity) VALUES(?,?,?,?,?)',(a['actor_id'],a['name'],a['session'],stamp(),stamp()));audit(c,a,'Entrada no Super ADM')
+  from nowup_security import register
+  expires=s['expires_at'] if not a['super'] else (datetime.now(timezone.utc)+timedelta(minutes=30)).isoformat()
+  register(c,request.cookies.get('nowup_session' if a['super'] else 'nowup_team227',''),a['id'],'admin' if a['super'] else 'team',expires,a['name']);audit(c,a,'Entrada no Super ADM')
  elif request.headers.get('x-nowup-activity')=='1':c.execute('UPDATE adm227_access SET last_activity=? WHERE id=?',(stamp(),access['id']))
  c.commit();return a
 def csrf(request):
@@ -87,11 +90,12 @@ def localminute(value):
 def localday():return datetime.now(TZ).date().isoformat()
 def metadata(c,kind):return {v['id']:v for v in rows(c,kind)}
 def public_staff(v):return {k:v.get(k) for k in ('id','name','email','role','photo','enabled','permissions')}
-def snapshot(c,a):
- permissions=set(a['permissions']);super_=a['super'];need=lambda *args:bool(permissions.intersection(args))
+def snapshot(c,a,order_ids=(),customer_ids=(),product_ids=()):
+ permissions=set(a['permissions']);super_=a['super'];need=lambda *args:super_ or any(k in permissions or k+':read' in permissions or k+':write' in permissions for k in args)
  raw_stores=[dict(r) for r in c.execute("""SELECT p.*,u.name owner,u.email,u.is_active,
- COALESCE(cat.name,'') category229,COALESCE(rating.value,0) rating229
+ COALESCE(cat.name,'') category229,COALESCE(rating.value,0) rating229,b.price paid_price228,b.next_due paid_due228
  FROM professionals p JOIN users u ON u.id=p.user_id
+ LEFT JOIN asaas_subscriptions b ON b.store_id=p.id
  LEFT JOIN (SELECT pc.professional_id,MIN(c.name) name FROM professional_categories pc JOIN categories c ON c.id=pc.category_id GROUP BY pc.professional_id) cat ON cat.professional_id=p.id
  LEFT JOIN (SELECT professional_id,AVG(stars) value FROM reviews GROUP BY professional_id) rating ON rating.professional_id=p.id
  ORDER BY p.id""")]
@@ -102,51 +106,47 @@ def snapshot(c,a):
   if need('stores'):
    st.update(owner=p['owner'],email=p['email'],phone=p['whatsapp'],document=p['document'],address=p['address'],hours=p['opening_hours'],photo='/uploads/'+p['avatar_filename'] if p['avatar_filename'] else '',slug=p['slug'],publicUrl='/p/'+p['slug'])
   else:st.update(owner='',email='',phone='',document='',address='',hours='',photo='')
-  st['category']=p['category229'];st['rating']=round(p['rating229'],1)
+  if p['paid_price228'] is not None:st.update(price=p['paid_price228'],due=p['paid_due228'])
+  st['category']=p['category229'];st['rating']=round(p['rating229'],1);st['subscriptionStatus']=p['subscription_status'];st['kycStatus']=p['kyc_status']
+  if not __import__('nowup_billing228').effective_status(p)['online']:st['online']=False
   if not need('stores'):st.update(kyc={},documents={})
   if not need('finance','dashboard'):st.update(price=0,due='',trialUntil='',cancelledAt='',subscribedAt='')
   stores.append(st)
  if need('stores'):
   for lead in rows(c,'leads'):stores.append({'city':'','neighborhood':'','category':'','owner':'','email':'','phone':'','document':'','address':'','hours':'','photo':'','radius':0,'prep':30,'rating':0,'hoursByDay':['']*7,'resources':[],'kyc':{},'documents':{},'plan':'legacy','price':0,'due':'','trialUntil':'','cancelledAt':'','subscribedAt':'','method':'Pix','online':False,'paused':False,'blocked':False,'featured':False,**lead})
- products=[];store_by_id={s['id']:s for s in stores};raw_products=[dict(r) for r in c.execute('SELECT * FROM products ORDER BY id')] if need('products','stores') else [];pm=metadata(c,'productmeta') if raw_products else {}
+ products=[];store_by_id={s['id']:s for s in stores};raw_products=[dict(r) for r in c.execute('SELECT * FROM products '+('WHERE id IN ('+','.join('?'*len(product_ids))+')' if product_ids else '')+' ORDER BY id LIMIT 50',product_ids)] if product_ids and need('products') else [];pm=metadata(c,'productmeta') if raw_products else {}
  for r in raw_products:
   if not need('products','stores'):break
   date_,hour=parts(r['created_at']);store=store_by_id.get(r['professional_id'],{})
   products.append({'id':r['id'],'store':r['professional_id'],'name':r['name'],'price':r['price_cents'],'photo':bool(r['image_filename']),'category':r['category'],'status':pm.get(r['id'],{}).get('status','Aprovado' if r['available'] else 'Pausado'),'date':date_,'hour':hour,'city':store.get('city',''),'image':'/uploads/'+r['image_filename'] if r['image_filename'] else ''})
   store.get('menu',[]).append({'name':r['name'],'price':r['price_cents']})
- orders=[];store_by_id={s['id']:s for s in stores};item_map={}
- if need('dashboard','orders','customers','stores'):
-  # Full real order history, without a hidden truncation that would falsify totals.
-  for i in c.execute('SELECT * FROM order_items ORDER BY id'):item_map.setdefault(i['order_id'],[]).append({'name':i['product_name'],'qty':i['quantity'],'price':i['unit_price_cents']})
-  assignments=metadata(c,'order_assignment')
-  for r in c.execute('SELECT * FROM orders ORDER BY id DESC'):
-   d,h=parts(r['created_at']);o={'id':r['id'],'store':r['professional_id'],'customer':r['customer_id'],'date':d,'hour':h,'minute':localminute(r['created_at']),'total':r['total_cents'],'delivery':r['delivery_fee_cents'],'status':r['status'],'live':r['status'] not in FINALS,'createdAt':r['created_at'],'items':item_map.get(r['id'],[]),'courier':assignments.get(r['id'],{}).get('courier'),'coupon':''}
-   orders.append(o)
- customers=[];cm=metadata(c,'customermeta')
- if need('customers'):
-  for u in c.execute("SELECT * FROM users WHERE role='customer' ORDER BY id"):
+ # /state contains no transaction history or customer directory. Requested mutation
+ # records are loaded by ID under a write transaction for optimistic concurrency.
+ orders=[];customers=[]
+ if order_ids and need('orders'):
+  from nowup_data228 import order_record
+  for r in c.execute('SELECT * FROM orders WHERE id IN ('+','.join('?'*len(order_ids))+')',order_ids):orders.append(order_record(r))
+ if customer_ids and need('customers'):
+  cm=metadata(c,'customermeta')
+  for u in c.execute("SELECT * FROM users WHERE role='customer' AND id IN ("+','.join('?'*len(customer_ids))+')',customer_ids):
    m=cm.get(u['id'],{});customers.append({'id':u['id'],'name':u['name'],'phone':u['phone'],'cpf':m.get('cpf',''),'birth':m.get('birth',''),'ageVerified':m.get('ageVerified',False),'city':u['city'],'neighborhood':u['neighborhood'],'address':u['address'],'blocked':not bool(u['is_active']),'joined':u['created_at'][:10]})
- elif need('orders','dashboard','marketing'):customers=[{'id':r['id'],'name':'Cliente #'+str(r['id']),'city':r['city'],'neighborhood':r['neighborhood']} for r in c.execute("SELECT id,city,neighborhood FROM users WHERE role='customer'")]
- if need('marketing'):
-  purchases={r['customer_id']:r['last_purchase'] for r in c.execute("SELECT customer_id,MAX(created_at) last_purchase FROM orders WHERE status='completed' GROUP BY customer_id")}
-  for customer in customers:customer['lastPurchase229']=purchases.get(customer['id'],'')[:10]
  current_settings=dict(c.execute('SELECT key,value FROM site_settings').fetchall());categories=[r['name'] for r in c.execute('SELECT name FROM categories ORDER BY sort_order,id')]
  cities=sorted({s['city'] for s in stores if s['city']}|{v.strip() for v in current_settings.get('active_cities','Ubatuba').split(',') if v.strip()})
- config={'autoBlock':False,'deliveryPerKm':0,'minOrder':0,'platformHours':'','globalMessage':'','homeTitle':current_settings.get('hero_title',''),'homeText':current_settings.get('hero_subtitle',''),'cities':cities,'activeCities':current_settings.get('active_cities','Ubatuba').split(','),**settings}
+ config={'autoBlock':True,'deliveryPerKm':0,'minOrder':0,'platformHours':'','globalMessage':'','homeTitle':current_settings.get('hero_title',''),'homeText':current_settings.get('hero_subtitle',''),'cities':cities,'activeCities':current_settings.get('active_cities','Ubatuba').split(','),**settings}
  banners=[]
  if need('settings'):
   for b in c.execute('SELECT * FROM home_banners210 ORDER BY position,id'):banners.append({'id':b['id'],'title':b['title'],'desktop':b['image'],'mobile':'','link':'','enabled':bool(b['active']),'start':'','end':'','city':'Todas','neighborhood':''})
  staff=[public_staff(s) for s in rows(c,'staff')] if super_ else []
  access=[]
  if super_:
-  for s in c.execute('SELECT * FROM adm227_access ORDER BY id DESC LIMIT 2000'):access.append({'id':s['id'],'employee':int(s['actor_id'].split(':')[1]) if s['actor_id'].startswith('staff:') else -int(s['actor_id'].split(':')[1]),'name':s['name'],'start':s['start'],'end':s['end'],'lastActivity':s['last_activity'],'state':s['state'],'device':'Sessão registrada no servidor'})
- logs=[{'id':r['id'],'actor':r['actor'],'action':r['action'],'date':r['created_at']} for r in c.execute('SELECT * FROM adm227_audit ORDER BY id DESC LIMIT 5000')] if need('system') or super_ else []
- result={'version':1,'operationsVersion':2,'profile':{'name':a['name'],'email':a['email'],'phone':'','cpf':'','photo':''},'plans':plans if need('finance','dashboard','stores') else [],'stores':stores,'orders':orders,'customers':customers,'products':products,'categories':categories,'banners':banners,'settings':config,'sessions':access,'logs':logs,'staff':staff,'errors':[],'integrations':{'payments':'Não conectado','whatsapp':False,'push':False},'reports':[]}
+  for s in c.execute("SELECT * FROM adm227_access WHERE actor_id LIKE 'staff:%' OR actor_id LIKE 'admin:%' ORDER BY id DESC LIMIT 200"):access.append({'id':s['id'],'employee':int(s['actor_id'].split(':')[1]) if s['actor_id'].startswith('staff:') else -int(s['actor_id'].split(':')[1]),'name':s['name'],'start':s['start'],'end':s['end'],'lastActivity':s['last_activity'],'state':s['state'],'device':'Sessão registrada no servidor'})
+ logs=[{'id':r['id'],'actor':r['actor'],'action':r['action'],'date':r['created_at']} for r in c.execute('SELECT * FROM adm227_audit ORDER BY id DESC LIMIT 200')] if need('system') or super_ else []
+ result={'version':1,'operationsVersion':2,'profile':{'name':a['name'],'email':a['email'],'phone':'','cpf':'','photo':''},'plans':plans if need('finance','dashboard','stores') else [],'stores':stores,'orders':orders,'customers':customers,'products':products,'categories':categories,'banners':banners,'settings':config,'sessions':access,'logs':logs,'staff':staff,'errors':[],'integrations':{'payments':'Asaas configurado' if __import__('nowup_billing228').configured() else 'Asaas aguardando credenciais','whatsapp':False,'push':False},'reports':[]}
  for kind,module in KINDS.items():
   if kind in ('leads','storemeta','productmeta','customermeta','staff'):continue
   if kind not in result:result[kind]=rows(c,kind) if module in permissions else []
  result['productCategories']=[x['name'] for x in rows(c,'productCategories')] if need('products') else []
- result['_meta']={'revision':c.execute('SELECT revision FROM adm227_state WHERE id=1').fetchone()[0],'actor':{k:a[k] for k in ('id','name','email','super','permissions')},'live':True,'unsupported':['gateway','whatsapp_api','push_campaign','automatic_billing_block','public_coupons','referrals_credit','theme_scheduler','assisted_login','kyc_provider','background_jobs'],'fetchedAt':stamp()}
+ result['_meta']={'revision':c.execute('SELECT revision FROM adm227_state WHERE id=1').fetchone()[0],'actor':{k:a[k] for k in ('id','name','email','super','permissions')},'live':True,'unsupported':['whatsapp_api','push_campaign','public_coupons','referrals_credit','theme_scheduler','assisted_login','kyc_identity_provider'],'paginated':True,'fetchedAt':stamp()}
  return result
 
 @router.get('/admin/super')
@@ -205,11 +205,13 @@ def update_store(c,a,oid,v,why):
  if 'email' in v:fail(400,'A troca de e-mail exige o fluxo de confirmação do cadastro atual.')
  if 'menu' in v:fail(400,'Cadastre produtos pelo painel da loja; os adicionais existentes precisam ser preservados.')
  if 'resources' in v:fail(400,'Os recursos seguem as regras atuais do plano. A troca de botões exige integração específica.')
- if 'documents' in v:fail(400,'O armazenamento privado de KYC ainda não está configurado.')
+ if 'documents' in v:fail(400,'Envie documentos pelo fluxo privado de KYC.')
+ if set(v)&{'price','plan','due','method','trialUntil','cancelledAt'} and c.execute('SELECT 1 FROM asaas_subscriptions WHERE store_id=? AND subscription_id IS NOT NULL',(oid,)).fetchone():fail(409,'Uma assinatura Asaas existente exige alteração de contrato conciliada; nenhum valor foi alterado.')
  m=get(c,'storemeta',oid) or {'id':oid};columns={}
  for key,col in {'name':'display_name','city':'city','neighborhood':'neighborhood','phone':'whatsapp','document':'document','address':'address','hours':'opening_hours','owner':None}.items():
   if key in v:
    val=clean(v[key],500, key in {'name','city','owner'})
+   if key=='document' and val and not __import__('nowup_billing228').valid_document(val):fail(422,'CPF/CNPJ inválido')
    if col:columns[col]=val
    if key=='owner':c.execute('UPDATE users SET name=? WHERE id=?',(val,p['user_id']))
  if 'photo' in v:columns['avatar_filename']=image(c,a,v['photo'])
@@ -243,13 +245,14 @@ def update_store(c,a,oid,v,why):
  if 'hoursByDay' in v:
   if not isinstance(v['hoursByDay'],list) or len(v['hoursByDay'])!=7:fail(400,'Informe os sete dias da semana.')
   m['hoursByDay']=[clean(s,40) for s in v['hoursByDay']]
- if 'kyc' in v:fail(400,'KYC real ainda não está configurado; não marque documentos como verificados por esta tela.')
+ if 'kyc' in v:fail(400,'Use a revisão privada de documentos para aprovar KYC.')
  if 'category' in v:
   cat=c.execute('SELECT id FROM categories WHERE name=? AND active=1',(clean(v['category'],120),)).fetchone()
   if not cat:fail(400,'Categoria de loja não encontrada.')
   c.execute('DELETE FROM professional_categories WHERE professional_id=?',(oid,));c.execute('INSERT INTO professional_categories VALUES(?,?)',(oid,cat[0]))
  if columns:c.execute('UPDATE professionals SET '+','.join(k+'=?' for k in columns)+' WHERE id=?',(*columns.values(),oid))
  put(c,'storemeta',oid,m)
+ if columns.get('admission_status')=='approved' and p['admission_status']!='approved':__import__('nowup_billing228').enqueue(c,oid)
 
 def update_order(c,a,oid,v,why):
  if set(v)-{'status','courier'}:fail(400,'Campo do pedido não permitido.')
@@ -356,7 +359,7 @@ async def change(request:Request):
  if not isinstance(body,dict) or not isinstance(body.get('changes'),list) or len(body['changes'])>50:fail(400,'Alterações inválidas.')
  why=clean(body.get('reason',''),500,True)
  with connection() as c:
-  a=auth(request,c);c.execute('BEGIN IMMEDIATE');current=snapshot(c,a)
+  a=auth(request,c);c.execute('BEGIN IMMEDIATE');current=snapshot(c,a,tuple(op['id'] for op in body['changes'] if op.get('kind')=='orders' and isinstance(op.get('id'),int)),tuple(op['id'] for op in body['changes'] if op.get('kind')=='customers' and isinstance(op.get('id'),int)),tuple(op['id'] for op in body['changes'] if op.get('kind')=='products' and isinstance(op.get('id'),int)))
   if body.get('revision')!=current['_meta']['revision']:fail(409,'Outro usuário alterou o painel. Atualize e tente novamente.')
   for op in body['changes']:
    if not isinstance(op,dict):fail(400,'Operação inválida.')
@@ -409,7 +412,7 @@ async def change(request:Request):
     for i,name in enumerate(names):c.execute('UPDATE categories SET sort_order=? WHERE name=?',(i,name))
    elif kind=='settings':
     if not a['super']:fail(403,'Configuração global exige Super ADM.')
-    if v.get('autoBlock') is True:fail(409,'O bloqueio automático por cobrança exige gateway e validação antes de ativar.')
+    if 'autoBlock' in v and type(v['autoBlock']) is not bool:fail(422,'autoBlock deve ser booleano')
     if set(v)&{'deliveryPerKm','minOrder'}:fail(409,'As regras de entrega continuam por loja; configure no painel de cada loja.')
     cfg=json.loads(c.execute('SELECT settings FROM adm227_state WHERE id=1').fetchone()[0]);cfg.update(v)
     for key,target in [('homeTitle','hero_title'),('homeText','hero_subtitle')]:
@@ -426,14 +429,14 @@ async def change(request:Request):
     member.update(v)
     member['name']=clean(member.get('name',''),100,True);member['email']=clean(member.get('email',''),200,True).lower()
     if not re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+',member['email']):fail(400,'E-mail inválido.')
-    if not isinstance(member.get('permissions'),list) or set(member['permissions'])-MODULES:fail(400,'Permissões inválidas.')
+    if not isinstance(member.get('permissions'),list) or set(member['permissions'])-(MODULES|READ_PERMISSIONS):fail(400,'Permissões inválidas.')
     if any(x['email']==member['email'] and x['id']!=oid for x in rows(c,'staff')):fail(409,'E-mail já cadastrado.')
     if v.get('photo'):member['photo']='/uploads/'+image(c,a,v['photo'])
     if creating:
      oid=nextid(c,'staff');member.update(id=oid,enabled=True,password_hash='')
     put(c,'staff',oid,member)
     if member.get('enabled') is False:
-     c.execute('DELETE FROM adm227_team_sessions WHERE staff_id=?',(oid,));c.execute("UPDATE adm227_access SET end=?,state='Revogada' WHERE actor_id=? AND end=''",(stamp(),'staff:'+str(oid)))
+     c.execute('DELETE FROM adm227_team_sessions WHERE staff_id=?',(oid,));c.execute("UPDATE adm227_access SET end=?,revoked_at=CURRENT_TIMESTAMP,end_at=CURRENT_TIMESTAMP,state='Revogada' WHERE actor_id=? AND end=''",(stamp(),'staff:'+str(oid)))
    elif kind=='sessions':
     if not a['super'] or creating or set(v)-{'end','state'}:fail(403,'Ação de sessão não permitida.')
     row=c.execute('SELECT * FROM adm227_access WHERE id=?',(oid,)).fetchone()
@@ -453,7 +456,7 @@ async def change(request:Request):
     if kind=='plans':oid=next((i+1 for i,r in enumerate(current['plans']) if r['id']==op.get('id')),0)
     update_entity(c,a,kind,number(oid,0),merged,creating,why)
   audit(c,a,why,','.join(str(o.get('kind'))+':'+str(o.get('id','novo')) for o in body['changes']))
-  c.execute('UPDATE adm227_state SET revision=revision+1 WHERE id=1');c.commit();return JSONResponse(snapshot(c,a),headers={'Cache-Control':'no-store'})
+  c.execute('UPDATE adm227_state SET revision=revision+1 WHERE id=1');c.commit();__import__('nowup_data228').invalidate();return JSONResponse(snapshot(c,a),headers={'Cache-Control':'no-store'})
 
 @router.post('/admin/super/api/invite/{staff_id}')
 def invite(request:Request,staff_id:int):
@@ -514,6 +517,10 @@ def code_submit(request:Request,code:str=Form(...)):
 @router.post('/admin/super/api/logout')
 def logout(request:Request):
  csrf(request)
+ from nowup_security import revoke_session,clear_cookies
  with connection() as c:
-  a=auth(request,c);c.execute("UPDATE adm227_access SET end=?,state='Deslogado' WHERE session_hash=?",(stamp(),a['session']));__import__('nowup_security').revoke_session(c,a['session']);audit(c,a,'Saída do Super ADM');c.commit()
- resp=JSONResponse({'ok':True,'next':'/admin/super/equipe/entrar'});resp.delete_cookie('nowup_team227',path='/admin/super');return resp
+  for name in ('nowup_session','nowup_team227'):
+   raw=request.cookies.get(name)
+   if raw:revoke_session(c,tokenhash(raw))
+  c.commit()
+ return clear_cookies(JSONResponse({'ok':True,'next':'/entrar?logout=ok'}))

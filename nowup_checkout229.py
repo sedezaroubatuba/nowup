@@ -20,6 +20,12 @@ def begin_checkout(conn, customer_id, professional_id, request_key, payload):
             separators=(',', ':')).encode()).hexdigest()
         key = request_key or 'legacy-' + digest
         conn.execute('BEGIN IMMEDIATE')
+        canonical=conn.execute('SELECT response_json FROM idempotency_keys WHERE store_id=? AND key=?',(professional_id,key)).fetchone()
+        if canonical:
+            saved=json.loads(canonical[0])
+            if saved['customer_id']!=customer_id or saved['payload_hash']!=digest:
+                raise HTTPException(409,'Chave de pedido já utilizada com outros dados.')
+            return saved['tracking_token'],key,digest
         row = conn.execute('''SELECT r.payload_hash,r.created_at,o.tracking_token
             FROM checkout_requests229 r JOIN orders o ON o.id=r.order_id
             WHERE r.customer_id=? AND r.professional_id=? AND r.request_key=?''',
@@ -38,6 +44,8 @@ def begin_checkout(conn, customer_id, professional_id, request_key, payload):
 
 
 def remember_checkout(conn, customer_id, professional_id, key, digest, order_id, created_at):
+    token=conn.execute('SELECT tracking_token FROM orders WHERE id=?',(order_id,)).fetchone()[0]
+    conn.execute('INSERT INTO idempotency_keys VALUES(?,?,?,?,?)',(professional_id,key,order_id,json.dumps({'tracking_token':token,'payload_hash':digest,'customer_id':customer_id}),created_at))
     conn.execute('INSERT INTO checkout_requests229 VALUES(?,?,?,?,?,?)',
         (customer_id, professional_id, key, digest, order_id, created_at))
 

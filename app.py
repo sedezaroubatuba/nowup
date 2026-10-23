@@ -11,7 +11,7 @@ from urllib.parse import quote, urlparse
 from urllib.request import Request as URLRequest, urlopen
 from urllib.error import HTTPError, URLError
 
-from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException
+from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -74,8 +74,10 @@ async def renew_saved_login(request: Request, call_next):
         expires = (datetime.now(timezone.utc) + timedelta(days=SESSION_DAYS)).isoformat()
         updated = conn.execute("""UPDATE sessions SET expires_at=?
             WHERE token=? AND expires_at>? AND user_id IN
-            (SELECT id FROM users WHERE is_active=1 AND role IN ('customer','professional'))""",
-            (expires, token, now_iso())).rowcount
+            (SELECT id FROM users WHERE is_active=1 AND role IN ('customer','professional'))
+            AND NOT EXISTS(SELECT 1 FROM adm227_access a WHERE a.session_hash=? AND (a.revoked_at IS NOT NULL OR a.end!=''))""",
+            (expires, token, now_iso(), hashlib.sha256(token.encode()).hexdigest())).rowcount
+        if updated:conn.execute("UPDATE adm227_access SET expires_at=? WHERE session_hash=? AND revoked_at IS NULL AND end=''",(expires,hashlib.sha256(token.encode()).hexdigest()))
         conn.commit()
     finally:
         conn.close()
@@ -115,7 +117,14 @@ def business_hours_lines(pro):
             lines.append(f"{DAY_LABELS[day]}: {row.get('start','09:00')}–{row.get('end','18:00')}")
     return lines
 
+def get_effective_status(pro):
+    from nowup_billing228 import effective_status
+    return effective_status(pro)
+
 def shop_status(pro):
+    from nowup_billing228 import effective_status
+    if pro["blocked"] or ("subscription_status" in pro.keys() and not effective_status(pro)["online"]):
+        return {"open":False,"code":"unavailable","label":"Loja temporariamente indisponível","detail":"Cadastro, assinatura ou KYC pendente"}
     manual=pro["business_status"] or "open"
     labels={"paused":"Loja pausada", "temporarily_closed":"Fechada temporariamente", "vacation":"Fechada para férias", "ad_paused":"Anúncio pausado"}
     if manual in labels:
@@ -188,9 +197,11 @@ def slugify(value: str):
     return value or secrets.token_hex(4)
 
 def db():
-    conn = sqlite3.connect(DB_PATH, timeout=15)
+    conn = sqlite3.connect(DB_PATH, timeout=5)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA busy_timeout = 5000")
+    conn.execute("PRAGMA journal_mode = WAL")
     return conn
 
 def hash_password(password: str, salt: Optional[str]=None):
@@ -729,6 +740,8 @@ def init_db():
 
 @app.on_event("startup")
 def startup():
+    from nowup_security import require_secrets
+    require_secrets()
     init_db()
     init_cms_db()
     # Cópia SQLite consistente; o disco persistente deve incluir a pasta data.
@@ -1031,7 +1044,7 @@ def attach_cart_assets144(response):
     return response
 
 @app.get("/p/{slug}", response_class=HTMLResponse)
-def profile(request: Request, slug: str):
+def profile(request: Request, slug: str, background_tasks: BackgroundTasks):
     conn=db()
     p=conn.execute("""
       SELECT p.*,
@@ -1040,8 +1053,7 @@ def profile(request: Request, slug: str):
       FROM professionals p WHERE p.slug=? AND p.blocked=0 AND p.admission_status='approved' AND p.plan_active!='none'
     """,(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404,"Profissional não encontrado")
-    conn.execute("UPDATE professionals SET views=views+1 WHERE id=?",(p["id"],))
-    conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"profile_view",now_iso())); conn.commit()
+    background_tasks.add_task(nowup_runtime228.analytics,p['id'],'profile_view')
     photos=conn.execute("SELECT * FROM photos WHERE professional_id=? ORDER BY is_cover DESC,id DESC",(p["id"],)).fetchall()
     posts=conn.execute("SELECT * FROM posts WHERE professional_id=? ORDER BY id DESC",(p["id"],)).fetchall()
     reviews=conn.execute("SELECT r.*,u.name FROM reviews r JOIN users u ON u.id=r.customer_id WHERE r.professional_id=? ORDER BY r.id DESC",(p["id"],)).fetchall()
@@ -1074,7 +1086,7 @@ def profile(request: Request, slug: str):
     return attach_cart_assets144(templates.TemplateResponse("profile.html", context(request, pro=pub, products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, photos=photos, posts=posts, reviews=reviews, pro_categories=cats, product_count=product_count, shop_status=status, hours_lines=business_hours_lines(p), can_review=can_review)))
 
 @app.get("/p/{slug}/menu", response_class=HTMLResponse)
-def native_menu(request: Request, slug: str):
+def native_menu(request: Request, slug: str, background_tasks: BackgroundTasks):
     conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved' AND plan_active IN ('cardapio','ambos')",(slug,)).fetchone()
     if not p: conn.close(); raise HTTPException(404,"Empresa não encontrada")
     if not p["is_premium"] or p["offer_mode"] not in ("menu","catalog"):
@@ -1092,8 +1104,7 @@ def native_menu(request: Request, slug: str):
     for row in conn.execute("""SELECT po.* FROM product_options po JOIN products pr ON pr.id=po.product_id
       WHERE pr.professional_id=? AND po.available=1 ORDER BY po.sort_order,po.id""",(p["id"],)).fetchall():
         product_options.setdefault(row["product_id"],[]).append(row)
-    conn.execute("UPDATE professionals SET menu_clicks=menu_clicks+1 WHERE id=?",(p["id"],))
-    conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"menu_click",now_iso())); conn.commit()
+    background_tasks.add_task(nowup_runtime228.analytics,p['id'],'menu_click')
     product_groups,delivery_zones=menu_rules89(conn,p["id"]); conn.close()
     status=shop_status(p)
     return attach_cart_assets144(attach_food_assets(templates.TemplateResponse("menu.html", context(request, pro=p, products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, shop_status=status))))
@@ -1121,87 +1132,99 @@ def options_single158(conn, product_id, raw_options):
 @app.post("/p/{slug}/menu/pedido")
 def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...), save_address: Optional[str]=Form(None), order_channel: str=Form("internal"), request_key: str=Form("")):
     logged=current_user(request)
-    conn=db(); p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved' AND plan_active IN ('cardapio','ambos')",(slug,)).fetchone()
-    if not p: conn.close(); raise HTTPException(404)
-    if logged and logged['id']==p['user_id']:
-        conn.close(); raise HTTPException(403,"Você pode visualizar sua loja, mas não fazer pedidos nela.")
-    if not logged or logged['role'] != 'customer':
-        conn.close()
-        return RedirectResponse('/p/'+quote(slug,safe='')+'/menu?conta=1',303)
-    if not customer_name.strip() or len(customer_name.strip())<2 or not normalize_phone(customer_phone):
-        conn.close(); raise HTTPException(400,'Informe nome e WhatsApp válidos')
-    if not p["is_premium"] or p["offer_mode"] not in ("menu","catalog"):
-        conn.close(); raise HTTPException(403,"Cardápio ou catálogo disponível somente no plano Premium")
-    from nowup_checkout229 import begin_checkout, completed_response
-    existing,checkout_key229,checkout_hash229=begin_checkout(conn,logged['id'],p['id'],request_key,{
-        'cart':cart_json,'name':customer_name,'phone':customer_phone,'fulfillment':fulfillment_type,
-        'payment':payment_method,'address':address,'neighborhood':neighborhood,
-        'reference':address_reference,'change':change_for,'notes':notes,'channel':order_channel})
-    if existing:
-        conn.close()
-        return completed_response(slug,existing)
-    if not shop_status(p)["open"]: conn.close(); return RedirectResponse(f"/p/{slug}/menu?fechado=1",303)
-    try: raw_items=json.loads(cart_json)
-    except Exception: conn.close(); raise HTTPException(400,"Carrinho inválido")
-    if not isinstance(raw_items,list) or not raw_items: conn.close(); raise HTTPException(400,"Carrinho vazio")
-    clean_items=[]; subtotal=0
-    for raw in raw_items[:50]:
-        try: pid=int(raw.get("id")); qty=max(1,min(99,int(raw.get("quantity",1)))); item_notes=str(raw.get("notes","")).strip()[:300]
-        except (TypeError,ValueError,AttributeError): continue
-        product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=? AND available=1",(pid,p["id"])).fetchone()
-        if not product:
-            conn.close(); raise HTTPException(400,"Um produto do carrinho ficou indisponível. Atualize o cardápio antes de enviar o pedido.")
-        if product:
-            qty=min(qty,max(1,product["max_quantity"] or 99)); chosen=[]; extras=0
-            try:chosen,extras=options_single158(conn,pid,raw.get("options",[]))
-            except HTTPException:conn.close();raise
-            utensils=raw.get("utensils",False)
-            try:item_notes=validate_customization(parse_config(product["customization192"]),raw.get("customization",{}),item_notes,utensils)
-            except HTTPException:conn.close();raise
-            try: validate_choices89(conn,pid,chosen)
+    conn=db()
+    try:
+        p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved' AND plan_active IN ('cardapio','ambos')",(slug,)).fetchone()
+        if not p: conn.close(); raise HTTPException(404)
+        if logged and logged['id']==p['user_id']:
+            conn.close(); raise HTTPException(403,"Você pode visualizar sua loja, mas não fazer pedidos nela.")
+        if not logged or logged['role'] != 'customer':
+            conn.close()
+            return RedirectResponse('/p/'+quote(slug,safe='')+'/menu?conta=1',303)
+        if not customer_name.strip() or len(customer_name.strip())<2 or not normalize_phone(customer_phone):
+            conn.close(); raise HTTPException(400,'Informe nome e WhatsApp válidos')
+        if not p["is_premium"] or p["offer_mode"] not in ("menu","catalog"):
+            conn.close(); raise HTTPException(403,"Cardápio ou catálogo disponível somente no plano Premium")
+        header_key=request.headers.get('x-idempotency-key','')
+        if not header_key or (request_key and header_key!=request_key):
+            conn.close();raise HTTPException(400,'X-Idempotency-Key obrigatório e consistente com o formulário')
+        request_key=header_key
+        from nowup_checkout229 import begin_checkout, completed_response
+        existing,checkout_key229,checkout_hash229=begin_checkout(conn,logged['id'],p['id'],request_key,{
+            'cart':cart_json,'name':customer_name,'phone':customer_phone,'fulfillment':fulfillment_type,
+            'payment':payment_method,'address':address,'neighborhood':neighborhood,
+            'reference':address_reference,'change':change_for,'notes':notes,'channel':order_channel})
+        if existing:
+            conn.close()
+            return completed_response(slug,existing)
+        nowup_billing228.assert_available(conn,p['id'])
+        if not shop_status(p)["open"]: conn.close(); return RedirectResponse(f"/p/{slug}/menu?fechado=1",303)
+        try: raw_items=json.loads(cart_json)
+        except Exception: conn.close(); raise HTTPException(400,"Carrinho inválido")
+        if not isinstance(raw_items,list) or not raw_items: conn.close(); raise HTTPException(400,"Carrinho vazio")
+        clean_items=[]; subtotal=0
+        for raw in raw_items[:50]:
+            try: pid=int(raw.get("id")); qty=max(1,min(99,int(raw.get("quantity",1)))); item_notes=str(raw.get("notes","")).strip()[:300]
+            except (TypeError,ValueError,AttributeError): continue
+            product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=? AND available=1",(pid,p["id"])).fetchone()
+            if not product:
+                conn.close(); raise HTTPException(400,"Um produto do carrinho ficou indisponível. Atualize o cardápio antes de enviar o pedido.")
+            if product:
+                qty=min(qty,max(1,product["max_quantity"] or 99)); chosen=[]; extras=0
+                try:chosen,extras=options_single158(conn,pid,raw.get("options",[]))
+                except HTTPException:conn.close();raise
+                utensils=raw.get("utensils",False)
+                try:item_notes=validate_customization(parse_config(product["customization192"]),raw.get("customization",{}),item_notes,utensils)
+                except HTTPException:conn.close();raise
+                try: validate_choices89(conn,pid,chosen)
+                except HTTPException: conn.close(); raise
+                unit=(product["promo_price_cents"] if product["promo_price_cents"]>0 else product["price_cents"])+extras
+                clean_items.append((product,qty,item_notes,chosen,unit)); subtotal += unit*qty
+        if not clean_items: conn.close(); raise HTTPException(400,"Nenhum produto disponível no carrinho")
+        fulfillment_type="delivery" if fulfillment_type=="delivery" else "pickup"
+        if fulfillment_type=="delivery" and not address.strip():
+            conn.close(); raise HTTPException(400,"Informe o endereço para entrega")
+        if fulfillment_type=="delivery" and not p["allows_delivery"]: conn.close(); raise HTTPException(400,"Esta loja não realiza entregas")
+        if fulfillment_type=="pickup" and not p["allows_pickup"]: conn.close(); raise HTTPException(400,"Esta loja não permite retirada")
+        if subtotal < (p["minimum_order_cents"] or 0): conn.close(); raise HTTPException(400,"O pedido não atingiu o valor mínimo")
+        delivery_fee=0
+        if fulfillment_type=="delivery":
+            try: delivery_fee,neighborhood=delivery_quote89(conn,p,neighborhood)
             except HTTPException: conn.close(); raise
-            unit=(product["promo_price_cents"] if product["promo_price_cents"]>0 else product["price_cents"])+extras
-            clean_items.append((product,qty,item_notes,chosen,unit)); subtotal += unit*qty
-    if not clean_items: conn.close(); raise HTTPException(400,"Nenhum produto disponível no carrinho")
-    fulfillment_type="delivery" if fulfillment_type=="delivery" else "pickup"
-    if fulfillment_type=="delivery" and not address.strip():
-        conn.close(); raise HTTPException(400,"Informe o endereço para entrega")
-    if fulfillment_type=="delivery" and not p["allows_delivery"]: conn.close(); raise HTTPException(400,"Esta loja não realiza entregas")
-    if fulfillment_type=="pickup" and not p["allows_pickup"]: conn.close(); raise HTTPException(400,"Esta loja não permite retirada")
-    if subtotal < (p["minimum_order_cents"] or 0): conn.close(); raise HTTPException(400,"O pedido não atingiu o valor mínimo")
-    delivery_fee=0
-    if fulfillment_type=="delivery":
-        try: delivery_fee,neighborhood=delivery_quote89(conn,p,neighborhood)
-        except HTTPException: conn.close(); raise
-    total=subtotal+delivery_fee
-    payment_labels={"pix":"Pix","cash":"Dinheiro","credit":"Cartão de crédito","debit":"Cartão de débito","on_delivery":"Combinar no atendimento"}
-    payment_method=payment_method if payment_method in payment_labels else "pix"
-    change_for_cents=price_to_cents(change_for) if payment_method=="cash" and change_for.strip() else 0
-    customer_id=logged['id'] if logged else None
-    created=now_iso(); tracking_token=secrets.token_urlsafe(24)
-    cur=conn.execute("""INSERT INTO orders(professional_id,customer_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at,subtotal_cents,delivery_fee_cents,neighborhood,address_reference,change_for_cents,tracking_token)
-      VALUES(?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?)""",(p["id"],customer_id,customer_name.strip()[:120],customer_phone.strip()[:30],fulfillment_type,address.strip()[:300],notes.strip()[:500],"new",total,created,created,subtotal,delivery_fee,neighborhood.strip()[:120],address_reference.strip()[:220],change_for_cents,tracking_token))
-    if not logged:
-        conn.execute('INSERT INTO guest_order_limits(professional_id,phone,created_at) VALUES(?,?,?)',(p['id'],normalize_phone(customer_phone),created))
-        conn.execute('DELETE FROM guest_order_limits WHERE created_at<?',((datetime.now(timezone.utc)-timedelta(days=2)).isoformat(),))
-    order_id=cur.lastrowid
-    order_code=f"NU-{order_id:06d}"; conn.execute("UPDATE orders SET payment_method=?,order_code=?,order_origin=? WHERE id=?",(payment_method,order_code,"external" if order_channel=="external" or p["plan_active"]=="cardapio" else "nowup",order_id))
-    conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)",(order_id,"new",created))
-    for product,qty,item_notes,chosen,unit in clean_items:
-        item_cur=conn.execute("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes) VALUES(?,?,?,?,?,?)",(order_id,product["id"],product["name"],qty,unit,item_notes))
-        for option in chosen: conn.execute("INSERT INTO order_item_options(order_item_id,option_id,option_name,price_cents) VALUES(?,?,?,?)",(item_cur.lastrowid,option["id"],option["name"],option["price_cents"]))
-    if customer_id and fulfillment_type=="delivery" and save_address:
-        conn.execute("UPDATE users SET address=?,neighborhood=?,address_reference=? WHERE id=? AND role='customer'",
-                     (address.strip()[:300],neighborhood.strip()[:120],address_reference.strip()[:220],logged["id"]))
-    conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(p["user_id"],"Novo pedido no NowUp",f"{order_code} — {customer_name.strip()[:120]}",f"/painel#pedido-{order_id}",created))
-    nowup_push75.enqueue_on_connection(conn,p["user_id"],order_id)
-    from nowup_checkout229 import remember_checkout
-    remember_checkout(conn,logged['id'],p['id'],checkout_key229,checkout_hash229,order_id,created)
-    conn.commit(); conn.close()
-    response=RedirectResponse(f"/pedido/{tracking_token}",303)
-    response.set_cookie("nowup_cart_completed",slug,max_age=120,samesite="lax",secure=request.url.scheme=="https")
-    response.set_cookie("nowup_cart_completed_token",tracking_token,max_age=600,httponly=True,samesite="lax",secure=request.url.scheme=="https")
-    return response
+        total=subtotal+delivery_fee
+        payment_labels={"pix":"Pix","cash":"Dinheiro","credit":"Cartão de crédito","debit":"Cartão de débito","on_delivery":"Combinar no atendimento"}
+        payment_method=payment_method if payment_method in payment_labels else "pix"
+        change_for_cents=price_to_cents(change_for) if payment_method=="cash" and change_for.strip() else 0
+        customer_id=logged['id'] if logged else None
+        created=now_iso(); tracking_token=secrets.token_urlsafe(24)
+        cur=conn.execute("""INSERT INTO orders(professional_id,customer_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at,subtotal_cents,delivery_fee_cents,neighborhood,address_reference,change_for_cents,tracking_token)
+          VALUES(?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?)""",(p["id"],customer_id,customer_name.strip()[:120],customer_phone.strip()[:30],fulfillment_type,address.strip()[:300],notes.strip()[:500],"new",total,created,created,subtotal,delivery_fee,neighborhood.strip()[:120],address_reference.strip()[:220],change_for_cents,tracking_token))
+        if not logged:
+            conn.execute('INSERT INTO guest_order_limits(professional_id,phone,created_at) VALUES(?,?,?)',(p['id'],normalize_phone(customer_phone),created))
+            conn.execute('DELETE FROM guest_order_limits WHERE created_at<?',((datetime.now(timezone.utc)-timedelta(days=2)).isoformat(),))
+        order_id=cur.lastrowid
+        order_code=f"NU-{order_id:06d}"; conn.execute("UPDATE orders SET payment_method=?,order_code=?,order_origin=? WHERE id=?",(payment_method,order_code,"external" if order_channel=="external" or p["plan_active"]=="cardapio" else "nowup",order_id))
+        conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)",(order_id,"new",created))
+        for product,qty,item_notes,chosen,unit in clean_items:
+            item_cur=conn.execute("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes) VALUES(?,?,?,?,?,?)",(order_id,product["id"],product["name"],qty,unit,item_notes))
+            for option in chosen: conn.execute("INSERT INTO order_item_options(order_item_id,option_id,option_name,price_cents) VALUES(?,?,?,?)",(item_cur.lastrowid,option["id"],option["name"],option["price_cents"]))
+        if customer_id and fulfillment_type=="delivery" and save_address:
+            conn.execute("UPDATE users SET address=?,neighborhood=?,address_reference=? WHERE id=? AND role='customer'",
+                         (address.strip()[:300],neighborhood.strip()[:120],address_reference.strip()[:220],logged["id"]))
+        conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(p["user_id"],"Novo pedido no NowUp",f"{order_code} — {customer_name.strip()[:120]}",f"/painel#pedido-{order_id}",created))
+        nowup_push75.enqueue_on_connection(conn,p["user_id"],order_id)
+        conn.execute('UPDATE orders SET delivery_neighborhood=? WHERE id=?',(neighborhood.strip()[:120],order_id))
+        conn.execute("INSERT INTO saved_carts VALUES(?,?,'[]',?) ON CONFLICT(user_id,store_id) DO UPDATE SET payload='[]',updated_at=excluded.updated_at",(customer_id,p['id'],created))
+        from nowup_checkout229 import remember_checkout
+        remember_checkout(conn,logged['id'],p['id'],checkout_key229,checkout_hash229,order_id,created)
+        conn.commit(); conn.close()
+        response=RedirectResponse(f"/pedido/{tracking_token}",303)
+        response.set_cookie("nowup_cart_completed",slug,max_age=120,samesite="lax",secure=request.url.scheme=="https")
+        response.set_cookie("nowup_cart_completed_token",tracking_token,max_age=600,httponly=True,samesite="lax",secure=request.url.scheme=="https")
+        return response
+
+    finally:
+        conn.close()
 
 ORDER_STATUS_LABELS={
   "new":"Aguardando aceite", "confirmed":"Pedido aceito", "preparing":"Em preparo",
@@ -1381,7 +1404,13 @@ def signup_success(request: Request, tipo: str="cliente"):
 def create_session_response(uid:int, dest:str, is_admin:bool=False):
     lifetime=timedelta(minutes=ADMIN_SESSION_MINUTES) if is_admin else timedelta(days=SESSION_DAYS)
     token=secrets.token_urlsafe(32); expires=(datetime.now(timezone.utc)+lifetime).isoformat()
-    conn=db(); conn.execute("INSERT INTO sessions(token,user_id,expires_at) VALUES(?,?,?)",(token,uid,expires)); conn.commit(); conn.close()
+    conn=db()
+    try:
+        conn.execute("INSERT INTO sessions(token,user_id,expires_at) VALUES(?,?,?)",(token,uid,expires))
+        from nowup_security import register
+        user=conn.execute('SELECT role,name FROM users WHERE id=?',(uid,)).fetchone()
+        register(conn,token,uid,user['role'],expires,user['name']);conn.commit()
+    finally:conn.close()
     resp=RedirectResponse(dest,303)
     cookie_options={"httponly":True,"samesite":"lax","path":"/","secure":os.getenv("NOWUP_HTTPS","0")=="1"}
     if not is_admin:
@@ -1428,12 +1457,21 @@ def reset_password(token: str=Form(...), password: str=Form(...), password_confi
     return RedirectResponse("/entrar?senha_redefinida=1",303)
 
 @app.post("/sair")
+@app.post("/logout")
 def logout(request: Request):
-    token=request.cookies.get("nowup_session")
-    if token:
-        nowup_push75.disable_session(token)
-        conn=db(); conn.execute("DELETE FROM sessions WHERE token=?",(token,)); conn.commit(); conn.close()
-    resp=RedirectResponse("/",303); resp.delete_cookie("nowup_session"); return resp
+    from nowup_security import revoke_session,token_hash,clear_cookies
+    from urllib.parse import urlsplit
+    origin=request.headers.get('origin')
+    if not origin or urlsplit(origin).netloc!=request.headers.get('host'):raise HTTPException(403,'Origem inválida')
+    conn=db()
+    try:
+        for name in ('nowup_session','nowup_team227'):
+            token=request.cookies.get(name)
+            if token:revoke_session(conn,token_hash(token))
+        conn.commit()
+    finally:conn.close()
+    return clear_cookies(RedirectResponse('/entrar?logout=ok',303))
+
 
 def order_day_bounds(day):
     """Limites UTC do dia comercial em São Paulo, incluindo a virada da data."""
@@ -2844,3 +2882,43 @@ def pro_kanban228(request: Request):
         return templates.TemplateResponse("merchant_kanban228.html",{"request":request,"kanban":kanban,"status_labels":ORDER_STATUS_LABELS},headers={"Cache-Control":"private, no-store"})
     finally:
         conn.close()
+
+# V228 audited migrations and bounded APIs. No destructive migration or data reset.
+import nowup_security,nowup_data228,nowup_billing228,nowup_kyc228,nowup_runtime228
+nowup_data228.configure(dict(db=db,db_path=DB_PATH,admin=nowup_admin227))
+nowup_billing228.configure(dict(db=db,admin=nowup_admin227,invalidate=nowup_data228.invalidate))
+nowup_kyc228.configure(dict(db=db,db_path=DB_PATH,current_user=current_user,admin=nowup_admin227,invalidate=nowup_data228.invalidate))
+nowup_runtime228.configure(dict(db=db,db_path=DB_PATH,current_user=current_user,billing=nowup_billing228))
+app.include_router(nowup_data228.router)
+app.include_router(nowup_billing228.router)
+app.include_router(nowup_kyc228.router)
+app.include_router(nowup_runtime228.router)
+
+@app.on_event('startup')
+def initialize228():
+    nowup_security.require_secrets()
+    conn=db()
+    try:
+        nowup_security.initialize(conn);nowup_data228.initialize(conn);nowup_billing228.initialize(conn);conn.commit()
+    finally:conn.close()
+    nowup_runtime228.start_worker()
+
+@app.on_event('shutdown')
+def shutdown228():nowup_runtime228.stop_worker()
+
+@app.middleware('http')
+async def enforce_store_entitlements228(request,call_next):
+    try:
+        match=re.match(r'^/p/([^/]+)(?:/|$)',request.url.path)
+        if match:
+            conn=db()
+            try:
+                p=conn.execute('SELECT p.*,u.is_active FROM professionals p JOIN users u ON u.id=p.user_id WHERE p.slug=?',(match.group(1),)).fetchone()
+                if p and not nowup_billing228.effective_status(p)['online']:
+                    user=current_user(request) if request.method=='GET' else None
+                    preview=user and (user['role']=='admin' or user['id']==p['user_id'])
+                    if not preview:return JSONResponse({'detail':'Loja temporariamente indisponível'},status_code=403)
+            finally:conn.close()
+        return await call_next(request)
+    except sqlite3.OperationalError:
+        return JSONResponse({'detail':'O serviço está temporariamente indisponível. Tente novamente em instantes.'},status_code=503,headers={'Retry-After':'5','Cache-Control':'no-store'})

@@ -133,6 +133,11 @@ def create_archive(directory):
             if (before.st_ino,before.st_size,before.st_mtime_ns)!=(after.st_ino,after.st_size,after.st_mtime_ns):
                 raise RuntimeError('Uma foto mudou durante a cópia. Tente novamente.')
             manifest['files'][entry]=digest.hexdigest()
+        private=Path(os.getenv('NOWUP_KYC_DIR',str(_db.parent/'kyc-private')))
+        if private.exists():
+            for doc in private.iterdir():
+                if doc.is_symlink() or not doc.is_file():raise RuntimeError('Arquivo privado inválido no backup')
+                entry='kyc-private/'+doc.name;z.write(doc,entry);manifest['files'][entry]=sha256(doc)
         z.writestr('manifest.json',json.dumps(manifest,ensure_ascii=False))
     os.chmod(archive,0o600)
     with zipfile.ZipFile(archive) as z:
@@ -278,3 +283,20 @@ def download(request:Request):
         shutil.rmtree(directory)
         raise HTTPException(409,'Não foi possível gerar a cópia completa. Confira os caminhos e as imagens cadastradas.') from exc
     return FileResponse(archive,filename='NOWUP-BACKUP-'+datetime.now(ZONE).strftime('%Y%m%d-%H%M%S')+'.zip',media_type='application/zip',headers={'Cache-Control':'no-store'},background=BackgroundTask(shutil.rmtree,directory))
+
+# Purpose-separated encryption for private KYC content and stored file identifiers.
+def private_key():
+    from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+    from cryptography.hazmat.primitives import hashes
+    secret=os.environ['NOWUP_ADMIN_SECRET']
+    return HKDF(algorithm=hashes.SHA256(),length=32,salt=None,info=b'nowup-kyc-v228').derive(secret.encode())
+
+def protect_private(raw):
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    nonce=os.urandom(12)
+    return base64.urlsafe_b64encode(nonce+AESGCM(private_key()).encrypt(nonce,raw,b'kyc228'))
+
+def unprotect_private(raw):
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    data=base64.urlsafe_b64decode(raw)
+    return AESGCM(private_key()).decrypt(data[:12],data[12:],b'kyc228')

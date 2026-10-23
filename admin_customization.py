@@ -13,6 +13,7 @@ templates = Jinja2Templates(directory=str(BASE / "templates"))
 
 def db():
     conn=sqlite3.connect(DB_PATH)
+    conn.execute("PRAGMA busy_timeout=5000")
     conn.row_factory=sqlite3.Row
     return conn
 
@@ -97,7 +98,9 @@ def create_secure_session(uid: int, dest: str, admin: bool=False):
     token=secrets.token_urlsafe(32)
     ttl=timedelta(minutes=30) if admin else timedelta(days=30)
     expires=(datetime.now(timezone.utc)+ttl).isoformat()
-    conn=db(); conn.execute("INSERT INTO sessions(token,user_id,expires_at) VALUES(?,?,?)",(token,uid,expires)); conn.commit(); conn.close()
+    conn=db(); conn.execute("INSERT INTO sessions(token,user_id,expires_at) VALUES(?,?,?)",(token,uid,expires)); from nowup_security import register
+    user=conn.execute('SELECT role,name FROM users WHERE id=?',(uid,)).fetchone()
+    register(conn,token,uid,user['role'],expires,user['name']);conn.commit(); conn.close()
     resp=RedirectResponse(dest,303)
     kwargs={"httponly":True,"samesite":"lax","secure":os.getenv("NOWUP_HTTPS","0")=="1"}
     if not admin:

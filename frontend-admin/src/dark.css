@@ -8,7 +8,7 @@
 .ops-alert{width:100%;text-align:left;font:inherit;color:inherit;border:0;background:transparent;cursor:pointer}.ops-alert:focus-visible{outline:2px solid #a382ff;outline-offset:3px}
 
 /* Shared palette and interaction states for the connected Super ADM. */
-:root{--brand:#7036c6;--brand-hover:#642bb5;--brand-active:#57229e;--brand-soft:#c4a4ff;--focus:#d8c2ff;--text-primary:#f1f2fb;--text-secondary:#b8c1d5;--surface:#151925;--border:#3b4257;--purple:var(--brand-soft)}
+:root{--brand:var(--color-primary);--brand-hover:#642bb5;--brand-active:#57229e;--brand-soft:#c4a4ff;--focus:#d8c2ff;--text-primary:#f1f2fb;--text-secondary:#b8c1d5;--surface:#151925;--border:#3b4257;--purple:var(--brand-soft)}
 .btn{background:var(--brand);border-color:var(--brand);font-size:12px;min-height:40px;transition:background-color .15s,border-color .15s,box-shadow .15s}
 .btn:hover:not(:disabled){background:var(--brand-hover);border-color:var(--brand-hover)}
 .btn:active:not(:disabled){background:var(--brand-active);border-color:var(--brand-active);box-shadow:inset 0 2px 4px #0003}
@@ -27,3 +27,5 @@ button[aria-busy=true]{cursor:progress}
 .field input::placeholder,.field textarea::placeholder,.searchbox input::placeholder{color:#a0adc5}
 @media(max-width:768px){.btn,.btn.small,.icon-btn,.sidebar nav button,.section-tabs button{min-height:44px}.icon-btn{min-width:44px}.field input,.field select,.field textarea,.ops-filters input,.ops-filters select{font-size:16px;min-height:44px}.form-grid{grid-template-columns:1fr}.ops-filters{min-width:0;max-width:100%;flex-wrap:wrap}.ops-filters label{min-width:0;max-width:100%}.panel{min-width:0}.table-scroll{max-width:100%;overflow-x:auto}.page-heading h1{overflow-wrap:anywhere}.modal{max-width:calc(100vw - 24px)}}
 @media(prefers-reduced-motion:reduce){.btn{transition:none}.button-spinner{animation:none;border-style:dotted}}
+
+.btn{min-height:44px;font-size:14px}.main-shell{min-width:0}.page-heading,.ops-filters{max-width:100%;box-sizing:border-box}

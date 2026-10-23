@@ -12,12 +12,21 @@ def env(tmp_path_factory):
     directory=tmp_path_factory.mktemp('merchant228')
     os.environ['NOWUP_DB']=str(directory/'test.db')
     os.environ['NOWUP_UPLOAD_DIR']=str(directory/'uploads')
+    os.environ['NOWUP_ADMIN_SECRET']='test-admin-secret-only-000000000000000000'
+    os.environ['NOWUP_JWT_SECRET']='test-jwt-secret-only-11111111111111111111'
+    os.environ['NOWUP_BILLING_WORKER']='0'
     os.environ['NOWUP_ADMIN_EMAIL']='admin@test.invalid'
     os.environ['NOWUP_ADMIN_PASSWORD']='isolated-local-test-password'
     sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
     m=importlib.import_module('app')
+    m.DB_PATH=directory/'test.db';m.UPLOAD_DIR=directory/'uploads';m.UPLOAD_DIR.mkdir(exist_ok=True)
+    for module_name in ('admin_customization','cms','email_verification'):
+        module=importlib.import_module(module_name)
+        if hasattr(module,'DB_PATH'):module.DB_PATH=m.DB_PATH
     for callback in m.app.router.on_startup:
         if callback.__name__!='start':callback()
+    m.nowup_home210.configure(m.__dict__)
+    m.nowup_push75.initialize()
     with m.db() as c:
         stores=c.execute('SELECT id,user_id FROM professionals ORDER BY id LIMIT 2').fetchall()
         assert len(stores)==2

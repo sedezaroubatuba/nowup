@@ -15,6 +15,16 @@ services:
         sync: false
       - key: NOWUP_ADMIN_PASSWORD
         sync: false
+      - key: NOWUP_ADMIN_SECRET
+        generateValue: true
+      - key: NOWUP_JWT_SECRET
+        generateValue: true
+      - key: NOWUP_KYC_DIR
+        value: /app/persist/kyc-private
+      - key: NOWUP_BILLING_WORKER
+        value: "0"
+      - key: ASAAS_API_BASE
+        value: https://api-sandbox.asaas.com/v3
     disk:
       name: nowup-data
       mountPath: /app/persist

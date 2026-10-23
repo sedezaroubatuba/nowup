@@ -10,26 +10,36 @@
   const completed=document.cookie.match(/(?:^|;\s*)nowup_cart_completed=([^;]+)/);
   if(completed){try{const slug=decodeURIComponent(completed[1]);if(path.endsWith('/p/'+slug)){localStorage.removeItem(key);localStorage.removeItem(infoKey);document.cookie='nowup_cart_completed=; Max-Age=0; Path=/';}}catch(_){}}
   const money=c=>(c/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),esc=v=>String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-  const checkoutForm229=dialog.querySelector('form');
+  let cartSyncTimer228,cartSyncReady228=false,submitting228=false;
+  const checkoutForm229=dialog.querySelector('form'),requestStorage228=key+':request';
   if(checkoutForm229){
     const requestInput=document.createElement('input');requestInput.type='hidden';requestInput.name='request_key';checkoutForm229.append(requestInput);
     let lastPayload='',token='';
-    checkoutForm229.addEventListener('submit',event=>{
-      const fields=[...new FormData(checkoutForm229)].filter(([name])=>name!=='request_key');const payload=JSON.stringify(fields);
+    try{const saved=JSON.parse(localStorage.getItem(requestStorage228)||'null');if(saved){lastPayload=saved.payload;token=saved.token}}catch(_){}
+    checkoutForm229.addEventListener('submit',async event=>{
+      event.preventDefault();if(submitting228)return;
+      const fields=[...new FormData(checkoutForm229)].filter(([name])=>name!=='request_key'),payload=JSON.stringify(fields);
       if(!token||payload!==lastPayload){token=crypto.randomUUID();lastPayload=payload;}
-      requestInput.value=token;
-      if(checkoutForm229.dataset.submitting229==='1'){event.preventDefault();return;}
-      checkoutForm229.dataset.submitting229='1';
-      const button=event.submitter;if(button){button.disabled=true;button.textContent='Enviando pedido…';}
-      setTimeout(()=>{checkoutForm229.dataset.submitting229='';if(button){button.disabled=false;button.textContent='Tentar enviar novamente';}},15000);
+      requestInput.value=token;try{localStorage.setItem(requestStorage228,JSON.stringify({token,payload}))}catch(_){}
+      submitting228=true;clearTimeout(cartSyncTimer228);
+      const button=event.submitter,before=button?.textContent;if(button){button.disabled=true;button.setAttribute('aria-busy','true');button.textContent='Enviando pedido…'}
+      const abort=new AbortController(),timeout=setTimeout(()=>abort.abort(),25000);
+      try{
+        const response=await fetch(checkoutForm229.action,{method:'POST',body:new FormData(checkoutForm229),credentials:'same-origin',headers:{'X-Idempotency-Key':token},signal:abort.signal});
+        if(!response.ok){let detail='Não foi possível confirmar o pedido.';try{detail=(await response.json()).detail||detail}catch(_){}throw Error(detail)}
+        const next=new URL(response.url);
+        if(next.origin===location.origin&&next.pathname.startsWith('/pedido/')){localStorage.removeItem(key);localStorage.removeItem(infoKey);localStorage.removeItem(requestStorage228);location.assign(next.href);return}
+        if(response.redirected&&next.origin===location.origin){location.assign(next.href);return}
+        throw Error('Pedido não confirmado. Tente novamente com o mesmo envio.');
+      }catch(error){let message=checkoutForm229.querySelector('[data-submit-error228]');if(!message){message=document.createElement('p');message.dataset.submitError228='';message.setAttribute('role','alert');checkoutForm229.append(message)}message.textContent=error.name==='AbortError'?'A confirmação demorou. Tente novamente; o mesmo envio não cria outro pedido.':error.message;}
+      finally{clearTimeout(timeout);submitting228=false;if(button){button.disabled=false;button.removeAttribute('aria-busy');button.textContent=before}}
     });
-    window.addEventListener('pageshow',()=>{checkoutForm229.dataset.submitting229='';checkoutForm229.querySelectorAll('[type=submit]').forEach(b=>b.disabled=false);});
   }
   const cartField=dialog.querySelector('[data-cart-json]'),dialogTotal=dialog.querySelector('[data-dialog-total]'),fulfillment=dialog.querySelector('[data-fulfillment]'),payment=dialog.querySelector('[data-payment]'),dockTotal=root.querySelector('[data-dock-total]'),cartCount=root.querySelector('[data-cart-count]'),dockCheckout=root.querySelector('[data-dock-checkout]');
   const qty=v=>Math.max(1,Math.min(99,parseInt(v,10)||1));
   function baseSubtotal(){let sum=0;cart.forEach(v=>sum+=v.unitPrice*v.quantity);return sum}
   function fee(){return fulfillment?.value==='delivery'?Number(cfg.deliveryFee||0):0}
-  function save(){try{localStorage.setItem(key,JSON.stringify([...cart]));localStorage.setItem(infoKey,JSON.stringify({name:cfg.storeName||'',updated:Date.now()}));window.dispatchEvent(new Event('nowup-cart-changed'));}catch(_){}}
+  function save(){try{localStorage.setItem(key,JSON.stringify([...cart]));localStorage.setItem(infoKey,JSON.stringify({name:cfg.storeName||'',updated:Date.now()}));window.dispatchEvent(new Event('nowup-cart-changed'));if(customerId&&cfg.storeId&&cartSyncReady228&&!submitting228){clearTimeout(cartSyncTimer228);const snapshot=JSON.stringify({items:[...cart],updatedAt:Date.now()});cartSyncTimer228=setTimeout(()=>fetch('/api/cart/'+cfg.storeId,{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:snapshot}).catch(()=>{}),600)}}catch(_){}}
   function sync(){if(cartField)cartField.value=JSON.stringify([...cart].map(([,v])=>({id:v.productId,quantity:v.quantity,notes:v.notes||'',options:v.options.map(o=>({id:Number(o.id),quantity:o.quantity||1})),utensils:!!v.utensils,customization:v.customization||{removed:[],groups:{}}})));save()}
   const notesAllowed=v=>{const card=[...root.querySelectorAll('[data-product]')].find(p=>Number(p.dataset.id)===v.productId);try{return JSON.parse(card?.dataset.custom192||'null')?.notes!==false;}catch(_){return true;}};
   const isPersonalized=v=>[...root.querySelectorAll('[data-product]')].some(p=>Number(p.dataset.id)===v.productId&&p.dataset.dish==='1');
@@ -37,6 +47,7 @@
     items.innerHTML=html||'<p class="muted">Adicione produtos para começar.</p>';const sub=baseSubtotal(),grand=sub+fee(),count=[...cart.values()].reduce((sum,v)=>sum+v.quantity,0);total.textContent=money(sub);if(dialogTotal)dialogTotal.textContent=money(grand);if(dockTotal)dockTotal.textContent=money(sub);if(cartCount)cartCount.textContent=count+` ${count===1?'item':'itens'}`;checkout.disabled=cfg.ownerView||cfg.open===false||!cart.size||sub<Number(cfg.minimumOrder||0)||[...cart.values()].some(v=>v.options.length>20||v.options.some(o=>(o.quantity||1)!==1));if(dockCheckout)dockCheckout.disabled=checkout.disabled;checkout.textContent=[...cart.values()].some(v=>v.options.length>20||v.options.some(o=>(o.quantity||1)!==1))?'Atualize os adicionais: até 3, uma porção de cada':cfg.open===false?'Pedidos pausados':cart.size&&sub<Number(cfg.minimumOrder||0)?`Faltam ${money(Number(cfg.minimumOrder)-sub)} para o mínimo`:'Continuar pedido';const note=dialog.querySelector('[data-fee-note]');if(note)note.textContent=fee()?`(inclui ${money(fee())} de entrega)`:'';sync()}
   if(!customerId)try{if(localStorage.getItem(key)===null){const legacy=localStorage.getItem(key+'/menu');if(legacy!==null){localStorage.setItem(key,legacy);localStorage.removeItem(key+'/menu');}}}catch(_){}
   try{(JSON.parse(localStorage.getItem(key)||'[]')||[]).forEach(([id,v])=>{if(v&&v.name)cart.set(String(id),{...v,productId:Number(v.productId||String(id).split(':')[0]),unitPrice:Number(v.unitPrice||v.price||0),options:Array.isArray(v.options)?v.options:[],max:Number(v.max||99)})})}catch(_){localStorage.removeItem(key)}
+  if(customerId&&cfg.storeId){const localBefore=localStorage.getItem(key);fetch('/api/cart/'+cfg.storeId,{credentials:'same-origin',cache:'no-store'}).then(r=>r.ok?r.json():null).then(remote=>{if(!submitting228&&!localBefore&&(localStorage.getItem(key)===localBefore||localStorage.getItem(key)==='[]')&&cart.size===0&&Array.isArray(remote?.items)){cart.clear();for(const entry of remote.items){if(Array.isArray(entry)&&entry.length===2&&entry[1]?.name)cart.set(String(entry[0]),{...entry[1],options:Array.isArray(entry[1].options)?entry[1].options:[]})}render()}}).catch(()=>{}).finally(()=>{cartSyncReady228=true;save()})}else cartSyncReady228=true;
   window.NOWUP_CART160={
     get(id){const v=cart.get(id);return v?JSON.parse(JSON.stringify(v)):null;},
     commit(card,configs,replaceId=null){
