@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  const heading=root?.querySelector('.nu83-catalog-heading'),layout=root?.querySelector('.menu-layout');
  const search=heading?.querySelector('[data-product-search], [data-store-search]');
  if(!root||!template||!heading||!layout||!search){body.classList.remove('nu187-store-home');return;}
+ const desktop228=matchMedia('(min-width:901px)');
  const make=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;};
  const intro=template.content.firstElementChild.cloneNode(true),nav=root.querySelector('.menu-category-nav');
  const sticky=root.querySelector('.nu-menu-sticky')||heading.parentElement;
@@ -32,6 +33,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   resize();window.scrollTo({top:0,behavior:'instant'});if(focus)search.focus({preventScroll:true});
  }
  function showHome(){
+  if(desktop228.matches){showProducts();return;}
   selectedCategory=null;categoryView.hidden=true;body.classList.remove('nu191-category');
   intro.hidden=false;showcase.hidden=false;body.classList.add('nu187-store-home');back.setAttribute('aria-label','Voltar ao início do NowUp');
   if(nav)anchor.after(nav);search.value='';search.dispatchEvent(new Event('input',{bubbles:true}));search.placeholder='Pesquisar produtos';search.setAttribute('aria-label','Pesquisar produtos nesta loja');search.blur();
@@ -102,8 +104,9 @@ document.addEventListener('DOMContentLoaded',()=>{
  search.addEventListener('click',()=>{if(body.classList.contains('nu187-store-home'))showProducts(true);});
  search.addEventListener('keydown',event=>{if(body.classList.contains('nu187-store-home')&&(event.key==='Enter'||event.key.length===1))showProducts();});
  search.addEventListener('input',()=>{if(body.classList.contains('nu187-store-home')&&search.value)showProducts();});
- back.addEventListener('click',()=>{if(body.classList.contains('nu187-store-home'))location.href='/';else showHome();});
+ back.addEventListener('click',()=>{if(desktop228.matches||body.classList.contains('nu187-store-home'))location.href='/';else showHome();});
  intro.querySelector('[data-store-promotion187]')?.addEventListener('click',()=>showProducts());
  window.addEventListener('nowup-cart-changed',()=>cartRefreshers.forEach(fn=>fn()));
+ desktop228.addEventListener('change',()=>{if(desktop228.matches)showProducts();else showHome();});
  body.dataset.store187Ready='1';if(new URLSearchParams(location.search).has('produto')||/^#produto-/.test(location.hash))showProducts();else showHome();
 });
