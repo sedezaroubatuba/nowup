@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  const heading=root?.querySelector('.nu83-catalog-heading'),layout=root?.querySelector('.menu-layout');
  const search=heading?.querySelector('[data-product-search], [data-store-search]');
  if(!root||!template||!heading||!layout||!search){body.classList.remove('nu187-store-home');return;}
+ const pageSize235=root.dataset.carouselLayout==='large'?1:4;
  const desktop228=matchMedia('(min-width:901px)');
  const desktopStyle228=document.createElement('style');
  desktopStyle228.textContent=`@media(min-width:901px){
@@ -76,7 +77,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const section=make('section','nu190-category');section.dataset.category190=key;sections.set(key,section);
   const header=make('header'),all=make('button','','Ver todos ›');all.type='button';all.addEventListener('click',()=>showCategory(key));const title=make('h2'),icon=make('span','nu229-category-icon');icon.setAttribute('aria-hidden','true');icon.replaceChildren(window.NowUpCategory230.create(group.name));title.append(icon,document.createTextNode(group.name));header.append(title,all);section.append(header);
   const track=make('div','nu190-track');track.tabIndex=0;track.setAttribute('aria-label','Produtos de '+group.name+'; deslize para os lados');
-  const pages=[];for(let i=0;i<group.cards.length;i+=4){const page=make('div','nu190-page');group.cards.slice(i,i+4).forEach(card=>page.append(compact(card)));pages.push(page);track.append(page);}section.append(track);
+  const pages=[];for(let i=0;i<group.cards.length;i+=pageSize235){const page=make('div','nu190-page');group.cards.slice(i,i+pageSize235).forEach(card=>page.append(compact(card)));pages.push(page);track.append(page);}section.append(track);
   const indicator=make('div','nu190-indicator'),prev=make('button','','‹'),next=make('button','','›'),dots=make('div','nu190-dots');prev.type=next.type='button';prev.setAttribute('aria-label','Página anterior de '+group.name);next.setAttribute('aria-label','Próxima página de '+group.name);
   let index=0;
   const dotButtons=pages.map((_,i)=>{const b=make('button');b.type='button';b.setAttribute('aria-label','Página '+(i+1)+' de '+group.name);b.addEventListener('click',()=>go(i));dots.append(b);return b;});

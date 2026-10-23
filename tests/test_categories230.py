@@ -63,3 +63,22 @@ def test_rendered_pages_and_migration(env):
         assert 'nu230-data' in response.text
         assert 'categories230.js' in response.text
     assert 'data-icon-picker230' in client.get('/painel').text
+
+
+def test_carousel_preference_is_persistent_validated_and_store_specific(env):
+    m,client,stores=env
+    client.cookies.set('nowup_session','icon-test-0')
+    with m.db() as c:
+        other_before=c.execute('SELECT carousel_layout235 FROM professionals WHERE id=?',(stores[1]['id'],)).fetchone()[0]
+    response=client.post('/painel/cardapio/exibicao',data={'carousel_layout235':'large'},follow_redirects=False)
+    assert response.status_code==303
+    with m.db() as c:
+        assert c.execute('SELECT carousel_layout235 FROM professionals WHERE id=?',(stores[0]['id'],)).fetchone()[0]=='large'
+        assert c.execute('SELECT carousel_layout235 FROM professionals WHERE id=?',(stores[1]['id'],)).fetchone()[0]==other_before
+    assert 'data-carousel-layout="large"' in client.get('/p/'+stores[0]['slug']).text
+    assert 'Foto grande — 1 produto por vez' in client.get('/painel').text
+    assert client.post('/painel/cardapio/exibicao',data={'carousel_layout235':'invalid'},follow_redirects=False).status_code==422
+    with m.db() as c:
+        assert c.execute('SELECT carousel_layout235 FROM professionals WHERE id=?',(stores[0]['id'],)).fetchone()[0]=='large'
+    assert client.post('/painel/cardapio/exibicao',data={'carousel_layout235':'compact'},follow_redirects=False).status_code==303
+    assert 'data-carousel-layout="compact"' in client.get('/p/'+stores[0]['slug']).text

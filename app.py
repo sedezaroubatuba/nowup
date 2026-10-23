@@ -543,6 +543,7 @@ def init_db():
     CREATE INDEX IF NOT EXISTS idx_product_categories_professional
       ON product_categories(professional_id,active,sort_order,id);
     """)
+    ensure_column(conn, "professionals", "carousel_layout235", "TEXT NOT NULL DEFAULT 'compact'")
     ensure_column(conn, "product_categories", "icon_key", "TEXT NOT NULL DEFAULT 'auto'")
     ensure_column(conn, "users", "email_verified", "INTEGER NOT NULL DEFAULT 1")
     ensure_column(conn, "users", "verification_token", "TEXT DEFAULT ''")
@@ -1840,6 +1841,20 @@ def pro_cart_notice143(request: Request, cart_notice: str=Form("")):
     finally:
         conn.close()
     return RedirectResponse("/painel?ok=aviso-carrinho#aviso-carrinho",303)
+
+@app.post("/painel/cardapio/exibicao")
+def pro_carousel_layout235(request: Request, carousel_layout235: str=Form(...)):
+    u=require_user(request,"professional")
+    if carousel_layout235 not in ("compact", "large"):
+        raise HTTPException(422,"Formato de carrossel inválido")
+    conn=db()
+    try:
+        require_premium_catalog(conn,u["id"])
+        conn.execute("UPDATE professionals SET carousel_layout235=? WHERE user_id=?",(carousel_layout235,u["id"]))
+        conn.commit()
+    finally:
+        conn.close()
+    return RedirectResponse("/painel?ok=exibicao#cardapio",303)
 
 @app.post("/painel/cardapio/configuracoes")
 def pro_menu_settings(request: Request, delivery_fee: str=Form("0"), minimum_order: str=Form("0"), prep_minutes: int=Form(40), pix_key: str=Form(""), allows_delivery: Optional[str]=Form(None), allows_pickup: Optional[str]=Form(None)):

@@ -88,3 +88,14 @@ html body.public-profile-area.nu232-store [data-native-menu] .nu190-showcase .nu
 html body.public-profile-area.nu232-store [data-native-menu] .nu190-showcase .nu201-card.nu190-card .nu201-open{min-height:40px!important;height:auto!important;margin-top:auto!important;font-size:12px!important;padding:8px 2px!important}
 html body.public-profile-area.nu232-store [data-native-menu] .nu190-showcase .nu201-selected.nu201-card.nu190-card{grid-template-columns:minmax(0,1fr)!important;min-height:150px!important}
 }
+
+/* V235: optional single-product carousel, scoped to the merchant preference. */
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout="large"] .nu190-showcase .nu190-page{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto!important}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout="large"] .nu190-showcase .nu201-card.nu190-card{display:flex!important;flex-direction:column!important;height:auto!important;min-height:0!important;padding:12px!important;gap:10px!important;max-width:560px!important;width:100%!important;margin-inline:auto!important}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout="large"] .nu190-showcase .nu201-card.nu190-card>img,
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout="large"] .nu190-showcase .nu201-card.nu190-card>.nu190-no-image{display:block!important;width:100%!important;height:clamp(200px,58vw,300px)!important;min-height:200px!important;padding:0!important;object-fit:contain!important;border:0!important;border-radius:12px!important}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout="large"] .nu190-showcase .nu201-card.nu190-card .nu190-card-content{width:100%!important;text-align:left!important;gap:10px!important}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout="large"] .nu190-showcase .nu201-card.nu190-card h3{display:block!important;font-size:18px!important;line-height:1.3!important;min-height:0!important;max-height:none!important;overflow:visible!important;-webkit-line-clamp:unset!important}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout="large"] .nu190-showcase .nu201-card.nu190-card strong{font-size:22px!important;margin:0!important}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout="large"] .nu190-showcase .nu201-card.nu190-card .nu201-open{min-height:46px!important;height:auto!important;font-size:16px!important;padding:12px!important}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout="large"] .nu190-showcase .nu201-selected.nu201-card.nu190-card>img{display:none!important}

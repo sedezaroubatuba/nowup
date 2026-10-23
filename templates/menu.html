@@ -94,7 +94,7 @@ html body.public-profile-area .nu85-note textarea{height:66px!important;min-heig
 
 </div>
 </section>
-<section class="native-menu" data-native-menu data-owner200="{{1 if user and user.id==pro.user_id else 0}}">
+<section class="native-menu" data-native-menu data-carousel-layout="{{pro.carousel_layout235}}" data-owner200="{{1 if user and user.id==pro.user_id else 0}}">
 <div class="container">
 <header class="nu83-catalog-heading"><h2>{{'Catálogo' if pro.offer_mode=='catalog' else 'Cardápio'}}</h2><label class="nu83-search">Buscar produtos<input class="input" type="search" data-product-search placeholder="Buscar produtos" aria-label="Buscar produtos"></label></header>
 <div class="store-status {% if shop_status.open %}open{% else %}closed{% endif %}"><b>{{shop_status.label}}</b><span>{{shop_status.detail}}</span>{% if not shop_status.open %}<small>Você pode consultar o {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}, mas os pedidos estão pausados neste momento.</small>{% endif %}</div>
