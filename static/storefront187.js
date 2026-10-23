@@ -54,14 +54,14 @@ document.addEventListener('DOMContentLoaded',()=>{
   else item.append(make('div','nu190-no-image','🍽'));
   if(card.dataset.cold==='1'){const ice=make('span','nu201-ice','❄');ice.title='Vendido gelado';ice.setAttribute('aria-label','Vendido gelado');item.append(ice);}
   const content=make('div','nu190-card-content');content.append(make('h3','',card.dataset.name||'Produto'),make('strong','',money(Number(card.dataset.price)||0)));
-  const toggle=make('button','nu201-open','Escolher');toggle.type='button';toggle.setAttribute('aria-label','Escolher '+card.dataset.name);toggle.setAttribute('aria-expanded','false');
+  const toggle=make('button','nu201-open','Adicionar');toggle.type='button';toggle.setAttribute('aria-label','Adicionar '+card.dataset.name);toggle.setAttribute('aria-expanded','false');
   const panel=make('div','nu201-panel');panel.hidden=true;
   const controls=make('div','nu190-amount'),minus=make('button','','−'),plus=make('button','','+'),amount=make('input');minus.type=plus.type='button';
   minus.setAttribute('aria-label','Diminuir quantidade');plus.setAttribute('aria-label','Aumentar quantidade');amount.type='number';amount.min='1';amount.max=String(Number(card.dataset.max)||99);amount.value='1';amount.step='1';amount.inputMode='numeric';amount.setAttribute('aria-label','Quantidade de '+card.dataset.name);controls.append(minus,amount,plus);
   const add=make('button','nu190-add','Adicionar');add.type='button';const back=make('button','nu201-back','Voltar');back.type='button';
   function normalize(){const n=Math.max(1,Math.min(Number(amount.max),Math.trunc(Number(amount.value)||1)));amount.value=String(n);minus.disabled=n<=1;plus.disabled=n>=Number(amount.max);return n;}
   function close(){panel.hidden=true;toggle.hidden=false;toggle.setAttribute('aria-expanded','false');item.classList.remove('nu201-selected');}
-  function sync(){const blocked=!!card.querySelector('[data-add]')?.disabled;toggle.disabled=blocked;add.disabled=blocked;toggle.textContent=blocked?'Indisponível':'Escolher';normalize();}
+  function sync(){const blocked=!!card.querySelector('[data-add]')?.disabled;toggle.disabled=blocked;add.disabled=blocked;toggle.textContent=blocked?'Indisponível':'Adicionar';normalize();}
   function open(){if(toggle.disabled)return;panel.hidden=false;toggle.hidden=true;toggle.setAttribute('aria-expanded','true');item.classList.add('nu201-selected');normalize();}
   toggle.addEventListener('click',open);item.addEventListener('click',e=>{if(!e.target.closest('button,input,a,label')&&panel.hidden)open();});
   minus.addEventListener('click',()=>{amount.value=String(normalize()-1);normalize();});plus.addEventListener('click',()=>{amount.value=String(normalize()+1);normalize();});amount.addEventListener('change',normalize);

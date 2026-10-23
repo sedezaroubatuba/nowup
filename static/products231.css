@@ -1,0 +1,18 @@
+/* Vertical product cards: photo, name, price and a visible Add button. */
+html body.public-profile-area [data-native-menu] .nu190-showcase .nu190-page{grid-template-columns:repeat(2,minmax(0,1fr))!important;align-items:stretch!important}
+html body.public-profile-area [data-native-menu] .nu190-showcase .nu201-card.nu190-card,
+html body.public-profile-area [data-native-menu] .nu191-grid .nu201-card.nu190-card{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:9px!important;height:100%!important;min-height:0!important;padding:10px!important;box-sizing:border-box;border:1px solid #ece8f1!important;border-radius:16px!important;background:#fff!important;box-shadow:0 3px 12px #29133e0c;min-width:0}
+html body.public-profile-area [data-native-menu] .nu190-showcase .nu201-card.nu190-card>img,
+html body.public-profile-area [data-native-menu] .nu191-grid .nu201-card.nu190-card>img,
+html body.public-profile-area [data-native-menu] .nu190-showcase .nu201-card.nu190-card>.nu190-no-image,
+html body.public-profile-area [data-native-menu] .nu191-grid .nu201-card.nu190-card>.nu190-no-image{display:block!important;width:100%!important;height:clamp(120px,35vw,180px)!important;object-fit:contain!important;flex:none;padding:8px!important;box-sizing:border-box;background:#fff!important;border:1px solid #f0edf3;border-radius:11px}
+html body.public-profile-area [data-native-menu] .nu201-card.nu190-card .nu190-card-content{display:flex!important;flex-direction:column!important;flex:1;min-width:0;text-align:center;gap:7px}
+html body.public-profile-area [data-native-menu] .nu201-card.nu190-card .nu190-card-content h3{margin:0!important;padding:0!important;font-size:14px!important;line-height:1.35!important;min-height:2.7em;max-height:none!important;overflow-wrap:anywhere;-webkit-line-clamp:unset!important;display:block!important}
+html body.public-profile-area [data-native-menu] .nu201-card.nu190-card .nu190-card-content strong{display:block!important;font-size:18px!important;line-height:1.3!important;margin:auto 0 1px!important;color:#202331!important}
+html body.public-profile-area [data-native-menu] .nu201-card.nu190-card .nu201-open{position:static!important;inset:auto!important;display:block;width:100%!important;min-height:44px!important;padding:10px 5px!important;background:#7434c6!important;color:#fff!important;border:0!important;border-radius:10px!important;font:inherit;font-size:14px!important;font-weight:750!important;cursor:pointer}
+html body.public-profile-area [data-native-menu] .nu201-card.nu190-card .nu201-open[hidden]{display:none!important}
+html body.public-profile-area [data-native-menu] .nu201-card.nu190-card .nu201-open:disabled{background:#eee9f3!important;color:#746b80!important;cursor:default}
+html body.public-profile-area [data-native-menu] .nu201-card.nu190-card .nu201-open::after{content:none!important}
+html body.public-profile-area [data-native-menu] .nu201-card.nu190-card.nu201-selected{background:#faf7ff!important;border-color:#ba96e9!important}
+html body.public-profile-area [data-native-menu] .nu201-card.nu190-card .nu201-panel{width:100%;box-sizing:border-box}
+@media(min-width:800px){html body.public-profile-area [data-native-menu] .nu201-card.nu190-card>img{height:180px!important}}
