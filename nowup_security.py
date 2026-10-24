@@ -8,8 +8,8 @@ def session_user(conn, token):
     if not token:
         return None
     row = conn.execute('''SELECT u.* FROM sessions s JOIN users u ON u.id=s.user_id
-        WHERE s.token=? AND s.expires_at>? AND u.is_active=1''',
-        (token, datetime.now(timezone.utc).isoformat())).fetchone()
+        WHERE s.token=? AND s.expires_at>? AND u.is_active=1 AND (s.absolute_expires_at238='' OR s.absolute_expires_at238>?)''',
+        (token, datetime.now(timezone.utc).isoformat(), datetime.now(timezone.utc).isoformat())).fetchone()
     if row is None:
         return None
     try:

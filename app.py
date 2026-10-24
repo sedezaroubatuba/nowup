@@ -28,9 +28,10 @@ DB_PATH = Path(os.getenv("NOWUP_DB", BASE / "data" / "nowup.db"))
 UPLOAD_DIR = Path(os.getenv("NOWUP_UPLOAD_DIR", BASE / "uploads"))
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-# Mantém clientes e profissionais conectados até escolherem sair.
-# O prazo longo existe apenas como proteção técnica do cookie/sessão.
-SESSION_DAYS = 3650
+# Login persistente: até 30 dias sem renovar e limite absoluto de 90 dias.
+# Revogação, logout e inativação continuam sendo validados no servidor.
+SESSION_DAYS = 30
+SESSION_ABSOLUTE_DAYS238 = 90
 MAX_PHOTOS = 10
 MAX_UPLOAD = 5 * 1024 * 1024
 ADMIN_SESSION_MINUTES = 30
@@ -47,12 +48,9 @@ templates.env.globals["category_key230"] = nowup_categories230.validate_key
 
 @app.middleware("http")
 async def security_headers_and_csrf(request: Request, call_next):
-    # Proteção CSRF por origem sem consumir formulários multipart.
-    if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
-        origin=request.headers.get("origin"); referer=request.headers.get("referer"); host=request.headers.get("host","")
-        origin_host=urlparse(origin).netloc if origin else ""; referer_host=urlparse(referer).netloc if referer else ""
-        if (origin_host and host and origin_host!=host) or (not origin_host and referer_host and host and referer_host!=host):
-            return JSONResponse({"detail":"Requisição bloqueada por segurança"},status_code=403)
+    from nowup_runtime238 import mutation_origin_allowed
+    if not mutation_origin_allowed(request):
+        return JSONResponse({"detail":"Origem da requisição não confirmada. Atualize a página e tente novamente."},status_code=403)
     response=await call_next(request)
     response.headers["X-Content-Type-Options"]="nosniff"
     response.headers["X-Frame-Options"]="DENY"
@@ -72,18 +70,11 @@ async def renew_saved_login(request: Request, call_next):
             or "text/html" not in response.headers.get("content-type", "")
             or any(item.startswith("nowup_session=") for item in response.headers.getlist("set-cookie"))):
         return response
-    conn = db()
-    try:
-        expires = (datetime.now(timezone.utc) + timedelta(days=SESSION_DAYS)).isoformat()
-        updated = conn.execute("""UPDATE sessions SET expires_at=?
-            WHERE token=? AND expires_at>? AND user_id IN
-            (SELECT id FROM users WHERE is_active=1 AND role IN ('customer','professional'))""",
-            (expires, token, now_iso())).rowcount
-        conn.commit()
-    finally:
-        conn.close()
-    if updated:
-        response.set_cookie("nowup_session", token, max_age=SESSION_DAYS*86400,
+    from nowup_runtime238 import renew_session
+    from starlette.concurrency import run_in_threadpool
+    max_age = await run_in_threadpool(renew_session, db, token, SESSION_DAYS)
+    if max_age:
+        response.set_cookie("nowup_session", token, max_age=max_age,
             httponly=True, samesite="lax", path="/",
             secure=request.url.scheme == "https" or os.getenv("NOWUP_HTTPS", "0") == "1")
     return response
@@ -234,13 +225,16 @@ def unique_slug(conn, name: str, table="professionals"):
     return candidate
 
 def current_user(request: Request):
+    if hasattr(request.state, "user238"):
+        return request.state.user238
     token = request.cookies.get("nowup_session")
     if not token: return None
     conn = db()
     from nowup_security import session_user
     row = session_user(conn, token)
     conn.close()
-    return dict(row) if row else None
+    request.state.user238 = dict(row) if row else None
+    return request.state.user238
 
 def require_user(request: Request, role: Optional[str]=None):
     u = current_user(request)
@@ -543,6 +537,14 @@ def init_db():
     CREATE INDEX IF NOT EXISTS idx_product_categories_professional
       ON product_categories(professional_id,active,sort_order,id);
     """)
+    ensure_column(conn, "sessions", "absolute_expires_at238", "TEXT NOT NULL DEFAULT ''")
+    conn.execute("UPDATE sessions SET absolute_expires_at238=? WHERE absolute_expires_at238=''", ((datetime.now(timezone.utc)+timedelta(days=SESSION_ABSOLUTE_DAYS238)).isoformat(),))
+    conn.execute("UPDATE sessions SET expires_at=MIN(expires_at,?) WHERE user_id IN (SELECT id FROM users WHERE role IN ('customer','professional'))", ((datetime.now(timezone.utc)+timedelta(days=SESSION_DAYS)).isoformat(),))
+    conn.executescript("""
+      CREATE INDEX IF NOT EXISTS idx_reviews_professional238 ON reviews(professional_id,stars);
+      CREATE INDEX IF NOT EXISTS idx_photos_professional238 ON photos(professional_id,is_cover DESC,id);
+      CREATE INDEX IF NOT EXISTS idx_exposure_date238 ON home_store_exposure90(visit_date,professional_id);
+    """)
     ensure_column(conn, "professionals", "carousel_layout235", "TEXT NOT NULL DEFAULT 'compact'")
     ensure_column(conn, "product_categories", "icon_key", "TEXT NOT NULL DEFAULT 'auto'")
     ensure_column(conn, "users", "email_verified", "INTEGER NOT NULL DEFAULT 1")
@@ -631,6 +633,7 @@ def init_db():
     ensure_column(conn, "products", "customization192", "TEXT NOT NULL DEFAULT ''")
     nowup_included195.initialize(conn)
     ensure_column(conn, "orders", "customer_id", "INTEGER REFERENCES users(id) ON DELETE SET NULL")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_customer238 ON orders(customer_id,id DESC)")
     ensure_column(conn, "orders", "tracking_token", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "orders", "order_origin", "TEXT NOT NULL DEFAULT 'legacy'")
     conn.execute("CREATE TABLE IF NOT EXISTS guest_order_limits (professional_id INTEGER NOT NULL,phone TEXT NOT NULL,created_at TEXT NOT NULL)")
@@ -796,10 +799,14 @@ def select_home_stores90(conn, rows, visitor_key, visit_date):
     leading=ordered[:12]+rotating[:3]+catalogs[:3]+(recommended or ordered)[:5]
     selected={r["id"] for r in leading}
     stamp=now_iso()
-    conn.executemany("INSERT OR IGNORE INTO home_store_exposure90(visit_date,visitor_key,professional_id,created_at) VALUES(?,?,?,?)",
-                     [(visit_date,visitor_key,pid,stamp) for pid in selected])
+    recorded={r[0] for r in conn.execute("SELECT professional_id FROM home_store_exposure90 WHERE visit_date=? AND visitor_key=?",(visit_date,visitor_key))}
+    missing238=selected-recorded
+    if missing238:
+        conn.executemany("INSERT OR IGNORE INTO home_store_exposure90(visit_date,visitor_key,professional_id,created_at) VALUES(?,?,?,?)",
+                         [(visit_date,visitor_key,pid,stamp) for pid in missing238])
     # Bounded retention for rotation counts, with no order/customer data in this table.
-    conn.execute("DELETE FROM home_store_exposure90 WHERE visit_date<?",((today-timedelta(days=30)).isoformat(),))
+    if conn.execute("SELECT 1 FROM home_store_exposure90 WHERE visit_date<? LIMIT 1",((today-timedelta(days=30)).isoformat(),)).fetchone():
+        conn.execute("DELETE FROM home_store_exposure90 WHERE visit_date<?",((today-timedelta(days=30)).isoformat(),))
     return ordered,rotating,catalogs
 
 @app.get("/", response_class=HTMLResponse)
@@ -821,9 +828,15 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
         where.append("p.business_type=?"); params.append(business_type)
     visitor_key=request.cookies.get("nowup_visitor") or secrets.token_urlsafe(18)
     visit_date=datetime.now(SAO_PAULO_TZ).date().isoformat()
-    conn.execute("INSERT OR IGNORE INTO daily_home_visits(visit_date,visitor_key,created_at) VALUES(?,?,?)",(visit_date,visitor_key,now_iso()))
-    conn.commit()
+    if not conn.execute("SELECT 1 FROM daily_home_visits WHERE visit_date=? AND visitor_key=?",(visit_date,visitor_key)).fetchone():
+        conn.execute("INSERT OR IGNORE INTO daily_home_visits(visit_date,visitor_key,created_at) VALUES(?,?,?)",(visit_date,visitor_key,now_iso()))
+        conn.commit()
     people_today=conn.execute("SELECT COUNT(*) FROM daily_home_visits WHERE visit_date=?",(visit_date,)).fetchone()[0]
+    total_professionals238=conn.execute(f"SELECT COUNT(*) FROM professionals p WHERE {' AND '.join(where)}",params).fetchone()[0]
+    # Bound the rich rows loaded for home; the paginated directory keeps every match reachable.
+    # Favor shops with less exposure so the candidate window rotates beyond the first page.
+    candidate_limit238=total_professionals238 if open_now=='1' else 60
+    cutoff238=(datetime.now(SAO_PAULO_TZ).date()-timedelta(days=6)).isoformat()
     rows = conn.execute(f"""
       SELECT p.*, u.name as owner_name,
        COALESCE((SELECT ROUND(AVG(stars),1) FROM reviews r WHERE r.professional_id=p.id),0) rating,
@@ -837,8 +850,10 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
        ) cover
       FROM professionals p JOIN users u ON u.id=p.user_id
       WHERE {' AND '.join(where)}
-      ORDER BY p.featured DESC,p.verified DESC,rating DESC,p.id DESC
-    """, params).fetchall()
+      ORDER BY p.featured DESC,
+       (SELECT COUNT(*) FROM home_store_exposure90 ex WHERE ex.professional_id=p.id AND ex.visit_date>=?) ASC,
+       p.verified DESC,rating DESC,p.id DESC LIMIT ?
+    """, [*params,cutoff238,candidate_limit238]).fetchall()
     rows=[dict(r) for r in rows]
     for row in rows: row["shop_status"]=shop_status(row)
     if open_now=="1": rows=[r for r in rows if r["shop_status"]["open"]]
@@ -862,7 +877,7 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
     offers=[r for r in rows if r["featured"]]
     recommended=[r for r in rows if r["business_type"]!="restaurant"]
     conn.close()
-    response=templates.TemplateResponse("home.html", context(request, professionals=rows, rotating_stores=rotating_stores[:12], catalog_stores=catalog_stores[:12], recent_orders=recent_orders, status_labels=ORDER_STATUS_LABELS, open_now=open_now, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today, has_home_filter=bool(q or category or business_type)))
+    response=templates.TemplateResponse("home.html", context(request, professionals=rows[:24], total_professionals238=len(rows) if open_now=="1" else total_professionals238, rotating_stores=rotating_stores[:12], catalog_stores=catalog_stores[:12], recent_orders=recent_orders, status_labels=ORDER_STATUS_LABELS, open_now=open_now, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today, has_home_filter=bool(q or category or business_type)))
     response = attach_food_assets(response)
     # A home deve buscar a identidade atual das lojas em cada acesso.
     response.headers["Cache-Control"] = "private, no-store"
@@ -871,7 +886,8 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
     return response
 
 @app.get("/profissionais", response_class=HTMLResponse)
-def professionals(request: Request, category: str="", city: str="", neighborhood: str="", cep: str="", q: str="", business_type: str=""):
+def professionals(request: Request, category: str="", city: str="", neighborhood: str="", cep: str="", q: str="", business_type: str="", page: int=1):
+    page=max(1,min(page,10000))
     conn=db(); where=["p.blocked=0 AND p.admission_status='approved'", public_business_scope()]; params=[]; cities=active_cities(get_settings(conn)); city=city.strip() or cities[0]
     for field,val in [("p.city",city),("p.neighborhood",neighborhood),("p.cep",cep)]:
         if val: where.append(f"{field} LIKE ?"); params.append(f"%{val}%")
@@ -887,9 +903,10 @@ def professionals(request: Request, category: str="", city: str="", neighborhood
        (SELECT COUNT(*) FROM reviews r WHERE r.professional_id=p.id) review_count,
        COALESCE(NULLIF(p.cover_filename,''),NULLIF(p.avatar_filename,''),(SELECT filename FROM photos ph WHERE ph.professional_id=p.id ORDER BY is_cover DESC,id ASC LIMIT 1)) cover
       FROM professionals p WHERE {' AND '.join(where)}
-      ORDER BY p.featured DESC,p.verified DESC,rating DESC,p.id DESC LIMIT 100
-    """,params).fetchall(); conn.close()
-    return templates.TemplateResponse("professionals.html", context(request, professionals=rows, active_cities=cities, filters={"category":category,"city":city,"neighborhood":neighborhood,"cep":cep,"q":q,"business_type":business_type}))
+      ORDER BY p.featured DESC,p.verified DESC,rating DESC,p.id DESC LIMIT 25 OFFSET ?
+    """,[*params,(page-1)*24]).fetchall(); conn.close()
+    has_more238=len(rows)>24; rows=rows[:24]
+    return templates.TemplateResponse("professionals.html", context(request, professionals=rows, page238=page, has_more238=has_more238, next_url238=request.url.path+"?"+request.url.include_query_params(page=page+1).query, prev_url238=request.url.path+"?"+request.url.include_query_params(page=page-1).query, active_cities=cities, filters={"category":category,"city":city,"neighborhood":neighborhood,"cep":cep,"q":q,"business_type":business_type}))
 
 
 def menu_rules89(conn, professional_id):
@@ -1393,7 +1410,7 @@ def signup_success(request: Request, tipo: str="cliente"):
 def create_session_response(uid:int, dest:str, is_admin:bool=False):
     lifetime=timedelta(minutes=ADMIN_SESSION_MINUTES) if is_admin else timedelta(days=SESSION_DAYS)
     token=secrets.token_urlsafe(32); expires=(datetime.now(timezone.utc)+lifetime).isoformat()
-    conn=db(); conn.execute("INSERT INTO sessions(token,user_id,expires_at) VALUES(?,?,?)",(token,uid,expires)); conn.commit(); conn.close()
+    conn=db(); conn.execute("INSERT INTO sessions(token,user_id,expires_at,absolute_expires_at238) VALUES(?,?,?,?)",(token,uid,expires,(datetime.now(timezone.utc)+timedelta(days=SESSION_ABSOLUTE_DAYS238)).isoformat())); conn.commit(); conn.close()
     resp=RedirectResponse(dest,303)
     cookie_options={"httponly":True,"samesite":"lax","path":"/","secure":os.getenv("NOWUP_HTTPS","0")=="1"}
     if not is_admin:

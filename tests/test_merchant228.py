@@ -32,7 +32,7 @@ def env(tmp_path_factory):
             ids[name]=cur.lastrowid
             c.execute('INSERT INTO order_items(order_id,product_name,quantity,unit_price_cents) VALUES(?,?,?,?)',(cur.lastrowid,'Produto de teste',2,2995))
         c.commit()
-    client=TestClient(m.app)
+    client=TestClient(m.app,headers={'Origin':'http://testserver'})
     client.cookies.set('nowup_session','merchant-test')
     return m,client,ids,p['id'],other['id']
 

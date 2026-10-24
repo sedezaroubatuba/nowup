@@ -34,7 +34,7 @@ def env(tmp_path_factory):
             c.execute("UPDATE professionals SET offer_mode='menu',is_premium=1,plan_active='ambos' WHERE id=?",(p['id'],))
             c.execute('INSERT INTO sessions(token,user_id,expires_at) VALUES(?,?,?)',(f'icon-test-{idx}',p['user_id'],(datetime.now(timezone.utc)+timedelta(days=1)).isoformat()))
         c.commit()
-    client=TestClient(m.app); client.cookies.set('nowup_session','icon-test-0')
+    client=TestClient(m.app,headers={'Origin':'http://testserver'}); client.cookies.set('nowup_session','icon-test-0')
     return m,client,stores
 
 def test_save_rename_and_tenant_boundary(env):
@@ -95,3 +95,34 @@ def test_two_product_carousel_setting(env):
     assert "value=\"compact\" checked" not in panel
     with m.db() as c:
         assert c.execute('SELECT carousel_layout235 FROM professionals WHERE id=?',(stores[0]['id'],)).fetchone()[0]=='pair'
+
+
+def test_mutations_reject_missing_and_cross_origin_and_webhook_keeps_own_auth(env):
+    _,client,_=env
+    client.headers.pop('Origin',None)
+    try:
+        for headers in [{},{'Origin':'null'},{'Origin':'https://evil.invalid'}]:
+            assert client.post('/painel/cardapio/exibicao',data={'carousel_layout235':'pair'},headers=headers).status_code==403
+        assert client.post('/painel/cardapio/exibicao',data={'carousel_layout235':'pair'},headers={'Referer':'http://testserver/painel'},follow_redirects=False).status_code==303
+        assert client.post('/integracoes/asaas/webhook',json={}).status_code==404  # Integration is not enabled in this app.
+    finally:client.headers['Origin']='http://testserver'
+
+
+def test_store_pagination_preserves_filters_and_reaches_all_results(env):
+    m,client,_=env;stamp=datetime.now(timezone.utc).isoformat()
+    with m.db() as c:
+        category=c.execute('SELECT id FROM categories WHERE active=1 LIMIT 1').fetchone()[0]
+        for n in range(27):
+            uid=c.execute("INSERT INTO users(role,name,email,password_hash,created_at) VALUES('professional',?,?,?,?)",(f'Paging238 {n}',f'paging238-{n}@test.invalid','unused',stamp)).lastrowid
+            pid=c.execute("INSERT INTO professionals(user_id,slug,display_name,city,created_at,plan_active,admission_status) VALUES(?,?,?,?,?,'ambos','approved')",(uid,f'paging238-{n}',f'Paging238 {n}','Ubatuba',stamp)).lastrowid
+            c.execute('INSERT INTO professional_categories VALUES(?,?)',(pid,category))
+        c.commit()
+    import re
+    first=client.get('/profissionais?q=Paging238&city=Ubatuba').text
+    second=client.get('/profissionais?q=Paging238&city=Ubatuba&page=2').text
+    a=set(re.findall(r'href="/p/(paging238-\d+)"',first));b=set(re.findall(r'href="/p/(paging238-\d+)"',second))
+    assert len(a)==24 and len(b)==3 and not a&b
+    assert 'Mais lojas' in first and 'Mais lojas' not in second
+    assert 'q=Paging238' in first and 'page=2' in first
+    home=client.get('/?q=Paging238&city=Ubatuba').text
+    assert 'Continuar vendo lojas' in home and '(27)' in home
