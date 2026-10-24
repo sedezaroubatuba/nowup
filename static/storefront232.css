@@ -111,3 +111,11 @@ html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layou
 html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout="pair"] .nu190-showcase .nu201-card.nu190-card .nu201-open{min-height:44px!important;height:auto!important;font-size:14px!important;padding:10px 3px!important;margin-top:0!important}
 html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout="pair"] .nu190-showcase .nu201-selected.nu201-card.nu190-card>img,
 html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout="pair"] .nu190-showcase .nu201-selected.nu201-card.nu190-card>.nu190-no-image{display:none!important}
+
+/* V237: products first on entry; slideshow joins the sticky controls after the cover. */
+html body.public-profile-area.nu233-store.nu237-banner-hidden.nu187-store-home [data-native-menu] .nu-menu-sticky .nu207-banners{display:none!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu232-info-row{flex-wrap:nowrap!important;gap:6px!important;padding:4px 10px!important;min-height:36px!important;font-size:11px!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu232-info-row .nu187-status{flex:none!important;white-space:nowrap!important;font-size:11px!important;margin:0!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu232-location{flex:1!important;min-width:0!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html body.public-profile-area.nu233-store [data-native-menu] .nu232-info-toggle{flex:none!important;min-height:32px!important;padding:4px 0!important;white-space:nowrap;font-size:11px!important}
+@media(min-width:901px){html body.public-profile-area.nu233-desktop [data-native-menu] .nu232-info-row{padding-left:115px!important}}

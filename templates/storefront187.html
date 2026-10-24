@@ -10,7 +10,7 @@
  <div class="nu232-info-row">
   <p class="nu187-status {% if shop_status.open %}is-open{% endif %}"><span class="nu190-status-dot" aria-hidden="true"></span>{{shop_status.label}}</p>
   <span class="nu232-location">{% if not pro.hide_address and pro.neighborhood %}{{pro.neighborhood}} · {% endif %}{{pro.city}}</span>
-  <button type="button" class="nu232-info-toggle" aria-controls="nu232-information" aria-expanded="false">Informações ›</button>
+  <button type="button" class="nu232-info-toggle" aria-controls="nu232-information" aria-expanded="false">Ver mais ›</button>
  </div>
  <details class="nu187-information" id="nu232-information"><summary>Informações da loja</summary>
   {% if shop_status.detail %}<p>◷ {{shop_status.detail}}</p>{% endif %}

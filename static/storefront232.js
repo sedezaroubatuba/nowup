@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!root || !bar || !intro) return;
   const infoButton = intro.querySelector('.nu232-info-toggle');
   const information = intro.querySelector('.nu187-information');
-  infoButton?.addEventListener('click', () => {information.open = !information.open; infoButton.setAttribute('aria-expanded', String(information.open));});
+  infoButton?.addEventListener('click', () => {information.open = !information.open; infoButton.setAttribute('aria-expanded', String(information.open)); infoButton.textContent = information.open ? 'Ver menos ‹' : 'Ver mais ›';});
   const mobile = matchMedia('(max-width:900px)');
   const body = document.body;
   let queued = false;
@@ -19,8 +19,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (bar.previousElementSibling !== intro) bar.before(intro);
       if (nav && nav.parentElement !== bar) bar.append(nav);
       const banner = root.querySelector('.nu207-banners');
-      if (banner && banner.parentElement !== bar) bar.append(banner);
+      if (banner && (banner.parentElement !== bar || (nav && banner.nextElementSibling !== nav))) bar.insertBefore(banner, nav || null);
     }
+    // Reveal the slideshow only after the store cover and information scroll away.
+    const bannerHidden = !home || intro.getBoundingClientRect().bottom > 1;
+    if (body.classList.contains('nu237-banner-hidden') !== bannerHidden) body.classList.toggle('nu237-banner-hidden', bannerHidden);
     const height = Math.ceil(bar.getBoundingClientRect().height);
     body.style.setProperty('--nu232-sticky-height', height + 'px');
     const dock = root.querySelector('.nu83-cart-dock:not([hidden])');
@@ -43,6 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
   new MutationObserver(schedule).observe(root, {childList: true, subtree: true});
   new MutationObserver(schedule).observe(body, {attributes: true, attributeFilter: ['class']});
   new ResizeObserver(schedule).observe(bar);
+  window.addEventListener('scroll', schedule, {passive: true});
   window.addEventListener('resize', schedule, {passive: true});
   window.visualViewport?.addEventListener('resize', schedule, {passive: true});
   mobile.addEventListener('change', enable);
