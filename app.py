@@ -1845,7 +1845,7 @@ def pro_cart_notice143(request: Request, cart_notice: str=Form("")):
 @app.post("/painel/cardapio/exibicao")
 def pro_carousel_layout235(request: Request, carousel_layout235: str=Form(...)):
     u=require_user(request,"professional")
-    if carousel_layout235 not in ("compact", "large"):
+    if carousel_layout235 not in ("compact", "pair", "large"):
         raise HTTPException(422,"Formato de carrossel inválido")
     conn=db()
     try:

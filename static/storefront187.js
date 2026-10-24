@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  const heading=root?.querySelector('.nu83-catalog-heading'),layout=root?.querySelector('.menu-layout');
  const search=heading?.querySelector('[data-product-search], [data-store-search]');
  if(!root||!template||!heading||!layout||!search){body.classList.remove('nu187-store-home');return;}
- const pageSize235=root.dataset.carouselLayout==='large'?1:4;
+ const pageSize235=({large:1,pair:2})[root.dataset.carouselLayout]||4;
  const desktop228=matchMedia('(min-width:901px)');
  const desktopStyle228=document.createElement('style');
  desktopStyle228.textContent=`@media(min-width:901px){

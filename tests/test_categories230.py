@@ -82,3 +82,16 @@ def test_carousel_preference_is_persistent_validated_and_store_specific(env):
         assert c.execute('SELECT carousel_layout235 FROM professionals WHERE id=?',(stores[0]['id'],)).fetchone()[0]=='large'
     assert client.post('/painel/cardapio/exibicao',data={'carousel_layout235':'compact'},follow_redirects=False).status_code==303
     assert 'data-carousel-layout="compact"' in client.get('/p/'+stores[0]['slug']).text
+
+
+def test_two_product_carousel_setting(env):
+    m,client,stores=env
+    client.cookies.set('nowup_session','icon-test-0')
+    assert client.post('/painel/cardapio/exibicao',data={'carousel_layout235':'pair'},follow_redirects=False).status_code==303
+    for suffix in ['', '/menu']:
+        assert 'data-carousel-layout="pair"' in client.get('/p/'+stores[0]['slug']+suffix).text
+    panel=client.get('/painel').text
+    assert "value=\"pair\" checked" in panel
+    assert "value=\"compact\" checked" not in panel
+    with m.db() as c:
+        assert c.execute('SELECT carousel_layout235 FROM professionals WHERE id=?',(stores[0]['id'],)).fetchone()[0]=='pair'
