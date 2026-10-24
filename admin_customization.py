@@ -12,9 +12,8 @@ router = APIRouter()
 templates = Jinja2Templates(directory=str(BASE / "templates"))
 
 def db():
-    conn=sqlite3.connect(DB_PATH)
-    conn.row_factory=sqlite3.Row
-    return conn
+    from nowup_database239 import connect
+    return connect(DB_PATH)
 
 def require_admin(request: Request):
     token=request.cookies.get("nowup_session")
