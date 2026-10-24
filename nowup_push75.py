@@ -1,4 +1,5 @@
 """Private per-session Web Push subscriptions; durable order delivery queue."""
+import os
 from contextlib import contextmanager
 import base64, hashlib, json, logging, re, threading, time
 from urllib.parse import urlsplit
@@ -142,7 +143,8 @@ def process():
 
 def run():
     while not _stop.is_set():
-        try: process()
+        try:
+            if os.getenv('NOWUP_MAINTENANCE','0')!='1':process()
         except Exception: logging.warning('NowUp push: fila aguardando nova tentativa.')
         _stop.wait(5)
 

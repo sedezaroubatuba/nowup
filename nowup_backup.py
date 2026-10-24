@@ -86,6 +86,10 @@ def sha256(path):
     return digest.hexdigest()
 
 def create_archive(directory):
+    from nowup_database239 import is_postgres
+    if is_postgres():
+        from nowup_postgres_backup239 import create_archive as postgres_archive
+        return postgres_archive(directory,_uploads,sha256)
     directory=Path(directory)
     if not _db.is_file() or not _uploads.is_dir():
         raise RuntimeError('Banco de dados ou pasta de fotos não encontrados. Confira os caminhos.')
@@ -255,6 +259,9 @@ def status(request:Request):
     result=state()
     result['configured']=not missing_config();result['automatic']=automatic_enabled()
     result['running']=_local.locked()
+    from nowup_database239 import is_postgres
+    result['database_backend']='postgres' if is_postgres() else 'sqlite'
+    result['native_tools_available']=not is_postgres() or bool(shutil.which('pg_dump'))
     return JSONResponse(result,headers={'Cache-Control':'no-store'})
 
 @router.post('/admin/backups/enviar')

@@ -1,4 +1,5 @@
 """Customer alerts: private incremental polling and persistent push jobs."""
+import os
 import json,time,threading,logging,hashlib
 from contextlib import contextmanager
 from fastapi import APIRouter,Request,HTTPException
@@ -75,7 +76,8 @@ def process():
 
 def run():
     while not _stop.is_set():
-        try:process()
+        try:
+            if os.getenv('NOWUP_MAINTENANCE','0')!='1':process()
         except Exception:logging.warning('NowUp: aviso de status aguardando nova tentativa.')
         _stop.wait(3)
 

@@ -19,7 +19,10 @@ def begin_checkout(conn, customer_id, professional_id, request_key, payload):
         digest = hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False,
             separators=(',', ':')).encode()).hexdigest()
         key = request_key or 'legacy-' + digest
-        conn.execute('BEGIN IMMEDIATE')
+        conn.execute('BEGIN' if getattr(conn,'dialect','sqlite')=='postgres' else 'BEGIN IMMEDIATE')
+        if getattr(conn,'dialect','sqlite')=='postgres':
+            lock_key=int.from_bytes(hashlib.sha256(f'{customer_id}:{professional_id}:{key}'.encode()).digest()[:8],'big',signed=True)
+            conn.execute('SELECT pg_advisory_xact_lock(?)',(lock_key,))
         row = conn.execute('''SELECT r.payload_hash,r.created_at,o.tracking_token
             FROM checkout_requests229 r JOIN orders o ON o.id=r.order_id
             WHERE r.customer_id=? AND r.professional_id=? AND r.request_key=?''',
