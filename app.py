@@ -2899,3 +2899,7 @@ def pro_kanban228(request: Request):
 from nowup_database239 import finalize_postgres_constraints, close_pool
 app.add_event_handler("startup", finalize_postgres_constraints)
 app.add_event_handler("shutdown", close_pool)
+
+# V241: import tool is disabled unless explicitly enabled on the fixed test host.
+import nowup_mobile_migration241
+nowup_mobile_migration241.install(app, require_user, UPLOAD_DIR)
