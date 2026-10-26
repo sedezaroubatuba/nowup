@@ -2903,3 +2903,7 @@ app.add_event_handler("shutdown", close_pool)
 # V241: import tool is disabled unless explicitly enabled on the fixed test host.
 import nowup_mobile_migration241
 nowup_mobile_migration241.install(app, require_user, UPLOAD_DIR)
+
+# V245: durable test images and authenticated image-only recovery.
+import nowup_media245
+nowup_media245.install(app, require_user, db, UPLOAD_DIR)

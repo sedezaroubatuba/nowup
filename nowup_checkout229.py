@@ -48,4 +48,5 @@ def remember_checkout(conn, customer_id, professional_id, key, digest, order_id,
 def completed_response(slug, token):
     response = RedirectResponse('/pedido/' + token, 303)
     response.set_cookie('nowup_cart_completed', slug, max_age=120, samesite='lax', path='/')
+    response.set_cookie('nowup_cart_completed_token', token, max_age=600, httponly=True, samesite='lax', path='/')
     return response
