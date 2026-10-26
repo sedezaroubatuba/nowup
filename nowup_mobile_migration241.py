@@ -40,6 +40,76 @@ def validate_archive(path):
         raise HTTPException(400,'Backup inválido ou formato não aceito.') from None
 
 
+
+# V243: diagnostic queries run in a separate, read-only PostgreSQL connection.
+# Only allowlisted categories leave this process; raw exceptions may contain secrets.
+def failure_category(output):
+    text = output.decode('utf-8', 'replace') if isinstance(output, bytes) else str(output or '')
+    lowered = text.lower()
+    rules = [
+        ('destino não está vazio', 'destino_ocupado', 'O banco de teste já contém tabelas. Não reimporte nem apague dados.'),
+        ('password authentication failed', 'autenticacao_banco', 'A autenticação do PostgreSQL falhou. Confira a URL interna no Render.'),
+        ('could not translate host name', 'host_banco', 'O endereço do PostgreSQL não foi resolvido.'),
+        ('name or service not known', 'host_banco', 'O endereço do PostgreSQL não foi resolvido.'),
+        ('connection refused', 'conexao_recusada', 'O PostgreSQL recusou a conexão.'),
+        ('timeout', 'tempo_conexao', 'A conexão ou operação excedeu o tempo disponível.'),
+        ('timed out', 'tempo_conexao', 'A conexão ou operação excedeu o tempo disponível.'),
+        ('modulenotfounderror', 'dependencia_ausente', 'Falta uma dependência no deploy de teste.'),
+        ('checksum divergente', 'conferencia_dados', 'A comparação dos dados falhou. Não ative PostgreSQL.'),
+        ('referências inválidas', 'referencias_origem', 'O backup contém referências inválidas.'),
+        ('permission denied', 'permissao', 'Uma operação foi recusada por falta de permissão.'),
+        ('undefinedcolumn', 'estrutura_sql', 'Uma coluna não foi reconhecida durante a migração.'),
+        ('syntaxerror', 'estrutura_sql', 'O processo encontrou um erro de sintaxe.'),
+        ('integrityerror', 'integridade_destino', 'O processo encontrou uma restrição de integridade.'),
+    ]
+    for marker, code, message in rules:
+        if marker in lowered:
+            return {'code': code, 'message': message}
+    return {'code': 'falha_nao_classificada', 'message': 'O processo falhou por uma causa ainda não identificada. Não reimporte.'}
+
+
+DIAGNOSTIC_SCRIPT = r"""
+import json, os
+try:
+    import psycopg
+    with psycopg.connect(os.environ['DATABASE_URL'], connect_timeout=10,
+                         options='-c default_transaction_read_only=on') as connection:
+        with connection.cursor() as cursor:
+            cursor.execute('SET TRANSACTION READ ONLY')
+            cursor.execute("SELECT current_database(), current_setting('transaction_read_only')")
+            database, read_only = cursor.fetchone()
+            if database != 'nowup_teste' or read_only != 'on':
+                print(json.dumps({'code': 'destino_nao_confirmado'}))
+            else:
+                cursor.execute("SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")
+                tables = cursor.fetchone()[0]
+                print(json.dumps({'code': 'conexao_ok', 'database': database,
+                                  'tables': tables, 'read_only': True}))
+except Exception as error:
+    # The parent classifies this output and never sends the raw text to the page/logs.
+    import sys
+    print(type(error).__name__ + ': ' + str(error), file=sys.stderr)
+    sys.exit(1)
+"""
+
+
+def diagnose_target():
+    try:
+        result = subprocess.run([sys.executable, '-c', DIAGNOSTIC_SCRIPT],
+                                env=os.environ.copy(), capture_output=True, timeout=20)
+    except subprocess.TimeoutExpired:
+        return {'code': 'tempo_conexao', 'message': 'A conexão excedeu 20 segundos. Nenhum dado foi alterado.'}
+    if result.returncode:
+        return failure_category(result.stderr)
+    try:
+        data = json.loads(result.stdout)
+        if data.get('code') == 'conexao_ok' and type(data.get('tables')) is int and data['tables'] >= 0 and data.get('read_only') is True and data.get('database') == 'nowup_teste':
+            return {key: data[key] for key in ('code', 'database', 'tables', 'read_only')}
+    except (ValueError, TypeError):
+        pass
+    return {'code': 'diagnostico_inconclusivo', 'message': 'Não foi possível confirmar o destino. Nenhum dado foi alterado.'}
+
+
 def install(app, authorize, upload_dir):
     def guard(request):
         if os.getenv('NOWUP_MIGRATION_TEST','0')!='1' or request.url.hostname!=TEST_HOST:
@@ -47,10 +117,18 @@ def install(app, authorize, upload_dir):
         authorize(request,'admin')
         validate_target(os.getenv('DATABASE_URL',''))
 
+    @app.get('/admin/migracao-teste/diagnostico')
+    def diagnostic(request: Request):
+        guard(request)
+        data = diagnose_target()
+        data['migration_verified'] = False
+        data['notice'] = 'Diagnóstico somente de leitura; não confirma migração. Mantenha NOWUP_DB_ENGINE=sqlite.'
+        return JSONResponse(data, headers={'Cache-Control': 'no-store'})
+
     @app.get('/admin/migracao-teste', response_class=HTMLResponse)
     def page(request: Request):
         guard(request)
-        return HTMLResponse('''<!doctype html><html lang="pt-BR"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Migração de teste NowUp</title><body style="font:18px system-ui;max-width:600px;margin:32px auto;padding:20px"><h1>Migração de teste</h1><p>Enviar uma cópia do backup para o banco <b>nowup_teste</b>. O banco de destino deve estar vazio. O site principal e o arquivo original serão preservados.</p><form method="post" enctype="multipart/form-data"><label>Backup completo (.zip)<br><input name="backup" type="file" accept=".zip" required></label><p><button style="padding:16px;background:#7026bd;color:white;border:0;border-radius:8px">Importar e conferir no banco de teste</button></p></form><p>Aguarde o resultado sem reenviar. Não publique o backup no GitHub. Esta ação não ativa PostgreSQL no aplicativo.</p></body></html>''',headers={'Cache-Control':'no-store'})
+        return HTMLResponse('''<!doctype html><html lang="pt-BR"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Migração de teste NowUp</title><body style="font:18px system-ui;max-width:600px;margin:32px auto;padding:20px"><h1>Migração de teste</h1><p><a href="/admin/migracao-teste/diagnostico">Conferir conexão e destino (sem importar)</a></p><p>Enviar uma cópia do backup para o banco <b>nowup_teste</b>. O banco de destino deve estar vazio. O site principal e o arquivo original serão preservados.</p><form method="post" enctype="multipart/form-data"><label>Backup completo (.zip)<br><input name="backup" type="file" accept=".zip" required></label><p><button style="padding:16px;background:#7026bd;color:white;border:0;border-radius:8px">Importar e conferir no banco de teste</button></p></form><p>Aguarde o resultado sem reenviar. Não publique o backup no GitHub. Esta ação não ativa PostgreSQL no aplicativo.</p></body></html>''',headers={'Cache-Control':'no-store'})
 
     @app.post('/admin/migracao-teste')
     def upload(request: Request, backup: UploadFile=File(...)):
@@ -92,7 +170,11 @@ def install(app, authorize, upload_dir):
             except subprocess.TimeoutExpired:
                 raise HTTPException(503,'Tempo excedido. Não reenvie sem conferir o destino.') from None
             if result.returncode or not report.is_file():
-                raise HTTPException(409,'Importação não confirmada. O destino pode estar ocupado ou a conexão falhou. Não altere NOWUP_DB_ENGINE.')
+                problem = failure_category(result.stderr)
+                # Codes contain no credentials, SQL statements or personal data.
+                import logging
+                logging.getLogger(__name__).warning('NOWUP_MIGRATION_TEST failure_code=%s returncode=%s', problem['code'], result.returncode)
+                raise HTTPException(409, {**problem, 'migration_verified': False, 'next': 'Não reenvie. Abra /admin/migracao-teste/diagnostico. Mantenha NOWUP_DB_ENGINE=sqlite.'})
             details=json.loads(report.read_text())
             if details.get('verified') is not True:
                 raise HTTPException(503,'Conferência não confirmada. Mantenha SQLite.')
