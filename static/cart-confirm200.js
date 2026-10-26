@@ -8,6 +8,7 @@
   for(const suffix of [path,path+'/menu']){localStorage.removeItem(prefix+suffix);localStorage.removeItem(info+suffix);}
   // Guest carts from the same store must not reappear after login/logout.
   for(const suffix of [path,path+'/menu']){localStorage.removeItem('nowup-cart:'+suffix);localStorage.removeItem('nowup-cart-info:'+suffix);}
+  document.cookie='nowup_cart_completed=; Max-Age=0; Path=/; SameSite=Lax';
   window.dispatchEvent(new Event('nowup-cart-changed'));
  }catch(_){}
 })();

@@ -76,7 +76,7 @@
   function restore200(){
     try{const stored=JSON.parse(localStorage.getItem(key)||'[]');cart.clear();stored.forEach(([id,v])=>cart.set(id,v));render();}catch(_){}
   }
-  window.addEventListener('pageshow',e=>{if(e.persisted)restore200();});
+  window.addEventListener('pageshow',()=>restore200());
   window.addEventListener('storage',e=>{if(e.key===key)restore200();});
   if(cfg.ownerView){root.querySelectorAll('[data-add], [data-product-quantity]').forEach(e=>{e.disabled=true;});}
   checkoutFields();render();
