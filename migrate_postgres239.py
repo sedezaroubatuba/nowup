@@ -21,11 +21,36 @@ def canonical(value):
 
 
 def digest_rows(rows):
-    digest=hashlib.sha256();count=0
-    for row in rows:
-        digest.update(json.dumps([canonical(v) for v in row],ensure_ascii=False,separators=(',',':'),allow_nan=False).encode())
-        digest.update(b'\n');count+=1
-    return count,digest.hexdigest()
+    """Compare row multisets, including duplicates, independently of DB collation.
+
+    Values retain the same strict canonical encoding used in V239. A local,
+    disk-backed SQLite sorter limits memory to 1,000 row hashes per batch.
+    No row values or personal data are stored in the sorting database.
+    """
+    digest = hashlib.sha256()
+    count = 0
+    sorter = sqlite3.connect('')
+    try:
+        sorter.execute('PRAGMA temp_store=FILE')
+        sorter.execute('PRAGMA cache_size=-2048')
+        sorter.execute('CREATE TABLE row_hashes (digest BLOB NOT NULL)')
+        batch = []
+        for row in rows:
+            encoded = json.dumps([canonical(value) for value in row],
+                                 ensure_ascii=False, separators=(',', ':'),
+                                 allow_nan=False).encode('utf-8')
+            batch.append((hashlib.sha256(encoded).digest(),))
+            count += 1
+            if len(batch) == 1000:
+                sorter.executemany('INSERT INTO row_hashes VALUES (?)', batch)
+                batch.clear()
+        if batch:
+            sorter.executemany('INSERT INTO row_hashes VALUES (?)', batch)
+        for (row_hash,) in sorter.execute('SELECT digest FROM row_hashes ORDER BY digest'):
+            digest.update(row_hash)
+        return count, digest.hexdigest()
+    finally:
+        sorter.close()
 
 
 def migrate(source_path, report_path=None):
@@ -72,7 +97,7 @@ def migrate(source_path, report_path=None):
                     order=', '.join('"'+name.replace('"','""')+'" ASC NULLS FIRST' for name in primary)
                     expected=digest_rows(snapshot.execute('SELECT * FROM "'+table.replace('"','""')+'" ORDER BY '+order))
                     actual=digest_rows(raw.execute(sql.SQL('SELECT {} FROM {} ORDER BY '+order).format(fields,sql.Identifier(table))))
-                    if actual!=expected:raise ValueError('Contagem ou checksum divergente na tabela '+table)
+                    if actual!=expected:raise ValueError('Contagem ou checksum divergente na tabela '+table+'; origem='+str(expected[0])+'; destino='+str(actual[0]))
                     report['tables'][table]={'rows':actual[0],'sha256':actual[1]}
                 for name,ddl in snapshot.execute("SELECT name,sql FROM sqlite_master WHERE type='index' AND sql IS NOT NULL ORDER BY name"):
                     destination.execute(ddl)
