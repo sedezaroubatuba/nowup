@@ -52,7 +52,9 @@ def install(app, require_user, db, directory):
                 if await run_in_threadpool(deleted):raise HTTPException(404)
             try:
                 response=await super().get_response(path,scope)
-                if response.status_code!=404:return response
+                if response.status_code!=404:
+                    response.headers['Cache-Control']='public, max-age=0, must-revalidate'
+                    return response
             except HTTPException as error:
                 if error.status_code!=404:raise
             except Exception as error:

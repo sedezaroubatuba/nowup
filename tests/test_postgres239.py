@@ -44,6 +44,7 @@ app.nowup_alerts112.initialize()
     subprocess.run([sys.executable,'-c',source_code],env=source_env,check=True,cwd=Path(__file__).resolve().parents[1],stdout=subprocess.DEVNULL)
     with sqlite3.connect(source) as conn:
         for table in [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")]:
+            if table in ('nowup_public_media245','nowup_deleted_media247','image_blobs'):continue
             for column in [r[1] for r in conn.execute('PRAGMA table_info("'+table+'")') if 'filename' in r[1]]:
                 conn.execute('UPDATE "'+table+'" SET "'+column+'"=\'\'')
     old={key:os.environ.get(key) for key in ['NOWUP_DB_ENGINE','DATABASE_URL','NOWUP_DB','NOWUP_UPLOAD_DIR','NOWUP_ADMIN_EMAIL','NOWUP_ADMIN_PASSWORD','NOWUP_PG_POOL_SIZE','NOWUP_HTTPS']}
