@@ -13,7 +13,8 @@ templates = Jinja2Templates(directory=str(BASE / "templates"))
 
 def db():
     from nowup_database239 import connect
-    return connect(DB_PATH)
+    from nowup_media247 import MediaConnection
+    return MediaConnection(connect(DB_PATH), Path(os.getenv("NOWUP_UPLOAD_DIR", BASE / "uploads")))
 
 def require_admin(request: Request):
     token=request.cookies.get("nowup_session")
@@ -105,7 +106,9 @@ def create_secure_session(uid: int, dest: str, admin: bool=False):
     return resp
 
 @router.post("/entrar")
-def secure_login(email: str=Form(...),password: str=Form(...),tipo: str=Form("")):
+def secure_login(request: Request, email: str=Form(...),password: str=Form(...),tipo: str=Form("")):
+    from nowup_auth247 import check as limit247
+    limit247(db,request,email)
     normalized=email.strip().lower()
     conn=db(); u=conn.execute("SELECT * FROM users WHERE email=? AND is_active=1",(normalized,)).fetchone(); conn.close()
     suffix=f"&tipo={tipo}" if tipo in ("cliente","profissional","admin") else ""
