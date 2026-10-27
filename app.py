@@ -185,7 +185,8 @@ def slugify(value: str):
 
 def db():
     from nowup_database239 import connect
-    return connect(DB_PATH)
+    from nowup_media247 import MediaConnection
+    return MediaConnection(connect(DB_PATH), UPLOAD_DIR)
 
 def hash_password(password: str, salt: Optional[str]=None):
     salt = salt or secrets.token_hex(16)
@@ -1180,15 +1181,22 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
     try: raw_items=json.loads(cart_json)
     except Exception: conn.close(); raise HTTPException(400,"Carrinho inválido")
     if not isinstance(raw_items,list) or not raw_items: conn.close(); raise HTTPException(400,"Carrinho vazio")
+    if len(raw_items)>50:
+        conn.close(); raise HTTPException(400,"O carrinho permite até 50 itens diferentes. Divida o pedido.")
     clean_items=[]; subtotal=0
-    for raw in raw_items[:50]:
-        try: pid=int(raw.get("id")); qty=max(1,min(99,int(raw.get("quantity",1)))); item_notes=str(raw.get("notes","")).strip()[:300]
-        except (TypeError,ValueError,AttributeError): continue
+    for raw in raw_items:
+        try:
+            if not isinstance(raw,dict) or type(raw.get("id")) is not int or type(raw.get("quantity",1)) is not int or raw["id"]<1 or not 1<=raw.get("quantity",1)<=99: raise ValueError()
+            pid=raw["id"]; qty=raw.get("quantity",1); item_notes=str(raw.get("notes","")).strip()[:300]
+        except (TypeError,ValueError,AttributeError):
+            conn.close(); raise HTTPException(400,"Um item do carrinho é inválido. Revise o pedido.")
         product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=? AND available=1",(pid,p["id"])).fetchone()
         if not product:
             conn.close(); raise HTTPException(400,"Um produto do carrinho ficou indisponível. Atualize o cardápio antes de enviar o pedido.")
         if product:
-            qty=min(qty,max(1,product["max_quantity"] or 99)); chosen=[]; extras=0
+            if qty>max(1,product["max_quantity"] or 99):
+                conn.close(); raise HTTPException(400,"Quantidade acima do limite do produto. Revise o carrinho.")
+            chosen=[]; extras=0
             try:chosen,extras=options_single158(conn,pid,raw.get("options",[]))
             except HTTPException:conn.close();raise
             utensils=raw.get("utensils",False)
@@ -1433,7 +1441,9 @@ def forgot_password_page(request: Request):
     return templates.TemplateResponse("forgot_password.html", context(request))
 
 @app.post("/recuperar-senha")
-def forgot_password(email: str=Form(...)):
+def forgot_password(request: Request, email: str=Form(...)):
+    from nowup_auth247 import check as limit247
+    limit247(db,request,email,'reset')
     normalized=normalize_email(email)
     if normalized:
         conn=db(); user=conn.execute("SELECT id,name,email FROM users WHERE email=? AND is_active=1",(normalized,)).fetchone()
@@ -2907,3 +2917,13 @@ nowup_mobile_migration241.install(app, require_user, UPLOAD_DIR)
 # V245: durable test images and authenticated image-only recovery.
 import nowup_media245
 nowup_media245.install(app, require_user, db, UPLOAD_DIR)
+
+@app.get('/api/cart-completion247')
+def cart_completion247(request: Request, request_key: str):
+    user=require_user(request,'customer')
+    if not re.fullmatch(r'[A-Za-z0-9_-]{16,128}',request_key):raise HTTPException(400,'Identificador inválido')
+    conn=db()
+    try:
+        row=conn.execute('SELECT p.slug FROM checkout_requests229 r JOIN orders o ON o.id=r.order_id JOIN professionals p ON p.id=r.professional_id WHERE r.customer_id=? AND r.request_key=? AND o.customer_id=?',(user['id'],request_key,user['id'])).fetchone()
+        return JSONResponse({'confirmed':bool(row),'path':'/p/'+row['slug'] if row else None},headers={'Cache-Control':'private, no-store'})
+    finally:conn.close()

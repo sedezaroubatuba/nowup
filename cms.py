@@ -15,7 +15,8 @@ templates=Jinja2Templates(directory=str(BASE/"templates")); router=APIRouter()
 
 def db():
     from nowup_database239 import connect
-    return connect(DB_PATH)
+    from nowup_media247 import MediaConnection
+    return MediaConnection(connect(DB_PATH), UPLOAD_DIR)
 def now_iso(): return datetime.now(timezone.utc).isoformat()
 def slugify(v):
     v=unicodedata.normalize("NFKD",v or "").encode("ascii","ignore").decode().lower()

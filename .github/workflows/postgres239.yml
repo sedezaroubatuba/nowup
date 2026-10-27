@@ -5,6 +5,9 @@ on:
   pull_request:
     paths:
       - '**.py'
+      - '**.js'
+      - '**.cjs'
+      - '**.html'
       - Dockerfile
       - requirements.txt
       - .github/workflows/postgres239.yml
@@ -30,11 +33,19 @@ jobs:
       - run: python3 -m venv /tmp/nowup-test
       - run: /tmp/nowup-test/bin/pip install -r requirements.txt pytest httpx
       - name: SQLite regression checks
-        run: /tmp/nowup-test/bin/python -m pytest tests -q
+        run: /tmp/nowup-test/bin/python -m pytest tests test_admin205.py -q
       - name: PostgreSQL 18 migration, checkout, backup and restore
         env:
           NOWUP_TEST_POSTGRES_URL: postgresql://postgres:ephemeral-test-only@postgres:5432/nowup_test
         run: /tmp/nowup-test/bin/python -m pytest tests/test_postgres239.py -q
+  browser-cart:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/cart-lifecycle247.test.cjs frontend-admin/tests/*.test.mjs
   docker:
     runs-on: ubuntu-latest
     steps:

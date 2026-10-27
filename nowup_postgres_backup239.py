@@ -2,6 +2,7 @@
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import zipfile
@@ -29,20 +30,40 @@ def create_archive(directory,uploads,hash_file):
         snapshot=conn.execute('SELECT pg_export_snapshot()').fetchone()[0]
         schema=conn.execute('SELECT current_schema()').fetchone()[0]
         tables=[r[0] for r in conn.execute("SELECT table_name FROM information_schema.tables WHERE table_schema=current_schema() AND table_type='BASE TABLE'")]
-        references=set();counts={}
+        from nowup_media247 import references as public_references
+        references=public_references(conn,native=True);counts={}
         for table in tables:
             counts[table]=conn.execute(sql.SQL('SELECT COUNT(*) FROM {}').format(sql.Identifier(table))).fetchone()[0]
-            columns=[r[0] for r in conn.execute("SELECT column_name FROM information_schema.columns WHERE table_schema=current_schema() AND table_name=%s AND column_name LIKE '%%filename%%'",(table,))]
-            for column in columns:
-                references.update(str(r[0]) for r in conn.execute(sql.SQL('SELECT {} FROM {} WHERE {} IS NOT NULL').format(sql.Identifier(column),sql.Identifier(table),sql.Identifier(column))) if r[0])
+        # Materialize the durable copies from the SAME exported snapshot used
+        # by pg_dump. Private order receipts remain inside the dump only.
+        import base64
+        staged=directory/'media247';staged.mkdir(mode=0o700)
+        if 'nowup_public_media245' in tables:
+            for row in conn.execute('SELECT filename,body,digest FROM nowup_public_media245'):
+                name,encoded,digest=row[0],row[1],row[2]
+                if not re.fullmatch(r'[A-Za-z0-9_-]+\.(?:jpg|jpeg|png|webp|gif)',name,re.I):raise RuntimeError('Nome de imagem persistida inválido')
+                data=base64.b64decode(encoded,validate=True)
+                if hashlib.sha256(data).hexdigest()!=digest:raise RuntimeError('Imagem persistida falhou na integridade')
+                (staged/name).write_bytes(data)
+        deleted=set()
+        if 'nowup_deleted_media247' in tables:deleted={r[0] for r in conn.execute('SELECT filename FROM nowup_deleted_media247')}
+        for source in uploads.rglob('*'):
+            if source.is_symlink():raise RuntimeError('Link simbólico na pasta de fotos')
+            if not source.is_file() or source.name in deleted:continue
+            relative=source.relative_to(uploads)
+            if len(relative.parts)!=1:raise RuntimeError('Subpasta de imagens não suportada')
+            target=staged/relative
+            if not target.exists():
+                before=source.stat();shutil.copyfile(source,target);after=source.stat()
+                if (before.st_ino,before.st_size,before.st_mtime_ns)!=(after.st_ino,after.st_size,after.st_mtime_ns):raise RuntimeError('Imagem mudou durante o backup')
         for name in references:
-            path=uploads/name
-            if Path(name).is_absolute() or '..' in Path(name).parts or path.is_symlink() or not path.is_file():
+            if Path(name).name!=name or name in deleted or not (staged/name).is_file():
                 raise RuntimeError('Há uma imagem cadastrada ausente; backup completo não confirmado')
         result=subprocess.run(['pg_dump','--format=custom','--no-owner','--no-privileges','--snapshot='+snapshot,'--schema='+schema,'--file='+str(dump)],env=native_environment(),stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,timeout=600)
         if result.returncode:raise RuntimeError('Falha no pg_dump. Confira a versão do cliente, permissões e conexão')
     finally:
         conn.rollback();owner.putconn(conn)
+    uploads=staged
     manifest={'format':'nowup-backup-v2','backend':'postgres','schema':schema,'created_at':datetime.now(timezone.utc).isoformat(),'database':'database/nowup.dump','row_counts':counts,'files':{'database/nowup.dump':hash_file(dump)}}
     archive=directory/'nowup-backup.zip'
     with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED,allowZip64=True) as zipped:

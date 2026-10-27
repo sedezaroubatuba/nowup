@@ -36,16 +36,25 @@ def install(app, require_user, db, directory):
     def initialize():
         conn=db()
         try:
-            conn.execute(f'CREATE TABLE IF NOT EXISTS {TABLE}(filename TEXT PRIMARY KEY,body TEXT NOT NULL,digest TEXT NOT NULL)')
+            from nowup_media247 import initialize as init247
+            init247(conn)
             conn.commit()
         finally: conn.close()
-    app.router.add_event_handler('startup',initialize)
+    app.router.on_startup.insert(0,initialize)
 
     class DurableFiles(StaticFiles):
         async def get_response(self,path,scope):
+            if NAME.fullmatch(path):
+                def deleted():
+                    conn=db()
+                    try:return bool(conn.execute('SELECT 1 FROM nowup_deleted_media247 WHERE filename=?',(path,)).fetchone())
+                    finally:conn.close()
+                if await run_in_threadpool(deleted):raise HTTPException(404)
             try:
                 response=await super().get_response(path,scope)
-                if response.status_code!=404:return response
+                if response.status_code!=404:
+                    response.headers['Cache-Control']='public, max-age=0, must-revalidate'
+                    return response
             except HTTPException as error:
                 if error.status_code!=404:raise
             except Exception as error:
@@ -61,30 +70,9 @@ def install(app, require_user, db, directory):
             data=base64.b64decode(row['body'],validate=True)
             if hashlib.sha256(data).hexdigest()!=row['digest']:raise HTTPException(503,'Imagem indisponível')
             kind=Image.open(io.BytesIO(data)).format.lower().replace('jpg','jpeg')
-            return Response(data,media_type='image/'+kind,headers={'Cache-Control':'public, max-age=3600','X-Content-Type-Options':'nosniff'})
+            return Response(data,media_type='image/'+kind,headers={'Cache-Control':'public, max-age=0, must-revalidate','X-Content-Type-Options':'nosniff'})
     for route in app.routes:
         if getattr(route,'path',None)=='/uploads':route.app=DurableFiles(directory=directory)
-
-    def snapshot():
-        return {p.name:(p.stat().st_mtime_ns,p.stat().st_size) for p in directory.iterdir() if p.is_file() and not p.is_symlink() and NAME.fullmatch(p.name)}
-    def synchronize(before):
-        after=snapshot(); changed=[n for n,v in after.items() if before.get(n)!=v]; deleted=before.keys()-after.keys()
-        if not changed and not deleted:return
-        conn=db()
-        try:
-            for name in changed:put(conn,name,(directory/name).read_bytes())
-            for name in deleted:conn.execute(f'DELETE FROM {TABLE} WHERE filename=?',(name,))
-            conn.commit()
-        except Exception:conn.rollback();raise
-        finally:conn.close()
-    @app.middleware('http')
-    async def persist_uploads(request,call_next):
-        mutation=request.method in ('POST','PUT','PATCH','DELETE')
-        before=await run_in_threadpool(snapshot) if mutation else None
-        response=await call_next(request)
-        if mutation and response.status_code<400:
-            await run_in_threadpool(synchronize,before)
-        return response
 
     def authorize(request):
         if request.url.hostname!=HOST:raise HTTPException(404)
@@ -128,6 +116,7 @@ def install(app, require_user, db, directory):
                     local=directory/p.name
                     if local.exists() and (local.is_symlink() or hashlib.sha256(local.read_bytes()).hexdigest()!=digest):raise HTTPException(409,'Foto local diferente do backup. Nenhuma alteração realizada.')
                     put(conn,p.name,data)
+                    conn.execute('DELETE FROM nowup_deleted_media247 WHERE filename=?',(p.name,))
                 conn.commit()
             except Exception:conn.rollback();raise
             finally:conn.close()

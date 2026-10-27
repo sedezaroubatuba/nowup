@@ -44,6 +44,7 @@ app.nowup_alerts112.initialize()
     subprocess.run([sys.executable,'-c',source_code],env=source_env,check=True,cwd=Path(__file__).resolve().parents[1],stdout=subprocess.DEVNULL)
     with sqlite3.connect(source) as conn:
         for table in [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")]:
+            if table in ('nowup_public_media245','nowup_deleted_media247','image_blobs'):continue
             for column in [r[1] for r in conn.execute('PRAGMA table_info("'+table+'")') if 'filename' in r[1]]:
                 conn.execute('UPDATE "'+table+'" SET "'+column+'"=\'\'')
     old={key:os.environ.get(key) for key in ['NOWUP_DB_ENGINE','DATABASE_URL','NOWUP_DB','NOWUP_UPLOAD_DIR','NOWUP_ADMIN_EMAIL','NOWUP_ADMIN_PASSWORD','NOWUP_PG_POOL_SIZE','NOWUP_HTTPS']}
@@ -184,3 +185,33 @@ def test_concurrent_checkout_key_creates_one_order(pg):
     with ThreadPoolExecutor(max_workers=2) as executor:tokens=list(executor.map(submit,[1,2]))
     assert tokens[0]==tokens[1]
     with m.db() as c:assert c.execute("SELECT COUNT(*) FROM orders WHERE tracking_token LIKE 'parallel239-%'").fetchone()[0]==1
+
+
+def test_durable_media_backup_deletion_and_auth_limits247(pg):
+    import hashlib,io,json,shutil
+    from PIL import Image
+    from nowup_backup import create_archive
+    from restore_backup import stage_backup
+    from nowup_auth247 import check
+    from starlette.requests import Request
+    from fastapi import HTTPException
+    m,client,_,_,root=pg
+    asset=m.UPLOAD_DIR/'durable247.jpg';Image.new('RGB',(3,3),'purple').save(asset,'JPEG');expected=asset.read_bytes()
+    with m.db() as c:
+        product=c.execute('SELECT MIN(id) FROM products').fetchone()[0]
+        c.execute('UPDATE products SET image_filename=? WHERE id=?',(asset.name,product))
+    asset.unlink()
+    with m.db() as c:
+        assert c.execute('SELECT digest FROM nowup_public_media245 WHERE filename=?',('durable247.jpg',)).fetchone()[0]==hashlib.sha256(expected).hexdigest()
+    if shutil.which('pg_dump') and shutil.which('pg_restore'):
+        destination=root/'media247-backup';destination.mkdir()
+        archive=create_archive(destination);staged=root/'media247-staged';stage_backup(archive,staged)
+        assert (staged/'uploads/durable247.jpg').read_bytes()==expected
+    with m.db() as c:c.execute("UPDATE products SET image_filename='' WHERE id=?",(product,))
+    with m.db() as c:
+        assert c.execute('SELECT 1 FROM nowup_public_media245 WHERE filename=?',('durable247.jpg',)).fetchone() is None
+        assert c.execute('SELECT 1 FROM nowup_deleted_media247 WHERE filename=?',('durable247.jpg',)).fetchone()
+    request=Request({'type':'http','method':'POST','path':'/entrar','headers':[],'client':('127.0.0.1',1000)})
+    for _ in range(10):check(m.db,request,'pg247@example.invalid',now=1800)
+    with pytest.raises(HTTPException) as error:check(m.db,request,'pg247@example.invalid',now=1801)
+    assert error.value.status_code==429
