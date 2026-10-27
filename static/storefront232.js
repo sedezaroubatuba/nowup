@@ -11,6 +11,15 @@ document.addEventListener('DOMContentLoaded', () => {
   infoButton?.addEventListener('click', () => {information.open = !information.open; infoButton.setAttribute('aria-expanded', String(information.open)); infoButton.textContent = information.open ? 'Ver menos ‹' : 'Ver mais ›';});
   const mobile = matchMedia('(max-width:900px)');
   const body = document.body;
+  const slideToggle = document.createElement('button');
+  slideToggle.type = 'button';
+  slideToggle.className = 'nu248-slide-toggle';
+  slideToggle.hidden = true;
+  let slideCollapsed = false;
+  slideToggle.addEventListener('click', () => {
+    slideCollapsed = !slideCollapsed;
+    measure();
+  });
   let queued = false;
   function measure() {
     queued = false;
@@ -19,11 +28,24 @@ document.addEventListener('DOMContentLoaded', () => {
       if (bar.previousElementSibling !== intro) bar.before(intro);
       if (nav && nav.parentElement !== bar) bar.append(nav);
       const banner = root.querySelector('.nu207-banners');
-      if (banner && (banner.parentElement !== bar || (nav && banner.nextElementSibling !== nav))) bar.insertBefore(banner, nav || null);
+      if (slideToggle.parentElement !== bar || (nav && slideToggle.nextElementSibling !== nav)) bar.insertBefore(slideToggle, nav || null);
+      if (banner && (banner.parentElement !== bar || banner.nextElementSibling !== slideToggle)) bar.insertBefore(banner, slideToggle);
     }
-    // Reveal the slideshow only after the store cover and information scroll away.
-    const bannerHidden = !home || intro.getBoundingClientRect().bottom > 1;
+    const banner = root.querySelector('.nu207-banners');
+    // On desktop the whole shopping header scrolls naturally. On mobile keep
+    // the current sticky group, with an explicit control to reclaim its space.
+    const beforeCover = intro.getBoundingClientRect().bottom > 1;
+    const bannerHidden = !home || (mobile.matches && (beforeCover || slideCollapsed));
     if (body.classList.contains('nu237-banner-hidden') !== bannerHidden) body.classList.toggle('nu237-banner-hidden', bannerHidden);
+    body.classList.toggle('nu248-slide-collapsed', mobile.matches && slideCollapsed);
+    slideToggle.hidden = !mobile.matches || !home || !banner || beforeCover;
+    const toggleLabel = slideCollapsed ? 'Mostrar slide ↓' : 'Subir slide ↑';
+    if (slideToggle.textContent !== toggleLabel) slideToggle.textContent = toggleLabel;
+    slideToggle.setAttribute('aria-expanded', String(!slideCollapsed));
+    if (banner) {
+      banner.id = 'nu248-store-slides';
+      slideToggle.setAttribute('aria-controls', banner.id);
+    }
     const height = Math.ceil(bar.getBoundingClientRect().height);
     body.style.setProperty('--nu232-sticky-height', height + 'px');
     const dock = root.querySelector('.nu83-cart-dock:not([hidden])');
