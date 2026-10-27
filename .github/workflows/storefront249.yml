@@ -1,0 +1,36 @@
+name: Storefront banner checks
+on:
+  pull_request:
+    paths:
+      - 'static/storefront232.*'
+      - 'templates/base.html'
+      - 'tests/storefront248.browser.cjs'
+      - '.github/workflows/storefront249.yml'
+  push:
+    branches: [codex/categorias-icones-v230]
+    paths:
+      - 'static/storefront232.*'
+      - 'templates/base.html'
+      - 'tests/storefront248.browser.cjs'
+      - '.github/workflows/storefront249.yml'
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --package-lock=false playwright
+      - name: Use installed Chrome or prepare Chromium
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "NOWUP_CHROME_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          else
+            npx playwright install --with-deps chromium
+          fi
+      - run: node --check static/storefront232.js
+      - name: Desktop scroll and mobile slideshow controls
+        run: node --test tests/storefront248.browser.cjs
