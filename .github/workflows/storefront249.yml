@@ -3,6 +3,10 @@ on:
   pull_request:
     paths:
       - 'static/storefront232.*'
+      - 'static/upload-preview250.*'
+      - 'static/order-chat206.js'
+      - 'templates/**'
+      - 'tests/upload-preview250.browser.cjs'
       - 'templates/base.html'
       - 'tests/storefront248.browser.cjs'
       - '.github/workflows/storefront249.yml'
@@ -10,6 +14,10 @@ on:
     branches: [codex/categorias-icones-v230]
     paths:
       - 'static/storefront232.*'
+      - 'static/upload-preview250.*'
+      - 'static/order-chat206.js'
+      - 'templates/**'
+      - 'tests/upload-preview250.browser.cjs'
       - 'templates/base.html'
       - 'tests/storefront248.browser.cjs'
       - '.github/workflows/storefront249.yml'
@@ -33,4 +41,4 @@ jobs:
           fi
       - run: node --check static/storefront232.js
       - name: Desktop scroll and mobile slideshow controls
-        run: node --test tests/storefront248.browser.cjs
+        run: node --test tests/storefront248.browser.cjs tests/upload-preview250.browser.cjs
