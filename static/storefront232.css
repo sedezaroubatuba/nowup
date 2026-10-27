@@ -129,6 +129,7 @@ html body.public-profile-area.nu233-store [data-native-menu] .nu248-slide-toggle
 html body.public-profile-area.nu233-store [data-native-menu] .nu248-slide-toggle[hidden]{display:none!important}
 html body.public-profile-area.nu233-store [data-native-menu] .nu248-slide-toggle:focus-visible{outline:3px solid #ad87dd;outline-offset:2px}
 @media(max-width:900px){
+ html body.public-profile-area.nu232-store [data-native-menu]{overflow-anchor:none}
  html body.public-profile-area.nu232-store.nu248-slide-collapsed [data-native-menu] .nu-menu-sticky .nu207-banners{display:none!important}
 }
 @media(min-width:901px){

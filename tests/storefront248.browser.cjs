@@ -15,7 +15,8 @@ const fixture=`<!doctype html><html><head><style>
 <section class="nu207-banners">Promoções da loja</section><div class="nu190-showcase">Produtos</div>
 </main></body></html>`;
 async function setup(width){
- const browser=await chromium.launch({headless:true});const page=await browser.newPage({viewport:{width,height:850}});
+ const executablePath=process.env.NOWUP_CHROME_EXECUTABLE;
+ const browser=await chromium.launch({headless:true,...(executablePath?{executablePath}:{})});const page=await browser.newPage({viewport:{width,height:850}});
  await page.route('http://nowup.local/**',r=>r.fulfill({contentType:'text/html',body:fixture}));await page.goto('http://nowup.local/p/loja');
  await page.addStyleTag({content:css});await page.addScriptTag({content:code});await page.evaluate(()=>document.dispatchEvent(new Event('DOMContentLoaded')));
  await page.waitForFunction(()=>document.body.classList.contains('nu233-store'));

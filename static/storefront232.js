@@ -17,8 +17,11 @@ document.addEventListener('DOMContentLoaded', () => {
   slideToggle.hidden = true;
   let slideCollapsed = false;
   slideToggle.addEventListener('click', () => {
+    const scrollTop = window.scrollY;
     slideCollapsed = !slideCollapsed;
     measure();
+    window.scrollTo({top: scrollTop, behavior: 'instant'});
+    schedule();
   });
   let queued = false;
   function measure() {
@@ -38,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const bannerHidden = !home || (mobile.matches && (beforeCover || slideCollapsed));
     if (body.classList.contains('nu237-banner-hidden') !== bannerHidden) body.classList.toggle('nu237-banner-hidden', bannerHidden);
     body.classList.toggle('nu248-slide-collapsed', mobile.matches && slideCollapsed);
-    slideToggle.hidden = !mobile.matches || !home || !banner || beforeCover;
+    slideToggle.hidden = !mobile.matches || !home || !banner || (beforeCover && !slideCollapsed);
     const toggleLabel = slideCollapsed ? 'Mostrar slide ↓' : 'Subir slide ↑';
     if (slideToggle.textContent !== toggleLabel) slideToggle.textContent = toggleLabel;
     slideToggle.setAttribute('aria-expanded', String(!slideCollapsed));
