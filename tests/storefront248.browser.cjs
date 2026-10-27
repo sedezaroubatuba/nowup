@@ -31,8 +31,9 @@ test('desktop banner is wide, scrolls away with search, and disappears in produc
   assert.equal(await page.locator('.nu248-slide-toggle').isVisible(),false);
   await page.evaluate(()=>{document.body.classList.remove('nu187-store-home');document.body.classList.add('nu228-desktop-catalog');});
   await page.waitForFunction(()=>getComputedStyle(document.querySelector('.nu187-intro')).display==='none');
-  await page.addStyleTag({content:'@media(min-width:901px){html body.public-profile-area.nu228-desktop-catalog [data-native-menu] .nu-menu-sticky{position:sticky!important;top:0!important}}'});
+  await page.addStyleTag({content:'@media(min-width:901px){html body.public-profile-area.nu228-desktop-catalog [data-native-menu] .nu-menu-sticky{position:sticky!important;top:0!important}html body.public-profile-area.nu228-desktop-catalog [data-native-menu] .nu207-banners{display:block!important}}'});
   assert.equal(await page.locator('.nu-menu-sticky').evaluate(e=>getComputedStyle(e).position),'relative');
+  assert.equal(await banner.isVisible(),false);
  }finally{await browser.close();}
 });
 test('mobile sticky banner can be collapsed and reopened without losing categories',async()=>{
