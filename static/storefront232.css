@@ -119,3 +119,29 @@ html body.public-profile-area.nu233-store [data-native-menu] .nu232-info-row .nu
 html body.public-profile-area.nu233-store [data-native-menu] .nu232-location{flex:1!important;min-width:0!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 html body.public-profile-area.nu233-store [data-native-menu] .nu232-info-toggle{flex:none!important;min-height:32px!important;padding:4px 0!important;white-space:nowrap;font-size:11px!important}
 @media(min-width:901px){html body.public-profile-area.nu233-desktop [data-native-menu] .nu232-info-row{padding-left:115px!important}}
+
+/* V248: desktop header scrolls away; mobile slideshow can be folded. */
+html body.public-profile-area.nu233-store [data-native-menu] .nu248-slide-toggle{
+ display:block;width:100%;min-height:36px;margin:4px 0;padding:6px 12px;
+ border:1px solid #7434c6;border-radius:10px;background:#fff;color:#7434c6;
+ font:inherit;font-size:13px;font-weight:700;cursor:pointer;
+}
+html body.public-profile-area.nu233-store [data-native-menu] .nu248-slide-toggle[hidden]{display:none!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu248-slide-toggle:focus-visible{outline:3px solid #ad87dd;outline-offset:2px}
+@media(max-width:900px){
+ html body.public-profile-area.nu232-store [data-native-menu]{overflow-anchor:none}
+ html body.public-profile-area.nu232-store.nu248-slide-collapsed [data-native-menu] .nu-menu-sticky .nu207-banners{display:none!important}
+}
+@media(min-width:901px){
+ html body.public-profile-area.nu233-store.nu233-desktop [data-native-menu] .nu-menu-sticky,
+ html body.public-profile-area.nu233-store.nu233-desktop [data-native-menu] .nu-menu-sticky.nu-search-fixed{
+  position:relative!important;inset:auto!important;top:auto!important;left:auto!important;right:auto!important;
+  width:100%!important;max-width:100%!important;margin:0!important;padding:6px 0!important;transform:none!important;z-index:auto!important;
+ }
+ html body.public-profile-area.nu233-store.nu233-desktop [data-native-menu] .nu-search-anchor{display:none!important;height:0!important}
+ html body.public-profile-area.nu233-store.nu233-desktop [data-native-menu] .menu-category-nav{position:static!important;inset:auto!important}
+ html body.public-profile-area.nu233-store.nu233-desktop.nu187-store-home [data-native-menu] .nu-menu-sticky .nu207-banners{
+  display:block!important;position:relative!important;inset:auto!important;width:100%!important;max-width:1100px!important;margin:8px auto!important;
+ }
+ html body.public-profile-area.nu233-store.nu233-desktop.nu228-desktop-catalog [data-native-menu] .nu187-intro{display:none!important}
+}

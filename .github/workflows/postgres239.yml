@@ -8,6 +8,7 @@ on:
       - '**.js'
       - '**.cjs'
       - '**.html'
+      - '**.css'
       - Dockerfile
       - requirements.txt
       - .github/workflows/postgres239.yml
@@ -46,6 +47,16 @@ jobs:
         with:
           node-version: '22'
       - run: node --test tests/cart-lifecycle247.test.cjs frontend-admin/tests/*.test.mjs
+      - run: npm install --no-save --package-lock=false playwright
+      - name: Use installed Chrome or prepare Chromium
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "NOWUP_CHROME_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          else
+            npx playwright install --with-deps chromium
+          fi
+      - name: Desktop scroll and mobile slideshow controls
+        run: node --test tests/storefront248.browser.cjs
   docker:
     runs-on: ubuntu-latest
     steps:
