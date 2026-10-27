@@ -16,7 +16,8 @@
     let lastPayload='',token='';
     checkoutForm229.addEventListener('submit',event=>{
       const fields=[...new FormData(checkoutForm229)].filter(([name])=>name!=='request_key');const payload=JSON.stringify(fields);
-      if(!token||payload!==lastPayload){token=crypto.randomUUID();lastPayload=payload;}
+      if(window.NOWUP_CHECKOUT247){token=window.NOWUP_CHECKOUT247.prepare(key,payload,localStorage.getItem(key));lastPayload=payload;}
+      else if(!token||payload!==lastPayload){token=crypto.randomUUID();lastPayload=payload;}
       requestInput.value=token;
       if(checkoutForm229.dataset.submitting229==='1'){event.preventDefault();return;}
       checkoutForm229.dataset.submitting229='1';
@@ -34,7 +35,7 @@
   const notesAllowed=v=>{const card=[...root.querySelectorAll('[data-product]')].find(p=>Number(p.dataset.id)===v.productId);try{return JSON.parse(card?.dataset.custom192||'null')?.notes!==false;}catch(_){return true;}};
   const isPersonalized=v=>[...root.querySelectorAll('[data-product]')].some(p=>Number(p.dataset.id)===v.productId&&p.dataset.dish==='1');
   function render(){let html='';cart.forEach((v,id)=>{html+=`<div class="cart-item"><div><b>${esc(v.name)}</b>${v.utensils?'<small>🍴 Enviar talheres (garfo e faca)</small>':''}${v.customizationSummary?`<small>${esc(v.customizationSummary)}</small>`:''}${v.options.length?`<small>${v.options.map(o=>esc(o.name)).join(', ')}</small>`:''}<small>${money(v.unitPrice)} por unidade</small><small class="nu150-item-total">Total do item: ${money(v.unitPrice*v.quantity)}</small>${isPersonalized(v)?`<button type="button" class="nu160-edit" data-edit-personalization160="${id}">Editar personalização</button>`:''}<input ${notesAllowed(v)?'':'hidden disabled'} class="cart-note" data-note="${id}" maxlength="300" value="${esc(v.notes||'')}" placeholder="Observação: bem passado, sem feijão..."></div><div class="cart-quantity"><button type="button" data-minus="${id}">−</button><input type="number" min="1" max="${v.max||99}" value="${v.quantity}" data-cart-quantity="${id}"><button type="button" data-plus="${id}">+</button><button class="cart-remove" type="button" data-remove="${id}">Excluir</button></div></div>`});
-    items.innerHTML=html||'<p class="muted">Adicione produtos para começar.</p>';const sub=baseSubtotal(),grand=sub+fee(),count=[...cart.values()].reduce((sum,v)=>sum+v.quantity,0);total.textContent=money(sub);if(dialogTotal)dialogTotal.textContent=money(grand);if(dockTotal)dockTotal.textContent=money(sub);if(cartCount)cartCount.textContent=count+` ${count===1?'item':'itens'}`;checkout.disabled=cfg.ownerView||cfg.open===false||!cart.size||sub<Number(cfg.minimumOrder||0)||[...cart.values()].some(v=>v.options.length>20||v.options.some(o=>(o.quantity||1)!==1));if(dockCheckout)dockCheckout.disabled=checkout.disabled;checkout.textContent=[...cart.values()].some(v=>v.options.length>20||v.options.some(o=>(o.quantity||1)!==1))?'Atualize os adicionais: até 3, uma porção de cada':cfg.open===false?'Pedidos pausados':cart.size&&sub<Number(cfg.minimumOrder||0)?`Faltam ${money(Number(cfg.minimumOrder)-sub)} para o mínimo`:'Continuar pedido';const note=dialog.querySelector('[data-fee-note]');if(note)note.textContent=fee()?`(inclui ${money(fee())} de entrega)`:'';sync()}
+    items.innerHTML=html||'<p class="muted">Adicione produtos para começar.</p>';const sub=baseSubtotal(),grand=sub+fee(),count=[...cart.values()].reduce((sum,v)=>sum+v.quantity,0);total.textContent=money(sub);if(dialogTotal)dialogTotal.textContent=money(grand);if(dockTotal)dockTotal.textContent=money(sub);if(cartCount)cartCount.textContent=count+` ${count===1?'item':'itens'}`;checkout.disabled=cart.size>50||cfg.ownerView||cfg.open===false||!cart.size||sub<Number(cfg.minimumOrder||0)||[...cart.values()].some(v=>v.options.length>20||v.options.some(o=>(o.quantity||1)!==1));if(dockCheckout)dockCheckout.disabled=checkout.disabled;checkout.textContent=cart.size>50?'Limite de 50 itens diferentes por pedido':[...cart.values()].some(v=>v.options.length>20||v.options.some(o=>(o.quantity||1)!==1))?'Atualize os adicionais: até 3, uma porção de cada':cfg.open===false?'Pedidos pausados':cart.size&&sub<Number(cfg.minimumOrder||0)?`Faltam ${money(Number(cfg.minimumOrder)-sub)} para o mínimo`:'Continuar pedido';const note=dialog.querySelector('[data-fee-note]');if(note)note.textContent=fee()?`(inclui ${money(fee())} de entrega)`:'';sync()}
   if(!customerId)try{if(localStorage.getItem(key)===null){const legacy=localStorage.getItem(key+'/menu');if(legacy!==null){localStorage.setItem(key,legacy);localStorage.removeItem(key+'/menu');}}}catch(_){}
   try{(JSON.parse(localStorage.getItem(key)||'[]')||[]).forEach(([id,v])=>{if(v&&v.name)cart.set(String(id),{...v,productId:Number(v.productId||String(id).split(':')[0]),unitPrice:Number(v.unitPrice||v.price||0),options:Array.isArray(v.options)?v.options:[],max:Number(v.max||99)})})}catch(_){localStorage.removeItem(key)}
   window.NOWUP_CART160={
@@ -76,8 +77,9 @@
   function restore200(){
     try{const stored=JSON.parse(localStorage.getItem(key)||'[]');cart.clear();stored.forEach(([id,v])=>cart.set(id,v));render();}catch(_){}
   }
-  window.addEventListener('pageshow',e=>{if(e.persisted)restore200();});
+  window.addEventListener('pageshow',()=>restore200());
   window.addEventListener('storage',e=>{if(e.key===key)restore200();});
+  window.addEventListener('nowup-cart-confirmed247',e=>{if(e.detail?.key===key)restore200();});
   if(cfg.ownerView){root.querySelectorAll('[data-add], [data-product-quantity]').forEach(e=>{e.disabled=true;});}
   checkoutFields();render();
 })();

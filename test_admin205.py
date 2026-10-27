@@ -16,11 +16,11 @@ def env(tmp_path):
  path=tmp_path/'db.sqlite'
  def db():
   c=sqlite3.connect(path);c.row_factory=sqlite3.Row;c.execute('PRAGMA foreign_keys=ON');return c
- ns={'db':db}
+ ns={'db':db,'datetime':datetime,'timezone':timezone,'timedelta':timedelta,'SESSION_ABSOLUTE_DAYS238':90,'SESSION_DAYS':30}
  tree=ast.parse((ROOT/'app.py').read_text());ensure=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='ensure_column');exec(compile(ast.Module(body=[ensure],type_ignores=[]),'schema','exec'),ns)
  init=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='init_db');part=[]
  for node in init.body:
-  if isinstance(node,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='defaults' for t in node.targets):break
+  if isinstance(node,ast.Assign) and any(isinstance(t,ast.Name) and t.id in ('defaults','epoch238') for t in node.targets):break
   if 'nowup_included195' not in ast.unparse(node):part.append(node)
  part.extend(ast.parse('conn.commit()\nconn.close()').body)
  fn=ast.FunctionDef(name='schema',args=ast.arguments(posonlyargs=[],args=[],kwonlyargs=[],kw_defaults=[],defaults=[]),body=part,decorator_list=[])

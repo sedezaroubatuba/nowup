@@ -48,6 +48,8 @@ templates.env.globals["category_key230"] = nowup_categories230.validate_key
 
 @app.middleware("http")
 async def security_headers_and_csrf(request: Request, call_next):
+    if os.getenv('NOWUP_MAINTENANCE','0')=='1' and request.url.path!='/health':
+        return JSONResponse({'detail':'Estamos atualizando o NowUp. Tente novamente em alguns minutos.'},status_code=503,headers={'Retry-After':'120'})
     from nowup_runtime238 import mutation_origin_allowed
     if not mutation_origin_allowed(request):
         return JSONResponse({"detail":"Origem da requisição não confirmada. Atualize a página e tente novamente."},status_code=403)
@@ -182,10 +184,9 @@ def slugify(value: str):
     return value or secrets.token_hex(4)
 
 def db():
-    conn = sqlite3.connect(DB_PATH, timeout=15)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+    from nowup_database239 import connect
+    from nowup_media247 import MediaConnection
+    return MediaConnection(connect(DB_PATH), UPLOAD_DIR)
 
 def hash_password(password: str, salt: Optional[str]=None):
     salt = salt or secrets.token_hex(16)
@@ -744,8 +745,13 @@ def init_db():
 
 @app.on_event("startup")
 def startup():
+    from nowup_database239 import initialize_postgres_helpers
+    initialize_postgres_helpers()
     init_db()
     init_cms_db()
+    from nowup_database239 import is_postgres
+    if is_postgres():
+        return
     # Cópia SQLite consistente; o disco persistente deve incluir a pasta data.
     backup_dir=DB_PATH.parent/"backups"; backup_dir.mkdir(parents=True,exist_ok=True)
     destination=backup_dir/f"nowup-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}.db"
@@ -811,6 +817,7 @@ def select_home_stores90(conn, rows, visitor_key, visit_date):
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request, q: str="", city: str="", category: str="", business_type: str="", open_now: str=""):
+    user=current_user(request)
     conn = db()
     settings = get_settings(conn)
     cities = active_cities(settings)
@@ -863,7 +870,7 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
       FROM posts po JOIN professionals p ON p.id=po.professional_id
       WHERE p.blocked=0 AND p.admission_status='approved' AND p.plan_active IN ('vitrine','ambos') AND po.post_type!='status' ORDER BY po.id DESC LIMIT 12
     """).fetchall()
-    user=current_user(request); favorite_ids=set()
+    favorite_ids=set()
     if user and user["role"]=="customer":
         favorite_ids={r[0] for r in conn.execute("SELECT professional_id FROM favorites WHERE customer_id=?",(user["id"],)).fetchall()}
     recent_orders=[]
@@ -1061,6 +1068,7 @@ def attach_cart_assets144(response):
 
 @app.get("/p/{slug}", response_class=HTMLResponse)
 def profile(request: Request, slug: str):
+    current=current_user(request)
     conn=db()
     p=conn.execute("""
       SELECT p.*,
@@ -1092,7 +1100,7 @@ def profile(request: Request, slug: str):
           WHERE pr.professional_id=? AND po.available=1 ORDER BY po.sort_order,po.id""",(p["id"],)).fetchall():
             product_options.setdefault(row["product_id"],[]).append(row)
     product_groups,delivery_zones=menu_rules89(conn,p["id"])
-    current=current_user(request); can_review=False
+    can_review=False
     if current and current["role"]=="customer":
         can_review=bool(conn.execute("SELECT 1 FROM orders WHERE customer_id=? AND professional_id=? AND status='completed' LIMIT 1",(current["id"],p["id"])).fetchone())
     conn.close()
@@ -1173,15 +1181,22 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
     try: raw_items=json.loads(cart_json)
     except Exception: conn.close(); raise HTTPException(400,"Carrinho inválido")
     if not isinstance(raw_items,list) or not raw_items: conn.close(); raise HTTPException(400,"Carrinho vazio")
+    if len(raw_items)>50:
+        conn.close(); raise HTTPException(400,"O carrinho permite até 50 itens diferentes. Divida o pedido.")
     clean_items=[]; subtotal=0
-    for raw in raw_items[:50]:
-        try: pid=int(raw.get("id")); qty=max(1,min(99,int(raw.get("quantity",1)))); item_notes=str(raw.get("notes","")).strip()[:300]
-        except (TypeError,ValueError,AttributeError): continue
+    for raw in raw_items:
+        try:
+            if not isinstance(raw,dict) or type(raw.get("id")) is not int or type(raw.get("quantity",1)) is not int or raw["id"]<1 or not 1<=raw.get("quantity",1)<=99: raise ValueError()
+            pid=raw["id"]; qty=raw.get("quantity",1); item_notes=str(raw.get("notes","")).strip()[:300]
+        except (TypeError,ValueError,AttributeError):
+            conn.close(); raise HTTPException(400,"Um item do carrinho é inválido. Revise o pedido.")
         product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=? AND available=1",(pid,p["id"])).fetchone()
         if not product:
             conn.close(); raise HTTPException(400,"Um produto do carrinho ficou indisponível. Atualize o cardápio antes de enviar o pedido.")
         if product:
-            qty=min(qty,max(1,product["max_quantity"] or 99)); chosen=[]; extras=0
+            if qty>max(1,product["max_quantity"] or 99):
+                conn.close(); raise HTTPException(400,"Quantidade acima do limite do produto. Revise o carrinho.")
+            chosen=[]; extras=0
             try:chosen,extras=options_single158(conn,pid,raw.get("options",[]))
             except HTTPException:conn.close();raise
             utensils=raw.get("utensils",False)
@@ -1426,7 +1441,9 @@ def forgot_password_page(request: Request):
     return templates.TemplateResponse("forgot_password.html", context(request))
 
 @app.post("/recuperar-senha")
-def forgot_password(email: str=Form(...)):
+def forgot_password(request: Request, email: str=Form(...)):
+    from nowup_auth247 import check as limit247
+    limit247(db,request,email,'reset')
     normalized=normalize_email(email)
     if normalized:
         conn=db(); user=conn.execute("SELECT id,name,email FROM users WHERE email=? AND is_active=1",(normalized,)).fetchone()
@@ -1582,7 +1599,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
       SUM(CASE WHEN status='cancelled' THEN 1 ELSE 0 END) cancelled
       FROM orders WHERE professional_id=? AND date(created_at) BETWEEN ? AND ?""",
       (p["id"],start.isoformat(),end.isoformat())).fetchone()
-    top_products=conn.execute("""SELECT oi.product_name,
+    top_products=conn.execute("""SELECT MIN(oi.product_name) AS product_name,
       SUM(oi.quantity) quantity, SUM(oi.quantity*oi.unit_price_cents) revenue_cents,
       COUNT(DISTINCT oi.order_id) order_count
       FROM order_items oi JOIN orders o ON o.id=oi.order_id
@@ -1594,7 +1611,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     store_notifications=[dict(n,order200=notice_orders200.get(n['id'])) for n in store_notifications]
     latest_notification_id=store_notifications[0]["id"] if store_notifications else 0
     store_client_orders=conn.execute("SELECT id,customer_id,order_code,status,total_cents,created_at FROM orders WHERE professional_id=? ORDER BY id DESC",(p["id"],)).fetchall()
-    store_clients=conn.execute("""SELECT customer_id,customer_name,COUNT(*) AS order_count,
+    store_clients=conn.execute("""SELECT customer_id,MIN(customer_name) AS customer_name,COUNT(*) AS order_count,
       MAX(created_at) AS last_order,
       SUM(CASE WHEN status='completed' THEN total_cents ELSE 0 END) AS completed_cents
       FROM orders WHERE professional_id=? AND customer_id IS NOT NULL
@@ -2887,3 +2904,26 @@ def pro_kanban228(request: Request):
         return templates.TemplateResponse("merchant_kanban228.html",{"request":request,"kanban":kanban,"status_labels":ORDER_STATUS_LABELS},headers={"Cache-Control":"private, no-store"})
     finally:
         conn.close()
+
+# Validate deferred references only after every feature table has been initialized.
+from nowup_database239 import finalize_postgres_constraints, close_pool
+app.add_event_handler("startup", finalize_postgres_constraints)
+app.add_event_handler("shutdown", close_pool)
+
+# V241: import tool is disabled unless explicitly enabled on the fixed test host.
+import nowup_mobile_migration241
+nowup_mobile_migration241.install(app, require_user, UPLOAD_DIR)
+
+# V245: durable test images and authenticated image-only recovery.
+import nowup_media245
+nowup_media245.install(app, require_user, db, UPLOAD_DIR)
+
+@app.get('/api/cart-completion247')
+def cart_completion247(request: Request, request_key: str):
+    user=require_user(request,'customer')
+    if not re.fullmatch(r'[A-Za-z0-9_-]{16,128}',request_key):raise HTTPException(400,'Identificador inválido')
+    conn=db()
+    try:
+        row=conn.execute('SELECT p.slug FROM checkout_requests229 r JOIN orders o ON o.id=r.order_id JOIN professionals p ON p.id=r.professional_id WHERE r.customer_id=? AND r.request_key=? AND o.customer_id=?',(user['id'],request_key,user['id'])).fetchone()
+        return JSONResponse({'confirmed':bool(row),'path':'/p/'+row['slug'] if row else None},headers={'Cache-Control':'private, no-store'})
+    finally:conn.close()

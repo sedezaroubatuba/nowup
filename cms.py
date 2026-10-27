@@ -14,7 +14,9 @@ UPLOAD_DIR=Path(os.getenv("NOWUP_UPLOAD_DIR",BASE/"uploads")); UPLOAD_DIR.mkdir(
 templates=Jinja2Templates(directory=str(BASE/"templates")); router=APIRouter()
 
 def db():
-    c=sqlite3.connect(DB_PATH); c.row_factory=sqlite3.Row; c.execute("PRAGMA foreign_keys=ON"); return c
+    from nowup_database239 import connect
+    from nowup_media247 import MediaConnection
+    return MediaConnection(connect(DB_PATH), UPLOAD_DIR)
 def now_iso(): return datetime.now(timezone.utc).isoformat()
 def slugify(v):
     v=unicodedata.normalize("NFKD",v or "").encode("ascii","ignore").decode().lower()
