@@ -223,7 +223,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </label>
 <label>Preço promocional<input class="input" name="promo_price" value="{% if product.promo_price_cents %}{{'%.2f'|format(product.promo_price_cents/100)|replace('.',',')}}{% endif %}" placeholder="Opcional"></label>
 <label>Máximo por pedido<input class="input" type="number" name="max_quantity" min="1" max="99" value="{{product.max_quantity}}"></label>
-<label>Trocar foto<input class="input" type="file" name="photo" accept="image/*">
+<label>Trocar foto<input class="input" type="file" name="photo" accept="image/*" data-preview250="{% if product.image_filename %}/uploads/{{product.image_filename}}{% endif %}">
 </label>
 <label class="full">Descrição completa do produto<textarea name="description">{{product.description}}</textarea>
 </label>
@@ -436,9 +436,9 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <div class="mini-avatar" data-avatar-preview>{% if pro.avatar_filename %}<img src="/uploads/{{pro.avatar_filename}}">{% else %}<span>🏪</span>{% endif %}</div>
 </div>
 <form action="/painel/identidade" method="post" enctype="multipart/form-data" class="grid2" data-identity-form>
-<label>Foto de perfil<input class="input" type="file" name="avatar" accept="image/*">
+<label>Foto de perfil<input class="input" type="file" name="avatar" accept="image/*" data-preview250="{% if pro.avatar_filename %}/uploads/{{pro.avatar_filename}}{% endif %}">
 </label>
-<label>Imagem da capa<input class="input" type="file" name="cover" accept="image/*">
+<label>Imagem da capa<input class="input" type="file" name="cover" accept="image/*" data-preview250="{% if pro.cover_filename %}/uploads/{{pro.cover_filename}}{% endif %}">
 </label>
 <button class="btn primary">Salvar foto e capa</button>
 <a class="btn soft" href="/p/{{pro.slug}}">Ver minha loja</a>
@@ -458,9 +458,9 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <span class="status-pill ok">Liberado pelo NowUp</span>
 </div>
 <p class="muted">Estas opções aparecem somente enquanto sua empresa estiver liberada para destaque ou slide.</p>
-<form action="/painel/publicidade" method="post" enctype="multipart/form-data" class="grid2">{% if pro.featured %}<label>Capa do destaque<input class="input" type="file" name="featured_image" accept="image/*">
+<form action="/painel/publicidade" method="post" enctype="multipart/form-data" class="grid2">{% if pro.featured %}<label>Capa do destaque<input class="input" type="file" name="featured_image" accept="image/*" data-preview250="{% if pro.featured_image_filename %}/uploads/{{pro.featured_image_filename}}{% endif %}">
 <small>Usada no cartão de destaque da página inicial.</small>
-</label>{% endif %}{% if pro.in_slider %}<label>Foto do slide<input class="input" type="file" name="slide_image" accept="image/*">
+</label>{% endif %}{% if pro.in_slider %}<label>Foto do slide<input class="input" type="file" name="slide_image" accept="image/*" data-preview250="{% if pro.slide_image_filename %}/uploads/{{pro.slide_image_filename}}{% endif %}">
 <small>Recomendado: imagem horizontal 1200 × 500.</small>
 </label>{% endif %}<button class="btn primary">Salvar imagens de divulgação</button>
 </form>
@@ -557,7 +557,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <input class="input" name="caption" placeholder="Legenda opcional">
 <button class="btn primary">Adicionar foto</button>
 </form>{% endif %}<div class="photoManager" style="margin-top:16px">{% for ph in photos %}<div class="pm">
-<img src="/uploads/{{ph.filename}}">
+<img src="/uploads/{{ph.filename}}" data-enlarge250 tabindex="0" role="button" aria-label="Visualizar foto">
 <div class="tiny">{% if ph.is_cover %}<b>Capa das buscas</b>{% endif %} {{ph.caption}}</div>
 <div class="row">
 <form action="/painel/fotos/{{ph.id}}/capa" method="post">
