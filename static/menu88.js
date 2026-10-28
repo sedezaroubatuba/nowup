@@ -6,6 +6,7 @@
   const customerId=Number.isSafeInteger(Number(cfg.customerId))&&Number(cfg.customerId)>0?Number(cfg.customerId):null;
   const key=customerId?`nowup-cart:u:${customerId}:${path}`:`nowup-cart:${path}`;
   const infoKey=`nowup-cart-info:${customerId?`u:${customerId}:`:''}${path}`;
+  if(!customerId)return; // Browsing is public; cart mutations require a customer session.
   // A confirmação do servidor limpa também o carrinho de quem comprou sem conta.
   const completed=document.cookie.match(/(?:^|;\s*)nowup_cart_completed=([^;]+)/);
   if(completed){try{const slug=decodeURIComponent(completed[1]);if(path.endsWith('/p/'+slug)){localStorage.removeItem(key);localStorage.removeItem(infoKey);document.cookie='nowup_cart_completed=; Max-Age=0; Path=/';}}catch(_){}}

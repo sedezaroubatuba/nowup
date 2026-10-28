@@ -1,0 +1,4 @@
+.nu252-login-notice{margin:10px 0;padding:12px 14px;border:1px solid #d9c8eb;border-radius:12px;background:#f7f1ff;color:#57317a;font-size:14px;line-height:1.5}.nu252-login-notice a{display:inline-block;min-height:44px;padding:10px 14px;box-sizing:border-box;background:#7434c6;color:#fff!important;border-radius:9px;text-decoration:none;font-weight:700;margin:6px 8px 0 0}
+[data-native-menu][data-login-required252="1"] :is(.nu83-cart-dock,.nu162-top-cart,.nu163-quantity,.product-buy>label,.product-options,.nu85-note,.nu151-summary,.nu151-choose,.nu158-utensils){display:none!important}
+[data-native-menu][data-login-required252="1"] :is(.nu201-open,[data-login-buy252]){white-space:normal!important;line-height:1.2!important;height:auto!important;min-height:44px!important;padding:8px!important;font-size:12px!important}
+.nu252-hidden-price{font-size:12px!important;font-weight:600!important;color:#7132bf!important;line-height:1.3!important}

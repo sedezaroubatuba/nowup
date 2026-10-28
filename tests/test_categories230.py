@@ -126,3 +126,29 @@ def test_store_pagination_preserves_filters_and_reaches_all_results(env):
     assert 'q=Paging238' in first and 'page=2' in first
     home=client.get('/?q=Paging238&city=Ubatuba').text
     assert 'Continuar vendo lojas' in home and '(27)' in home
+
+
+def test_guest_browses_without_product_prices_and_cannot_submit(env):
+    import re
+    m,client,stores=env
+    pro=stores[0]; stamp=datetime.now(timezone.utc).isoformat()
+    with m.db() as c:
+        c.execute("INSERT INTO products(professional_id,name,category,price_cents,created_at,updated_at) VALUES(?,'Guest252 test','Geral',4257,?,?)",(pro['id'],stamp,stamp))
+        before=c.execute('SELECT COUNT(*) FROM orders').fetchone()[0]
+    client.cookies.clear()
+    try:
+        for suffix in ['', '/menu']:
+            response=client.get('/p/'+pro['slug']+suffix)
+            assert response.status_code==200
+            body=response.text
+            assert 'Guest252 test' in body and 'Faça login para comprar' in body
+            assert 'data-hide-prices252="1"' in body and 'data-login-required252="1"' in body
+            assert 'R$ 42,57' not in body
+            assert all(x=='0' for x in re.findall(r'data-price="([^"]*)"',body))
+        denied=client.post('/p/'+pro['slug']+'/menu/pedido',data={'customer_name':'Guest','customer_phone':'12999999999','cart_json':'[]'},follow_redirects=False)
+        assert denied.status_code==303
+        with m.db() as c:assert c.execute('SELECT COUNT(*) FROM orders').fetchone()[0]==before
+    finally:
+        client.cookies.set('nowup_session','icon-test-0')
+    signed_in=client.get('/p/'+pro['slug']).text
+    assert 'data-hide-prices252="0"' in signed_in and 'R$ 42,57' in signed_in
