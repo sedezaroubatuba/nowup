@@ -124,6 +124,8 @@ def test_authenticated_reports_settings_and_replayed_checkout(pg):
     assert a.status_code==303,a.text
     b=client.post('/p/'+pro['slug']+'/menu/pedido',data=payload,follow_redirects=False)
     assert b.status_code==303 and a.headers['location']==b.headers['location']
+    ack=client.post('/p/'+pro['slug']+'/menu/pedido',data=payload,headers={'Accept':'application/json'},follow_redirects=False)
+    assert ack.status_code==200 and ack.json()=={'confirmed':True,'path':'/p/'+pro['slug'],'redirect':a.headers['location']}
     with m.db() as c:
         orders=c.execute('SELECT total_cents FROM orders WHERE customer_id=?',(customer,)).fetchall()
         assert len(orders)==1 and orders[0][0]==4780

@@ -1176,7 +1176,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
         'reference':address_reference,'change':change_for,'notes':notes,'channel':order_channel})
     if existing:
         conn.close()
-        return completed_response(slug,existing)
+        return completed_response(slug,existing,request)
     if not shop_status(p)["open"]: conn.close(); return RedirectResponse(f"/p/{slug}/menu?fechado=1",303)
     try: raw_items=json.loads(cart_json)
     except Exception: conn.close(); raise HTTPException(400,"Carrinho inválido")
@@ -1242,10 +1242,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
     from nowup_checkout229 import remember_checkout
     remember_checkout(conn,logged['id'],p['id'],checkout_key229,checkout_hash229,order_id,created)
     conn.commit(); conn.close()
-    response=RedirectResponse(f"/pedido/{tracking_token}",303)
-    response.set_cookie("nowup_cart_completed",slug,max_age=120,samesite="lax",secure=request.url.scheme=="https")
-    response.set_cookie("nowup_cart_completed_token",tracking_token,max_age=600,httponly=True,samesite="lax",secure=request.url.scheme=="https")
-    return response
+    return completed_response(slug,tracking_token,request)
 
 ORDER_STATUS_LABELS={
   "new":"Aguardando aceite", "confirmed":"Pedido aceito", "preparing":"Em preparo",

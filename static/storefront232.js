@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.scrollTo({top: scrollTop, behavior: 'instant'});
     schedule();
   });
+  let coverPassed = false;
   let queued = false;
   function measure() {
     queued = false;
@@ -37,7 +38,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const banner = root.querySelector('.nu207-banners');
     // On desktop the whole shopping header scrolls naturally. On mobile keep
     // the current sticky group, with an explicit control to reclaim its space.
-    const beforeCover = intro.getBoundingClientRect().bottom > 1;
+    const coverBottom = intro.getBoundingClientRect().bottom;
+    // Hysteresis prevents the banner changing the layout repeatedly at the cover edge.
+    if (window.scrollY <= 4 || coverBottom > 48) coverPassed = false;
+    else if (coverBottom < -8) coverPassed = true;
+    const beforeCover = !coverPassed;
     const bannerHidden = !home || (mobile.matches && (beforeCover || slideCollapsed));
     if (body.classList.contains('nu237-banner-hidden') !== bannerHidden) body.classList.toggle('nu237-banner-hidden', bannerHidden);
     body.classList.toggle('nu248-slide-collapsed', mobile.matches && slideCollapsed);
@@ -50,12 +55,12 @@ document.addEventListener('DOMContentLoaded', () => {
       slideToggle.setAttribute('aria-controls', banner.id);
     }
     const height = Math.ceil(bar.getBoundingClientRect().height);
-    body.style.setProperty('--nu232-sticky-height', height + 'px');
+    if(body.style.getPropertyValue('--nu232-sticky-height')!==height+'px')body.style.setProperty('--nu232-sticky-height',height+'px');
     const dock = root.querySelector('.nu83-cart-dock:not([hidden])');
     const dockHeight = dock && getComputedStyle(dock).position === 'fixed' && dock.getBoundingClientRect().height > 0 ? dock.getBoundingClientRect().height + 24 : 20;
     // Four complete cards (2x2), after the cover has scrolled out of view.
     const cardHeight = Math.max(150, Math.min(240, Math.floor((window.innerHeight - height - 44 - 32 - dockHeight - 8) / 2)));
-    body.style.setProperty('--nu232-card-height', cardHeight + 'px');
+    if(body.style.getPropertyValue('--nu232-card-height')!==cardHeight+'px')body.style.setProperty('--nu232-card-height',cardHeight+'px');
   }
   function schedule() {
     if (!queued) {queued = true; requestAnimationFrame(measure);}
