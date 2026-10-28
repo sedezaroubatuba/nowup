@@ -18,7 +18,7 @@ body.nowup-login-white{background:#fff!important;background-image:none!important
 @media(max-width:600px){.nowup-login-white .formCard{padding:20px;margin:12px auto}.nowup-login-white h1{font-size:28px!important;line-height:1.2}.nowup-login-white h2{font-size:23px!important}.nowup-login-white .rolecard .tiny{font-size:13px!important}.nowup-login-white .roleicon{font-size:28px!important}}
 </style>
 <div class="container"><div class="formCard">
-<h1>Como você quer entrar?</h1>
+<h1>Como você quer entrar?</h1>{% if request.query_params.get('comprar') %}<p role="status">Faça login para comprar</p>{% endif %}
 <p class="muted">Escolha seu tipo de acesso para deixar tudo mais claro.</p>
 <div class="rolegrid">
 <a class="rolecard" href="/entrar?tipo=cliente"><span class="roleicon">👤</span><b>Cliente</b><span class="muted tiny">Comprar, acompanhar pedidos e descobrir lojas.</span></a>
