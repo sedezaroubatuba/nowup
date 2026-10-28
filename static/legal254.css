@@ -9,3 +9,5 @@ html body.nowup-legal-area .nu254-legal p{margin:0 0 20px!important}
 html body.nowup-legal-area .nu254-legal p:last-child{margin-bottom:0!important}
 html body.nowup-legal-area .nu254-legal a{color:#633397!important;text-decoration:underline}
 html body.nowup-legal-area .nu254-legal a:focus-visible{outline:3px solid #7434c6;outline-offset:3px}
+html body.nowup-legal-area :is(.mainnav a,.footer,.footer p,.footer a,.footer b,.footer small,.footer span,.footer h2,.footer h3,.footer strong){color:#253247!important;text-shadow:none!important}
+html body.nowup-legal-area .footer{background:#fff!important;background-image:none!important}
