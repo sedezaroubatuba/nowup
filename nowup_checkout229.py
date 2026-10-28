@@ -1,10 +1,11 @@
 """Checkout idempotency. The order and its request record commit atomically."""
+import os
 import hashlib
 import json
 import re
 from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 
 
 def begin_checkout(conn, customer_id, professional_id, request_key, payload):
@@ -45,8 +46,14 @@ def remember_checkout(conn, customer_id, professional_id, key, digest, order_id,
         (customer_id, professional_id, key, digest, order_id, created_at))
 
 
-def completed_response(slug, token):
-    response = RedirectResponse('/pedido/' + token, 303)
-    response.set_cookie('nowup_cart_completed', slug, max_age=120, samesite='lax', path='/')
-    response.set_cookie('nowup_cart_completed_token', token, max_age=600, httponly=True, samesite='lax', path='/')
+def completed_response(slug, token, request=None):
+    # Acknowledgement is returned only after commit (or an existing committed request).
+    if request is not None and 'application/json' in request.headers.get('accept', ''):
+        response = JSONResponse({'confirmed': True, 'path': '/p/' + slug,
+            'redirect': '/pedido/' + token}, headers={'Cache-Control': 'private, no-store'})
+    else:
+        response = RedirectResponse('/pedido/' + token, 303)
+    secure = request is not None and (request.url.scheme == 'https' or os.getenv('NOWUP_HTTPS') == '1')
+    response.set_cookie('nowup_cart_completed', slug, max_age=120, samesite='lax', path='/', secure=secure)
+    response.set_cookie('nowup_cart_completed_token', token, max_age=600, httponly=True, samesite='lax', path='/', secure=secure)
     return response

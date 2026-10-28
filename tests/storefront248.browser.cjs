@@ -49,3 +49,11 @@ test('mobile sticky banner can be collapsed and reopened without losing categori
   assert.equal(await page.locator('.nu248-slide-toggle').isVisible(),false);
  }finally{await browser.close();}
 });
+
+test('mobile banner remains stable while scrolling around the cover threshold',async()=>{
+ const {browser,page}=await setup(390);try{
+  await page.evaluate(()=>window.scrollTo(0,320));await page.getByRole('button',{name:'Subir slide ↑'}).waitFor({state:'visible'});
+  for(const y of [299,301,296,304,298,302]){await page.evaluate(y=>window.scrollTo(0,y),y);await page.waitForTimeout(40);assert.equal(await page.locator('.nu207-banners').isVisible(),true);}
+  await page.evaluate(()=>window.scrollTo(0,0));await page.locator('.nu207-banners').waitFor({state:'hidden'});
+ }finally{await browser.close();}
+});

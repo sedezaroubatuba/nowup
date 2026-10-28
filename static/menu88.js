@@ -14,15 +14,32 @@
   if(checkoutForm229){
     const requestInput=document.createElement('input');requestInput.type='hidden';requestInput.name='request_key';checkoutForm229.append(requestInput);
     let lastPayload='',token='';
-    checkoutForm229.addEventListener('submit',event=>{
+    checkoutForm229.addEventListener('submit',async event=>{
+      event.preventDefault();
+      if(checkoutForm229.dataset.submitting229==='1')return;
       const fields=[...new FormData(checkoutForm229)].filter(([name])=>name!=='request_key');const payload=JSON.stringify(fields);
-      if(window.NOWUP_CHECKOUT247){token=window.NOWUP_CHECKOUT247.prepare(key,payload,localStorage.getItem(key));lastPayload=payload;}
+      const snapshot=localStorage.getItem(key);
+      if(window.NOWUP_CHECKOUT247){token=window.NOWUP_CHECKOUT247.prepare(key,payload,snapshot);lastPayload=payload;}
       else if(!token||payload!==lastPayload){token=crypto.randomUUID();lastPayload=payload;}
       requestInput.value=token;
-      if(checkoutForm229.dataset.submitting229==='1'){event.preventDefault();return;}
       checkoutForm229.dataset.submitting229='1';
-      const button=event.submitter;if(button){button.disabled=true;button.textContent='Enviando pedido…';}
-      setTimeout(()=>{checkoutForm229.dataset.submitting229='';if(button){button.disabled=false;button.textContent='Tentar enviar novamente';}},15000);
+      let feedback=checkoutForm229.querySelector('[data-checkout-feedback251]');
+      if(!feedback){feedback=document.createElement('p');feedback.dataset.checkoutFeedback251='';feedback.setAttribute('role','status');checkoutForm229.append(feedback);}
+      const button=event.submitter,original=button?.textContent;
+      if(button){button.disabled=true;button.textContent='Enviando pedido…';}
+      feedback.textContent='Enviando pedido…';
+      const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),30000);
+      try{
+        const response=await fetch(checkoutForm229.action,{method:'POST',body:new FormData(checkoutForm229),headers:{Accept:'application/json'},credentials:'same-origin',signal:controller.signal});
+        const json=(response.headers.get('content-type')||'').includes('application/json')?await response.json():null;
+        if(!response.ok||!json?.confirmed||json.path!==path||!/^\/pedido\/[A-Za-z0-9_-]+$/.test(json.redirect||''))throw new Error(typeof json?.detail==='string'?json.detail:'Envio não confirmado. Confira Meus pedidos antes de tentar novamente.');
+        // Clear this exact cart in the current page before navigating; no dependency
+        // on cookies, tracking-page scripts or a back/forward cache restoration.
+        if(localStorage.getItem(key)===snapshot){cart.clear();localStorage.removeItem(key);localStorage.removeItem(infoKey);sessionStorage.removeItem('nowup-checkout247:'+key);render();}
+        feedback.textContent='Pedido enviado com sucesso.';
+        location.assign(json.redirect);
+      }catch(error){feedback.textContent=error.name==='AbortError'?'O envio demorou. Confira Meus pedidos antes de tentar novamente.':error.message;
+      }finally{clearTimeout(timeout);checkoutForm229.dataset.submitting229='';if(button){button.disabled=false;button.textContent=original;}}
     });
     window.addEventListener('pageshow',()=>{checkoutForm229.dataset.submitting229='';checkoutForm229.querySelectorAll('[type=submit]').forEach(b=>b.disabled=false);});
   }
