@@ -52,11 +52,12 @@ def remember_checkout(conn, customer_id, professional_id, key, digest, order_id,
 
 def completed_response(slug, token, request=None):
     # Acknowledgement is returned only after commit (or an existing committed request).
+    target=('/p/'+slug+'/pedido/'+token) if request is not None and request.headers.get('x-nowup-store-app')=='256' else '/pedido/'+token
     if request is not None and 'application/json' in request.headers.get('accept', ''):
         response = JSONResponse({'confirmed': True, 'path': '/p/' + slug,
-            'redirect': '/pedido/' + token}, headers={'Cache-Control': 'private, no-store'})
+            'redirect': target}, headers={'Cache-Control': 'private, no-store'})
     else:
-        response = RedirectResponse('/pedido/' + token, 303, headers={'Cache-Control':'private, no-store'})
+        response = RedirectResponse(target, 303, headers={'Cache-Control':'private, no-store'})
     secure = request is not None and (request.url.scheme == 'https' or os.getenv('NOWUP_HTTPS') == '1')
     response.set_cookie('nowup_cart_completed', slug, max_age=120, samesite='lax', path='/', secure=secure)
     response.set_cookie('nowup_cart_completed_token', token, max_age=600, httponly=True, samesite='lax', path='/', secure=secure)

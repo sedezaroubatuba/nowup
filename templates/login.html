@@ -24,7 +24,7 @@ body.nowup-login-white{background:#fff!important;background-image:none!important
 <a class="rolecard" href="/entrar?tipo=cliente"><span class="roleicon">👤</span><b>Cliente</b><span class="muted tiny">Comprar, acompanhar pedidos e descobrir lojas.</span></a>
 <a class="rolecard" href="/entrar?tipo=profissional"><span class="roleicon">🧰</span><b>Lojista</b><span class="muted tiny">Gerenciar sua loja, produtos e pedidos.</span></a>
 </div>
-{% set tipo=request.query_params.get('tipo','') %}
+{% set tipo='cliente' if store_app256 else request.query_params.get('tipo','') %}
 {% set erro=request.query_params.get('erro','') %}
 {% if erro=='1' %}<div class="alert danger">E-mail ou senha incorretos.</div>{% elif erro=='perfil' %}<div class="alert danger">Esta conta não corresponde ao tipo de acesso escolhido.</div>{% elif erro=='verificacao' %}<div class="alert danger">Confirme seu e-mail antes de entrar.</div>{% elif erro=='pedido-login' %}<div class="alert">Entre como cliente para finalizar o pedido.</div>{% elif erro=='expirado' %}<div class="alert danger">O link de confirmação expirou. Solicite um novo.</div>{% elif erro=='2fa' %}<div class="alert danger">Não foi possível enviar o código de segurança. Confira a configuração da Brevo.</div>{% elif erro=='2fa_expirado' %}<div class="alert danger">O código expirou ou atingiu o limite de tentativas. Entre novamente.</div>{% endif %}
 {% if request.query_params.get('verificado') %}<div class="alert" style="background:#e9fbf3;color:#087b4b;border:1px solid #abefc6">E-mail confirmado com sucesso. Agora você pode entrar.</div>{% endif %}
@@ -32,7 +32,7 @@ body.nowup-login-white{background:#fff!important;background-image:none!important
 <div class="loginbox">
 <h2>{% if tipo=='admin' %}Acesso administrativo{% elif tipo=='profissional' %}Entrar como lojista{% elif tipo=='cliente' %}Entrar como cliente{% else %}Entrar na NowUp{% endif %}</h2>
 {% if tipo=='admin' %}<div class="security-note"><b>🔐 Acesso administrativo</b><div class="tiny muted">Use somente suas credenciais de administrador. O painel será tratado como acesso sensível.</div></div>{% endif %}
-<form method="post" action="/entrar">
+<form method="post" action="{{store_app256.login if store_app256 else '/entrar'}}">
 <input type="hidden" name="tipo" value="{{tipo}}">
 <label>E-mail</label><input class="input" type="email" name="email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="email" required>
 <label style="display:block;margin-top:10px">Senha</label><div class="password-row"><input id="nowup-login-password" class="input" type="password" name="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required><button class="password-toggle" type="button" aria-controls="nowup-login-password" aria-pressed="false" onclick="const field=document.getElementById('nowup-login-password');const show=field.type==='password';field.type=show?'text':'password';this.textContent=show?'Ocultar':'Mostrar';this.setAttribute('aria-pressed',String(show));">Mostrar</button></div>
@@ -40,5 +40,5 @@ body.nowup-login-white{background:#fff!important;background-image:none!important
 </form>
 <p style="text-align:right;margin:10px 0 0"><a class="muted tiny" href="/recuperar-senha">Esqueci minha senha</a></p>
 <p class="muted tiny" style="margin-top:16px">Ainda não tem conta?</p>
-<div class="row" style="flex-wrap:wrap"><a class="btn soft" href="/cadastro/cliente">Criar conta de cliente</a><a class="btn soft" href="/cadastro/profissional">Cadastrar minha loja</a></div>
+<div class="row" style="flex-wrap:wrap"><a class="btn soft" href="{{store_app256.signup if store_app256 else '/cadastro/cliente'}}">Criar conta de cliente</a><a class="btn soft" href="/cadastro/profissional">Cadastrar minha loja</a></div>
 </div></div></div>{% endblock %}

@@ -1,4 +1,5 @@
 from __future__ import annotations
+import nowup_storeapp256
 import nowup_categories230
 import nowup_included195
 from nowup_custom192 import parse_config, save_config, charge_options, validate_customization
@@ -278,6 +279,7 @@ def context(request: Request, **kwargs):
         "category_catalog230": nowup_categories230.CATALOG,
         "category_choices230": icon_choices230,
         "email_service_ready": email_service_configured(),
+        **nowup_storeapp256.page_context(globals(),request,kwargs),
         **kwargs
     }
 
@@ -2943,3 +2945,7 @@ def cart_completion247(request: Request, request_key: str):
         row=conn.execute('SELECT p.slug FROM checkout_requests229 r JOIN orders o ON o.id=r.order_id JOIN professionals p ON p.id=r.professional_id WHERE r.customer_id=? AND r.request_key=? AND o.customer_id=?',(user['id'],request_key,user['id'])).fetchone()
         return JSONResponse({'confirmed':bool(row),'path':'/p/'+row['slug'] if row else None},headers={'Cache-Control':'private, no-store'})
     finally:conn.close()
+
+# Store-specific cardápio links, branding and install identity.
+import nowup_storeapp256
+nowup_storeapp256.install(globals())

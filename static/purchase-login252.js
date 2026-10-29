@@ -1,7 +1,8 @@
 (()=>{'use strict';
  const root=document.querySelector('[data-native-menu]');
  if(!root||root.dataset.loginRequired252!=='1')return;
- const url='/entrar?tipo=cliente&comprar=1';
+ const store=document.getElementById('store-app256');
+ const url=store?JSON.parse(store.textContent).login:'/entrar?tipo=cliente&comprar=1';
  function login(){location.assign(url);}
  window.NOWUP_LOGIN252={login};
  const controls='[data-add],[data-login-buy252],.nu201-open,.nu190-add,.nu151-choose,[data-checkout],[data-dock-checkout],[data-cart-summary],.nu162-top-cart';
