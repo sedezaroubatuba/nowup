@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  }
  function compact(card){
   const item=make('article','nu190-card nu201-card'),image=card.querySelector('.nu163-media img, img');
-  if(image){const photo=make('img');photo.decoding='async';if(image.dataset.src258){photo.src='/static/product-placeholder.svg';photo.dataset.src258=image.dataset.src258;}else{photo.src=image.currentSrc||image.getAttribute('src');}photo.alt='';photo.loading='lazy';photo.addEventListener('error',()=>{photo.src='/static/product-placeholder.svg';},{once:true});item.append(photo);}
+  if(image){const photo=make('img');photo.decoding='async';if(image.dataset.src258){photo.src='/static/product-placeholder.svg';photo.dataset.src258=image.dataset.src258;}else{photo.src=image.getAttribute('src')||image.currentSrc;}photo.alt='';photo.loading='lazy';photo.addEventListener('error',()=>{photo.src='/static/product-placeholder.svg';},{once:true});item.append(photo);}
   else item.append(make('div','nu190-no-image','🍽'));
   if(card.dataset.cold==='1'){const ice=make('span','nu201-ice','❄');ice.title='Vendido gelado';ice.setAttribute('aria-label','Vendido gelado');item.append(ice);}
   const content=make('div','nu190-card-content');content.append(make('h3','',card.dataset.name||'Produto'),root.dataset.hidePrices252==='1'?make('small','nu252-hidden-price',''):make('strong','',money(Number(card.dataset.price)||0)));
