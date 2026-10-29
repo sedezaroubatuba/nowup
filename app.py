@@ -1179,6 +1179,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
             conn.close(); raise HTTPException(400,'Informe nome e WhatsApp válidos')
         if not p["is_premium"] or p["offer_mode"] not in ("menu","catalog"):
             conn.close(); raise HTTPException(403,"Cardápio ou catálogo disponível somente no plano Premium")
+        if request.headers.get('x-nowup-store-app')=='256':order_channel='external'
         from nowup_checkout229 import begin_checkout, completed_response
         existing,checkout_key229,checkout_hash229=begin_checkout(conn,logged['id'],p['id'],request_key,{
             'cart':cart_json,'name':customer_name,'phone':customer_phone,'fulfillment':fulfillment_type,

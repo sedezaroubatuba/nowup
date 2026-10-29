@@ -70,6 +70,7 @@ def test_scoped_checkout_stays_idempotent_and_tracks_only_its_store(shop):
     assert 'id="store-app256"' in tracking.text and 'Sede Zero' in tracking.text
     with m.db() as c:
         assert c.execute('SELECT COUNT(*) FROM orders').fetchone()[0]==1
+        assert c.execute('SELECT order_origin FROM orders').fetchone()[0]=='external'
         other=c.execute('SELECT slug FROM professionals WHERE id<>? LIMIT 1',(pid,)).fetchone()[0]
     assert client.get('/p/'+other+'/pedido/'+target.rsplit('/',1)[1]).status_code==404
 
