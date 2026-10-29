@@ -642,6 +642,8 @@ def init_db():
     ensure_column(conn, "products", "customization192", "TEXT NOT NULL DEFAULT ''")
     import nowup_storeapp257
     nowup_storeapp257.initialize(conn)
+    import nowup_auth247
+    nowup_auth247.initialize(conn)
     nowup_included195.initialize(conn)
     ensure_column(conn, "orders", "customer_id", "INTEGER REFERENCES users(id) ON DELETE SET NULL")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_customer238 ON orders(customer_id,id DESC)")
@@ -1566,20 +1568,21 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
         for option in conn.execute(f"""SELECT oio.* FROM order_item_options oio JOIN order_items oi ON oi.id=oio.order_item_id
           WHERE oi.order_id IN ({placeholders}) ORDER BY oio.id""",order_ids).fetchall():
             order_item_options.setdefault(option["order_item_id"],[]).append(option)
+    period_lower258=order_day_bounds(start)[0];period_upper258=order_day_bounds(end)[1]
     order_summary=conn.execute("""SELECT COUNT(*) total,
-      COALESCE(SUM(CASE WHEN status!='cancelled' THEN total_cents ELSE 0 END),0) revenue_cents,
-      COALESCE(ROUND(AVG(CASE WHEN status!='cancelled' THEN total_cents END)),0) avg_ticket_cents,
+      COALESCE(SUM(CASE WHEN status NOT IN ('cancelled','rejected') THEN total_cents ELSE 0 END),0) revenue_cents,
+      COALESCE(ROUND(AVG(CASE WHEN status NOT IN ('cancelled','rejected') THEN total_cents END)),0) avg_ticket_cents,
       SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) completed,
       SUM(CASE WHEN status='cancelled' THEN 1 ELSE 0 END) cancelled
-      FROM orders WHERE professional_id=? AND date(created_at) BETWEEN ? AND ?""",
-      (p["id"],start.isoformat(),end.isoformat())).fetchone()
+      FROM orders WHERE professional_id=? AND created_at>=? AND created_at<?""",
+      (p["id"],period_lower258,period_upper258)).fetchone()
     top_products=conn.execute("""SELECT oi.product_name,
       SUM(oi.quantity) quantity, SUM(oi.quantity*oi.unit_price_cents) revenue_cents,
       COUNT(DISTINCT oi.order_id) order_count
       FROM order_items oi JOIN orders o ON o.id=oi.order_id
-      WHERE o.professional_id=? AND o.status!='cancelled' AND date(o.created_at) BETWEEN ? AND ?
+      WHERE o.professional_id=? AND o.status NOT IN ('cancelled','rejected') AND o.created_at>=? AND o.created_at<?
       GROUP BY lower(oi.product_name) ORDER BY quantity DESC,revenue_cents DESC LIMIT 15""",
-      (p["id"],start.isoformat(),end.isoformat())).fetchall()
+      (p["id"],period_lower258,period_upper258)).fetchall()
     store_notifications=conn.execute("SELECT * FROM notifications WHERE user_id=? ORDER BY id DESC LIMIT 30",(u["id"],)).fetchall()
     notice_orders200=notification_orders200(conn,u["id"])
     store_notifications=[dict(n,order200=notice_orders200.get(n['id'])) for n in store_notifications]

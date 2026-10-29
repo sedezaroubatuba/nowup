@@ -47,7 +47,7 @@ def validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighbor
             pid=raw["id"]; qty=raw.get("quantity",1); item_notes=str(raw.get("notes","")).strip()[:300]
         except (TypeError,ValueError,AttributeError):
             raise HTTPException(400,"Um item do carrinho é inválido. Revise o pedido.")
-        product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=? AND available=1",(pid,p["id"])).fetchone()
+        product=conn.execute("SELECT pr.* FROM products pr WHERE pr.id=? AND pr.professional_id=? AND pr.available=1 AND (NOT EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category)) OR EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) AND pc.active=1))",(pid,p["id"])).fetchone()
         if not product:
             raise HTTPException(400,"Um produto do carrinho ficou indisponível. Atualize o cardápio antes de enviar o pedido.")
         if product:

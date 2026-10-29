@@ -7,6 +7,10 @@ on:
       - 'tests/storeapp256.browser.cjs'
       - 'tests/storeapp257.browser.cjs'
       - 'static/menu88.js'
+      - 'static/images258.js'
+      - 'static/storefront187.js'
+      - 'static/cart-lifecycle247.js'
+      - 'tests/images258.browser.cjs'
       - 'static/upload-preview250.*'
       - 'static/order-chat206.js'
       - 'templates/**'
@@ -22,6 +26,10 @@ on:
       - 'tests/storeapp256.browser.cjs'
       - 'tests/storeapp257.browser.cjs'
       - 'static/menu88.js'
+      - 'static/images258.js'
+      - 'static/storefront187.js'
+      - 'static/cart-lifecycle247.js'
+      - 'tests/images258.browser.cjs'
       - 'static/upload-preview250.*'
       - 'static/order-chat206.js'
       - 'templates/**'
@@ -48,5 +56,6 @@ jobs:
             npx playwright install --with-deps chromium
           fi
       - run: node --check static/storefront232.js
+      - run: node --test tests/cart-lifecycle247.test.cjs
       - name: Desktop scroll and mobile slideshow controls
-        run: node --test tests/storefront248.browser.cjs tests/upload-preview250.browser.cjs tests/storeapp256.browser.cjs tests/storeapp257.browser.cjs
+        run: node --test tests/storefront248.browser.cjs tests/upload-preview250.browser.cjs tests/storeapp256.browser.cjs tests/storeapp257.browser.cjs tests/images258.browser.cjs
