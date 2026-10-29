@@ -87,9 +87,10 @@ def test_delivery_quote_and_cross_store_item(channel):
     with m.db() as c:c.execute('UPDATE professionals SET allows_delivery=1,delivery_fee_cents=500 WHERE id=?',(pid,))
     data.update(fulfillment_type='delivery',address='',neighborhood='Centro')
     assert client.post('/p/'+slug+'/menu/whatsapp',data=data).status_code==400
-    data.update(address='Rua A, 12',notes='Sem sacola',address_reference='Portão azul')
+    data.update(address='Rua A, 12',notes='Sem sacola',address_reference='Portão azul',save_address='1')
     response=client.post('/p/'+slug+'/menu/whatsapp',data=data);assert response.status_code==200,response.text
     assert response.json()['total_cents']==800 and 'Portão azul' in response.json()['message']
+    with m.db() as c:assert c.execute('SELECT address FROM users WHERE id=?',(customer['id'],)).fetchone()[0]=='Rua A, 12'
     data['request_key']='cross-store-request-257';data['cart_json']=json.dumps([{'id':999999,'quantity':1}])
     assert client.post('/p/'+slug+'/menu/whatsapp',data=data).status_code==400
 

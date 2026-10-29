@@ -103,7 +103,7 @@ def install(g):
         return RedirectResponse('/painel?ok=whatsapp#cardapio-independente',303)
 
     @app.post('/p/{slug}/menu/whatsapp')
-    def whatsapp_checkout257(request:Request,slug:str,customer_name:str=Form(...),customer_phone:str=Form(''),cart_json:str=Form(...),fulfillment_type:str=Form('pickup'),payment_method:str=Form('pix'),address:str=Form(''),neighborhood:str=Form(''),address_reference:str=Form(''),change_for:str=Form(''),notes:str=Form(''),request_key:str=Form(...)):
+    def whatsapp_checkout257(request:Request,slug:str,customer_name:str=Form(...),customer_phone:str=Form(''),cart_json:str=Form(...),fulfillment_type:str=Form('pickup'),payment_method:str=Form('pix'),address:str=Form(''),neighborhood:str=Form(''),address_reference:str=Form(''),change_for:str=Form(''),notes:str=Form(''),request_key:str=Form(...),save_address:str=Form('')):
         p=store(g,slug);user=g['require_user'](request,'customer')
         if user and user['id']==p['user_id']:raise HTTPException(403,'Você não pode fazer pedidos na sua própria loja.')
         name=str(user.get('name','')).strip()
@@ -161,6 +161,8 @@ def install(g):
                     for option in chosen:conn.execute('INSERT INTO order_item_options(order_item_id,option_id,option_name,price_cents) VALUES(?,?,?,?)',(item.lastrowid,option['id'],option['name'],option['price_cents']))
                 conn.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(p['user_id'],'Novo pedido no NowUp',code+' — '+name,'/painel#pedido-'+str(oid),created))
                 g['nowup_push75'].enqueue_on_connection(conn,p['user_id'],oid)
+                if fulfillment_type=='delivery' and save_address:
+                    conn.execute("UPDATE users SET address=?,neighborhood=?,address_reference=? WHERE id=? AND role='customer'",(address.strip(),area,address_reference.strip(),identity))
                 remember_checkout(conn,identity,p['id'],key,digest,oid,created)
                 result.update(recorded=True,redirect='/p/'+slug+'/pedido/'+token,order_code=code)
                 result['message']='Pedido '+code+' — registrado no painel (não duplicar).\n'+message
