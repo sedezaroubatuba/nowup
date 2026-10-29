@@ -2886,3 +2886,7 @@ def pro_kanban228(request: Request):
 nowup_storeapp256.install(globals())
 
 nowup_storeapp257.install(globals())
+
+import nowup_opening260
+templates.env.globals["opening_config260"]=nowup_opening260.config
+nowup_opening260.install(globals())

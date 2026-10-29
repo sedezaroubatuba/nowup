@@ -58,4 +58,4 @@ jobs:
       - run: node --check static/storefront232.js
       - run: node --test tests/cart-lifecycle247.test.cjs
       - name: Desktop scroll and mobile slideshow controls
-        run: node --test tests/storefront248.browser.cjs tests/upload-preview250.browser.cjs tests/storeapp256.browser.cjs tests/storeapp257.browser.cjs tests/images258.browser.cjs
+        run: node --test tests/storefront248.browser.cjs tests/upload-preview250.browser.cjs tests/storeapp256.browser.cjs tests/storeapp257.browser.cjs tests/images258.browser.cjs tests/opening260.browser.cjs
