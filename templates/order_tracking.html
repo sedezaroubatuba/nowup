@@ -2,7 +2,7 @@
 {% block title %}Pedido {{order.order_code}} | NowUp
 {% endblock %}
 {% block content %}
-{% if clear_cart200 %}<script id="cart-confirmation200" type="application/json">{{ {'path':'/p/' ~ order.slug,'customerId':order.customer_id}|tojson }}</script><script src="/static/cart-confirm200.js?v=200"></script>{% endif %}
+{% if clear_cart200 %}<script id="cart-confirmation200" type="application/json">{{ {'path':'/p/' ~ order.slug,'customerId':order.customer_id}|tojson }}</script><script src="/static/cart-confirm200.js?v=255"></script>{% endif %}
 
 <main class="container order-track" data-status-url="/pedido/{{order.tracking_token}}/status" data-current-status="{{order.status}}">
   <section class="order-hero"><div class="order-check">✓</div><p class="eyebrow">PEDIDO ENVIADO À LOJA</p><h1>{{order.order_code}}</h1><p>Seu pedido chegou à sala de pedidos de <strong>{{order.display_name}}</strong>.</p><div class="order-live-status status-{{order.status}}" id="orderLiveStatus">{{status_labels.get(order.status,order.status)}}</div><p class="muted">Acompanhe aqui. Pedido recebido pelo sistema não significa aceite da loja; o status será atualizado quando ela aceitar.</p></section>

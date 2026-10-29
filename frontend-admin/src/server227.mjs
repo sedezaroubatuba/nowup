@@ -12,4 +12,18 @@ export function changes(previous,next){const list=[];for(const key of Object.key
  if(previous[key].some(r=>!next[key].some(n=>n.id===r.id)))throw Error('Exclusão não disponível neste painel. Use pausar ou desativar.');
  }return list}
 
-export function api(path,body){return path==='change'?exclusiveMutation(()=>request(path,body)):request(path,body)}
+export async function hydrateOrders255(data,read=request){
+ const paging=data?._meta?.orderPagination255;if(!paging)return data;
+ let cursor=paging.nextBefore;const seen=new Set();
+ while(cursor!==null&&cursor!==undefined){
+  if(!Number.isSafeInteger(cursor)||cursor<1||seen.has(cursor))throw Error('Paginação de pedidos inválida. Atualize o painel.');
+  seen.add(cursor);const page=await read('orders-page?before_id='+cursor);
+  if(page.revision!==data._meta.revision)throw Error('O painel mudou durante a leitura. Atualize para carregar o histórico completo.');
+  if(!Array.isArray(page.orders)||page.orders.some(o=>!Number.isSafeInteger(o.id)||o.id>=cursor))throw Error('Página de pedidos inválida.');
+  if(page.nextBefore!=null&&(page.nextBefore>=cursor||!page.orders.length||page.nextBefore!==page.orders.at(-1).id))throw Error('Continuação de pedidos inválida.');
+  data.orders.push(...page.orders);cursor=page.nextBefore;
+ }
+ data._meta.orderPagination255={...paging,nextBefore:null,complete:true};return data;
+}
+async function load255(path,body){const result=await request(path,body);return path==='state'||path==='change'?hydrateOrders255(result):result;}
+export function api(path,body){return path==='change'?exclusiveMutation(()=>load255(path,body)):load255(path,body)}
