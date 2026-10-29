@@ -24,6 +24,9 @@
   });
   test.addEventListener('click',async()=>{test.disabled=true;try{await api('testar');status.textContent='Teste enviado. Confira o aviso no celular.';}catch(e){status.textContent=e.message;}finally{test.disabled=false;}});
   disable.addEventListener('click',async()=>{disable.disabled=true;try{await api('desativar');enabled=false;try{localStorage.removeItem('nowup-customer-sound');}catch(_){}test.hidden=true;disable.hidden=true;status.textContent='Avisos desativados nesta conta.';}catch(e){status.textContent=e.message;}finally{disable.disabled=false;}});
+  // Renew this account's device registration without asking permission again.
+  async function restorePush(){if(!supported||Notification.permission!=='granted')return;try{const reg=await navigator.serviceWorker.register('/nowup-push-sw.js',{scope:'/'});const sub=await reg.pushManager.getSubscription();if(sub){await api('ativar',sub.toJSON());test.hidden=false;disable.hidden=false;status.textContent='Avisos ativados neste aparelho.';}}catch(_){status.textContent='Toque em ativar avisos para reconectar as notificações.';}}
+  restorePush();
   async function restore(){if(!enabled&&preference())enabled=await unlock();}
   document.addEventListener('pointerdown',restore);document.addEventListener('keydown',restore);
   async function check(){

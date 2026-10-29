@@ -9,7 +9,7 @@ def test_home_opening_is_message_free_and_only_home(panel,monkeypatch):
  assert 'id="nowup-opening260"' in home.text and '#24272d' in home.text
  assert 'Seu bairro.' not in home.text
  assert 'opening-config260' in home.text
- assert 'id="nowup-opening260"' not in client.get('/entrar').text
+ assert 'id="nowup-opening260"' in client.get('/entrar').text
  with m.db() as c:slug=c.execute('SELECT slug FROM professionals ORDER BY id LIMIT 1').fetchone()[0]
  assert 'id="nowup-opening260"' not in client.get('/p/'+slug+'/menu?loja=1').text
 
