@@ -1,10 +1,11 @@
 """Checkout idempotency. The order and its request record commit atomically."""
+import os
 import hashlib
 import json
 import re
 from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 
 
 def begin_checkout(conn, customer_id, professional_id, request_key, payload):
@@ -13,13 +14,20 @@ def begin_checkout(conn, customer_id, professional_id, request_key, payload):
             raise HTTPException(400, 'Identificador do pedido inválido. Atualize a página.')
         # Canonical JSON avoids different whitespace producing different legacy keys.
         try:
-            payload = {**payload, 'cart': json.loads(payload['cart'])}
+            if not isinstance(payload.get('cart'),str) or len(payload['cart'].encode('utf-8'))>262144:
+                raise ValueError()
+            cart=json.loads(payload['cart'],parse_constant=lambda value: (_ for _ in ()).throw(ValueError()))
+            if not isinstance(cart,list) or len(cart)>50:raise ValueError()
+            payload = {**payload, 'cart': cart}
         except (ValueError, TypeError):
             raise HTTPException(400, 'Carrinho inválido')
         digest = hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False,
             separators=(',', ':')).encode()).hexdigest()
         key = request_key or 'legacy-' + digest
-        conn.execute('BEGIN IMMEDIATE')
+        conn.execute('BEGIN' if getattr(conn,'dialect','sqlite')=='postgres' else 'BEGIN IMMEDIATE')
+        if getattr(conn,'dialect','sqlite')=='postgres':
+            lock_key=int.from_bytes(hashlib.sha256(f'{customer_id}:{professional_id}:{key}'.encode()).digest()[:8],'big',signed=True)
+            conn.execute('SELECT pg_advisory_xact_lock(?)',(lock_key,))
         row = conn.execute('''SELECT r.payload_hash,r.created_at,o.tracking_token
             FROM checkout_requests229 r JOIN orders o ON o.id=r.order_id
             WHERE r.customer_id=? AND r.professional_id=? AND r.request_key=?''',
@@ -42,7 +50,14 @@ def remember_checkout(conn, customer_id, professional_id, key, digest, order_id,
         (customer_id, professional_id, key, digest, order_id, created_at))
 
 
-def completed_response(slug, token):
-    response = RedirectResponse('/pedido/' + token, 303)
-    response.set_cookie('nowup_cart_completed', slug, max_age=120, samesite='lax', path='/')
+def completed_response(slug, token, request=None):
+    # Acknowledgement is returned only after commit (or an existing committed request).
+    if request is not None and 'application/json' in request.headers.get('accept', ''):
+        response = JSONResponse({'confirmed': True, 'path': '/p/' + slug,
+            'redirect': '/pedido/' + token}, headers={'Cache-Control': 'private, no-store'})
+    else:
+        response = RedirectResponse('/pedido/' + token, 303, headers={'Cache-Control':'private, no-store'})
+    secure = request is not None and (request.url.scheme == 'https' or os.getenv('NOWUP_HTTPS') == '1')
+    response.set_cookie('nowup_cart_completed', slug, max_age=120, samesite='lax', path='/', secure=secure)
+    response.set_cookie('nowup_cart_completed_token', token, max_age=600, httponly=True, samesite='lax', path='/', secure=secure)
     return response

@@ -42,6 +42,9 @@ CREATE INDEX IF NOT EXISTS adm227_audit_date ON adm227_audit(created_at,id);''')
   c.execute("INSERT OR IGNORE INTO adm227_state(id) VALUES(1)")
   if not c.execute("SELECT 1 FROM adm227_entities WHERE kind='plans'").fetchone():
    for i,(key,name,price) in enumerate([('start','Start',7900),('pro','Pro',14900),('premium','Premium',24900)],1):put(c,'plans',i,{'id':key,'name':name,'price':price,'features':'Plano de mensalidade; vinculação individual sem migração automática'})
+  c.execute('CREATE INDEX IF NOT EXISTS order_items_order255 ON order_items(order_id,id)')
+  c.execute('CREATE INDEX IF NOT EXISTS orders_store_date255 ON orders(professional_id,created_at,id)')
+  c.execute('CREATE INDEX IF NOT EXISTS adm227_entities_kind255 ON adm227_entities(kind,id)')
   c.commit()
 def rows(c,kind):return [json.loads(r[0]) for r in c.execute('SELECT data FROM adm227_entities WHERE kind=? ORDER BY id',(kind,))]
 def get(c,kind,oid):
@@ -49,6 +52,17 @@ def get(c,kind,oid):
 def put(c,kind,oid,obj):c.execute('INSERT INTO adm227_entities VALUES(?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data',(kind,int(oid),json.dumps(obj,ensure_ascii=False,separators=(',',':'))))
 def nextid(c,kind):return c.execute('SELECT COALESCE(MAX(id),0)+1 FROM adm227_entities WHERE kind=?',(kind,)).fetchone()[0]
 def audit(c,a,action,target=''):c.execute('INSERT INTO adm227_audit(actor,actor_id,action,target,created_at) VALUES(?,?,?,?,?)',(a['name'],a['actor_id'],action[:500],str(target)[:120],stamp()))
+def validate_staff255(member):
+ if type(member.get('enabled')) is not bool:fail(400,'Situação da equipe inválida. Use ativo ou desativado.')
+ permissions=member.get('permissions')
+ if not isinstance(permissions,list) or any(not isinstance(p,str) or p not in MODULES for p in permissions):fail(400,'Permissões inválidas.')
+ if len(permissions)!=len(set(permissions)):fail(400,'Permissões duplicadas.')
+
+def revoke_staff255(c,staff_id):
+ for table in ('adm227_team_sessions','adm227_challenges','adm227_invites'):
+  c.execute('DELETE FROM '+table+' WHERE staff_id=?',(staff_id,))
+ c.execute("UPDATE adm227_access SET end=?,state='Revogada' WHERE actor_id=? AND end=''",(stamp(),'staff:'+str(staff_id)))
+
 def auth(request,c,module=None):
  u=G['current_user'](request)
  if u and u['role']=='admin':
@@ -56,7 +70,9 @@ def auth(request,c,module=None):
  else:
   raw=request.cookies.get('nowup_team227','');s=c.execute('SELECT staff_id FROM adm227_team_sessions WHERE token_hash=? AND expires_at>?',(tokenhash(raw),stamp())).fetchone() if raw else None
   member=get(c,'staff',s[0]) if s else None
-  if not member or not member.get('enabled'):fail(401,'Entre novamente para acessar o painel.')
+  if not member:fail(401,'Entre novamente para acessar o painel.')
+  if member.get('enabled') is not True:fail(403,'Esta conta de equipe foi desativada.')
+  validate_staff255(member)
   a={**{k:member.get(k,'') for k in ('id','name','email')},'actor_id':'staff:'+str(member['id']),'permissions':member.get('permissions',[]),'super':False,'session':tokenhash(raw)}
  if module and module not in a['permissions']:fail(403,'Seu acesso não inclui este módulo.')
  access=c.execute('SELECT id,end FROM adm227_access WHERE session_hash=?',(a['session'],)).fetchone()
@@ -66,8 +82,8 @@ def auth(request,c,module=None):
  elif request.headers.get('x-nowup-activity')=='1':c.execute('UPDATE adm227_access SET last_activity=? WHERE id=?',(stamp(),access['id']))
  c.commit();return a
 def csrf(request):
- origin=request.headers.get('origin');host=request.headers.get('host','')
- if not origin or urlsplit(origin).netloc!=host or request.headers.get('x-nowup-admin')!='227':fail(403,'Origem não autorizada. Atualize o painel e tente novamente.')
+ from nowup_runtime238 import mutation_origin_allowed
+ if not mutation_origin_allowed(request) or request.headers.get('x-nowup-admin')!='227':fail(403,'Origem não autorizada. Atualize o painel e tente novamente.')
 def limited(c,key,limit=8):
  now=stamp();old=c.execute('SELECT * FROM adm227_limits WHERE key=?',(key,)).fetchone()
  if old and old['started']>(datetime.now(timezone.utc)-timedelta(minutes=15)).isoformat():
@@ -87,6 +103,31 @@ def localminute(value):
 def localday():return datetime.now(TZ).date().isoformat()
 def metadata(c,kind):return {v['id']:v for v in rows(c,kind)}
 def public_staff(v):return {k:v.get(k) for k in ('id','name','email','role','photo','enabled','permissions')}
+def order_page255(c,a,before_id=0,limit=200,exact_id=None):
+ if not set(a['permissions']).intersection({'dashboard','orders','customers','stores'}):
+  return {'orders':[],'nextBefore':None}
+ if type(limit) is not int or not 1<=limit<=200 or type(before_id) is not int or before_id<0:fail(400,'Paginação inválida.')
+ where='WHERE id=?' if exact_id is not None else ('WHERE id<?' if before_id else '')
+ params=(exact_id,) if exact_id is not None else ((before_id,) if before_id else ())
+ selected=list(c.execute('SELECT * FROM orders '+where+' ORDER BY id DESC LIMIT ?',(*params,limit+1)))
+ more=len(selected)>limit;selected=selected[:limit];ids=[r['id'] for r in selected];items={};assignments={}
+ if ids:
+  marks=','.join('?' for _ in ids)
+  for row in c.execute('SELECT order_id,product_name,quantity,unit_price_cents FROM order_items WHERE order_id IN ('+marks+') ORDER BY id',ids):
+   items.setdefault(row['order_id'],[]).append({'name':row['product_name'],'qty':row['quantity'],'price':row['unit_price_cents']})
+  for row in c.execute("SELECT id,data FROM adm227_entities WHERE kind='order_assignment' AND id IN ("+marks+')',ids):assignments[row['id']]=json.loads(row['data'])
+ orders=[]
+ for r in selected:
+  d,h=parts(r['created_at']);orders.append({'id':r['id'],'store':r['professional_id'],'customer':r['customer_id'],'date':d,'hour':h,'minute':localminute(r['created_at']),'total':r['total_cents'],'delivery':r['delivery_fee_cents'],'status':r['status'],'live':r['status'] not in FINALS,'createdAt':r['created_at'],'items':items.get(r['id'],[]),'courier':assignments.get(r['id'],{}).get('courier'),'coupon':''})
+ return {'orders':orders,'nextBefore':ids[-1] if more else None}
+
+@router.get('/admin/super/api/orders-page')
+def orders_page255(request:Request,before_id:int=0,limit:int=200):
+ with connection() as c:
+  a=auth(request,c);result=order_page255(c,a,before_id,limit)
+  result['revision']=c.execute('SELECT revision FROM adm227_state WHERE id=1').fetchone()[0]
+  return JSONResponse(result,headers={'Cache-Control':'private, no-store','Vary':'Cookie'})
+
 def snapshot(c,a):
  permissions=set(a['permissions']);super_=a['super'];need=lambda *args:bool(permissions.intersection(args))
  raw_stores=[dict(r) for r in c.execute("""SELECT p.*,u.name owner,u.email,u.is_active,
@@ -114,14 +155,7 @@ def snapshot(c,a):
   date_,hour=parts(r['created_at']);store=store_by_id.get(r['professional_id'],{})
   products.append({'id':r['id'],'store':r['professional_id'],'name':r['name'],'price':r['price_cents'],'photo':bool(r['image_filename']),'category':r['category'],'status':pm.get(r['id'],{}).get('status','Aprovado' if r['available'] else 'Pausado'),'date':date_,'hour':hour,'city':store.get('city',''),'image':'/uploads/'+r['image_filename'] if r['image_filename'] else ''})
   store.get('menu',[]).append({'name':r['name'],'price':r['price_cents']})
- orders=[];store_by_id={s['id']:s for s in stores};item_map={}
- if need('dashboard','orders','customers','stores'):
-  # Full real order history, without a hidden truncation that would falsify totals.
-  for i in c.execute('SELECT * FROM order_items ORDER BY id'):item_map.setdefault(i['order_id'],[]).append({'name':i['product_name'],'qty':i['quantity'],'price':i['unit_price_cents']})
-  assignments=metadata(c,'order_assignment')
-  for r in c.execute('SELECT * FROM orders ORDER BY id DESC'):
-   d,h=parts(r['created_at']);o={'id':r['id'],'store':r['professional_id'],'customer':r['customer_id'],'date':d,'hour':h,'minute':localminute(r['created_at']),'total':r['total_cents'],'delivery':r['delivery_fee_cents'],'status':r['status'],'live':r['status'] not in FINALS,'createdAt':r['created_at'],'items':item_map.get(r['id'],[]),'courier':assignments.get(r['id'],{}).get('courier'),'coupon':''}
-   orders.append(o)
+ page255=order_page255(c,a);orders=page255['orders']
  customers=[];cm=metadata(c,'customermeta')
  if need('customers'):
   for u in c.execute("SELECT * FROM users WHERE role='customer' ORDER BY id"):
@@ -146,7 +180,7 @@ def snapshot(c,a):
   if kind in ('leads','storemeta','productmeta','customermeta','staff'):continue
   if kind not in result:result[kind]=rows(c,kind) if module in permissions else []
  result['productCategories']=[x['name'] for x in rows(c,'productCategories')] if need('products') else []
- result['_meta']={'revision':c.execute('SELECT revision FROM adm227_state WHERE id=1').fetchone()[0],'actor':{k:a[k] for k in ('id','name','email','super','permissions')},'live':True,'unsupported':['gateway','whatsapp_api','push_campaign','automatic_billing_block','public_coupons','referrals_credit','theme_scheduler','assisted_login','kyc_provider','background_jobs'],'fetchedAt':stamp()}
+ result['_meta']={'revision':c.execute('SELECT revision FROM adm227_state WHERE id=1').fetchone()[0],'actor':{k:a[k] for k in ('id','name','email','super','permissions')},'live':True,'unsupported':['gateway','whatsapp_api','push_campaign','automatic_billing_block','public_coupons','referrals_credit','theme_scheduler','assisted_login','kyc_provider','background_jobs'],'fetchedAt':stamp(),'orderPagination255':{'nextBefore':page255['nextBefore'],'pageSize':200}}
  return result
 
 @router.get('/admin/super')
@@ -270,7 +304,7 @@ def update_order(c,a,oid,v,why):
    n=c.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(o['customer_id'],'Atualização do pedido',message,'/pedido/'+o['tracking_token'],stamp()))
    G['nowup_alerts112'].enqueue(c,o['customer_id'],n.lastrowid,{'title':'Atualização do pedido','body':message,'url':'/pedido/'+o['tracking_token'],'tag':'nowup-status-'+str(oid)})
  if 'courier' in v:
-  courier=number(v['courier'],0)
+  courier=0 if v['courier'] is None else number(v['courier'],0)
   if courier and not get(c,'couriers',courier):fail(400,'Entregador não cadastrado.')
   put(c,'order_assignment',oid,{'id':oid,'courier':courier})
 
@@ -366,6 +400,8 @@ async def change(request:Request):
    if kind=='staff' and not a['super']:fail(403,'Somente o Super Admin pode gerenciar funcionários.')
    if kind in {'stores','orders','customers','products','banners','staff','sessions'} and not creating:
     original=next((r for r in current[kind] if r['id']==oid),None)
+    if not original and kind=='orders' and 'orders' in a['permissions']:
+     found=order_page255(c,a,exact_id=number(oid,1))['orders'];original=found[0] if found else None
     if not original:fail(404,'Registro não disponível para seu acesso.')
     if any(original.get(k)!=val for k,val in (before or {}).items()):fail(409,'Este registro mudou. Atualize antes de salvar.')
    if kind=='stores':
@@ -423,17 +459,18 @@ async def change(request:Request):
     allowed={'name','email','role','photo','enabled','permissions'}
     if set(v)-allowed:fail(400,'Campo de funcionário inválido.')
     member={} if creating else get(c,'staff',oid)
+    old_email=member.get('email','')
     member.update(v)
+    if creating:member.setdefault('enabled',True)
+    validate_staff255(member)
     member['name']=clean(member.get('name',''),100,True);member['email']=clean(member.get('email',''),200,True).lower()
     if not re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+',member['email']):fail(400,'E-mail inválido.')
-    if not isinstance(member.get('permissions'),list) or set(member['permissions'])-MODULES:fail(400,'Permissões inválidas.')
     if any(x['email']==member['email'] and x['id']!=oid for x in rows(c,'staff')):fail(409,'E-mail já cadastrado.')
     if v.get('photo'):member['photo']='/uploads/'+image(c,a,v['photo'])
     if creating:
-     oid=nextid(c,'staff');member.update(id=oid,enabled=True,password_hash='')
+     oid=nextid(c,'staff');member.update(id=oid,password_hash='')
     put(c,'staff',oid,member)
-    if member.get('enabled') is False:
-     c.execute('DELETE FROM adm227_team_sessions WHERE staff_id=?',(oid,));c.execute("UPDATE adm227_access SET end=?,state='Revogada' WHERE actor_id=? AND end=''",(stamp(),'staff:'+str(oid)))
+    if member['enabled'] is False or (old_email and old_email!=member['email']):revoke_staff255(c,oid)
    elif kind=='sessions':
     if not a['super'] or creating or set(v)-{'end','state'}:fail(403,'Ação de sessão não permitida.')
     row=c.execute('SELECT * FROM adm227_access WHERE id=?',(oid,)).fetchone()
