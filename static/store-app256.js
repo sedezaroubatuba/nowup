@@ -4,6 +4,8 @@
  if(configNode.dataset.loginRequired==='1'){
   document.addEventListener('click',e=>{const b=e.target.closest?.('[data-add],[data-login-buy252],.nu201-open,.nu190-add,.nu151-choose,[data-checkout],[data-dock-checkout],[data-cart-summary]');if(b&&b.closest('[data-native-menu]')&&!b.disabled){e.preventDefault();e.stopImmediatePropagation();location.assign(cfg.login);}},true);
  }
+ document.querySelectorAll('[data-native-menu] a[href^="/entrar"]').forEach(a=>a.href=cfg.login);
+ document.addEventListener('click',e=>{if(e.target.closest?.('.nu187-back')&&(document.body.classList.contains('nu187-store-home')||matchMedia('(min-width:900px)').matches)){e.preventDefault();e.stopImmediatePropagation();location.assign(cfg.menu);}},true);
  const installed=()=>installedHere||matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
  const buttons=[...document.querySelectorAll('[data-store-install256]')];
  function refresh(){buttons.forEach(b=>b.hidden=installed());}
