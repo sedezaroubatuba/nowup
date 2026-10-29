@@ -31,9 +31,9 @@
       feedback.textContent='Enviando pedido…';
       const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),30000);
       try{
-        const response=await fetch(checkoutForm229.action,{method:'POST',body:new FormData(checkoutForm229),headers:{Accept:'application/json'},credentials:'same-origin',signal:controller.signal});
+        const response=await fetch(checkoutForm229.action,{method:'POST',body:new FormData(checkoutForm229),headers:{Accept:'application/json',...(document.getElementById('store-app256')?{'X-Nowup-Store-App':'256'}:{})},credentials:'same-origin',signal:controller.signal});
         const json=(response.headers.get('content-type')||'').includes('application/json')?await response.json():null;
-        if(!response.ok||!json?.confirmed||json.path!==path||!/^\/pedido\/[A-Za-z0-9_-]+$/.test(json.redirect||''))throw new Error(typeof json?.detail==='string'?json.detail:'Envio não confirmado. Confira Meus pedidos antes de tentar novamente.');
+        if(!response.ok||!json?.confirmed||json.path!==path||!((String(json.redirect||'').startsWith(path+'/pedido/')&&/^[A-Za-z0-9_-]+$/.test(String(json.redirect||'').slice((path+'/pedido/').length)))||/^\/pedido\/[A-Za-z0-9_-]+$/.test(json.redirect||'')))throw new Error(typeof json?.detail==='string'?json.detail:'Envio não confirmado. Confira Meus pedidos antes de tentar novamente.');
         // Clear this exact cart in the current page before navigating; no dependency
         // on cookies, tracking-page scripts or a back/forward cache restoration.
         if(localStorage.getItem(key)===snapshot){cart.clear();localStorage.removeItem(key);localStorage.removeItem(infoKey);sessionStorage.removeItem('nowup-checkout247:'+key);render();}

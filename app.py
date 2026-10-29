@@ -1,4 +1,5 @@
 from __future__ import annotations
+import nowup_storeapp256
 import nowup_categories230
 import nowup_included195
 from nowup_custom192 import parse_config, save_config, charge_options, validate_customization
@@ -277,6 +278,7 @@ def context(request: Request, **kwargs):
         "category_catalog230": nowup_categories230.CATALOG,
         "category_choices230": icon_choices230,
         "email_service_ready": email_service_configured(),
+        **nowup_storeapp256.page_context(globals(),request,kwargs),
         **kwargs
     }
 
@@ -1179,6 +1181,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
             conn.close(); raise HTTPException(400,'Informe nome e WhatsApp válidos')
         if not p["is_premium"] or p["offer_mode"] not in ("menu","catalog"):
             conn.close(); raise HTTPException(403,"Cardápio ou catálogo disponível somente no plano Premium")
+        if request.headers.get('x-nowup-store-app')=='256':order_channel='external'
         from nowup_checkout229 import begin_checkout, completed_response
         existing,checkout_key229,checkout_hash229=begin_checkout(conn,logged['id'],p['id'],request_key,{
             'cart':cart_json,'name':customer_name,'phone':customer_phone,'fulfillment':fulfillment_type,
@@ -2920,3 +2923,6 @@ def pro_kanban228(request: Request):
         return templates.TemplateResponse("merchant_kanban228.html",{"request":request,"kanban":kanban,"status_labels":ORDER_STATUS_LABELS},headers={"Cache-Control":"private, no-store"})
     finally:
         conn.close()
+
+# Store-specific cardápio links, branding and install identity.
+nowup_storeapp256.install(globals())
