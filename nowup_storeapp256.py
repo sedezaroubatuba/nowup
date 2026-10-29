@@ -2,6 +2,7 @@
 import base64
 import hashlib
 import io
+import json
 import re
 from pathlib import Path
 from urllib.parse import quote, urlsplit
@@ -26,16 +27,32 @@ def presentation(p):
     slug=p['slug'];prefix='/p/'+quote(slug,safe='')
     return {'slug':slug,'name':p['display_name'],'menu':prefix+'/menu?loja=1',
         'manifest':prefix+'/manifest.webmanifest','icon':prefix+'/app-icon/192.png',
-        'orders':prefix+'/pedidos','logout':prefix+'/sair','login':prefix+'/entrar?tipo=cliente','signup':'/cadastro/cliente?loja='+quote(slug,safe='')}
+        'whatsapp':prefix+'/menu/whatsapp','orders':prefix+'/pedidos','logout':prefix+'/sair','login':prefix+'/entrar?tipo=cliente','signup':'/cadastro/cliente?loja='+quote(slug,safe='')}
 
 def page_context(g,request,values):
     p=getattr(request.state,'store_app256',None)
     candidate=values.get('pro')
     if p is None and candidate is not None and request.method=='GET' and request.url.path.startswith('/p/'):
-        if candidate['plan_active']=='cardapio' or request.query_params.get('loja')=='1':
+        if candidate['plan_active']=='cardapio' or request.query_params.get('loja')=='1' or request.query_params.get('origem')=='externo':
             try:p=store(g,candidate['slug'])
             except HTTPException:p=None
-    return {'store_app256':presentation(p) if p else None}
+    number='';mode='both'
+    if request.url.path=='/painel' and candidate is not None:
+        c=g['db']()
+        try:
+            row=c.execute('SELECT whatsapp,mode FROM store_menu257 WHERE professional_id=?',(candidate['id'],)).fetchone()
+            number=row[0] if row and row[0] else candidate['whatsapp']
+            mode=row[1] if row else 'both'
+        finally:c.close()
+    followup=None
+    order=values.get('order');viewer=g['current_user'](request) if order is not None else None
+    if order is not None and viewer and viewer['id']==order['customer_id']:
+        c=g['db']()
+        try:
+            saved=c.execute('SELECT response FROM store_dispatch257 WHERE order_id=?',(order['id'],)).fetchone()
+            if saved:followup=json.loads(saved[0]).get('whatsapp_url')
+        finally:c.close()
+    return {'store_order_whatsapp257':followup,'store_order_mode257':mode,'store_whatsapp_number257':number,'store_app256':presentation(p) if p else None,'store_whatsapp257':bool(p and request.url.path.rstrip('/').endswith('/menu'))}
 
 def install(g):
     app=g['app']

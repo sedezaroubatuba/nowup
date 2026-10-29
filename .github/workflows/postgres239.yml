@@ -56,7 +56,7 @@ jobs:
             npx playwright install --with-deps chromium
           fi
       - name: Desktop scroll and mobile slideshow controls
-        run: node --test tests/storefront248.browser.cjs tests/cart251.browser.cjs tests/purchase252.browser.cjs tests/storeapp256.browser.cjs
+        run: node --test tests/storefront248.browser.cjs tests/cart251.browser.cjs tests/purchase252.browser.cjs tests/storeapp256.browser.cjs tests/storeapp257.browser.cjs
   docker:
     runs-on: ubuntu-latest
     steps:

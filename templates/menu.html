@@ -97,7 +97,7 @@ html body.public-profile-area .nu85-note textarea{height:66px!important;min-heig
 <section class="native-menu" data-native-menu data-login-required252="{{1 if not user or (user.role!='customer' and user.id!=pro.user_id) else 0}}" data-hide-prices252="{{0 if user else 1}}" data-carousel-layout="{{pro.carousel_layout235}}" data-owner200="{{1 if user and user.id==pro.user_id else 0}}">
 <div class="container">
 <header class="nu83-catalog-heading"><h2>{{'Catálogo' if pro.offer_mode=='catalog' else 'Cardápio'}}</h2><label class="nu83-search">Buscar produtos<input class="input" type="search" data-product-search placeholder="Buscar produtos" aria-label="Buscar produtos"></label></header>
-{% if not user %}<p class="nu252-login-notice" role="note"><a href="/entrar?tipo=cliente&amp;comprar=1">Faça login para comprar</a></p>{% elif user.role!='customer' and user.id!=pro.user_id %}<p class="nu252-login-notice">Entre com uma conta de cliente para comprar.</p>{% endif %}
+{% if not user %}<p class="nu252-login-notice" role="note"><a href="/entrar?tipo=cliente&amp;comprar=1">Faça login para comprar</a></p>{% elif user and user.role!='customer' and user.id!=pro.user_id %}<p class="nu252-login-notice">Entre com uma conta de cliente para comprar.</p>{% endif %}
 <div class="store-status {% if shop_status.open %}open{% else %}closed{% endif %}"><b>{{shop_status.label}}</b><span>{{shop_status.detail}}</span>{% if not shop_status.open %}<small>Você pode consultar o {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}, mas os pedidos estão pausados neste momento.</small>{% endif %}</div>
 {% if menu_categories %}<nav class="menu-category-nav" aria-label="Categorias">
 <button type="button" class="active" data-category-filter="all">Todos</button>{% for category in menu_categories %}<button type="button" data-category-filter="{{category|lower}}">{{category}}</button>{% endfor %}</nav>{% endif %}
@@ -110,7 +110,7 @@ html body.public-profile-area .nu85-note textarea{height:66px!important;min-heig
 <div>
 {% if user %}<strong>{% if product.promo_price_cents > 0 %}<del>R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</del> R$ {{'%.2f'|format(product.promo_price_cents/100)|replace('.',',')}}{% else %}R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}{% endif %}</strong>{% else %}{% endif %}
 {% if product_options.get(product.id) %}<div class="product-options">{% for group in product_groups.get(product.id,[]) %}<span hidden data-dish-group="{{group.id}}" data-min="{{group.min_choices}}" data-max="{{group.max_choices}}" data-group-name="{{group.name}}"></span>{% endfor %}<small>Adicionais e opções</small>{% for option in product_options.get(product.id,[]) %}<label><input type="checkbox" data-product-option data-option-group="{{option.group_id or 0}}" {% if not product.available %}disabled{% endif %} value="{{option.id}}" data-option-name="{{option.name}}" data-option-price="{{option.price_cents if user else 0}}"> {{option.name}}{% if user and option.price_cents %} + R$ {{'%.2f'|format(option.price_cents/100)|replace('.',',')}}{% endif %}</label>{% endfor %}</div>{% endif %}
-<details class="nu85-note"><summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M14 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9"/><path d="m16 3 5 5-9 9-5 1 1-5Z"/></svg><span>Observação</span></summary><label>Observações ou retirada de ingredientes<textarea rows="2" data-product-notes maxlength="300" placeholder="{{'Ex.: cor, tamanho ou modelo' if pro.offer_mode=='catalog' else 'Ex.: sem cebola e sem tomate, por favor'}}"></textarea><small>Retirar ingredientes não altera o preço.</small></label></details><div class="product-buy"><label>Qtd.<input class="product-quantity-input" type="number" min="1" max="99" step="1" value="1" inputmode="numeric" data-product-quantity aria-label="Digite a quantidade" {% if not user or user.role!='customer' or not shop_status.open or not product.available %}disabled{% endif %}></label><button class="btn primary" type="button" data-add data-login-buy252 {% if (user and user.id==pro.user_id) or not shop_status.open or not product.available %}disabled{% endif %}>{% if not user %}Faça login para comprar{% elif not product.available %}Indisponível{% elif shop_status.open %}Adicionar{% else %}Fechado{% endif %}</button></div>
+<details class="nu85-note"><summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M14 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9"/><path d="m16 3 5 5-9 9-5 1 1-5Z"/></svg><span>Observação</span></summary><label>Observações ou retirada de ingredientes<textarea rows="2" data-product-notes maxlength="300" placeholder="{{'Ex.: cor, tamanho ou modelo' if pro.offer_mode=='catalog' else 'Ex.: sem cebola e sem tomate, por favor'}}"></textarea><small>Retirar ingredientes não altera o preço.</small></label></details><div class="product-buy"><label>Qtd.<input class="product-quantity-input" type="number" min="1" max="99" step="1" value="1" inputmode="numeric" data-product-quantity aria-label="Digite a quantidade" {% if (not user or user.role!='customer') or (user and user.id==pro.user_id) or not shop_status.open or not product.available %}disabled{% endif %}></label><button class="btn primary" type="button" data-add data-login-buy252 {% if (user and user.id==pro.user_id) or not shop_status.open or not product.available %}disabled{% endif %}>{% if not user %}Faça login para comprar{% elif not product.available %}Indisponível{% elif shop_status.open %}Adicionar{% else %}Fechado{% endif %}</button></div>
 </div>
 </div>
 </article>{% else %}<div class="panel empty-state">
@@ -142,9 +142,9 @@ html body.public-profile-area .nu85-note textarea{height:66px!important;min-heig
 </div>
 </aside></dialog>
 <dialog class="checkout-dialog" data-checkout-dialog>
-<form action="/p/{{pro.slug}}/menu/pedido" method="post" data-order-form>
+<form action="/p/{{pro.slug}}/menu/{{'whatsapp' if store_whatsapp257 else 'pedido'}}" method="post" data-order-form>
 <button class="dialog-close" type="button" data-dialog-close>×</button>
-<h2>Finalizar pedido</h2>{% if not user %}<p class="muted">Compra rápida sem cadastro. Informe seu nome e WhatsApp; guarde o link de acompanhamento após enviar.</p>{% endif %}
+<h2>Finalizar pedido</h2>{% if store_whatsapp257 %}<p class="muted">Compra com sua conta de cliente. Escolha entrega ou retirada. O pedido segue o destino escolhido pela loja: painel, WhatsApp ou ambos. Se abrir o WhatsApp, toque em Enviar para entregar a mensagem.</p>{% elif not user %}<p class="muted">Faça login para comprar pelo NowUp.</p>{% endif %}
 <input type="hidden" name="cart_json" data-cart-json>
 <label>Seu nome<input class="input" name="customer_name" value="{% if user and user.role=='customer' %}{{user.name}}{% endif %}" required>
 </label>
@@ -165,12 +165,12 @@ html body.public-profile-area .nu85-note textarea{height:66px!important;min-heig
 <span>Total <small data-fee-note></small></span>
 <b data-dialog-total>R$ 0,00</b>
 </div>
-<button class="btn primary full-btn">Enviar pedido pelo NowUp</button>
+<button class="btn primary full-btn">{{'Continuar pedido' if store_whatsapp257 else 'Enviar pedido pelo NowUp'}}</button>
 </form>
 </dialog>
 <footer class="nu83-cart-dock" hidden><button type="button" data-cart-summary><span>🛒 <span data-cart-count>0 itens</span></span><strong>Ver carrinho · <span data-dock-total>R$ 0,00</span></strong></button></footer></section>
-<script>window.NOWUP_MENU={{ {'deliveryFee':pro.delivery_fee_cents,'minimumOrder':pro.minimum_order_cents,'open':shop_status.open,'ownerView':(user and user.id==pro.user_id) or false,'storeName':pro.display_name,'customerId':user.id if user and user.role=='customer' else none}|tojson }};</script>
-<link rel="stylesheet" href="/static/cart144.css?v=144"><link rel="stylesheet" href="/static/purchase-login252.css?v=252"><script src="/static/purchase-login252.js?v=252"></script><script src="/static/menu88.js?v=255">
+<script>window.NOWUP_MENU={{ {'whatsappCheckout':store_whatsapp257|default(false),'deliveryFee':pro.delivery_fee_cents,'minimumOrder':pro.minimum_order_cents,'open':shop_status.open,'ownerView':(user and user.id==pro.user_id) or false,'storeName':pro.display_name,'customerId':user.id if user and user.role=='customer' else none}|tojson }};</script>
+<link rel="stylesheet" href="/static/cart144.css?v=144"><link rel="stylesheet" href="/static/purchase-login252.css?v=252"><script src="/static/purchase-login252.js?v=252"></script><script src="/static/menu88.js?v=257">
 </script>
 <script src="/static/cart144.js?v=144" defer></script><script src="/static/customer-address.js?v=69" defer></script><link rel="stylesheet" href="/static/menu-swipe.css?v=145">
 <script src="/static/menu-swipe.js?v=197" defer></script>

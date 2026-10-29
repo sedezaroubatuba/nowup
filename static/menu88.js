@@ -4,8 +4,8 @@
   if(!items||!total||!checkout||!dialog)return;
   const path=location.pathname.replace(/\/menu\/?$/,'').replace(/\/$/,'');
   const customerId=Number.isSafeInteger(Number(cfg.customerId))&&Number(cfg.customerId)>0?Number(cfg.customerId):null;
-  const key=customerId?`nowup-cart:u:${customerId}:${path}`:`nowup-cart:${path}`;
-  const infoKey=`nowup-cart-info:${customerId?`u:${customerId}:`:''}${path}`;
+  const key=cfg.whatsappCheckout?`nowup-cart:whatsapp257:u:${customerId}:${path}`:customerId?`nowup-cart:u:${customerId}:${path}`:`nowup-cart:${path}`;
+  const infoKey=`nowup-cart-info:${cfg.whatsappCheckout?'whatsapp257:':''}${customerId?`u:${customerId}:`:''}${path}`;
   if(!customerId)return; // Browsing is public; cart mutations require a customer session.
   // A confirmação do servidor limpa também o carrinho de quem comprou sem conta.
   const completed=document.cookie.match(/(?:^|;\s*)nowup_cart_completed=([^;]+)/);
@@ -33,6 +33,19 @@
       try{
         const response=await fetch(checkoutForm229.action,{method:'POST',body:new FormData(checkoutForm229),headers:{Accept:'application/json',...(document.getElementById('store-app256')?{'X-Nowup-Store-App':'256'}:{})},credentials:'same-origin',signal:controller.signal});
         const json=(response.headers.get('content-type')||'').includes('application/json')?await response.json():null;
+        if(cfg.whatsappCheckout){
+          const validWA=/^https:\/\/wa\.me\/55[0-9]{10,11}\?text=/.test(json?.whatsapp_url||'');
+          const validTrack=typeof json?.redirect==='string'&&json.redirect.startsWith(path+'/pedido/')&&/^[A-Za-z0-9_-]+$/.test(json.redirect.slice((path+'/pedido/').length));
+          if(!response.ok||!json?.prepared||(!json.recorded&&!validWA)||(json.recorded&&!validTrack)||(json.mode!=='panel'&&!validWA))throw new Error(typeof json?.detail==='string'?json.detail:'Não foi possível preparar o pedido. Revise os dados.');
+          if(json.recorded&&localStorage.getItem(key)===snapshot){cart.clear();localStorage.removeItem(key);localStorage.removeItem(infoKey);sessionStorage.removeItem('nowup-checkout247:'+key);render();}
+          feedback.textContent=json.recorded?'Pedido '+json.order_code+' registrado no painel da loja. Aguarde a confirmação.' : 'Pedido preparado para WhatsApp. A confirmação será feita pela loja.';
+          const old=checkoutForm229.querySelector('[data-whatsapp-ready257]');if(old)old.remove();
+          const ready=document.createElement('div');ready.dataset.whatsappReady257='';
+          const preview=document.createElement('pre');preview.textContent=json.message;preview.style.cssText='white-space:pre-wrap;font:inherit';ready.append(preview);
+          if(validWA){const link=document.createElement('a');link.className='btn primary full-btn';link.href=json.whatsapp_url;link.textContent='Abrir WhatsApp e enviar';link.rel='noopener';link.target='_blank';ready.append(link);const note=document.createElement('p');note.textContent='Toque em Enviar no WhatsApp. '+(json.recorded?'O pedido já está no painel; é a mesma venda.':'');ready.append(note);}
+          if(validTrack){const tracking=document.createElement('a');tracking.className='btn soft full-btn';tracking.href=json.redirect;tracking.textContent='Acompanhar pedido';ready.append(tracking);}
+          checkoutForm229.append(ready);return;
+        }
         if(!response.ok||!json?.confirmed||json.path!==path||!((String(json.redirect||'').startsWith(path+'/pedido/')&&/^[A-Za-z0-9_-]+$/.test(String(json.redirect||'').slice((path+'/pedido/').length)))||/^\/pedido\/[A-Za-z0-9_-]+$/.test(json.redirect||'')))throw new Error(typeof json?.detail==='string'?json.detail:'Envio não confirmado. Confira Meus pedidos antes de tentar novamente.');
         // Clear this exact cart in the current page before navigating; no dependency
         // on cookies, tracking-page scripts or a back/forward cache restoration.
@@ -42,6 +55,7 @@
       }catch(error){feedback.textContent=error.name==='AbortError'?'O envio demorou. Confira Meus pedidos antes de tentar novamente.':error.message;
       }finally{clearTimeout(timeout);checkoutForm229.dataset.submitting229='';if(button){button.disabled=false;button.textContent=original;}}
     });
+    checkoutForm229.addEventListener('input',()=>checkoutForm229.querySelector('[data-whatsapp-ready257]')?.remove());
     window.addEventListener('pageshow',()=>{checkoutForm229.dataset.submitting229='';checkoutForm229.querySelectorAll('[type=submit]').forEach(b=>b.disabled=false);});
   }
   const cartField=dialog.querySelector('[data-cart-json]'),dialogTotal=dialog.querySelector('[data-dialog-total]'),fulfillment=dialog.querySelector('[data-fulfillment]'),payment=dialog.querySelector('[data-payment]'),dockTotal=root.querySelector('[data-dock-total]'),cartCount=root.querySelector('[data-cart-count]'),dockCheckout=root.querySelector('[data-dock-checkout]');
@@ -52,7 +66,7 @@
   function sync(){if(cartField)cartField.value=JSON.stringify([...cart].map(([,v])=>({id:v.productId,quantity:v.quantity,notes:v.notes||'',options:v.options.map(o=>({id:Number(o.id),quantity:o.quantity||1})),utensils:!!v.utensils,customization:v.customization||{removed:[],groups:{}}})));save()}
   const notesAllowed=v=>{const card=[...root.querySelectorAll('[data-product]')].find(p=>Number(p.dataset.id)===v.productId);try{return JSON.parse(card?.dataset.custom192||'null')?.notes!==false;}catch(_){return true;}};
   const isPersonalized=v=>[...root.querySelectorAll('[data-product]')].some(p=>Number(p.dataset.id)===v.productId&&p.dataset.dish==='1');
-  function render(){let html='';cart.forEach((v,id)=>{html+=`<div class="cart-item"><div><b>${esc(v.name)}</b>${v.utensils?'<small>🍴 Enviar talheres (garfo e faca)</small>':''}${v.customizationSummary?`<small>${esc(v.customizationSummary)}</small>`:''}${v.options.length?`<small>${v.options.map(o=>esc(o.name)).join(', ')}</small>`:''}<small>${money(v.unitPrice)} por unidade</small><small class="nu150-item-total">Total do item: ${money(v.unitPrice*v.quantity)}</small>${isPersonalized(v)?`<button type="button" class="nu160-edit" data-edit-personalization160="${id}">Editar personalização</button>`:''}<input ${notesAllowed(v)?'':'hidden disabled'} class="cart-note" data-note="${id}" maxlength="300" value="${esc(v.notes||'')}" placeholder="Observação: bem passado, sem feijão..."></div><div class="cart-quantity"><button type="button" data-minus="${id}">−</button><input type="number" min="1" max="${v.max||99}" value="${v.quantity}" data-cart-quantity="${id}"><button type="button" data-plus="${id}">+</button><button class="cart-remove" type="button" data-remove="${id}">Excluir</button></div></div>`});
+  function render(){checkoutForm229?.querySelector('[data-whatsapp-ready257]')?.remove();let html='';cart.forEach((v,id)=>{html+=`<div class="cart-item"><div><b>${esc(v.name)}</b>${v.utensils?'<small>🍴 Enviar talheres (garfo e faca)</small>':''}${v.customizationSummary?`<small>${esc(v.customizationSummary)}</small>`:''}${v.options.length?`<small>${v.options.map(o=>esc(o.name)).join(', ')}</small>`:''}<small>${money(v.unitPrice)} por unidade</small><small class="nu150-item-total">Total do item: ${money(v.unitPrice*v.quantity)}</small>${isPersonalized(v)?`<button type="button" class="nu160-edit" data-edit-personalization160="${id}">Editar personalização</button>`:''}<input ${notesAllowed(v)?'':'hidden disabled'} class="cart-note" data-note="${id}" maxlength="300" value="${esc(v.notes||'')}" placeholder="Observação: bem passado, sem feijão..."></div><div class="cart-quantity"><button type="button" data-minus="${id}">−</button><input type="number" min="1" max="${v.max||99}" value="${v.quantity}" data-cart-quantity="${id}"><button type="button" data-plus="${id}">+</button><button class="cart-remove" type="button" data-remove="${id}">Excluir</button></div></div>`});
     items.innerHTML=html||'<p class="muted">Adicione produtos para começar.</p>';const sub=baseSubtotal(),grand=sub+fee(),count=[...cart.values()].reduce((sum,v)=>sum+v.quantity,0);total.textContent=money(sub);if(dialogTotal)dialogTotal.textContent=money(grand);if(dockTotal)dockTotal.textContent=money(sub);if(cartCount)cartCount.textContent=count+` ${count===1?'item':'itens'}`;checkout.disabled=cart.size>50||cfg.ownerView||cfg.open===false||!cart.size||sub<Number(cfg.minimumOrder||0)||[...cart.values()].some(v=>v.options.length>20||v.options.some(o=>(o.quantity||1)!==1));if(dockCheckout)dockCheckout.disabled=checkout.disabled;checkout.textContent=cart.size>50?'Limite de 50 itens diferentes por pedido':[...cart.values()].some(v=>v.options.length>20||v.options.some(o=>(o.quantity||1)!==1))?'Atualize os adicionais: até 3, uma porção de cada':cfg.open===false?'Pedidos pausados':cart.size&&sub<Number(cfg.minimumOrder||0)?`Faltam ${money(Number(cfg.minimumOrder)-sub)} para o mínimo`:'Continuar pedido';const note=dialog.querySelector('[data-fee-note]');if(note)note.textContent=fee()?`(inclui ${money(fee())} de entrega)`:'';sync()}
   if(!customerId)try{if(localStorage.getItem(key)===null){const legacy=localStorage.getItem(key+'/menu');if(legacy!==null){localStorage.setItem(key,legacy);localStorage.removeItem(key+'/menu');}}}catch(_){}
   try{(JSON.parse(localStorage.getItem(key)||'[]')||[]).forEach(([id,v])=>{if(v&&v.name)cart.set(String(id),{...v,productId:Number(v.productId||String(id).split(':')[0]),unitPrice:Number(v.unitPrice||v.price||0),options:Array.isArray(v.options)?v.options:[],max:Number(v.max||99)})})}catch(_){localStorage.removeItem(key)}

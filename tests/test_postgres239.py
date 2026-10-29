@@ -217,3 +217,28 @@ def test_durable_media_backup_deletion_and_auth_limits247(pg):
     for _ in range(10):check(m.db,request,'pg247@example.invalid',now=1800)
     with pytest.raises(HTTPException) as error:check(m.db,request,'pg247@example.invalid',now=1801)
     assert error.value.status_code==429
+
+
+def test_independent_dual_delivery_transaction_and_retry257(pg,monkeypatch):
+    import json
+    m,client,_,_,_=pg
+    with m.db() as c:
+        p=c.execute('SELECT id,slug FROM professionals ORDER BY id LIMIT 1').fetchone()
+        c.execute("UPDATE professionals SET plan_active='ambos',is_premium=1,offer_mode='menu',admission_status='approved',blocked=0,business_status='open',business_hours='',allows_pickup=1,minimum_order_cents=0,whatsapp='12999999999' WHERE id=?",(p['id'],))
+        stamp=m.now_iso()
+        product=c.execute("INSERT INTO products(professional_id,name,price_cents,extras_mode,created_at,updated_at) VALUES(?,'Dual channel PG',700,'none',?,?)",(p['id'],stamp,stamp)).lastrowid
+        uid=c.execute("INSERT INTO users(role,name,email,password_hash,phone,created_at) VALUES('customer','Cliente PG257','pg257@example.invalid','unused','12988887777',?)",(stamp,)).lastrowid
+        customer=dict(c.execute('SELECT * FROM users WHERE id=?',(uid,)).fetchone())
+        c.execute("INSERT INTO store_menu257(professional_id,whatsapp,mode) VALUES(?,?,'both') ON CONFLICT(professional_id) DO UPDATE SET mode='both',whatsapp=excluded.whatsapp",(p['id'],'5512999999999'))
+    monkeypatch.setattr(m,'current_user',lambda request:customer)
+    payload={'customer_name':'ignored','cart_json':json.dumps([{'id':product,'quantity':2}]),'request_key':'postgres-dual-channel257'}
+    endpoint='/p/'+p['slug']+'/menu/whatsapp'
+    response=client.post(endpoint,data=payload);assert response.status_code==200,response.text
+    assert response.json()['recorded'] and response.json()['total_cents']==1400
+    assert client.post(endpoint,data=payload).json()==response.json()
+    with m.db() as c:
+        orders=c.execute('SELECT * FROM orders WHERE customer_id=?',(uid,)).fetchall()
+        assert len(orders)==1 and orders[0]['customer_name']=='Cliente PG257'
+        assert c.execute('SELECT COUNT(*) FROM store_dispatch257 WHERE order_id=?',(orders[0]['id'],)).fetchone()[0]==1
+    changed={**payload,'notes':'alterado'}
+    assert client.post(endpoint,data=changed).status_code==409
