@@ -26,7 +26,7 @@ def presentation(p):
     slug=p['slug'];prefix='/p/'+quote(slug,safe='')
     return {'slug':slug,'name':p['display_name'],'menu':prefix+'/menu?loja=1',
         'manifest':prefix+'/manifest.webmanifest','icon':prefix+'/app-icon/192.png',
-        'login':prefix+'/entrar?tipo=cliente','signup':'/cadastro/cliente?loja='+quote(slug,safe='')}
+        'orders':prefix+'/pedidos','logout':prefix+'/sair','login':prefix+'/entrar?tipo=cliente','signup':'/cadastro/cliente?loja='+quote(slug,safe='')}
 
 def page_context(g,request,values):
     p=getattr(request.state,'store_app256',None)
@@ -109,6 +109,28 @@ def install(g):
         elif location.startswith('/entrar?'):result.headers['location']='/p/'+quote(slug,safe='')+'/entrar?'+urlsplit(location).query
         result.headers.update(HEADERS)
         return result
+
+    @app.get('/p/{slug}/pedidos')
+    def store_orders256(request:Request,slug:str,before_id:int=0):
+        p=store(g,slug,active=False);user=g['current_user'](request)
+        if not user or user['role']!='customer':return RedirectResponse(presentation(p)['login'],303,headers=HEADERS)
+        if before_id<0:raise HTTPException(400,'Página inválida')
+        c=g['db']()
+        try:
+            clause=' AND id<?' if before_id else '';params=(p['id'],user['id'])+((before_id,) if before_id else ())
+            orders=[dict(row) for row in c.execute('SELECT id,order_code,status,total_cents,created_at,tracking_token FROM orders WHERE professional_id=? AND customer_id=?'+clause+' ORDER BY id DESC LIMIT 26',params)]
+        finally:c.close()
+        next_id=orders[24]['id'] if len(orders)>25 else None;orders=orders[:25]
+        from datetime import datetime
+        for order in orders:order['local_date']=datetime.fromisoformat(order['created_at']).astimezone(g['SAO_PAULO_TZ']).strftime('%d/%m/%Y %H:%M')
+        request.state.store_app256=p
+        return g['templates'].TemplateResponse('store_orders256.html',g['context'](request,store_orders256=orders,store_next256=next_id,status_labels=g['ORDER_STATUS_LABELS']),headers=HEADERS)
+
+    @app.post('/p/{slug}/sair')
+    def store_logout256(request:Request,slug:str):
+        p=store(g,slug,active=False);response=g['logout'](request)
+        response.headers['location']=presentation(p)['menu'];response.delete_cookie('nowup_store_return256',path='/')
+        return response
 
     @app.get('/p/{slug}/pedido/{token}')
     def store_order256(request:Request,slug:str,token:str):

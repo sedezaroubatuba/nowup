@@ -112,3 +112,15 @@ def test_real_customer_login_returns_to_store_and_preserves_session(shop,monkeyp
     assert 'nowup_session=' in response.headers['set-cookie']
     bad=client.post('/p/'+slug+'/entrar',data={'email':'audit247@example.invalid','password':'wrong'},follow_redirects=False)
     assert bad.headers['location'].startswith('/p/'+slug+'/entrar?erro=1')
+
+
+def test_customer_history_is_scoped_by_customer_and_store(shop,monkeypatch):
+    m,client,slug,pid,url,data,_=shop
+    client.post(url,data=data,headers={'Accept':'application/json','X-Nowup-Store-App':'256'})
+    page=client.get('/p/'+slug+'/pedidos');assert page.status_code==200,page.text
+    assert 'Acompanhar pedido' in page.text and 'Sede Zero' in page.text
+    with m.db() as c:other=c.execute('SELECT slug FROM professionals WHERE id<>? LIMIT 1',(pid,)).fetchone()[0]
+    assert 'Você ainda não fez pedidos nesta loja.' in client.get('/p/'+other+'/pedidos').text
+    monkeypatch.setattr(m,'current_user',lambda request:None)
+    denied=client.get('/p/'+slug+'/pedidos',follow_redirects=False)
+    assert denied.status_code==303 and denied.headers['location'].startswith('/p/'+slug+'/entrar')
