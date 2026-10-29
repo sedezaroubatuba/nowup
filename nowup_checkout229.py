@@ -14,7 +14,11 @@ def begin_checkout(conn, customer_id, professional_id, request_key, payload):
             raise HTTPException(400, 'Identificador do pedido inválido. Atualize a página.')
         # Canonical JSON avoids different whitespace producing different legacy keys.
         try:
-            payload = {**payload, 'cart': json.loads(payload['cart'])}
+            if not isinstance(payload.get('cart'),str) or len(payload['cart'].encode('utf-8'))>262144:
+                raise ValueError()
+            cart=json.loads(payload['cart'],parse_constant=lambda value: (_ for _ in ()).throw(ValueError()))
+            if not isinstance(cart,list) or len(cart)>50:raise ValueError()
+            payload = {**payload, 'cart': cart}
         except (ValueError, TypeError):
             raise HTTPException(400, 'Carrinho inválido')
         digest = hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False,
@@ -52,7 +56,7 @@ def completed_response(slug, token, request=None):
         response = JSONResponse({'confirmed': True, 'path': '/p/' + slug,
             'redirect': '/pedido/' + token}, headers={'Cache-Control': 'private, no-store'})
     else:
-        response = RedirectResponse('/pedido/' + token, 303)
+        response = RedirectResponse('/pedido/' + token, 303, headers={'Cache-Control':'private, no-store'})
     secure = request is not None and (request.url.scheme == 'https' or os.getenv('NOWUP_HTTPS') == '1')
     response.set_cookie('nowup_cart_completed', slug, max_age=120, samesite='lax', path='/', secure=secure)
     response.set_cookie('nowup_cart_completed_token', token, max_age=600, httponly=True, samesite='lax', path='/', secure=secure)
