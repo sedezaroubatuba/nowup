@@ -5,6 +5,8 @@ on:
       - 'static/storefront232.*'
       - 'static/store-app256.js'
       - 'tests/storeapp256.browser.cjs'
+      - 'tests/storeapp257.browser.cjs'
+      - 'static/menu88.js'
       - 'static/upload-preview250.*'
       - 'static/order-chat206.js'
       - 'templates/**'
@@ -18,6 +20,8 @@ on:
       - 'static/storefront232.*'
       - 'static/store-app256.js'
       - 'tests/storeapp256.browser.cjs'
+      - 'tests/storeapp257.browser.cjs'
+      - 'static/menu88.js'
       - 'static/upload-preview250.*'
       - 'static/order-chat206.js'
       - 'templates/**'
@@ -45,4 +49,4 @@ jobs:
           fi
       - run: node --check static/storefront232.js
       - name: Desktop scroll and mobile slideshow controls
-        run: node --test tests/storefront248.browser.cjs tests/upload-preview250.browser.cjs tests/storeapp256.browser.cjs
+        run: node --test tests/storefront248.browser.cjs tests/upload-preview250.browser.cjs tests/storeapp256.browser.cjs tests/storeapp257.browser.cjs

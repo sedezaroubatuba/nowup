@@ -141,11 +141,11 @@ html body.public-profile-area .nu85-note textarea{height:66px!important;min-heig
 </div>
 </aside></dialog>
 <dialog class="checkout-dialog" data-checkout-dialog>
-<form action="/p/{{pro.slug}}/menu/pedido" method="post" data-order-form>
+<form action="/p/{{pro.slug}}/menu/{{'whatsapp' if store_whatsapp257 else 'pedido'}}" method="post" data-order-form>
 <button class="dialog-close" type="button" data-dialog-close>×</button>
-<h2>Finalizar pedido</h2>{% if not user %}<p class="muted">Compra rápida sem cadastro. Informe seu nome e WhatsApp; guarde o link de acompanhamento após enviar.</p>{% endif %}
+<h2>Finalizar pedido</h2>{% if store_whatsapp257 %}<p class="muted">Compra com sua conta de cliente. Escolha entrega ou retirada. O pedido segue o destino escolhido pela loja: painel, WhatsApp ou ambos. Se abrir o WhatsApp, toque em Enviar para entregar a mensagem.</p>{% elif not user %}<p class="muted">Faça login para comprar pelo NowUp.</p>{% endif %}
 <input type="hidden" name="cart_json" data-cart-json>
-<label>Seu nome<input class="input" name="customer_name" value="{% if user and user.role=='customer' %}{{user.name}}{% endif %}" required>
+<label>Seu nome<input class="input" name="customer_name" {% if store_whatsapp257 %}readonly{% endif %} value="{% if user and user.role=='customer' %}{{user.name}}{% endif %}" required>
 </label>
 <label>Seu WhatsApp<input class="input" name="customer_phone" value="{% if user and user.role=='customer' %}{{user.phone}}{% endif %}" inputmode="tel" required>
 </label>
@@ -164,12 +164,12 @@ html body.public-profile-area .nu85-note textarea{height:66px!important;min-heig
 <span>Total <small data-fee-note></small></span>
 <b data-dialog-total>R$ 0,00</b>
 </div>
-<button class="btn primary full-btn">Enviar pedido pelo NowUp</button>
+<button class="btn primary full-btn">{{'Continuar pedido' if store_whatsapp257 else 'Enviar pedido pelo NowUp'}}</button>
 </form>
 </dialog>
 <footer class="nu83-cart-dock" hidden><button type="button" data-cart-summary><span>🛒 <span data-cart-count>0 itens</span></span><strong>Ver carrinho · <span data-dock-total>R$ 0,00</span></strong></button></footer></section>
-<script>window.NOWUP_MENU={{ {'deliveryFee':pro.delivery_fee_cents,'minimumOrder':pro.minimum_order_cents,'open':shop_status.open,'ownerView':(user and user.id==pro.user_id) or false,'storeName':pro.display_name,'customerId':user.id if user and user.role=='customer' else none}|tojson }};</script>
-<link rel="stylesheet" href="/static/cart144.css?v=144"><script src="/static/menu88.js?v=255">
+<script>window.NOWUP_MENU={{ {'whatsappCheckout':store_whatsapp257|default(false),'deliveryFee':pro.delivery_fee_cents,'minimumOrder':pro.minimum_order_cents,'open':shop_status.open,'ownerView':(user and user.id==pro.user_id) or false,'storeName':pro.display_name,'customerId':user.id if user and user.role=='customer' else none}|tojson }};</script>
+<link rel="stylesheet" href="/static/cart144.css?v=144"><script src="/static/menu88.js?v=257">
 </script>
 <script src="/static/cart144.js?v=144" defer></script><script src="/static/customer-address.js?v=69" defer></script><link rel="stylesheet" href="/static/menu-swipe.css?v=145">
 <script src="/static/menu-swipe.js?v=197" defer></script>

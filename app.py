@@ -1,4 +1,5 @@
 from __future__ import annotations
+import nowup_storeapp257
 import nowup_storeapp256
 import nowup_categories230
 import nowup_included195
@@ -639,6 +640,8 @@ def init_db():
     ensure_column(conn, "orders", "change_for_cents", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "products", "sold_cold", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "products", "customization192", "TEXT NOT NULL DEFAULT ''")
+    import nowup_storeapp257
+    nowup_storeapp257.initialize(conn)
     nowup_included195.initialize(conn)
     ensure_column(conn, "orders", "customer_id", "INTEGER REFERENCES users(id) ON DELETE SET NULL")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_customer238 ON orders(customer_id,id DESC)")
@@ -1194,55 +1197,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
         lock255=" FOR UPDATE" if getattr(conn,'dialect','sqlite')=='postgres' else ""
         p=conn.execute("SELECT * FROM professionals WHERE id=? AND blocked=0 AND admission_status='approved' AND plan_active IN ('cardapio','ambos') AND EXISTS(SELECT 1 FROM users owner255 WHERE owner255.id=professionals.user_id AND owner255.is_active=1)"+lock255,(p['id'],)).fetchone()
         if not p:raise HTTPException(409,"Esta loja não está recebendo pedidos. Revise seu carrinho.")
-        if fulfillment_type not in ('delivery','pickup'):raise HTTPException(400,"Escolha entrega ou retirada.")
-        if payment_method not in ('pix','cash','credit','debit','on_delivery'):raise HTTPException(400,"Escolha uma forma de pagamento válida.")
-        if not shop_status(p)["open"]: conn.close(); return RedirectResponse(f"/p/{slug}/menu?fechado=1",303)
-        try: raw_items=json.loads(cart_json)
-        except Exception: conn.close(); raise HTTPException(400,"Carrinho inválido")
-        if not isinstance(raw_items,list) or not raw_items: conn.close(); raise HTTPException(400,"Carrinho vazio")
-        if len(raw_items)>50:
-            conn.close(); raise HTTPException(400,"O carrinho permite até 50 itens diferentes. Divida o pedido.")
-        clean_items=[]; subtotal=0; quantities255={}
-        for raw in raw_items:
-            try:
-                if not isinstance(raw,dict) or type(raw.get("id")) is not int or type(raw.get("quantity",1)) is not int or raw["id"]<1 or not 1<=raw.get("quantity",1)<=99: raise ValueError()
-                pid=raw["id"]; qty=raw.get("quantity",1); item_notes=str(raw.get("notes","")).strip()[:300]
-            except (TypeError,ValueError,AttributeError):
-                conn.close(); raise HTTPException(400,"Um item do carrinho é inválido. Revise o pedido.")
-            product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=? AND available=1",(pid,p["id"])).fetchone()
-            if not product:
-                conn.close(); raise HTTPException(400,"Um produto do carrinho ficou indisponível. Atualize o cardápio antes de enviar o pedido.")
-            if product:
-                quantities255[pid]=quantities255.get(pid,0)+qty
-                if quantities255[pid]>min(99,max(1,product["max_quantity"] or 99)):
-                    conn.close(); raise HTTPException(400,"Quantidade acima do limite do produto. Revise o carrinho.")
-                chosen=[]; extras=0
-                try:chosen,extras=options_single158(conn,pid,raw.get("options",[]))
-                except HTTPException:conn.close();raise
-                utensils=raw.get("utensils",False)
-                try:item_notes=validate_customization(parse_config(product["customization192"]),raw.get("customization",{}),item_notes,utensils)
-                except HTTPException:conn.close();raise
-                try: validate_choices89(conn,pid,chosen)
-                except HTTPException: conn.close(); raise
-                unit=(product["promo_price_cents"] if product["promo_price_cents"]>0 else product["price_cents"])+extras
-                if unit<0:raise HTTPException(409,"Preço indisponível. Entre em contato com a loja.")
-                clean_items.append((product,qty,item_notes,chosen,unit)); subtotal += unit*qty
-        if not clean_items: conn.close(); raise HTTPException(400,"Nenhum produto disponível no carrinho")
-        fulfillment_type="delivery" if fulfillment_type=="delivery" else "pickup"
-        if fulfillment_type=="delivery" and not address.strip():
-            conn.close(); raise HTTPException(400,"Informe o endereço para entrega")
-        if fulfillment_type=="delivery" and not p["allows_delivery"]: conn.close(); raise HTTPException(400,"Esta loja não realiza entregas")
-        if fulfillment_type=="pickup" and not p["allows_pickup"]: conn.close(); raise HTTPException(400,"Esta loja não permite retirada")
-        if subtotal < (p["minimum_order_cents"] or 0): conn.close(); raise HTTPException(400,"O pedido não atingiu o valor mínimo")
-        delivery_fee=0
-        if fulfillment_type=="delivery":
-            try: delivery_fee,neighborhood=delivery_quote89(conn,p,neighborhood)
-            except HTTPException: conn.close(); raise
-        total=subtotal+delivery_fee
-        payment_labels={"pix":"Pix","cash":"Dinheiro","credit":"Cartão de crédito","debit":"Cartão de débito","on_delivery":"Combinar no atendimento"}
-        payment_method=payment_method if payment_method in payment_labels else "pix"
-        change_for_cents=price_to_cents(change_for) if payment_method=="cash" and change_for.strip() else 0
-        if change_for_cents and change_for_cents<total:raise HTTPException(400,"O valor para troco deve cobrir o total do pedido.")
+        clean_items,subtotal,delivery_fee,neighborhood,total,change_for_cents=nowup_storeapp257.validate(globals(),conn,p,cart_json,fulfillment_type,payment_method,address,neighborhood,change_for)
         customer_id=logged['id'] if logged else None
         created=now_iso(); tracking_token=secrets.token_urlsafe(24)
         cur=conn.execute("""INSERT INTO orders(professional_id,customer_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at,subtotal_cents,delivery_fee_cents,neighborhood,address_reference,change_for_cents,tracking_token)
@@ -2926,3 +2881,5 @@ def pro_kanban228(request: Request):
 
 # Store-specific cardápio links, branding and install identity.
 nowup_storeapp256.install(globals())
+
+nowup_storeapp257.install(globals())
