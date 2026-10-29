@@ -2908,3 +2908,7 @@ import nowup_storeapp256
 nowup_storeapp256.install(globals())
 
 nowup_storeapp257.install(globals())
+
+import nowup_opening260
+templates.env.globals["opening_config260"]=nowup_opening260.config
+nowup_opening260.install(globals())

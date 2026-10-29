@@ -1,0 +1,12 @@
+(()=>{'use strict';const el=document.getElementById('nowup-opening260');if(!el)return;if(getComputedStyle(el).position!=='fixed'){el.remove();return;}
+const node=document.getElementById('opening-config260');let cfg;try{cfg=JSON.parse(node.textContent);}catch(_){el.remove();return;}
+const duration=Math.max(2500,Math.min(6000,Number(cfg.duration)||4200)),color=/^#[0-9a-f]{6}$/i.test(cfg.color)?cfg.color:'#7136bf',key='nowup-opening260',today=new Date().toLocaleDateString('en-CA');let audio=null,finished=false;
+function stopAudio(){if(audio){audio.close().catch(()=>{});audio=null;}}
+function close(){if(finished)return;finished=true;clearTimeout(timer);stopAudio();el.remove();document.removeEventListener('keydown',escape);}
+function escape(e){if(e.key==='Escape')close();}
+let show=true;try{if(!cfg.preview){if(cfg.frequency==='daily'&&localStorage.getItem(key)===today)show=false;if(cfg.frequency==='session'&&sessionStorage.getItem(key)==='1')show=false;if(show){localStorage.setItem(key,today);sessionStorage.setItem(key,'1');}}}catch(_){}
+if(!show){el.remove();return;}
+el.style.setProperty('--opening-color260',color);el.style.setProperty('--opening-duration260',duration+'ms');el.style.display='block';el.classList.add('playing');el.querySelector('[data-opening-skip260]').addEventListener('click',close);document.addEventListener('keydown',escape);
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;const timer=setTimeout(close,reduced?650:duration+100);window.addEventListener('pagehide',close,{once:true});document.addEventListener('visibilitychange',()=>{if(document.hidden)close();},{once:true});
+if(cfg.sound&&!reduced){el.addEventListener('pointerdown',e=>{if(e.target.closest('[data-opening-skip260]')||finished)return;const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;try{audio=new AC();audio.resume().catch(()=>{});const t=audio.currentTime;function tone(at,len,freq,type,gain,end){const osc=audio.createOscillator(),amp=audio.createGain();osc.type=type;osc.frequency.setValueAtTime(freq,t+at);if(end)osc.frequency.exponentialRampToValueAtTime(end,t+at+len);amp.gain.setValueAtTime(.0001,t+at);amp.gain.exponentialRampToValueAtTime(gain,t+at+.025);amp.gain.exponentialRampToValueAtTime(.0001,t+at+len);osc.connect(amp).connect(audio.destination);osc.start(t+at);osc.stop(t+at+len+.02);}for(const at of [0,.2]){tone(at,.15,430,'triangle',.09);tone(at,.15,330,'square',.022);}tone(.45,.65,75,'sawtooth',.035,210);}catch(_){}},{once:true});}
+})();
