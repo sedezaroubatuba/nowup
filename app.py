@@ -1322,7 +1322,7 @@ def signup_customer(name: str=Form(...), email: str=Form(...), phone: str=Form("
         return RedirectResponse("/cadastro/cliente?erro=email_invalido",303)
     if normalized_email == admin_email:
         return RedirectResponse("/cadastro/cliente?erro=admin",303)
-    if phone and not normalize_phone(phone):
+    if not normalize_phone(phone):
         return RedirectResponse("/cadastro/cliente?erro=telefone",303)
     if len(password)<8:
         return RedirectResponse("/cadastro/cliente?erro=senha",303)
@@ -1354,13 +1354,18 @@ def signup_pro_page(request: Request):
     return templates.TemplateResponse("signup_professional.html", context(request, active_cities=active_cities()))
 
 @app.post("/cadastro/profissional")
-def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Form(...), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), doc_type: str=Form(...), document: str=Form(...), business_type: str=Form("professional"), offer_mode: str=Form("services"), plan: str=Form(...), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[]), address: str=Form(""), state: str=Form("")):
+def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Form(...), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), doc_type: str=Form(...), document: str=Form(...), business_type: str=Form("professional"), offer_mode: str=Form("services"), plan: str=Form(...), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[]), address: str=Form(""), state: str=Form(""), legal_name: str=Form(...), owner_name: str=Form(...), owner_cpf: str=Form(...), owner_role: str=Form(...), facade: UploadFile=File(...), company: UploadFile=File(...), identity: UploadFile=File(...), address_proof: UploadFile=File(...)):
     if not all(v.strip() for v in (name,address,neighborhood,city)) or state not in nowup_admin205.UFS:
         return RedirectResponse("/cadastro/profissional?erro=endereco",303)
     if plan not in ('cardapio','vitrine','ambos'):
         return RedirectResponse('/cadastro/profissional?erro=plano',303)
     if (plan=='vitrine' and offer_mode!='services') or (plan!='vitrine' and offer_mode not in ('menu','catalog')):
         return RedirectResponse('/cadastro/profissional?erro=plano',303)
+    import nowup_verification257 as verification
+    if doc_type != 'CNPJ': raise HTTPException(400,'Cadastro de lojistas somente com CNPJ.')
+    fields257 = dict(legal_name=legal_name,owner_name=owner_name,owner_cpf=owner_cpf,owner_role=owner_role)
+    docs257 = verification.evidence(fields257,dict(facade=facade,company=company,identity=identity,address_proof=address_proof),document)
+    document = re.sub(r'\D','',document)
     normalized_email=normalize_email(email)
     admin_email=os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
     if not normalized_email:
@@ -1392,6 +1397,7 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
         offer_mode=offer_mode if offer_mode in ("services","menu","catalog") else "services"
         cur=conn.execute("INSERT INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,description,services,business_type,offer_mode,plan_active,plan_requested,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                          (uid,slug,name.strip(),doc_type,document.strip(),phone.strip(),city.strip(),neighborhood.strip(),cep.strip(),description.strip(),services.strip(),business_type,offer_mode,'none',plan,now_iso())); pid=cur.lastrowid
+        verification.save(conn,pid,fields257,docs257)
         conn.execute("UPDATE professionals SET address=?,state=? WHERE id=?",(address.strip()[:300],state,pid))
         conn.execute("UPDATE users SET address=?,neighborhood=?,city=?,state=? WHERE id=?",(address.strip()[:300],neighborhood.strip()[:120],city,state,uid))
         for cid in category_ids[:1]:
@@ -2462,6 +2468,10 @@ def admin_review_professional(request: Request, pid:int, decision:str, reason:st
     pro=conn.execute("SELECT p.*,u.email_verified FROM professionals p JOIN users u ON u.id=p.user_id WHERE p.id=?",(pid,)).fetchone()
     if not pro: conn.rollback(); conn.close(); raise HTTPException(404,"Loja não encontrada")
     if pro["is_demo"]: conn.rollback(); conn.close(); return RedirectResponse("/admin?erro=perfil-demo#profissionais",303)
+    if decision=='approved':
+        from nowup_verification257 import require_review
+        try: require_review(conn,pid)
+        except Exception: conn.rollback();conn.close();raise
     if decision=='approved' and not pro["email_verified"]:
         conn.rollback(); conn.close(); return RedirectResponse("/admin?erro=email-pendente#profissionais",303)
     if decision=='approved' and pro['plan_requested'] not in ('cardapio','vitrine','ambos'):
@@ -2902,3 +2912,6 @@ nowup_storeapp257.install(globals())
 import nowup_opening260
 templates.env.globals["opening_config260"]=nowup_opening260.config
 nowup_opening260.install(globals())
+
+import nowup_verification257
+nowup_verification257.register(globals())
