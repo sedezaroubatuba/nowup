@@ -259,6 +259,9 @@ def update_store(c,a,oid,v,why):
  if 'approval' in v:
   if v['approval'] not in ('approved','pending','rejected'):fail(400,'Aprovação inválida.')
   columns['admission_status']=v['approval']
+ if columns.get('admission_status')=='approved':
+  from nowup_verification257 import require_review
+  require_review(c,oid)
  if columns.get('admission_status')=='rejected' or columns.get('blocked')==1:
   if len(why.strip())<8:fail(400,'Informe justificativa para bloquear ou reprovar.')
   columns['admission_reason']=why[:500]
