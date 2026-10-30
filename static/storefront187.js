@@ -84,9 +84,21 @@ document.addEventListener('DOMContentLoaded',()=>{
  if(combos256.length)special256.set('__combos256',{name:'🍻 Combos para o seu rolê',cards:combos256});
  const ordered256=new Map([...special256,...groups]);
  special256.forEach((value,key)=>groups.set(key,value));
- const shortcuts256=make('nav','nu256-shortcuts');shortcuts256.setAttribute('aria-label','Promoções e combos');
- special256.forEach((group,key)=>{const b=make('button',key==='__offers256'?'nu256-offers':'nu256-combos',key==='__offers256'?'🔥 Promoções':'🍻 Combos');b.type='button';b.addEventListener('click',()=>showCategory(key));shortcuts256.append(b);});
- if(special256.size)showcase.append(shortcuts256);
+ const categoryBar274=nav||make('nav','menu-category-nav');
+ if(!nav)sticky.append(categoryBar274);
+ const firstCategory274=categoryBar274.querySelector('[data-category-filter]:not([data-category-filter="all"])');
+ special256.forEach((group,key)=>{const b=make('button','',key==='__offers256'?'🔥 Promoções':'🍻 Combos');b.type='button';b.dataset.categoryFilter=key;b.addEventListener('click',()=>showCategory(key));categoryBar274.insertBefore(b,firstCategory274);buttons.push(b);});
+ categoryBar274.classList.add('nu274-categories');
+ const normalize274=text=>text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ const palettes274=[['#6410c9','#8c16ef'],['#006c7a','#008e8a'],['#17449b','#087dbe'],['#a20d4b','#d52268'],['#3e6b15','#56891b']];
+ buttons.forEach((b,index)=>{const key=b.dataset.categoryFilter,text=normalize274(b.textContent);let colors=palettes274[index%palettes274.length];
+ if(key==='all'||key==='__combos256')colors=palettes274[0];
+ else if(key==='__offers256')colors=['#e84900','#ea8b00'];
+ else if(/cerveja|chopp/.test(text))colors=['#a34e00','#d37800'];
+ else if(/destilado|whisk|vodka/.test(text))colors=palettes274[2];
+ else if(/refrigerante|suco/.test(text))colors=['#b7111c','#e12830'];
+ else if(/gelo|carvao|agua/.test(text))colors=palettes274[1];
+ b.style.setProperty('--nu274-start',colors[0]);b.style.setProperty('--nu274-end',colors[1]);});
  ordered256.forEach((group,key)=>{
   if(!group.cards.length)return;
   const section=make('section','nu190-category');section.dataset.category190=key;sections.set(key,section);
