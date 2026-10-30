@@ -1,6 +1,7 @@
 from __future__ import annotations
 import nowup_storeapp257
 import nowup_storeapp256
+import nowup_neighborhoods267
 import nowup_categories230
 import nowup_included195
 from nowup_custom192 import parse_config, save_config, charge_options, validate_customization
@@ -45,6 +46,8 @@ app.include_router(cms_router)
 app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 templates = Jinja2Templates(directory=str(BASE / "templates"))
+templates.env.globals["delivery_neighborhoods267"]=nowup_neighborhoods267.names
+templates.env.globals["canonical_neighborhood267"]=nowup_neighborhoods267.canonical
 templates.env.globals["category_icon230"] = nowup_categories230.icon
 templates.env.globals["category_key230"] = nowup_categories230.validate_key
 
@@ -945,7 +948,7 @@ def validate_choices89(conn, product_id, chosen):
 def delivery_quote89(conn, pro, neighborhood):
     zones=conn.execute("SELECT * FROM professional_delivery_zones WHERE professional_id=?",(pro["id"],)).fetchall()
     if not zones: return (pro["delivery_fee_cents"] or 0),neighborhood.strip()[:120]
-    zone=next((z for z in zones if z["active"] and z["name_key"]==zone_key89(neighborhood)),None)
+    zone=next((z for z in zones if z["active"] and (nowup_neighborhoods267.canonical(pro["city"],z["name"]) or z["name_key"])==(nowup_neighborhoods267.canonical(pro["city"],neighborhood) or zone_key89(neighborhood))),None)
     if not zone: raise HTTPException(400,"Selecione um bairro atendido pela loja para entrega.")
     return zone["fee_cents"],zone["name"]
 
@@ -1023,7 +1026,16 @@ def pro_zone_save89(request: Request, name: str=Form(...), fee: str=Form("0"), e
     u=require_user(request,"professional"); conn=db()
     try:
         p=require_premium_catalog(conn,u["id"])
-        clean=name.strip()[:120]; key=zone_key89(clean)
+        clean=nowup_neighborhoods267.canonical(p['city'],name)
+        existing=conn.execute('SELECT * FROM professional_delivery_zones WHERE id=? AND professional_id=?',(zone_id,p['id'])).fetchone() if zone_id else None
+        if zone_id and not existing: raise HTTPException(404,'Bairro não encontrado')
+        if not clean:
+            if existing and name==existing['name']:clean=name
+            else:raise HTTPException(400,'Selecione um bairro da lista padronizada da cidade. Bairro ausente deve ser conferido pelo suporte.')
+        for other in conn.execute('SELECT id,name FROM professional_delivery_zones WHERE professional_id=?',(p['id'],)):
+            if other['id']!=zone_id and (nowup_neighborhoods267.canonical(p['city'],other['name']) or other['name'])==clean:
+                raise HTTPException(400,'Este bairro já está cadastrado. Edite a taxa existente.')
+        key=zone_key89(clean)
         if not key or not 5<=eta_minutes<=240: raise HTTPException(400,"Informe bairro e prazo entre 5 e 240 minutos")
         cents=price_to_cents(fee)
         try:
