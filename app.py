@@ -40,6 +40,8 @@ MAX_UPLOAD = 5 * 1024 * 1024
 ADMIN_SESSION_MINUTES = 30
 
 app = FastAPI(title="NowUp", version="1.0.0")
+from nowup_feedback270 import install as install_feedback270
+install_feedback270(app)
 app.include_router(admin_customization_router)
 app.include_router(email_verification_router)
 app.include_router(cms_router)
