@@ -62,12 +62,13 @@ document.addEventListener('DOMContentLoaded',()=>{
   const add=make('button','nu190-add','Adicionar');add.type='button';const back=make('button','nu201-back','Voltar');back.type='button';
   function normalize(){const n=Math.max(1,Math.min(Number(amount.max),Math.trunc(Number(amount.value)||1)));amount.value=String(n);minus.disabled=n<=1;plus.disabled=n>=Number(amount.max);return n;}
   function close(){panel.hidden=true;toggle.hidden=false;toggle.setAttribute('aria-expanded','false');item.classList.remove('nu201-selected');}
-  function sync(){const blocked=!!card.querySelector('[data-add]')?.disabled;toggle.disabled=blocked;add.disabled=blocked;toggle.textContent=blocked?'Indisponível':'Adicionar';normalize();}
+  const chosen=make('small','nu-cart-selected262');chosen.hidden=true;chosen.setAttribute('aria-live','polite');content.append(chosen);
+  function sync(){const count=window.NOWUP_CART160?.quantity(card.dataset.id)||0;chosen.hidden=count===0;chosen.textContent=count?'✓ No carrinho · '+count+' un.':'';item.classList.toggle('nu-cart-in262',count>0);const blocked=!!card.querySelector('[data-add]')?.disabled;toggle.disabled=blocked;add.disabled=blocked;toggle.textContent=blocked?'Indisponível':'Adicionar';normalize();}
   function open(){if(toggle.disabled)return;panel.hidden=false;toggle.hidden=true;toggle.setAttribute('aria-expanded','true');item.classList.add('nu201-selected');normalize();}
   toggle.addEventListener('click',open);item.addEventListener('click',e=>{if(!e.target.closest('button,input,a,label')&&panel.hidden)open();});
   minus.addEventListener('click',()=>{amount.value=String(normalize()-1);normalize();});plus.addEventListener('click',()=>{amount.value=String(normalize()+1);normalize();});amount.addEventListener('change',normalize);
   add.addEventListener('click',()=>{const original=card.querySelector('[data-add]');if(!original||original.disabled)return;const choose=card.querySelector('.nu151-choose');if(choose){choose.click();return;}const quantity=card.querySelector('[data-product-quantity]');if(quantity)quantity.value=String(normalize());original.click();close();});back.addEventListener('click',()=>{close();toggle.focus();});
-  panel.append(controls,add,back);content.append(toggle,panel);item.append(content);cartRefreshers.push(sync);sync();return item;
+  panel.append(controls,add,back);const actions=make('div','nu-cart-actions262');actions.append(toggle,chosen);content.append(actions,panel);item.append(content);cartRefreshers.push(sync);sync();return item;
  }
  const buttons=nav?Array.from(nav.querySelectorAll('[data-category-filter]')):[],groups=new Map();
  buttons.filter(b=>b.dataset.categoryFilter!=='all').forEach(b=>groups.set(b.dataset.categoryFilter,{name:b.textContent.trim(),cards:[]}));
@@ -119,7 +120,8 @@ document.addEventListener('DOMContentLoaded',()=>{
  search.addEventListener('input',()=>{if(body.classList.contains('nu187-store-home')&&search.value)showProducts();});
  back.addEventListener('click',()=>{if(desktop228.matches||body.classList.contains('nu187-store-home'))location.href='/';else showHome();});
  intro.querySelector('[data-store-promotion187]')?.addEventListener('click',()=>showProducts());
- window.addEventListener('nowup-cart-changed',()=>cartRefreshers.forEach(fn=>fn()));
+ function syncNative262(){originals.forEach(card=>{const button=card.querySelector('[data-add]');if(!button)return;let badge=card.querySelector('[data-cart-selected262]');if(!badge){badge=make('small','nu-cart-selected262');badge.dataset.cartSelected262='';badge.setAttribute('aria-live','polite');button.after(badge);}const count=window.NOWUP_CART160?.quantity(card.dataset.id)||0;badge.hidden=count===0;badge.textContent=count?'✓ No carrinho · '+count+' un.':'';card.classList.toggle('nu-cart-in262',count>0);});}
+ syncNative262();window.addEventListener('nowup-cart-changed',()=>{cartRefreshers.forEach(fn=>fn());syncNative262();});
  desktop228.addEventListener('change',()=>showHome());
  body.dataset.store187Ready='1';if(new URLSearchParams(location.search).has('produto')||/^#produto-/.test(location.hash))showProducts();else showHome();
 });

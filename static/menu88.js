@@ -71,6 +71,7 @@
   if(!customerId)try{if(localStorage.getItem(key)===null){const legacy=localStorage.getItem(key+'/menu');if(legacy!==null){localStorage.setItem(key,legacy);localStorage.removeItem(key+'/menu');}}}catch(_){}
   try{(JSON.parse(localStorage.getItem(key)||'[]')||[]).forEach(([id,v])=>{if(v&&v.name)cart.set(String(id),{...v,productId:Number(v.productId||String(id).split(':')[0]),unitPrice:Number(v.unitPrice||v.price||0),options:Array.isArray(v.options)?v.options:[],max:Number(v.max||99)})})}catch(_){localStorage.removeItem(key)}
   window.NOWUP_CART160={
+    quantity(productId){return [...cart.values()].filter(v=>Number(v.productId)===Number(productId)).reduce((sum,v)=>sum+(Number(v.quantity)||0),0);},
     get(id){const v=cart.get(id);return v?JSON.parse(JSON.stringify(v)):null;},
     commit(card,configs,replaceId=null){
       if(cfg.ownerView)throw new Error('Sua loja está em modo de visualização.');
