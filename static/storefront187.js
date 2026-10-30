@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(card.dataset.cold==='1'){const ice=make('span','nu201-ice','❄');ice.title='Vendido gelado';ice.setAttribute('aria-label','Vendido gelado');item.append(ice);}
   item.dataset.source256=card.dataset.id;
   const regular=Number(card.dataset.regular256),price=Number(card.dataset.price);
+  item.classList.toggle('nu256-highlight',card.dataset.combo256==='1'||(price>0&&regular>price));
   if(regular>price){const badge=make('span','nu256-discount','🔥 -'+Math.round((regular-price)*100/regular)+'%');item.prepend(badge);}
   const content=make('div','nu190-card-content');content.append(make('h3','',card.dataset.name||'Produto'),make('strong','',money(Number(card.dataset.price)||0)));
   const toggle=make('button','nu201-open','Adicionar');toggle.type='button';toggle.setAttribute('aria-label','Adicionar '+card.dataset.name);toggle.setAttribute('aria-expanded','false');
