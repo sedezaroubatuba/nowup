@@ -2,7 +2,12 @@
 <fieldset class="full"><legend>Combos e Leve junto</legend>
 <label class="check"><input type="checkbox" name="is_combo256" value="1" {% if current and current.is_combo256 %}checked{% endif %}> 🍻 Mostrar na categoria Combos</label>
 <label class="check"><input type="checkbox" name="recommend256" value="1" {% if current and current.recommend256 %}checked{% endif %}> 🔥 Sugerir a promoção deste produto no carrinho</label>
-<label>Produtos que combinam com este item<select name="related256" multiple size="5">{% for other in products if not current or other.id != current.id %}<option value="{{other.id}}" {% if current and other.id|string in (current.related256 or '').split(',') %}selected{% endif %}>{{other.name}}</option>{% endfor %}</select></label>
+<div class="nu273-picker" data-pair-picker273>
+<label>Buscar produtos para combinar<input class="input" type="search" data-pair-search273 placeholder="Digite o nome do produto" autocomplete="off"></label>
+<p class="muted" data-pair-status273 role="status" aria-live="polite">Marque os produtos que deseja sugerir.</p>
+<div class="nu273-options" role="group" aria-label="Produtos combináveis">
+{% for other in products if not current or other.id != current.id %}<label class="check" data-pair-option273><input type="checkbox" name="related256" value="{{other.id}}" {% if current and other.id|string in (current.related256 or '').split(',') %}checked{% endif %}> <span>{{other.name}}</span></label>{% else %}<p>Nenhum outro produto cadastrado.</p>{% endfor %}
+</div></div>
 <small>Selecione até 20 itens da sua loja. Ao comprar este produto, o cliente verá até 3 sugestões em “Leve junto”. Promoções só são sugeridas enquanto o preço promocional estiver ativo. O cliente escolhe se deseja adicionar.</small>
 </fieldset>
 {% endmacro %}
