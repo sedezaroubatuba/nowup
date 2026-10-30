@@ -1,0 +1,19 @@
+/* Chosen storefront: lavender photo stages, white readable information. */
+html body.public-profile-area [data-native-menu] .nu190-showcase .nu201-card.nu190-card>img,
+html body.public-profile-area [data-native-menu] .nu191-grid .nu201-card.nu190-card>img,
+html body.public-profile-area [data-native-menu] .nu201-card.nu190-card>.nu190-no-image{background:radial-gradient(ellipse at 50% 38%,#fbf8ff 0%,#ede3fc 55%,#d9c6f4 100%)!important;border:1px solid #e4d5f6!important;border-radius:12px!important;object-fit:contain!important;padding:10px!important;box-shadow:inset 0 -8px 18px #6b24ae0a}
+html body.public-profile-area [data-native-menu] .nu201-card.nu190-card{position:relative!important;overflow:hidden}
+html body.public-profile-area [data-native-menu] .nu201-card.nu190-card .nu190-card-content{text-align:left!important}
+html body.public-profile-area [data-native-menu] .nu201-card.nu190-card .nu190-card-content strong{color:#600cb6!important}
+.nu256-discount{position:absolute;top:14px;left:14px;z-index:2;background:#ff6414;color:white;border-radius:9px;padding:5px 8px;font-weight:800;font-size:12px}
+.nu256-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}
+.nu256-shortcuts button{border:0;border-radius:15px;padding:18px 8px;color:#fff;font:inherit;font-weight:800;font-size:clamp(17px,4vw,24px);cursor:pointer;min-height:65px;text-align:center}
+.nu256-offers{background:linear-gradient(110deg,#ff5412,#ffba00)}
+.nu256-combos{background:linear-gradient(110deg,#9c2cff,#5b08b6)}
+.nu256-pairs{background:#f6f0ff;border:1px solid #e1d1f4;border-radius:15px;padding:12px;margin:14px 0}
+.nu256-pairs[hidden]{display:none}
+.nu256-pairs h3{margin:0 0 8px;color:#55118a;font-size:18px}
+.nu256-pair{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid #e7dcf5}
+.nu256-pair img{width:48px;height:58px;object-fit:contain;border-radius:9px;background:#ede2fc}
+.nu256-pair>div{flex:1;min-width:0}.nu256-pair b,.nu256-pair span{display:block;font-size:13px;overflow-wrap:anywhere}.nu256-pair span{color:#600cb6;font-weight:800;margin-top:4px}
+.nu256-pair button{flex:none;background:#6d18b9;color:white;border:0;border-radius:10px;padding:10px 8px;font-weight:700;cursor:pointer}
