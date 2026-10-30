@@ -61,7 +61,7 @@
   const cartField=dialog.querySelector('[data-cart-json]'),dialogTotal=dialog.querySelector('[data-dialog-total]'),fulfillment=dialog.querySelector('[data-fulfillment]'),payment=dialog.querySelector('[data-payment]'),dockTotal=root.querySelector('[data-dock-total]'),cartCount=root.querySelector('[data-cart-count]'),dockCheckout=root.querySelector('[data-dock-checkout]');
   const qty=v=>Math.max(1,Math.min(99,parseInt(v,10)||1));
   function baseSubtotal(){let sum=0;cart.forEach(v=>sum+=v.unitPrice*v.quantity);return sum}
-  function fee(){return fulfillment?.value==='delivery'?Number(cfg.deliveryFee||0):0}
+  function fee(){if(fulfillment?.value!=='delivery')return 0;const zone=dialog.querySelector('[data-delivery-zone265]');return zone?Number(zone.selectedOptions[0]?.dataset.fee||0):Number(cfg.deliveryFee||0)}
   function save(){try{localStorage.setItem(key,JSON.stringify([...cart]));localStorage.setItem(infoKey,JSON.stringify({name:cfg.storeName||'',updated:Date.now()}));window.dispatchEvent(new Event('nowup-cart-changed'));}catch(_){}}
   function sync(){if(cartField)cartField.value=JSON.stringify([...cart].map(([,v])=>({id:v.productId,quantity:v.quantity,notes:v.notes||'',options:v.options.map(o=>({id:Number(o.id),quantity:o.quantity||1})),utensils:!!v.utensils,customization:v.customization||{removed:[],groups:{}}})));save()}
   const notesAllowed=v=>{const card=[...root.querySelectorAll('[data-product]')].find(p=>Number(p.dataset.id)===v.productId);try{return JSON.parse(card?.dataset.custom192||'null')?.notes!==false;}catch(_){return true;}};
@@ -111,7 +111,8 @@
   search?.addEventListener('input',filter);
   root.querySelector('[data-cart-summary]')?.addEventListener('click',()=>{const summary=root.querySelector('.menu-cart');summary?.scrollIntoView({behavior:'smooth',block:'center'});summary?.focus({preventScroll:true});});
   checkout.addEventListener('click',()=>dialog.showModal());dockCheckout?.addEventListener('click',()=>{if(!checkout.disabled)dialog.showModal()});dialog.querySelector('[data-dialog-close]')?.addEventListener('click',()=>dialog.close());
-  function checkoutFields(){const delivery=fulfillment?.value==='delivery',address=dialog.querySelector('[data-address]');if(address){address.hidden=!delivery;address.querySelectorAll('input').forEach(i=>i.required=delivery)}const change=dialog.querySelector('[data-change]');if(change)change.hidden=payment?.value!=='cash';render()}
+  function checkoutFields(){const delivery=fulfillment?.value==='delivery',address=dialog.querySelector('[data-address]');if(address){address.hidden=!delivery;address.querySelectorAll('input:not([type=checkbox]),select').forEach(i=>i.required=delivery)}const change=dialog.querySelector('[data-change]');if(change)change.hidden=payment?.value!=='cash';render()}
+  dialog.querySelector('[data-delivery-zone265]')?.addEventListener('change',render);
   fulfillment?.addEventListener('change',checkoutFields);payment?.addEventListener('change',checkoutFields);// Cart is cleared only after the server confirms a successfully created order.
   const slides=[...root.querySelectorAll('.nu-daily-slide')],dots=[...root.querySelectorAll('[data-promo-index]')];let promoIndex=0;const showPromo=i=>{promoIndex=i;slides.forEach((s,n)=>s.classList.toggle('active',n===i));dots.forEach((d,n)=>d.classList.toggle('active',n===i))};dots.forEach((d,i)=>d.addEventListener('click',()=>showPromo(i)));if(slides.length>1)setInterval(()=>showPromo((promoIndex+1)%slides.length),4000);
   root.querySelector('[data-show-all]')?.addEventListener('click',()=>{root.querySelectorAll('[data-category-filter]').forEach((x,i)=>x.classList.toggle('active',i===0));root.querySelectorAll('[data-product]').forEach(p=>p.hidden=false)});
