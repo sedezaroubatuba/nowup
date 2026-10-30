@@ -1,3 +1,4 @@
+{% import 'pairs256.html' as pairs256 %}
 {% extends 'base.html' %}{% block title %}Painel do lojista | NowUp{% endblock %}{% block body_class %}professional-area{% endblock %}{% block content %}<link rel="stylesheet" href="/static/order-items166.css?v=166"><link rel="stylesheet" href="/static/pro-compact.css?v=67">{% set status_labels = status_labels|default({'new':'Pedido recebido','confirmed':'Pedido aceito','preparing':'Em preparo','ready':'Pronto','out_for_delivery':'Saiu para entrega','completed':'Concluído','cancelled':'Cancelado','rejected':'Recusado'}, true) %}<link rel="stylesheet" href="/static/pro-panel-navigation.css?v=60">
 <style>
 body.professional-area .pro-dashboard .order-alert-control{display:flex!important}
@@ -189,6 +190,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </label>
 <label>Preço<input class="input" name="price" inputmode="decimal" placeholder="Ex.: 29,90" required>
 </label>
+{{pairs256.fields(products)}}
 <label>Preço promocional<input class="input" name="promo_price" inputmode="decimal" placeholder="Opcional"></label>
 <label>Máximo por pedido<input class="input" type="number" name="max_quantity" min="1" max="99" value="99"></label>
 <label>Foto<input class="input" type="file" name="photo" accept="image/*">
@@ -221,6 +223,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </label>
 <label>Preço<input class="input" name="price" value="{{'%.2f'|format(product.price_cents/100)|replace('.',',')}}" required>
 </label>
+{{pairs256.fields(products,product)}}
 <label>Preço promocional<input class="input" name="promo_price" value="{% if product.promo_price_cents %}{{'%.2f'|format(product.promo_price_cents/100)|replace('.',',')}}{% endif %}" placeholder="Opcional"></label>
 <label>Máximo por pedido<input class="input" type="number" name="max_quantity" min="1" max="99" value="{{product.max_quantity}}"></label>
 <label>Trocar foto<input class="input" type="file" name="photo" accept="image/*">

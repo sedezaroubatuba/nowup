@@ -54,6 +54,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(image){const photo=make('img');photo.src=image.currentSrc||image.getAttribute('src');photo.alt='';photo.loading='lazy';photo.addEventListener('error',()=>{photo.src='/static/product-placeholder.svg';},{once:true});item.append(photo);}
   else item.append(make('div','nu190-no-image','🍽'));
   if(card.dataset.cold==='1'){const ice=make('span','nu201-ice','❄');ice.title='Vendido gelado';ice.setAttribute('aria-label','Vendido gelado');item.append(ice);}
+  item.dataset.source256=card.dataset.id;
+  const regular=Number(card.dataset.regular256),price=Number(card.dataset.price);
+  if(regular>price){const badge=make('span','nu256-discount','🔥 -'+Math.round((regular-price)*100/regular)+'%');item.prepend(badge);}
   const content=make('div','nu190-card-content');content.append(make('h3','',card.dataset.name||'Produto'),make('strong','',money(Number(card.dataset.price)||0)));
   const toggle=make('button','nu201-open','Adicionar');toggle.type='button';toggle.setAttribute('aria-label','Adicionar '+card.dataset.name);toggle.setAttribute('aria-expanded','false');
   const panel=make('div','nu201-panel');panel.hidden=true;
@@ -72,7 +75,17 @@ document.addEventListener('DOMContentLoaded',()=>{
  const buttons=nav?Array.from(nav.querySelectorAll('[data-category-filter]')):[],groups=new Map();
  buttons.filter(b=>b.dataset.categoryFilter!=='all').forEach(b=>groups.set(b.dataset.categoryFilter,{name:b.textContent.trim(),cards:[]}));
  originals.forEach(card=>{const key=card.dataset.category||'outros';if(!groups.has(key))groups.set(key,{name:card.querySelector('.menu-product-info small')?.textContent?.trim()||'Outros produtos',cards:[]});groups.get(key).cards.push(card);});
- groups.forEach((group,key)=>{
+ const offers256=originals.filter(c=>Number(c.dataset.price)<Number(c.dataset.regular256)&&c.dataset.available256==='1');
+ const combos256=originals.filter(c=>c.dataset.combo256==='1'&&c.dataset.available256==='1');
+ const special256=new Map();
+ if(offers256.length)special256.set('__offers256',{name:'🔥 Ofertas para aproveitar',cards:offers256});
+ if(combos256.length)special256.set('__combos256',{name:'🍻 Combos para o seu rolê',cards:combos256});
+ const ordered256=new Map([...special256,...groups]);
+ special256.forEach((value,key)=>groups.set(key,value));
+ const shortcuts256=make('nav','nu256-shortcuts');shortcuts256.setAttribute('aria-label','Promoções e combos');
+ special256.forEach((group,key)=>{const b=make('button',key==='__offers256'?'nu256-offers':'nu256-combos',key==='__offers256'?'🔥 Promoções':'🍻 Combos');b.type='button';b.addEventListener('click',()=>showCategory(key));shortcuts256.append(b);});
+ if(special256.size)showcase.append(shortcuts256);
+ ordered256.forEach((group,key)=>{
   if(!group.cards.length)return;
   const section=make('section','nu190-category');section.dataset.category190=key;sections.set(key,section);
   const header=make('header'),all=make('button','','Ver todos ›');all.type='button';all.addEventListener('click',()=>showCategory(key));const title=make('h2'),icon=make('span','nu229-category-icon');icon.setAttribute('aria-hidden','true');icon.replaceChildren(window.NowUpCategory230.create(group.name));title.append(icon,document.createTextNode(group.name));header.append(title,all);section.append(header);
@@ -118,7 +131,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  search.addEventListener('keydown',event=>{if(body.classList.contains('nu187-store-home')&&(event.key==='Enter'||event.key.length===1))showProducts();});
  search.addEventListener('input',()=>{if(body.classList.contains('nu187-store-home')&&search.value)showProducts();});
  back.addEventListener('click',()=>{if(desktop228.matches||body.classList.contains('nu187-store-home'))location.href='/';else showHome();});
- intro.querySelector('[data-store-promotion187]')?.addEventListener('click',()=>showProducts());
+ intro.querySelector('[data-store-promotion187]')?.addEventListener('click',()=>showCategory('__offers256'));
  window.addEventListener('nowup-cart-changed',()=>cartRefreshers.forEach(fn=>fn()));
  desktop228.addEventListener('change',()=>showHome());
  body.dataset.store187Ready='1';if(new URLSearchParams(location.search).has('produto')||/^#produto-/.test(location.hash))showProducts();else showHome();
