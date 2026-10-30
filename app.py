@@ -1022,7 +1022,7 @@ def pro_assign_group89(request: Request, option_id: int, group_id: int=Form(0)):
     return RedirectResponse("/painel?ok=grupo#adicionais",303)
 
 @app.post("/painel/cardapio/entregas89")
-def pro_zone_save89(request: Request, name: str=Form(...), fee: str=Form("0"), eta_minutes: int=Form(40), active: Optional[str]=Form(None), zone_id: int=Form(0)):
+def pro_zone_save89(request: Request, name: str=Form(...), fee: str=Form("0"), eta_minutes: int=Form(40), active: Optional[str]=Form(None), zone_id: int=Form(0), manual: Optional[str]=Form(None)):
     u=require_user(request,"professional"); conn=db()
     try:
         p=require_premium_catalog(conn,u["id"])
@@ -1031,9 +1031,13 @@ def pro_zone_save89(request: Request, name: str=Form(...), fee: str=Form("0"), e
         if zone_id and not existing: raise HTTPException(404,'Bairro não encontrado')
         if not clean:
             if existing and name==existing['name']:clean=name
-            else:raise HTTPException(400,'Selecione um bairro da lista padronizada da cidade. Bairro ausente deve ser conferido pelo suporte.')
+            elif manual == '1':
+                clean=' '.join(name.split())
+                if not 2<=len(clean)<=120 or any(ord(ch)<32 for ch in clean):
+                    raise HTTPException(400,'Informe um nome de bairro entre 2 e 120 caracteres.')
+            else:raise HTTPException(400,'Selecione um bairro da lista ou use Adicionar bairro manualmente.')
         for other in conn.execute('SELECT id,name FROM professional_delivery_zones WHERE professional_id=?',(p['id'],)):
-            if other['id']!=zone_id and (nowup_neighborhoods267.canonical(p['city'],other['name']) or other['name'])==clean:
+            if other['id']!=zone_id and zone_key89(nowup_neighborhoods267.canonical(p['city'],other['name']) or other['name'])==zone_key89(clean):
                 raise HTTPException(400,'Este bairro já está cadastrado. Edite a taxa existente.')
         key=zone_key89(clean)
         if not key or not 5<=eta_minutes<=240: raise HTTPException(400,"Informe bairro e prazo entre 5 e 240 minutos")
@@ -1045,7 +1049,7 @@ def pro_zone_save89(request: Request, name: str=Form(...), fee: str=Form("0"), e
             conn.commit()
         except sqlite3.IntegrityError: raise HTTPException(400,"Este bairro já está cadastrado")
     finally: conn.close()
-    return RedirectResponse("/painel?ok=entrega#cardapio",303)
+    return RedirectResponse("/painel?ok=entrega#bairros-entrega265",303)
 
 @app.post("/painel/cardapio/entregas89/{zone_id}/excluir")
 def pro_zone_delete89(request: Request, zone_id: int):
@@ -1055,7 +1059,7 @@ def pro_zone_delete89(request: Request, zone_id: int):
         if not conn.execute("DELETE FROM professional_delivery_zones WHERE id=? AND professional_id=?",(zone_id,p["id"])).rowcount: raise HTTPException(404)
         conn.commit()
     finally: conn.close()
-    return RedirectResponse("/painel?ok=entrega#cardapio",303)
+    return RedirectResponse("/painel?ok=entrega#bairros-entrega265",303)
 
 def attach_cart_assets144(response):
     """Carrega o carrinho mesmo com uma base HTML anterior instalada."""
