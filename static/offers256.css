@@ -21,3 +21,11 @@ html body.public-profile-area [data-native-menu] .nu201-card.nu190-card.nu256-hi
 .nu273-picker{min-width:0;width:100%}.nu273-picker>label{display:grid;gap:6px}.nu273-picker input[type=search]{width:100%;min-height:44px;box-sizing:border-box}
 .nu273-options{max-height:180px;overflow-y:auto;overscroll-behavior:contain;border:1px solid #e6e1ed;border-radius:10px;padding:8px;background:white}
 .nu273-options label{display:flex;align-items:center;gap:8px;min-height:40px;padding:4px 6px;margin:0;box-sizing:border-box}.nu273-options label[hidden]{display:none!important}.nu273-options input[type=checkbox]{flex:none;width:19px;height:19px}
+/* Keep the original category strip: one row, swipe horizontally, white labels. */
+html body.public-profile-area.nu233-store [data-native-menu] .menu-category-nav.nu274-categories{display:flex!important;flex-flow:row nowrap!important;overflow-x:auto!important;justify-content:flex-start!important;gap:8px!important;max-width:100%;scrollbar-width:none}
+html body.public-profile-area [data-native-menu] .menu-category-nav.nu274-categories::-webkit-scrollbar{display:none}
+html body.public-profile-area.nu233-store [data-native-menu] .menu-category-nav.nu274-categories>button{flex:0 0 auto!important;color:white!important;background:linear-gradient(110deg,var(--nu274-start,#6410c9),var(--nu274-end,#8c16ef))!important;border:2px solid transparent!important;border-radius:16px!important;white-space:nowrap!important;min-height:42px!important;box-shadow:none!important}
+html body.public-profile-area.nu233-store [data-native-menu] .menu-category-nav.nu274-categories>button.active{border-color:white!important;box-shadow:0 0 0 2px #5b2498!important}
+html body.public-profile-area.nu233-store [data-native-menu] .menu-category-nav.nu274-categories>button:focus-visible{outline:3px solid #211038;outline-offset:2px}
+html body.public-profile-area.nu233-store [data-native-menu] .menu-category-nav.nu274-categories>button .nu230-icon,
+html body.public-profile-area.nu233-store [data-native-menu] .menu-category-nav.nu274-categories>button .nu230-label{color:white!important}
