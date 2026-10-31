@@ -1,0 +1,15 @@
+{% macro fields(current=none) %}
+<fieldset class="full nu285-promotion" data-promotion285>
+<legend>Promoção</legend>
+<label class="check"><input type="checkbox" name="promo_enabled" value="1" data-promo-enabled285 {% if current and current.promo_price_cents > 0 %}checked{% endif %}> Colocar em promoção</label>
+<div data-promo-settings285>
+<p>Como definir o desconto?</p>
+<div class="nu285-modes"><label><input type="radio" name="promo_mode" value="final" checked> Informar preço final</label><label><input type="radio" name="promo_mode" value="percent"> Desconto em %</label></div>
+<label data-promo-final285>Preço promocional (R$)<input class="input" name="promo_price" inputmode="decimal" value="{% if current and current.promo_price_cents %}{{'%.2f'|format(current.promo_price_cents/100)|replace('.',',')}}{% endif %}" placeholder="Ex.: 8,50"></label>
+<label data-promo-percent285 hidden>Desconto (%)<input class="input" name="promo_percent" type="number" min="0.01" max="99.99" step="0.01" inputmode="decimal" placeholder="Ex.: 15"></label>
+<div class="nu285-preview" aria-live="polite"><small>Preço promocional</small><strong data-promo-result285>—</strong><del data-promo-original285></del><span data-promo-saving285></span></div>
+<small>O preço com desconto será usado automaticamente no carrinho.</small>
+<p data-promo-error285 role="status"></p>
+</div>
+</fieldset>
+{% endmacro %}

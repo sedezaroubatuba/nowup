@@ -1,3 +1,4 @@
+{% import "promotions285.html" as promotions285 %}
 {% import 'pairs256.html' as pairs256 %}
 {% extends 'base.html' %}{% block title %}Painel do lojista | NowUp{% endblock %}{% block body_class %}professional-area{% endblock %}{% block content %}<link rel="stylesheet" href="/static/order-items166.css?v=166"><link rel="stylesheet" href="/static/pro-compact.css?v=67">{% set status_labels = status_labels|default({'new':'Pedido recebido','confirmed':'Pedido aceito','preparing':'Em preparo','ready':'Pronto','out_for_delivery':'Saiu para entrega','completed':'Concluído','cancelled':'Cancelado','rejected':'Recusado'}, true) %}<link rel="stylesheet" href="/static/pro-panel-navigation.css?v=60">
 <style>
@@ -198,10 +199,10 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </label>
 <label>Categoria<select name="category" required><option value="__combos256">🍻 Combos — categoria do aplicativo</option><option value="Geral" selected>Geral</option>{% for category in product_categories if category.active and category.name|lower != 'combos' %}<option value="{{category.name}}">{{category.name}}</option>{% endfor %}</select>
 </label>
-<label>Preço<input class="input" name="price" inputmode="decimal" placeholder="Ex.: 29,90" required>
+<label>Preço normal (R$)<input class="input" name="price" inputmode="decimal" placeholder="Ex.: 29,90" required>
 </label>
 {{pairs256.fields(products)}}
-<label>Preço promocional<input class="input" name="promo_price" inputmode="decimal" placeholder="Opcional"></label>
+{{promotions285.fields()}}
 <label>Máximo por pedido<input class="input" type="number" name="max_quantity" min="1" max="99" value="99"></label>
 <label>Foto<input class="input" type="file" name="photo" accept="image/*">
 </label>
@@ -231,10 +232,10 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </label>
 <label>Categoria<select name="category" required><option value="__combos256" {% if product.is_combo256 or product.category|lower == 'combos' %}selected{% endif %}>🍻 Combos — categoria do aplicativo</option>{% if not product.is_combo256 and product.category|lower != 'combos' %}<option value="{{product.category}}" selected>{{product.category}}</option>{% endif %}{% for category in product_categories if category.active and category.name|lower != 'combos' and category.name != product.category %}<option value="{{category.name}}" {% if category.name==product.category and not product.is_combo256 %}selected{% endif %}>{{category.name}}</option>{% endfor %}</select>
 </label>
-<label>Preço<input class="input" name="price" value="{{'%.2f'|format(product.price_cents/100)|replace('.',',')}}" required>
+<label>Preço normal (R$)<input class="input" name="price" value="{{'%.2f'|format(product.price_cents/100)|replace('.',',')}}" required>
 </label>
 {{pairs256.fields(products,product)}}
-<label>Preço promocional<input class="input" name="promo_price" value="{% if product.promo_price_cents %}{{'%.2f'|format(product.promo_price_cents/100)|replace('.',',')}}{% endif %}" placeholder="Opcional"></label>
+{{promotions285.fields(product)}}
 <label>Máximo por pedido<input class="input" type="number" name="max_quantity" min="1" max="99" value="{{product.max_quantity}}"></label>
 <label>Trocar foto<input class="input" type="file" name="photo" accept="image/*" data-preview250="{% if product.image_filename %}/uploads/{{product.image_filename}}{% endif %}">
 </label>
@@ -259,8 +260,8 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 {% endif %}
 </section>
 <section class="panel" id="adicionais"><h2>Adicionais da loja</h2><p>Cadastre uma vez e selecione no cadastro de cada produto. Permitir todos também inclui os novos adicionais que você cadastrar depois.</p>{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}
-<form action="/painel/adicionais-loja" method="post" class="product-form"><label>Nome<input class="input" name="name" maxlength="100" placeholder="Bacon, cheddar, salada…" required></label><label>Preço<input class="input" name="price" value="0,00" inputmode="decimal" required></label><label class="check"><input type="checkbox" name="available" value="1" checked> Disponível</label><button class="btn primary">Cadastrar adicional</button></form>
-{% for extra in shared_extras %}<details><summary>{{extra.name}} · R$ {{'%.2f'|format(extra.price_cents/100)|replace('.',',')}} · {{'Disponível' if extra.available else 'Indisponível'}}</summary><form action="/painel/adicionais-loja" method="post" class="product-form"><input type="hidden" name="extra_id" value="{{extra.id}}"><label>Nome<input class="input" name="name" value="{{extra.name}}" maxlength="100" required></label><label>Preço<input class="input" name="price" value="{{'%.2f'|format(extra.price_cents/100)|replace('.',',')}}" inputmode="decimal" required></label><label class="check"><input type="checkbox" name="available" value="1" {% if extra.available %}checked{% endif %}> Disponível</label><button class="btn primary">Salvar em todos os produtos vinculados</button></form></details>{% else %}<p>Nenhum adicional compartilhado cadastrado.</p>{% endfor %}
+<form action="/painel/adicionais-loja" method="post" class="product-form"><label>Nome<input class="input" name="name" maxlength="100" placeholder="Bacon, cheddar, salada…" required></label><label>Preço normal (R$)<input class="input" name="price" value="0,00" inputmode="decimal" required></label><label class="check"><input type="checkbox" name="available" value="1" checked> Disponível</label><button class="btn primary">Cadastrar adicional</button></form>
+{% for extra in shared_extras %}<details><summary>{{extra.name}} · R$ {{'%.2f'|format(extra.price_cents/100)|replace('.',',')}} · {{'Disponível' if extra.available else 'Indisponível'}}</summary><form action="/painel/adicionais-loja" method="post" class="product-form"><input type="hidden" name="extra_id" value="{{extra.id}}"><label>Nome<input class="input" name="name" value="{{extra.name}}" maxlength="100" required></label><label>Preço normal (R$)<input class="input" name="price" value="{{'%.2f'|format(extra.price_cents/100)|replace('.',',')}}" inputmode="decimal" required></label><label class="check"><input type="checkbox" name="available" value="1" {% if extra.available %}checked{% endif %}> Disponível</label><button class="btn primary">Salvar em todos os produtos vinculados</button></form></details>{% else %}<p>Nenhum adicional compartilhado cadastrado.</p>{% endfor %}
 <details><summary>Adicionais antigos por produto</summary><p>Os complementos antigos continuam preservados. Para reutilizar, cadastre-os na lista da loja e selecione no produto.</p>{% for product in products %}{% if product_options.get(product.id) and product.extras_mode=='legacy' %}<h3>{{product.name}}</h3>{% for option in product_options.get(product.id,[]) %}<p>{{option.name}} · R$ {{'%.2f'|format(option.price_cents/100)|replace('.',',')}}</p>{% endfor %}{% endif %}{% endfor %}</details>
 {% else %}<p>Disponível para planos com cardápio ou catálogo.</p>{% endif %}</section>
 <section class="panel analytics-panel" id="relatorios"><p><a class="btn soft" href="/painel/vendas-manuais/relatorios">Relatório consolidado: NowUp, presenciais e delivery manual</a></p><small>As estatísticas originais abaixo consideram pedidos online. Para incluir vendas manuais, abra o relatório consolidado.</small>
@@ -598,9 +599,10 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <script src="/static/panel-back-top.js?v=70" defer></script>
 
 <link rel="manifest" href="/static/nowup-lojista.webmanifest"><script src="/static/pro-push75.js?v=112" defer></script>
-<link rel="stylesheet" href="/static/order-review127.css?v=127"><script src="/static/order-review127.js?v=127" defer></script><link rel="stylesheet" href="/static/custom196.css?v=196"><script type="application/json" id="included-catalog195">{{included_catalog195|tojson}}</script><script defer src="/static/custom196.js?v=200"></script><link rel="stylesheet" href="/static/pro198.css?v=198"><script defer src="/static/pro198.js?v=228"></script>
+<link rel="stylesheet" href="/static/order-review127.css?v=127"><script src="/static/order-review127.js?v=127" defer></script><link rel="stylesheet" href="/static/custom196.css?v=196"><script type="application/json" id="included-catalog195">{{included_catalog195|tojson}}</script><script defer src="/static/custom196.js?v=284"></script><link rel="stylesheet" href="/static/pro198.css?v=198"><script defer src="/static/pro198.js?v=228"></script>
 <nav class="nu198-bottom" aria-label="Navegação do lojista"><a href="#inicio" data-nav198><span aria-hidden="true">⌂</span>Início</a><a href="#produtos-loja" data-nav198><span aria-hidden="true">▦</span>Produtos</a><a href="#pedidos-ativos" data-nav198><span aria-hidden="true">▤</span>Pedidos</a><a href="#configuracoes" data-nav198><span aria-hidden="true">☷</span>Mais</a></nav>
-<link rel="stylesheet" href="/static/compact200.css?v=200"><script defer src="/static/compact200.js?v=200"></script><script defer src="/static/notification-status200.js?v=200"></script><link rel="stylesheet" href="/static/pro221.css?v=221"><script defer src="/static/pro221.js?v=221"></script><link rel="stylesheet" href="/static/merchant228.css?v=228"><script defer src="/static/merchant228.js?v=228"></script><link rel="stylesheet" href="/static/merchant-feedback270.css?v=270"><script defer src="/static/merchant-feedback270.js?v=270"></script>
+<link rel="stylesheet" href="/static/compact200.css?v=200"><script defer src="/static/compact200.js?v=285"></script><script defer src="/static/notification-status200.js?v=200"></script><link rel="stylesheet" href="/static/pro221.css?v=221"><script defer src="/static/pro221.js?v=221"></script><link rel="stylesheet" href="/static/merchant228.css?v=228"><script defer src="/static/merchant228.js?v=228"></script><link rel="stylesheet" href="/static/merchant-feedback270.css?v=270"><script defer src="/static/merchant-feedback270.js?v=270"></script>
+<link rel="stylesheet" href="/static/promotions285.css?v=285"><script defer src="/static/promotions285.js?v=285"></script>
 {% endblock %}
 
 

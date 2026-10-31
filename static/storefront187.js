@@ -65,7 +65,8 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   item.classList.toggle('nu256-highlight',card.dataset.combo256==='1'||(price>0&&regular>price));
   if(regular>price){const badge=make('span','nu256-discount','🔥 -'+Math.round((regular-price)*100/regular)+'%');item.prepend(badge);}
   const content=make('div','nu190-card-content');content.append(make('h3','',card.dataset.name||'Produto'),make('strong','',money(Number(card.dataset.price)||0)));
-  if(item.classList.contains('nu275-combo-card')){const desc=card.querySelector('.menu-product-info>p')?.textContent?.trim();if(desc)content.insertBefore(make('p','nu275-combo-description',desc),content.querySelector('strong'));}
+  if(item.classList.contains('nu275-combo-card'))item.prepend(make('span','nu284-combo-badge','COMBO'));
+  if(regular>price)content.insertBefore(make('del','nu284-old-price',money(regular)),content.querySelector('strong'));
   const toggle=make('button','nu201-open','Adicionar');toggle.type='button';toggle.setAttribute('aria-label','Adicionar '+card.dataset.name);toggle.setAttribute('aria-expanded','false');
   const panel=make('div','nu201-panel');panel.hidden=true;
   const controls=make('div','nu190-amount'),minus=make('button','','−'),plus=make('button','','+'),amount=make('input');minus.type=plus.type='button';
@@ -74,12 +75,12 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   function normalize(){const n=Math.max(1,Math.min(Number(amount.max),Math.trunc(Number(amount.value)||1)));amount.value=String(n);minus.disabled=n<=1;plus.disabled=n>=Number(amount.max);return n;}
   function close(){panel.hidden=true;toggle.hidden=(window.NOWUP_CART160?.quantity(card.dataset.id)||0)>0;toggle.setAttribute('aria-expanded','false');item.classList.remove('nu201-selected');}
   const chosen=make('small','nu-cart-selected262');chosen.hidden=true;chosen.setAttribute('aria-live','polite');content.append(chosen);const step=make('div','nu-step263'),less=make('button','','−'),number=make('span'),more=make('button','','+');less.type=more.type='button';less.setAttribute('aria-label','Remover uma unidade de '+card.dataset.name);more.setAttribute('aria-label','Adicionar uma unidade de '+card.dataset.name);number.setAttribute('aria-live','polite');step.append(less,number,more);step.hidden=true;less.onclick=()=>window.NOWUP_CART160?.adjust(card.dataset.id,-1);more.onclick=()=>window.NOWUP_CART160?.adjust(card.dataset.id,1);
-  function sync(){const count=window.NOWUP_CART160?.quantity(card.dataset.id)||0;chosen.hidden=true;step.hidden=count===0;toggle.hidden=count>0||!panel.hidden;number.textContent=String(count);if(count>0){panel.hidden=true;item.classList.remove('nu201-selected');}more.disabled=!!card.querySelector('[data-add]')?.disabled||count>=Number(card.dataset.max||99);item.classList.toggle('nu-cart-in262',count>0);const blocked=!!card.querySelector('[data-add]')?.disabled;toggle.disabled=blocked;add.disabled=blocked;toggle.textContent=blocked?'Indisponível':'Adicionar';normalize();}
-  function open(){if(toggle.disabled)return;panel.hidden=false;toggle.hidden=true;toggle.setAttribute('aria-expanded','true');item.classList.add('nu201-selected');normalize();}
-  toggle.addEventListener('click',open);item.addEventListener('click',e=>{if(!e.target.closest('button,input,a,label')&&panel.hidden&&!(window.NOWUP_CART160?.quantity(card.dataset.id)||0))open();});
+  function sync(){const count=window.NOWUP_CART160?.quantity(card.dataset.id)||0;chosen.hidden=true;step.hidden=count===0;toggle.hidden=count>0||!panel.hidden;number.textContent=String(count);if(count>0){panel.hidden=true;item.classList.remove('nu201-selected');}more.disabled=!!card.querySelector('[data-add]')?.disabled||count>=Number(card.dataset.max||99);item.classList.toggle('nu-cart-in262',count>0);const blocked=!!card.querySelector('[data-add]')?.disabled;toggle.disabled=blocked;add.disabled=blocked;toggle.textContent=blocked?'Indisponível':item.classList.contains('nu275-combo-card')?'›':'Adicionar';if(item.classList.contains('nu275-combo-card')){toggle.hidden=false;step.hidden=true;}normalize();}
+  function open(){if(toggle.disabled)return;if(item.classList.contains('nu275-combo-card')){card.querySelector('.nu151-choose')?.click();return;}panel.hidden=false;toggle.hidden=true;toggle.setAttribute('aria-expanded','true');item.classList.add('nu201-selected');normalize();}
+  toggle.addEventListener('click',open);item.addEventListener('click',e=>{if(!e.target.closest('button,input,a,label')&&panel.hidden&&(item.classList.contains('nu275-combo-card')||!(window.NOWUP_CART160?.quantity(card.dataset.id)||0)))open();});
   minus.addEventListener('click',()=>{amount.value=String(normalize()-1);normalize();});plus.addEventListener('click',()=>{amount.value=String(normalize()+1);normalize();});amount.addEventListener('change',normalize);
   add.addEventListener('click',()=>{const original=card.querySelector('[data-add]');if(!original||original.disabled)return;const choose=card.querySelector('.nu151-choose');if(choose){choose.click();return;}const quantity=card.querySelector('[data-product-quantity]');if(quantity)quantity.value=String(normalize());original.click();close();});back.addEventListener('click',()=>{close();toggle.focus();});
-  panel.append(controls,add,back);const actions=make('div','nu-cart-actions262');actions.append(toggle,step);content.append(actions,panel);item.append(content);cartRefreshers.push(sync);sync();return item;
+  panel.append(controls,add,back);const actions=make('div','nu-cart-actions262');actions.append(toggle,step);if(item.classList.contains('nu275-combo-card')){toggle.classList.add('nu284-combo-open');toggle.setAttribute('aria-label','Personalizar '+card.dataset.name);step.hidden=true;}content.append(actions,panel);item.append(content);cartRefreshers.push(sync);sync();return item;
  }
  const buttons=nav?Array.from(nav.querySelectorAll('[data-category-filter]')):[],groups=new Map();
  buttons.filter(b=>b.dataset.categoryFilter!=='all').forEach(b=>groups.set(b.dataset.categoryFilter,{name:b.textContent.trim(),cards:[]}));
@@ -89,14 +90,14 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  const combos256=catalog275.combos;
  groups.forEach((group,key)=>{if(!group.cards.length){groups.delete(key);const b=buttons.find(b=>b.dataset.categoryFilter===key);b?.remove();}});
  const special256=new Map();
- if(offers256.length)special256.set('__offers256',{name:'🔥 Ofertas para aproveitar',cards:offers256});
- if(combos256.length)special256.set('__combos256',{name:'🍻 Combos para o seu rolê',cards:combos256});
+ if(combos256.length)special256.set('__combos256',{name:'Combos',cards:combos256});
+ if(offers256.length)special256.set('__offers256',{name:'Promoções',cards:offers256});
  const ordered256=new Map([...special256,...groups]);
  special256.forEach((value,key)=>groups.set(key,value));
  const categoryBar274=nav||make('nav','menu-category-nav');
  if(!nav)sticky.append(categoryBar274);
  const firstCategory274=categoryBar274.querySelector('[data-category-filter]:not([data-category-filter="all"])');
- special256.forEach((group,key)=>{const b=make('button','',key==='__offers256'?'🔥 Promoções':'🍻 Combos');b.type='button';b.dataset.categoryFilter=key;b.addEventListener('click',()=>showCategory(key));categoryBar274.insertBefore(b,firstCategory274);buttons.push(b);});
+ special256.forEach((group,key)=>{const b=make('button','',key==='__offers256'?'Promoções':'Combos');b.type='button';b.dataset.categoryFilter=key;b.replaceChildren(window.NowUpCategory230.create(group.name),make('span','nu230-label',group.name));b.addEventListener('click',()=>showCategory(key));categoryBar274.insertBefore(b,firstCategory274);buttons.push(b);});
  categoryBar274.classList.add('nu274-categories');
  const normalize274=text=>text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
  const palettes274=[['#6410c9','#8c16ef'],['#197638','#258b45'],['#b7111c','#df2430']];
@@ -111,7 +112,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  ordered256.forEach((group,key)=>{
   if(!group.cards.length)return;
   const section=make('section','nu190-category');section.dataset.category190=key;section.classList.toggle('nu275-combo-section',key==='__combos256');sections.set(key,section);
-  const header=make('header'),all=make('button','','Ver todos ›');all.type='button';all.addEventListener('click',()=>showCategory(key));const title=make('h2'),icon=make('span','nu229-category-icon');icon.setAttribute('aria-hidden','true');icon.replaceChildren(window.NowUpCategory230.create(group.name));title.append(icon,document.createTextNode(group.name));header.append(title,all);section.append(header);
+  const header=make('header'),all=make('button','','Ver todos ›');all.type='button';all.addEventListener('click',()=>showCategory(key));const title=make('h2'),icon=make('span','nu284-category-icon');icon.setAttribute('aria-hidden','true');icon.replaceChildren(window.NowUpCategory230.create(group.name));title.append(icon,document.createTextNode(group.name));header.append(title,all);section.append(header);
   const track=make('div','nu190-track');track.tabIndex=0;track.setAttribute('aria-label','Produtos de '+group.name+'; deslize para os lados');
   const pages=[],pageSources238=[];
   const pageSize275=key==='__combos256'?1:pageSize235;

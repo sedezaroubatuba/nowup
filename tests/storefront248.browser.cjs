@@ -23,17 +23,17 @@ async function setup(width){
  await page.waitForFunction(()=>document.body.classList.contains('nu233-store'));
  return {browser,page};
 }
-test('desktop banner is wide, scrolls away with search, and disappears in product search',async()=>{
+test('desktop banner scrolls below sticky search and disappears in product search',async()=>{
  const {browser,page}=await setup(1440);try{
   const banner=page.locator('.nu207-banners');await banner.waitFor({state:'visible'});
   assert.ok((await banner.boundingBox()).width>750);
-  assert.equal(await page.locator('.nu-menu-sticky').evaluate(e=>getComputedStyle(e).position),'relative');
-  await page.evaluate(()=>window.scrollTo(0,850));await page.waitForFunction(()=>document.querySelector('.nu-menu-sticky').getBoundingClientRect().bottom<0);
+  assert.equal(await page.locator('.nu-menu-sticky').evaluate(e=>getComputedStyle(e).position),'sticky');
+  await page.evaluate(()=>window.scrollTo(0,850));await page.waitForFunction(()=>document.querySelector('.nu207-banners').getBoundingClientRect().bottom<0);
 
   await page.evaluate(()=>{document.body.classList.remove('nu187-store-home');document.body.classList.add('nu228-desktop-catalog');});
   await page.waitForFunction(()=>getComputedStyle(document.querySelector('.nu187-intro')).display==='none');
   await page.addStyleTag({content:'@media(min-width:901px){html body.public-profile-area.nu228-desktop-catalog [data-native-menu] .nu-menu-sticky{position:sticky!important;top:0!important}html body.public-profile-area.nu228-desktop-catalog [data-native-menu] .nu207-banners{display:block!important}}'});
-  assert.equal(await page.locator('.nu-menu-sticky').evaluate(e=>getComputedStyle(e).position),'relative');
+  assert.equal(await page.locator('.nu-menu-sticky').evaluate(e=>getComputedStyle(e).position),'sticky');
   assert.equal(await banner.isVisible(),false);
  }finally{await browser.close();}
 });
@@ -41,7 +41,7 @@ test('mobile slideshow scrolls away while search and categories remain usable',a
  const {browser,page}=await setup(390);try{
   const banner=page.locator('.nu207-banners');await banner.waitFor({state:'visible'});
   assert.equal(await banner.evaluate(e=>!!e.parentElement.closest('[data-native-menu]')&&!e.parentElement.classList.contains('nu-menu-sticky')),true);
-  const before=await banner.boundingBox();
+  const before=await banner.boundingBox();assert.ok(before.y>=(await page.locator('.nu-menu-sticky').boundingBox()).y);assert.equal(await banner.evaluate(e=>e.previousElementSibling.classList.contains('nu-menu-sticky')),true);
   await page.evaluate(()=>window.scrollTo(0,600));
   await page.waitForFunction(()=>document.querySelector('.nu207-banners').getBoundingClientRect().bottom<0);
   const after=await banner.boundingBox();assert.ok(after.y<before.y-500);
