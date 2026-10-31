@@ -11,7 +11,8 @@ test('large sideways combo showcase, four-card view and no combo duplication in 
   assert.equal(await page.locator('[data-category190="cervejas"] .nu190-card').count(),1);
   const size=await page.locator('.nu275-combo-section .nu190-page').first().evaluate(e=>({width:e.getBoundingClientRect().width,parent:e.parentElement.clientWidth}));assert.ok(size.width>size.parent*.75&&size.width<size.parent*.9);
   await page.locator('.nu275-combo-section header button').click();assert.equal(await page.locator('.nu275-combos-grid .nu190-card').count(),6);
-  const grid=await page.locator('.nu275-combos-grid').evaluate(e=>({cols:getComputedStyle(e).gridTemplateColumns.split(' ').length,height:e.firstElementChild.getBoundingClientRect().height}));assert.equal(grid.cols,2);assert.ok(grid.height<300);
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  const grid=await page.locator('.nu275-combos-grid').evaluate(e=>({cols:getComputedStyle(e).gridTemplateColumns.split(' ').length,height:e.firstElementChild.getBoundingClientRect().height,top:e.getBoundingClientRect().top,viewport:window.innerHeight}));assert.equal(grid.cols,2);assert.ok(grid.top+grid.height*2+8<=grid.viewport-12,JSON.stringify(grid));
   await page.locator('[data-category-filter="cervejas"]').click();assert.ok(await page.locator('.nu275-combos-grid').isHidden());assert.deepEqual(errors,[]);
  }finally{await browser.close();}
 });
