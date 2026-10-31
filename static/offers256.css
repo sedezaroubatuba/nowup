@@ -40,14 +40,21 @@ html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layou
 html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu190-showcase .nu275-combo-section .nu201-card.nu190-card strong{font-size:23px!important;line-height:1.2!important;margin:0!important}
 .nu275-combo-description{font-size:13px;color:#77758a;margin:0;line-height:1.35}
 html body.public-profile-area [data-native-menu] .nu275-combos-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
-html body.public-profile-area.nu233-store [data-native-menu] .nu275-combos-grid .nu201-card.nu190-card{display:flex!important;flex-direction:column!important;height:var(--nu275-grid-card-height,230px)!important;min-height:0!important;padding:6px!important;gap:5px!important;overflow:hidden!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu275-combos-grid .nu201-card.nu190-card{display:flex!important;flex-direction:column!important;height:var(--nu275-grid-card-height,360px)!important;min-height:0!important;padding:6px!important;gap:5px!important;overflow:hidden!important}
 html body.public-profile-area.nu233-store [data-native-menu] .nu275-combos-grid .nu201-card.nu190-card>img,
-html body.public-profile-area.nu233-store [data-native-menu] .nu275-combos-grid .nu201-card.nu190-card>.nu190-no-image{width:100%!important;height:calc(var(--nu275-grid-card-height,230px) - 118px)!important;min-height:55px!important;padding:5px!important;object-fit:contain!important;background:radial-gradient(ellipse at center,#9634db,#541387 65%,#2c1048)!important;border:0!important;border-radius:9px!important;flex:none!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu275-combos-grid .nu201-card.nu190-card>.nu190-no-image{width:100%!important;height:calc(var(--nu275-grid-card-height,360px) - 145px)!important;min-height:130px!important;padding:8px!important;object-fit:contain!important;background:radial-gradient(ellipse at center,#9634db,#541387 65%,#2c1048)!important;border:0!important;border-radius:9px!important;flex:none!important}
 html body.public-profile-area.nu233-store [data-native-menu] .nu275-combos-grid .nu190-card-content{gap:4px!important;text-align:left!important}
-html body.public-profile-area.nu233-store [data-native-menu] .nu275-combos-grid .nu201-card.nu190-card h3{font-size:12px!important;line-height:15px!important;min-height:30px!important;max-height:30px!important;display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical;overflow:hidden!important}
-html body.public-profile-area.nu233-store [data-native-menu] .nu275-combos-grid .nu201-card.nu190-card strong{font-size:17px!important;line-height:20px!important;margin:0!important}
-html body.public-profile-area.nu233-store [data-native-menu] .nu275-combos-grid .nu201-open{min-height:34px!important;height:34px!important;padding:6px!important;font-size:12px!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu275-combos-grid .nu201-card.nu190-card h3{font-size:14px!important;line-height:18px!important;min-height:36px!important;max-height:36px!important;display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical;overflow:hidden!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu275-combos-grid .nu201-card.nu190-card strong{font-size:20px!important;line-height:24px!important;margin:0!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu275-combos-grid .nu201-open{min-height:40px!important;height:40px!important;padding:8px!important;font-size:13px!important}
 html body.public-profile-area [data-native-menu] .nu275-combos-grid .nu275-combo-description{display:none!important}
-html body.public-profile-area.nu233-store [data-native-menu] .nu275-combos-grid .nu201-selected.nu201-card.nu190-card{height:auto!important;min-height:var(--nu275-grid-card-height,230px)!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu275-combos-grid .nu201-selected.nu201-card.nu190-card{height:auto!important;min-height:var(--nu275-grid-card-height,360px)!important}
 @media(min-width:901px){html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu190-showcase .nu275-combo-section .nu190-page{flex-basis:44%!important;width:44%!important}}
 html body.public-profile-area [data-native-menu] .nu275-combos-grid[hidden]{display:none!important}
+
+/* Compact title leaves room for two taller combo cards. */
+html body.public-profile-area [data-native-menu] .nu276-combo-view .nu219-category-header{flex-wrap:nowrap!important;gap:8px!important;margin-bottom:6px}
+html body.public-profile-area [data-native-menu] .nu276-combo-view .nu219-category-header h2{font-size:23px!important;line-height:1.2!important;display:flex;align-items:center;gap:7px}
+html body.public-profile-area [data-native-menu] .nu276-combo-view .nu219-less{font-size:12px!important;padding:8px 10px!important;min-height:38px!important;white-space:nowrap}
+html body.public-profile-area [data-native-menu] .nu276-combo-view .nu191-count{margin:5px 0 10px!important;font-size:13px}
+html body.public-profile-area [data-native-menu][data-owner200="1"]>p[role="status"]{font-size:12px!important;line-height:1.35!important;padding:8px 10px!important;margin:8px 0!important;border-radius:9px;background:#f8f6fb;color:#61576d}
