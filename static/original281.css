@@ -1,0 +1,15 @@
+/* Original white storefront, preserving catalog and cart functionality. */
+html body.public-profile-area.nu233-store{background:#fff!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu-menu-sticky.nu-menu-sticky{background:#fff!important;border:0!important;box-shadow:none!important;border-radius:0!important;box-sizing:border-box!important;padding:10px!important;max-width:100%!important;min-width:0!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu-menu-sticky .nu83-catalog-heading{width:100%!important;min-width:0!important;box-sizing:border-box!important;gap:6px!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu-menu-sticky .nu83-search{min-width:0!important;flex:1 1 0!important;width:0!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu-menu-sticky input{box-sizing:border-box!important;max-width:100%!important;min-width:0!important}
+html body.public-profile-area.nu233-store [data-native-menu] .menu-category-nav.nu274-categories>button{background:#7730c5!important;color:#fff!important;border:1px solid transparent!important;box-shadow:none!important}
+html body.public-profile-area.nu233-store [data-native-menu] .menu-category-nav.nu274-categories>button .nu230-icon{color:#fff!important}
+html body.public-profile-area.nu233-store [data-native-menu] .menu-category-nav.nu274-categories>button .nu230-label{color:#fff!important}
+html body.public-profile-area.nu233-store [data-native-menu] .menu-category-nav.nu274-categories>button.active{background:#7132bf!important;color:#fff!important;border-color:#7132bf!important;box-shadow:none!important}
+html body.public-profile-area.nu233-store [data-native-menu] .menu-category-nav.nu274-categories>button.active .nu230-icon,html body.public-profile-area.nu233-store [data-native-menu] .menu-category-nav.nu274-categories>button.active .nu230-label{color:#fff!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu229-category-icon{background:#f3edfa!important;color:#7434c6!important}
+
+html body.public-profile-area.nu233-store [data-native-menu] .menu-category-nav.nu274-categories>button:nth-child(even){background:#1679d8!important}
+html body.public-profile-area.nu233-store [data-native-menu] .menu-category-nav.nu274-categories>button.active{border-color:#fff!important;box-shadow:0 0 0 2px #bba0df!important}
