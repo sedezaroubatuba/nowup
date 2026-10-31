@@ -62,6 +62,8 @@ test('late slideshow is placed below search and returns there after category nav
   await page.evaluate(()=>{document.body.classList.remove('nu187-store-home');});await page.locator('.nu207-banners').waitFor({state:'hidden'});
   await page.evaluate(()=>{document.body.classList.add('nu187-store-home');window.scrollTo(0,0);});
   await page.waitForFunction(()=>document.querySelector('.nu207-banners').previousElementSibling?.classList.contains('nu-menu-sticky'));
+  await page.evaluate(async()=>{await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));window.scrollTo(0,0);});
+  await page.waitForFunction(()=>{const search=document.querySelector('.nu-menu-sticky').getBoundingClientRect(),banner=document.querySelector('.nu207-banners').getBoundingClientRect();return window.scrollY===0&&banner.top>=search.bottom;});
   const search=await page.locator('.nu-menu-sticky').boundingBox(),banner=await page.locator('.nu207-banners').boundingBox();assert.ok(banner.y>=search.y+search.height);
  }finally{await browser.close();}
 });
