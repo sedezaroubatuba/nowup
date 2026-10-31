@@ -28,7 +28,7 @@ test('desktop banner is wide, scrolls away with search, and disappears in produc
   assert.ok((await banner.boundingBox()).width>750);
   assert.equal(await page.locator('.nu-menu-sticky').evaluate(e=>getComputedStyle(e).position),'relative');
   await page.evaluate(()=>window.scrollTo(0,850));await page.waitForFunction(()=>document.querySelector('.nu-menu-sticky').getBoundingClientRect().bottom<0);
-  assert.equal(await page.locator('.nu248-slide-toggle').isVisible(),false);
+
   await page.evaluate(()=>{document.body.classList.remove('nu187-store-home');document.body.classList.add('nu228-desktop-catalog');});
   await page.waitForFunction(()=>getComputedStyle(document.querySelector('.nu187-intro')).display==='none');
   await page.addStyleTag({content:'@media(min-width:901px){html body.public-profile-area.nu228-desktop-catalog [data-native-menu] .nu-menu-sticky{position:sticky!important;top:0!important}html body.public-profile-area.nu228-desktop-catalog [data-native-menu] .nu207-banners{display:block!important}}'});
@@ -36,16 +36,17 @@ test('desktop banner is wide, scrolls away with search, and disappears in produc
   assert.equal(await banner.isVisible(),false);
  }finally{await browser.close();}
 });
-test('mobile sticky banner can be collapsed and reopened without losing categories',async()=>{
+test('mobile slideshow scrolls away while search and categories remain usable',async()=>{
  const {browser,page}=await setup(390);try{
-  await page.evaluate(()=>window.scrollTo(0,320));const toggle=page.getByRole('button',{name:'Subir slide ↑'});await toggle.waitFor({state:'visible'});
-  const before=await page.locator('.nu-menu-sticky').boundingBox();assert.ok(Math.abs(before.y)<2);
-  await toggle.click();await page.locator('.nu207-banners').waitFor({state:'hidden'});
+  const banner=page.locator('.nu207-banners');await banner.waitFor({state:'visible'});
+  assert.equal(await banner.evaluate(e=>e.parentElement.hasAttribute('data-native-menu')),true);
+  const before=await banner.boundingBox();
+  await page.evaluate(()=>window.scrollTo(0,600));
+  await page.waitForFunction(()=>document.querySelector('.nu207-banners').getBoundingClientRect().bottom<0);
+  const after=await banner.boundingBox();assert.ok(after.y<before.y-500);
   assert.equal(await page.locator('.menu-category-nav').isVisible(),true);
-  assert.equal(await page.getByRole('button',{name:'Mostrar slide ↓'}).getAttribute('aria-expanded'),'false');
-  assert.ok((await page.locator('.nu-menu-sticky').boundingBox()).height<before.height);
-  await page.getByRole('button',{name:'Mostrar slide ↓'}).click();await page.locator('.nu207-banners').waitFor({state:'visible'});
-  await page.setViewportSize({width:1440,height:850});await page.waitForFunction(()=>document.body.classList.contains('nu233-desktop'));
-  assert.equal(await page.locator('.nu248-slide-toggle').isVisible(),false);
+  assert.ok(Math.abs((await page.locator('.nu-menu-sticky').boundingBox()).y)<2);
+  await page.evaluate(()=>document.body.classList.remove('nu187-store-home'));
+  await banner.waitFor({state:'hidden'});
  }finally{await browser.close();}
 });
