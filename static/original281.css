@@ -18,3 +18,8 @@ html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layou
 html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu190-showcase .nu290-offers-section .nu201-card.nu190-card{border:2px solid #ff7828!important;box-shadow:0 2px 7px #ff782810!important}
 html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu190-showcase .nu275-combo-section>header h2.nu286-category-label{border-color:#762bc0!important}
 html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu190-showcase .nu290-offers-section>header h2.nu286-category-label{border-color:#ff7828!important}
+
+/* V299: purple outlines throughout the remaining storefront categories. */
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu190-showcase .nu190-category:not(.nu290-offers-section) .nu201-card.nu190-card{border:2px solid #762bc0!important;box-shadow:0 2px 7px #762bc010!important}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu190-showcase .nu190-category:not(.nu290-offers-section)>header h2.nu286-category-label{border-color:#762bc0!important}
+html body.public-profile-area.nu233-store [data-native-menu] .menu-category-nav.nu274-categories>button:not(.active){border-color:#762bc0!important}
