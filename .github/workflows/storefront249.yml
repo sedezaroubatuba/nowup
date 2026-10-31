@@ -61,4 +61,4 @@ jobs:
         run: node --test tests/storefront248.browser.cjs tests/upload-preview250.browser.cjs tests/storeapp256.browser.cjs tests/storeapp257.browser.cjs tests/images258.browser.cjs tests/opening260.browser.cjs
 
       - name: Combo showcase and category separation
-        run: node --test tests/storefront275.browser.cjs tests/combos284.browser.cjs
+        run: node --test tests/storefront275.browser.cjs tests/combos284.browser.cjs tests/home292.browser.cjs
