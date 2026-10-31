@@ -1,0 +1,11 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
+const {chromium}=require('playwright');
+test('public offer tabs switch feeds below stores and link to the original product',async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:process.env.NOWUP_CHROME_EXECUTABLE||undefined,args:['--no-sandbox']});try{
+ const page=await browser.newPage({viewport:{width:390,height:844}});await page.route('https://nowup.test/**',route=>route.fulfill({contentType:'text/html',body:'<html></html>'}));await page.goto('https://nowup.test/');
+ await page.route('**/api/experimente-hoje?**',route=>{const kind=new URL(route.request().url()).searchParams.get('kind');return route.fulfill({json:{items:[{id:1,name:kind==='combos'?'Combo real':'Oferta real',shop:'Loja real',product_name:'Produto',price_cents:850,regular_price_cents:1000,discount_percent:15,image:'/uploads/a.jpg',url:'/p/loja-real/menu?produto=1'}]}});});
+ await page.setContent(`<style>${fs.readFileSync('static/home-offers292.css','utf8')}</style><body class="v50-directory-home"><section id="stores">Lojas</section><section class="nu292-market" data-home-products217><div role="tablist"><button role="tab" data-market-tab="promotions">Promoções</button><button role="tab" data-market-tab="combos">Combos</button></div><section data-market-panel="promotions"><h2>Promoções</h2><p role="status">Carregando</p></section><section data-market-panel="combos" hidden><h2>Combos</h2><p role="status">Carregando</p></section></section><script>${fs.readFileSync('static/home-offers292.js','utf8')}</script>`);
+ await page.waitForSelector('[data-market-panel=promotions] .nu292-card');assert.match(await page.locator('[data-market-panel=promotions]').textContent(),/Oferta real/);assert.equal(await page.locator('.nu292-card').first().getAttribute('href'),'/p/loja-real/menu?produto=1');
+ await page.getByRole('tab',{name:'Combos',exact:true}).click();assert.equal(await page.locator('[data-market-panel=promotions]').isHidden(),true);assert.match(await page.locator('[data-market-panel=combos]').textContent(),/Combo real/);await page.getByRole('tab',{name:'Combos',exact:true}).press('ArrowLeft');assert.equal(await page.getByRole('tab',{name:'Promoções',exact:true}).getAttribute('aria-selected'),'true');
+ }finally{await browser.close();}
+});

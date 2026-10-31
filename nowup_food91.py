@@ -40,7 +40,7 @@ def daily_mix(groups, day, limit=180):
 
 def register_food_feed(app, db, get_settings, active_cities, shop_status, public_scope):
     @app.get('/api/experimente-hoje')
-    def food_feed(city: str = ''):
+    def food_feed(city: str = '', kind: str = ''):
         from fastapi.responses import JSONResponse
         conn = db()
         try:
@@ -58,7 +58,7 @@ def register_food_feed(app, db, get_settings, active_cities, shop_status, public
                 rows = conn.execute("""SELECT pr.* FROM products pr
                     WHERE pr.professional_id=? AND pr.available=1
                     AND pr.max_quantity>0 AND trim(pr.image_filename)!=''
-                    AND (NOT EXISTS(SELECT 1 FROM product_categories pc
+                    AND (pr.is_combo256=1 OR lower(pr.category)='combos' OR NOT EXISTS(SELECT 1 FROM product_categories pc
                         WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category))
                       OR EXISTS(SELECT 1 FROM product_categories pc
                         WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) AND pc.active=1))
@@ -66,9 +66,16 @@ def register_food_feed(app, db, get_settings, active_cities, shop_status, public
                 items = []
                 for row in rows:
                     p = dict(row)
-                    price = p['promo_price_cents'] if p['promo_price_cents'] > 0 else p['price_cents']
+                    regular = int(p['price_cents'] or 0)
+                    promo = int(p['promo_price_cents'] or 0)
+                    is_combo = bool(p.get('is_combo256')) or str(p.get('category', '')).strip().lower() == 'combos'
+                    is_promotion = 0 < promo < regular
+                    if kind == 'promotions' and not is_promotion: continue
+                    if kind == 'combos' and not is_combo: continue
+                    price = promo if promo > 0 else regular
                     items.append({'id': p['id'], 'name': p['name'], 'shop': store['display_name'],
-                        'price_cents': price, 'image': '/uploads/' + quote(p['image_filename'], safe=''),
+                        'price_cents': price, 'regular_price_cents': regular, 'is_combo': is_combo,
+                        'discount_percent': round((regular-price)*100/regular) if is_promotion else 0, 'image': '/uploads/' + quote(p['image_filename'], safe=''),
                         'url': '/p/' + quote(store['slug'], safe='') + '/menu?produto=' + str(p['id']),
                         'product_name': p['name']})
                 if items: groups[store['id']] = items
