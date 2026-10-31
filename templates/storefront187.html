@@ -20,8 +20,6 @@
    {% if hours_lines %}<h2>Horários de funcionamento</h2>{% for line in hours_lines %}<p>{{line}}</p>{% endfor %}{% elif pro.opening_hours %}<h2>Horários de funcionamento</h2><p class="nu187-hours">{{pro.opening_hours}}</p>{% else %}<p>Horários não informados pela loja.</p>{% endif %}
    {% if pro.address and not pro.hide_address %}<p><a href="https://www.google.com/maps/search/?api=1&query={{pro.address|urlencode}}" target="_blank" rel="noopener">Como chegar</a></p>{% endif %}
  </details>
- {% set promotions=namespace(count=0) %}{% for product in products %}{% if product.available and product.promo_price_cents > 0 and product.promo_price_cents < product.price_cents %}{% set promotions.count=promotions.count+1 %}{% endif %}{% endfor %}
- {% if promotions.count %}<button class="nu187-promotion" type="button" data-store-promotion187><b>Promoções da loja</b><span>{{promotions.count}} {{'produto com preço especial' if promotions.count == 1 else 'produtos com preços especiais'}} · Ver produtos →</span></button>{% endif %}
  <h2 class="nu187-category-title">Categorias</h2>
 
 </section>

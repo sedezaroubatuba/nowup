@@ -15,6 +15,10 @@
     const span = document.createElement('span');
     span.className = 'nu230-icon';
     span.setAttribute('aria-hidden', 'true');
+    if (!chosen && ['promocoes', 'promocao'].includes(normalize(name))) {
+      span.textContent = '🔥';
+      return span;
+    }
     const item = byKey.get(resolve(name, chosen));
     // Only bundled catalog SVG is inserted; category names are always textContent.
     if (item) span.innerHTML = '<svg class="nu230-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false">' + item.svg + '</svg>';
