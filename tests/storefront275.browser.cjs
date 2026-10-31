@@ -14,7 +14,7 @@ test('large sideways combo showcase, two tall cards per row and no combo duplica
   assert.equal(await offers.locator('.nu190-page').first().locator('.nu190-card').count(),2);
   assert.equal(await offers.locator('.nu289-combo-price small').first().textContent(),'Preço promocional');
   assert.match(await offers.locator('del').first().textContent(),/5,00/);
-  const offerSize=await offers.locator('.nu190-card').first().boundingBox();assert.ok(offerSize.height>offerSize.width*1.5,JSON.stringify(offerSize));
+  const offerSize=await offers.locator('.nu190-card').first().boundingBox();assert.ok(offerSize.height>=480&&offerSize.height>offerSize.width*2,JSON.stringify(offerSize));
   assert.equal(await offers.locator('.nu190-track').evaluate(e=>getComputedStyle(e).overflowX),'auto');
   const headerFits=await page.locator('.nu-menu-sticky').evaluate(e=>{const b=e.getBoundingClientRect(),input=e.querySelector('input').getBoundingClientRect();return input.right<=b.right-8&&input.left>=b.left+8&&e.scrollWidth<=e.clientWidth;});assert.ok(headerFits,'shopping header must fit without clipping');
   assert.equal(await page.locator('[data-category190="cervejas"] .nu190-card').count(),1);
