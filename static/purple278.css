@@ -19,3 +19,12 @@ html body.public-profile-area.nu233-store [data-native-menu] .nu190-indicator{co
 html body.public-profile-area.nu233-store [data-native-menu] .nu190-category{border-color:#e4d4ee!important}
 html body.public-profile-area.nu233-store [data-native-menu] .nu201-open:disabled{background:#eeebf1!important;color:#97909e!important;opacity:1!important}
 html body.public-profile-area.nu233-store [data-native-menu] :is(button,input):focus-visible{outline:3px solid #b48bda!important;outline-offset:2px}
+
+/* V279: inset shopping controls; only category contents scroll sideways. */
+html body.public-profile-area.nu233-store [data-native-menu] .nu-menu-sticky.nu-menu-sticky{box-sizing:border-box!important;max-width:100%!important;min-width:0!important;padding:10px!important;border-radius:18px!important;background:linear-gradient(115deg,#451176,#6517a5)!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu-menu-sticky .nu83-catalog-heading{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;gap:6px!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu-menu-sticky .nu83-catalog-heading .nu83-search{min-width:0!important;flex:1 1 0!important;width:0!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu-menu-sticky .nu83-catalog-heading input{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu-menu-sticky .nu248-slide-toggle{box-sizing:border-box!important;max-width:100%!important;background:#8121c5!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu-menu-sticky .menu-category-nav.nu274-categories{width:100%!important;min-width:0!important;box-sizing:border-box!important;padding:5px 3px!important;scroll-padding-inline:3px}
+html body.public-profile-area.nu233-store [data-native-menu] .nu-menu-sticky .menu-category-nav.nu274-categories>button{border-radius:14px!important}
