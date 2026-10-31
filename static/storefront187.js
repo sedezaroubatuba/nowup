@@ -55,7 +55,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   if(nav)anchor.after(nav);search.value='';search.dispatchEvent(new Event('input',{bubbles:true}));search.placeholder='Pesquisar produtos';search.setAttribute('aria-label','Pesquisar produtos nesta loja');search.blur();
   refreshers.forEach(fn=>fn());cartRefreshers.forEach(fn=>fn());resize();window.scrollTo({top:homeScroll,behavior:'instant'});
  }
- function compact(card){
+ function compact(card,offer=false){
   const item=make('article','nu190-card nu201-card'),image=card.querySelector('.nu163-media img, img');
   if(image){const photo=make('img');photo.decoding='async';if(image.dataset.src258){photo.src='/static/product-placeholder.svg';photo.dataset.src258=image.dataset.src258;}else{photo.src=image.getAttribute('src')||image.currentSrc;}photo.alt='';photo.loading='lazy';photo.addEventListener('error',()=>{photo.src='/static/product-placeholder.svg';},{once:true});item.append(photo);}
   else item.append(make('div','nu190-no-image','🍽'));
@@ -67,7 +67,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   const content=make('div','nu190-card-content');content.append(make('h3','',card.dataset.name||'Produto'),make('strong','',money(Number(card.dataset.price)||0)));
   if(item.classList.contains('nu275-combo-card'))item.prepend(make('span','nu284-combo-badge','COMBO'));
   if(regular>price)content.insertBefore(make('del','nu284-old-price',money(regular)),content.querySelector('strong'));
-  if(item.classList.contains('nu275-combo-card')){const priceBox=make('div','nu289-combo-price'),label=make('small','','Preço do combo'),old=content.querySelector('.nu284-old-price'),value=content.querySelector('strong');priceBox.append(label);if(old)priceBox.append(old);priceBox.append(value);content.append(priceBox);}
+  if(item.classList.contains('nu275-combo-card')||offer){const priceBox=make('div','nu289-combo-price'),label=make('small','',item.classList.contains('nu275-combo-card')?'Preço do combo':'Preço promocional'),old=content.querySelector('.nu284-old-price'),value=content.querySelector('strong');priceBox.append(label);if(old)priceBox.append(old);priceBox.append(value);content.append(priceBox);}
   const toggle=make('button','nu201-open','Adicionar');toggle.type='button';toggle.setAttribute('aria-label','Adicionar '+card.dataset.name);toggle.setAttribute('aria-expanded','false');
   const panel=make('div','nu201-panel');panel.hidden=true;
   const controls=make('div','nu190-amount'),minus=make('button','','−'),plus=make('button','','+'),amount=make('input');minus.type=plus.type='button';
@@ -112,13 +112,13 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  b.style.setProperty('--nu274-start',colors[0]);b.style.setProperty('--nu274-end',colors[1]);});
  ordered256.forEach((group,key)=>{
   if(!group.cards.length)return;
-  const section=make('section','nu190-category');section.dataset.category190=key;section.classList.toggle('nu275-combo-section',key==='__combos256');sections.set(key,section);
+  const section=make('section','nu190-category');section.dataset.category190=key;section.classList.toggle('nu275-combo-section',key==='__combos256');section.classList.toggle('nu290-offers-section',key==='__offers256');sections.set(key,section);
   const header=make('header'),all=make('button','','Ver todos ›');all.type='button';all.addEventListener('click',()=>showCategory(key));const title=make('h2','nu286-category-label'),icon=make('span','nu284-category-icon');icon.setAttribute('aria-hidden','true');icon.replaceChildren(window.NowUpCategory230.create(group.name));title.append(icon,document.createTextNode(group.name));header.append(title,all);section.append(header);
   const track=make('div','nu190-track');track.tabIndex=0;track.setAttribute('aria-label','Produtos de '+group.name+'; deslize para os lados');
   const pages=[],pageSources238=[];
-  const pageSize275=key==='__combos256'?1:pageSize235;
+  const pageSize275=key==='__combos256'?1:key==='__offers256'?2:pageSize235;
   for(let i=0;i<group.cards.length;i+=pageSize275){const page=make('div','nu190-page');page.style.minHeight='150px';pageSources238.push(group.cards.slice(i,i+pageSize275));pages.push(page);track.append(page);}
-  function loadPage238(i){const page=pages[i];if(!page||page.dataset.loaded238)return;page.dataset.loaded238='1';pageSources238[i].forEach(card=>page.append(compact(card)));}
+  function loadPage238(i){const page=pages[i];if(!page||page.dataset.loaded238)return;page.dataset.loaded238='1';pageSources238[i].forEach(card=>page.append(compact(card,key==='__offers256')));}
   loadPage238(0);loadPage238(1);section.append(track);
   const indicator=make('div','nu190-indicator'),prev=make('button','','‹'),next=make('button','','›'),dots=make('div','nu190-dots');prev.type=next.type='button';prev.setAttribute('aria-label','Página anterior de '+group.name);next.setAttribute('aria-label','Próxima página de '+group.name);
   let index=0;
@@ -142,7 +142,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   intro.hidden=true;showcase.hidden=true;categoryView.hidden=false;back.setAttribute('aria-label','Voltar à página da loja');
   if(nav)sticky.append(nav);
   if(!categoryCache.has(key)){
-   const grid=make('div','nu191-grid');grid.classList.toggle('nu275-combos-grid',key==='__combos256'||key==='__offers256');grid.classList.toggle('nu277-promotions-grid',key==='__offers256');const cards=group.cards.map(source=>{const node=compact(source);grid.append(node);return {source,node};});categoryView.append(grid);categoryCache.set(key,{grid,cards});
+   const grid=make('div','nu191-grid');grid.classList.toggle('nu275-combos-grid',key==='__combos256'||key==='__offers256');grid.classList.toggle('nu277-promotions-grid',key==='__offers256');const cards=group.cards.map(source=>{const node=compact(source,key==='__offers256');grid.append(node);return {source,node};});categoryView.append(grid);categoryCache.set(key,{grid,cards});
   }
   categoryCache.forEach((entry,k)=>entry.grid.hidden=k!==key);
   categoryView.classList.toggle('nu276-combo-view',key==='__combos256'||key==='__offers256');
