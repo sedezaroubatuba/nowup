@@ -1,6 +1,6 @@
 {% macro fields(products, current=none) %}
 <fieldset class="full"><legend>Combos e Leve junto</legend>
-<label class="check"><input type="checkbox" name="is_combo256" value="1" {% if current and current.is_combo256 %}checked{% endif %}> 🍻 Mostrar na categoria Combos</label>
+<p>Para cadastrar um combo, escolha <b>Combos — categoria do aplicativo</b> no campo Categoria. Ele aparece automaticamente na vitrine de combos.</p>
 <label class="check"><input type="checkbox" name="recommend256" value="1" {% if current and current.recommend256 %}checked{% endif %}> 🔥 Sugerir a promoção deste produto no carrinho</label>
 <div class="nu273-picker" data-pair-picker273>
 <label>Buscar produtos para combinar<input class="input" type="search" data-pair-search273 placeholder="Digite o nome do produto" autocomplete="off"></label>
