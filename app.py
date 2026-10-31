@@ -1826,7 +1826,9 @@ def configure_personalization153(conn, product_id, enabled, max_choices):
     conn.execute("UPDATE product_options SET group_id=? WHERE product_id=? AND group_id=0",(gid,product_id))
 
 @app.post("/painel/cardapio/produtos")
-def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([])):
+def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([])):
+    from nowup_promotions285 import promotional_cents
+    promo_cents285=promotional_cents(price_to_cents(price),promo_price,promo_mode,promo_percent,promo_enabled,price_to_cents)
     is_combo256=bool(is_combo256) or category.strip().casefold() in ('__combos256','combos')
     if is_combo256: category='Combos'
     custom192=parse_config(customization192) if customization192 else None
@@ -1840,16 +1842,19 @@ def pro_product_add(request: Request, name: str=Form(...), description: str=Form
     from nowup_pairs256 import validate_pairs
     try: pair_ids256=validate_pairs(conn,p["id"],related256)
     except HTTPException: conn.close(); raise
-    created=now_iso(); cur=conn.execute("INSERT INTO products(professional_id,name,description,category,price_cents,image_filename,available,created_at,updated_at,promo_price_cents,featured,max_quantity) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",(p["id"],name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,created,created,price_to_cents(promo_price) if promo_price.strip() else 0,1 if featured else 0,max(1,min(99,max_quantity))))
+    created=now_iso(); cur=conn.execute("INSERT INTO products(professional_id,name,description,category,price_cents,image_filename,available,created_at,updated_at,promo_price_cents,featured,max_quantity) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",(p["id"],name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,created,created,promo_cents285,1 if featured else 0,max(1,min(99,max_quantity))))
     conn.execute("UPDATE products SET sold_cold=? WHERE id=?",(1 if sold_cold else 0,cur.lastrowid))
     conn.execute("UPDATE products SET is_combo256=?,recommend256=?,related256=? WHERE id=?",(bool(is_combo256),bool(recommend256),pair_ids256,cur.lastrowid))
     if extras_mode=="legacy":configure_personalization153(conn,cur.lastrowid,bool(personalizable),max_choices)
     else:configure_shared155(conn,p["id"],cur.lastrowid,extras_mode,extra_ids,max_choices)
     if custom192 is not None:save_config(conn,cur.lastrowid,custom192)
+    if is_combo256:conn.execute('UPDATE products SET is_dish=1 WHERE id=?',(cur.lastrowid,))
     conn.commit(); conn.close(); return RedirectResponse("/painel?ok=produto#novo-produto",303)
 
 @app.post("/painel/cardapio/produtos/{product_id}")
-def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([])):
+def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([])):
+    from nowup_promotions285 import promotional_cents
+    promo_cents285=promotional_cents(price_to_cents(price),promo_price,promo_mode,promo_percent,promo_enabled,price_to_cents)
     is_combo256=bool(is_combo256) or category.strip().casefold() in ('__combos256','combos')
     if is_combo256: category='Combos'
     custom192=parse_config(customization192) if customization192 else None
@@ -1870,9 +1875,10 @@ def pro_product_edit(request: Request, product_id: int, name: str=Form(...), des
             try: (UPLOAD_DIR/fn).unlink(missing_ok=True)
             except OSError: pass
         fn=new_fn
-    conn.execute("UPDATE products SET name=?,description=?,category=?,price_cents=?,image_filename=?,available=?,updated_at=?,promo_price_cents=?,featured=?,max_quantity=? WHERE id=?",(name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,now_iso(),price_to_cents(promo_price) if promo_price.strip() else 0,1 if featured else 0,max(1,min(99,max_quantity)),product_id)); configure_personalization153(conn,product_id,bool(personalizable),max_choices) if extras_mode=="legacy" else configure_shared155(conn,p["id"],product_id,extras_mode,extra_ids,max_choices)
+    conn.execute("UPDATE products SET name=?,description=?,category=?,price_cents=?,image_filename=?,available=?,updated_at=?,promo_price_cents=?,featured=?,max_quantity=? WHERE id=?",(name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,now_iso(),promo_cents285,1 if featured else 0,max(1,min(99,max_quantity)),product_id)); configure_personalization153(conn,product_id,bool(personalizable),max_choices) if extras_mode=="legacy" else configure_shared155(conn,p["id"],product_id,extras_mode,extra_ids,max_choices)
     conn.execute("UPDATE products SET sold_cold=? WHERE id=? AND professional_id=?",(1 if sold_cold else 0,product_id,p["id"]))
     if custom192 is not None:save_config(conn,product_id,custom192)
+    if is_combo256:conn.execute('UPDATE products SET is_dish=1 WHERE id=?',(product_id,))
     conn.execute("UPDATE products SET is_combo256=?,recommend256=?,related256=? WHERE id=? AND professional_id=?",(bool(is_combo256),bool(recommend256),pair_ids256,product_id,p["id"]))
     conn.commit(); conn.close()
     return RedirectResponse("/painel?ok=produto#cardapio",303)

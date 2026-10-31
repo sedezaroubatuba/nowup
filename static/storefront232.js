@@ -16,13 +16,16 @@ document.addEventListener('DOMContentLoaded', () => {
     queued = false;
     const home = body.classList.contains('nu187-store-home');
     if (home) {
-      if (nav && nav.parentElement !== bar) bar.append(nav);
       const banner = root.querySelector('.nu207-banners');
       if (banner) {
-        if (banner.parentElement !== bar.parentElement || banner.nextElementSibling !== bar) bar.before(banner);
-        if (intro.nextElementSibling !== banner) banner.before(intro);
-      } else if (intro.nextElementSibling !== bar) bar.before(intro);
-    }
+        if (bar.nextElementSibling !== banner) bar.after(banner);
+        if (intro.nextElementSibling !== bar) bar.before(intro);
+        if (nav && banner.nextElementSibling !== nav) banner.after(nav);
+      } else {
+        if (intro.nextElementSibling !== bar) bar.before(intro);
+        if (nav && bar.nextElementSibling !== nav) bar.after(nav);
+      }
+    } else if (nav && nav.parentElement !== bar) bar.append(nav);
     // The slideshow belongs to the page flow, never the sticky search controls.
     body.classList.toggle('nu237-banner-hidden', !home);
     body.classList.remove('nu248-slide-collapsed');

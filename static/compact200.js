@@ -19,7 +19,7 @@
   options.before(question);
   const originalDisabled=new WeakMap();options.querySelectorAll('input,select,textarea,button').forEach(el=>originalDisabled.set(el,el.disabled));
   function sync(){
-   const simple=radios[0].checked;form.dataset.simple200=String(simple);options.hidden=simple;
+   const combo=['__combos256','combos'].includes(form.querySelector('[name=category]')?.value.toLowerCase());question.hidden=combo;const simple=radios[0].checked&&!combo;form.dataset.simple200=String(simple);options.hidden=simple;
    options.querySelectorAll('input,select,textarea,button').forEach(el=>{
     if(el.name==='customization192'||el===mode)return;
     if(simple){if(!el.dataset.disabled200)originalDisabled.set(el,el.disabled);el.dataset.disabled200='1';el.disabled=true;}
@@ -27,14 +27,15 @@
    });
    if(mode){mode.disabled=false;if(!simple)mode.dispatchEvent(new Event('change',{bubbles:true}));}
   }
-  radios.forEach(r=>r.addEventListener('change',sync));sync();
+  radios.forEach(r=>r.addEventListener('change',sync));form.querySelector('[name=category]')?.addEventListener('change',sync);sync();
   form.addEventListener('submit',()=>{if(form.dataset.simple200==='true'&&mode)mode.value='none';},true);
   // Secondary fields remain available without occupying the simple registration form.
   const extra=document.createElement('details');extra.className='nu200-secondary';
   const summary=document.createElement('summary');summary.textContent='Mais informações do produto';extra.append(summary);
-  for(const name of ['promo_price','max_quantity','description','available','featured']){
+  for(const name of ['max_quantity','description','available','featured']){
    const label=form.querySelector('[name="'+name+'"]')?.closest('label');if(label)extra.append(label);
   }
+  const category=form.querySelector('[name=category]');function revealCombo(){if(['__combos256','combos'].includes(category?.value.toLowerCase()))extra.open=true;}category?.addEventListener('change',revealCombo);revealCombo();
   if(extra.children.length>1){const save=form.querySelector('button:not([type]),button[type=submit]');if(save)save.before(extra);else form.append(extra);}
  });
 })();

@@ -2,7 +2,7 @@
  'use strict';
  document.querySelectorAll('[data-extras-mode155]').forEach(mode=>{const picker=mode.form?.querySelector('[data-shared-picker155]');const sync=()=>{if(picker){picker.hidden=mode.value!=='selected';picker.style.setProperty('display',mode.value==='selected'?'block':'none','important');}};mode.addEventListener('change',sync);sync();});
  const root=document.querySelector('[data-native-menu]');if(!root)return;
- const cards=[...root.querySelectorAll('[data-product][data-dish="1"]')];if(!cards.length)return;
+ const cards=[...root.querySelectorAll('[data-product][data-dish="1"], [data-product][data-combo256="1"]')];if(!cards.length)return;
  const dialog=document.createElement('dialog');dialog.className='nu151-dish-dialog';dialog.setAttribute('aria-label','Personalizar lanche');
  const header=document.createElement('div');header.className='nu160-header';header.innerHTML='<button type="button" data-close160 aria-label="Voltar ao cardápio">←</button><b data-step160>Personalizar</b><label data-amount-label160>Unidades <input type="number" min="1" step="1" value="1" data-amount160 aria-label="Quantidade de lanches"></label>';
  dialog.append(header);root.append(dialog);
@@ -19,15 +19,15 @@
   editKey=key;editDefault=key?window.NOWUP_CART160.get(key):null;if(key&&!editDefault)return;
   total=editDefault?.quantity||Math.max(1,Math.min(Number(card.dataset.max)||99,parseInt(card.querySelector('[data-product-quantity]')?.value,10)||1));index=0;drafts=Array.from({length:total},()=>null);oldScroll=window.scrollY;marker=document.createComment('produto');card.before(marker);current=card;dialog.append(card);card.classList.add('nu151-dish-open');
   countInput.max=String(Number(card.dataset.max)||99);countInput.value=String(total);const note=card.querySelector('.nu85-note');if(note)note.open=true;showDraft(editDefault);
-  const cart=root.querySelector('[data-cart-dialog143]');if(cart?.open){returnCart=cart;cart.close();}dialog.showModal();
+  const cart=root.querySelector('[data-cart-dialog143]');if(cart?.open){returnCart=cart;cart.close();}dialog.setAttribute('aria-label',card.dataset.combo256==='1'?'Personalizar combo':'Personalizar produto');dialog.showModal();
  }
  countInput.addEventListener('change',()=>{if(!current)return;const n=Number(countInput.value),max=Number(current.dataset.max)||99;if(!Number.isInteger(n)||n<1||n>max){countInput.value=String(total);return;}total=n;drafts=Array.from({length:total},()=>null);index=0;update();});
  cards.forEach(card=>{
   const options=card.querySelector('.product-options');if(options){const t=options.querySelector('small');if(t)t.textContent='ADICIONAIS';const hint=document.createElement('small');hint.textContent='Opcional · Até '+window.NOWUP_CUSTOM192.limit(card)+(window.NOWUP_CUSTOM192.get(card).free_enabled?' · Até '+window.NOWUP_CUSTOM192.get(card).free_count+' grátis':'');options.prepend(hint);}
-  const note=card.querySelector('.nu85-note');if(note){const label=note.querySelector('label');if(label?.firstChild)label.firstChild.textContent='OBSERVAÇÕES ';const input=note.querySelector('textarea');if(input)input.placeholder='Ex.: sem cebola, por favor.';}
+  const note=card.querySelector('.nu85-note');if(note){const label=note.querySelector('label');if(label?.firstChild)label.firstChild.textContent='OBSERVAÇÕES ';const input=note.querySelector('textarea');if(input)input.placeholder=card.dataset.combo256==='1'?'Ex.: preferência de sabor ou gelo.':'Ex.: sem cebola, por favor.';}
   if(note&&!window.NOWUP_CUSTOM192.get(card).notes)note.hidden=true;
   const utensils=document.createElement('label');utensils.className='nu158-utensils';utensils.innerHTML='<input type="checkbox" data-utensils158> 🍴 Enviar talheres (garfo e faca)';if(window.NOWUP_CUSTOM192.get(card).utensils)note?.before(utensils);
-  const summary=document.createElement('div');summary.dataset.dishSummary151='';summary.className='nu151-summary';summary.innerHTML='<p><span>Lanche</span><b data-base151></b></p><p><span>Adicionais</span><b data-extras151></b></p><p><strong>Total desta unidade</strong><strong data-total151></strong></p>';card.querySelector('.product-buy')?.before(summary);
+  const summary=document.createElement('div');summary.dataset.dishSummary151='';summary.className='nu151-summary';summary.innerHTML='<p><span>Produto</span><b data-base151></b></p><p><span>Adicionais</span><b data-extras151></b></p><p><strong>Total desta unidade</strong><strong data-total151></strong></p>';card.querySelector('.product-buy')?.before(summary);
   const error=document.createElement('p');error.dataset.dishError151='';error.setAttribute('role','status');card.querySelector('.product-buy')?.before(error);
   const previous=document.createElement('button');previous.type='button';previous.dataset.prev160='';previous.className='nu160-prev';previous.textContent='← Unidade anterior';previous.addEventListener('click',()=>{drafts[index]=snapshot();index--;showDraft(drafts[index]||editDefault);});card.querySelector('.product-buy')?.before(previous);
   const plus=document.createElement('button');plus.type='button';plus.className='nu151-choose btn primary';plus.textContent='+';plus.setAttribute('aria-label','Personalizar '+card.dataset.name);plus.disabled=!!card.querySelector('[data-add]')?.disabled;plus.addEventListener('click',()=>begin(card));card.querySelector('.menu-product-info')?.append(plus);

@@ -68,6 +68,11 @@ def parse_config(raw):
     output = {'ingredients': clean_ingredients, 'groups': clean_groups,
             'free_enabled': free_enabled, 'free_count': integer(data.get('free_count', 0), 0, 20, 'Gratuitos') if free_enabled else 0,
             'utensils': data.get('utensils', False), 'notes': data.get('notes', True)}
+    items = data.get('combo_items', [])
+    if not isinstance(items, list) or len(items) > 40 or any(not isinstance(item, dict) for item in items):
+        fail('Cadastre até 40 itens no combo.')
+    item_names = names([item.get('name') for item in items], 'Itens do combo')
+    output['combo_items'] = [{'name': name, 'quantity': integer(items[i].get('quantity'), 1, 99, name)} for i, name in enumerate(item_names)]
     if 'included195' in data:output['included195'] = data['included195']
     return output
 
