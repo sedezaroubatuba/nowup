@@ -156,7 +156,18 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  root.addEventListener('input',event=>{if(event.target===search&&selectedCategory){event.stopImmediatePropagation();filterCategory();}},true);
  root.addEventListener('search',event=>{if(event.target===search&&selectedCategory){event.stopImmediatePropagation();filterCategory();}},true);
  if(!originals.length)showcase.append(make('p','nu190-empty','Esta loja ainda não publicou produtos.'));
- root.addEventListener('click',event=>{if(!body.classList.contains('nu187-store-home')&&!selectedCategory)return;const button=event.target.closest('[data-category-filter]');if(!button)return;event.preventDefault();event.stopImmediatePropagation();buttons.forEach(b=>{const active=b===button;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});if(selectedCategory){if(button.dataset.categoryFilter==='all')showHome();else showCategory(button.dataset.categoryFilter);return;}(sections.get(button.dataset.categoryFilter)||showcase).scrollIntoView({block:'start',behavior:'auto'});},true);
+ function handleCategory297(event){
+  const button=event.target.closest('[data-category-filter]');if(!button)return;
+  const key=button.dataset.categoryFilter,special=key==='__combos256'||key==='__offers256';
+  if(!special&&!body.classList.contains('nu187-store-home')&&!selectedCategory)return;
+  event.preventDefault();event.stopImmediatePropagation();
+  buttons.forEach(b=>{const active=b===button;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
+  // Special collections must always use their own product groups, including after a search.
+  if(special){showCategory(key);return;}
+  if(selectedCategory){if(key==='all')showHome();else showCategory(key);return;}
+  (sections.get(key)||showcase).scrollIntoView({block:'start',behavior:'auto'});
+ }
+ root.addEventListener('click',handleCategory297,true);
  // Focus alone does not switch views: explicit top-search interaction does.
  search.addEventListener('click',()=>{if(body.classList.contains('nu187-store-home'))showProducts(true);});
  search.addEventListener('keydown',event=>{if(body.classList.contains('nu187-store-home')&&(event.key==='Enter'||event.key.length===1))showProducts();});

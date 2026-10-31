@@ -39,3 +39,13 @@ html body.public-profile-area.nu187-store-home [data-native-menu] .menu-layout{s
 .nu-cart-actions262{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.nu-cart-actions262>.nu201-open{flex:1;width:auto!important;min-width:65px}.nu-cart-actions262>.nu-cart-selected262{flex:none;font-size:10px!important;padding:5px}
 
 .nu-step263{display:flex!important;align-items:center;justify-content:space-between;gap:8px;width:100%;background:#7036c6!important;border-radius:12px;color:white!important;min-height:44px;overflow:hidden}.nu-step263[hidden]{display:none!important}.nu-step263 button{background:transparent!important;color:white!important;border:0!important;border-radius:0!important;min-width:44px!important;min-height:44px!important;font-size:22px!important;padding:4px!important;margin:0!important}.nu-step263 span{color:white!important;font-size:17px!important;font-weight:700}.nu-step263 button:disabled{opacity:.4}.nu-step263 button:focus-visible{outline:2px solid white;outline-offset:-4px}.nu-cart-actions262{width:100%}
+
+/* V297: white quantity symbols on purple in every catalog view. */
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu-step263>button,
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu-quantity131>button,
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu190-amount>button{background:#7036c6!important;color:#fff!important;border-color:#7036c6!important}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu-step263>span{color:#fff!important;background:#7036c6!important}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] [data-add][hidden],
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu201-open[hidden],
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu-step263[hidden]{display:none!important}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] [data-product].nu-cart-in262 .product-buy>label{display:none!important}
