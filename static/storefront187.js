@@ -143,10 +143,12 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
    const grid=make('div','nu191-grid');grid.classList.toggle('nu275-combos-grid',key==='__combos256');const cards=group.cards.map(source=>{const node=compact(source);grid.append(node);return {source,node};});categoryView.append(grid);categoryCache.set(key,{grid,cards});
   }
   categoryCache.forEach((entry,k)=>entry.grid.hidden=k!==key);
-  categoryTitle.replaceChildren(window.NowUpCategory230.create(group.name),document.createTextNode(group.name));search.value='';search.placeholder='Buscar em '+group.name;search.setAttribute('aria-label','Buscar em '+group.name);filterCategory();
+  categoryView.classList.toggle('nu276-combo-view',key==='__combos256');
+  const viewName276=key==='__combos256'?'Combos':group.name;
+  categoryTitle.replaceChildren(window.NowUpCategory230.create(viewName276),document.createTextNode(viewName276));search.value='';search.placeholder=key==='__combos256'?'Buscar combos':'Buscar em '+group.name;search.setAttribute('aria-label',search.placeholder);filterCategory();
   resize();window.scrollTo({top:0,behavior:'instant'});requestAnimationFrame(sizeCombos275);
  }
- function sizeCombos275(){const grid=categoryCache.get('__combos256')?.grid;if(selectedCategory!=='__combos256'||!grid)return;const top=Math.max(grid.getBoundingClientRect().top,sticky.getBoundingClientRect().bottom+70),dock=root.querySelector('.nu83-cart-dock:not([hidden])'),bottom=dock?dock.getBoundingClientRect().height+18:20;grid.style.setProperty('--nu275-grid-card-height',Math.max(170,Math.floor((window.innerHeight-top-bottom-8)/2))+'px');}
+ function sizeCombos275(){const grid=categoryCache.get('__combos256')?.grid;if(selectedCategory!=='__combos256'||!grid)return;const top=Math.max(grid.getBoundingClientRect().top,sticky.getBoundingClientRect().bottom+70),dock=root.querySelector('.nu83-cart-dock:not([hidden])'),bottom=dock?dock.getBoundingClientRect().height+18:20;grid.style.setProperty('--nu275-grid-card-height',Math.max(280,Math.min(520,Math.floor(window.innerHeight-top-bottom-10)))+'px');}
  window.addEventListener('resize',()=>requestAnimationFrame(sizeCombos275));
  root.addEventListener('input',event=>{if(event.target===search&&selectedCategory){event.stopImmediatePropagation();filterCategory();}},true);
  root.addEventListener('search',event=>{if(event.target===search&&selectedCategory){event.stopImmediatePropagation();filterCategory();}},true);
