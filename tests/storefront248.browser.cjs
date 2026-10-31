@@ -51,3 +51,17 @@ test('mobile slideshow scrolls away while search and categories remain usable',a
   await banner.waitFor({state:'hidden'});
  }finally{await browser.close();}
 });
+
+test('late slideshow is placed below search and returns there after category navigation',async()=>{
+ const {browser,page}=await setup(390);try{
+  await page.evaluate(()=>{const banner=document.querySelector('.nu207-banners');document.querySelector('.nu187-intro').before(banner);window.dispatchEvent(new Event('nowup-slide-ready286'));});
+  await page.waitForFunction(()=>document.querySelector('.nu-menu-sticky').nextElementSibling?.classList.contains('nu207-banners'));
+  await page.evaluate(()=>window.scrollTo(0,650));
+  await page.waitForFunction(()=>Math.abs(document.querySelector('.nu-menu-sticky').getBoundingClientRect().top)<2);
+  assert.ok((await page.locator('.nu207-banners').boundingBox()).y<0);
+  await page.evaluate(()=>{document.body.classList.remove('nu187-store-home');});await page.locator('.nu207-banners').waitFor({state:'hidden'});
+  await page.evaluate(()=>{document.body.classList.add('nu187-store-home');window.scrollTo(0,0);});
+  await page.waitForFunction(()=>document.querySelector('.nu207-banners').previousElementSibling?.classList.contains('nu-menu-sticky'));
+  const search=await page.locator('.nu-menu-sticky').boundingBox(),banner=await page.locator('.nu207-banners').boundingBox();assert.ok(banner.y>=search.y+search.height);
+ }finally{await browser.close();}
+});

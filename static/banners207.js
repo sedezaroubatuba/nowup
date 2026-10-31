@@ -20,7 +20,7 @@
    function schedule(){clearInterval(timer);if(data.items.length>1&&!paused&&!document.hidden&&!section.matches(':hover')&&!section.contains(document.activeElement))timer=setInterval(()=>{if(document.body.classList.contains('nu187-store-home'))go(index+1);},Math.max(1,Math.min(120,Number(data.seconds)||2))*1000);}
    controls.append(button('Banner anterior','‹',()=>go(index-1)),counter,button('Próximo banner','›',()=>go(index+1)),pause);if(data.items.length===1)controls.hidden=true;
    track.addEventListener('scroll',()=>{index=Math.round(track.scrollLeft/Math.max(1,track.clientWidth));counter.textContent=(index+1)+' / '+data.items.length;},{passive:true});
-   section.append(track,controls);const showcase=root.querySelector('.nu190-showcase');if(!showcase)return;showcase.before(section);
+   section.append(track,controls);const sticky=root.querySelector('.nu-menu-sticky');if(!sticky)return;sticky.after(section);window.dispatchEvent(new Event('nowup-slide-ready286'));
    section.addEventListener('mouseenter',schedule);section.addEventListener('mouseleave',schedule);section.addEventListener('focusin',schedule);section.addEventListener('focusout',()=>setTimeout(schedule,0));document.addEventListener('visibilitychange',schedule);window.addEventListener('pagehide',()=>clearInterval(timer));schedule();
   }catch(e){console.warn('Banners temporariamente indisponíveis');}
  }

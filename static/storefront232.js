@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const banner = root.querySelector('.nu207-banners');
       if (banner) {
         if (bar.nextElementSibling !== banner) bar.after(banner);
+        banner.dataset.layout286='below-search';
         if (intro.nextElementSibling !== bar) bar.before(intro);
         if (nav && banner.nextElementSibling !== nav) banner.after(nav);
       } else {
@@ -56,5 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
   window.visualViewport?.addEventListener('resize', schedule, {passive: true});
   mobile.addEventListener('change', enable);
   window.addEventListener('nowup-cart-changed', schedule);
+  window.addEventListener('nowup-slide-ready286', schedule);
   enable();
 });

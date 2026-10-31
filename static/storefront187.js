@@ -112,7 +112,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  ordered256.forEach((group,key)=>{
   if(!group.cards.length)return;
   const section=make('section','nu190-category');section.dataset.category190=key;section.classList.toggle('nu275-combo-section',key==='__combos256');sections.set(key,section);
-  const header=make('header'),all=make('button','','Ver todos ›');all.type='button';all.addEventListener('click',()=>showCategory(key));const title=make('h2'),icon=make('span','nu284-category-icon');icon.setAttribute('aria-hidden','true');icon.replaceChildren(window.NowUpCategory230.create(group.name));title.append(icon,document.createTextNode(group.name));header.append(title,all);section.append(header);
+  const header=make('header'),all=make('button','','Ver todos ›');all.type='button';all.addEventListener('click',()=>showCategory(key));const title=make('h2','nu286-category-label'),icon=make('span','nu284-category-icon');icon.setAttribute('aria-hidden','true');icon.replaceChildren(window.NowUpCategory230.create(group.name));title.append(icon,document.createTextNode(group.name));header.append(title,all);section.append(header);
   const track=make('div','nu190-track');track.tabIndex=0;track.setAttribute('aria-label','Produtos de '+group.name+'; deslize para os lados');
   const pages=[],pageSources238=[];
   const pageSize275=key==='__combos256'?1:pageSize235;
