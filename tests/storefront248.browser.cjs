@@ -67,3 +67,17 @@ test('late slideshow is placed below search and returns there after category nav
   const search=await page.locator('.nu-menu-sticky').boundingBox(),banner=await page.locator('.nu207-banners').boundingBox();assert.ok(banner.y>=search.y+search.height);
  }finally{await browser.close();}
 });
+
+
+test('wide slideshow keeps its height with a square lazy-loading placeholder',async()=>{
+ const browser=await chromium.launch({headless:true,...(process.env.NOWUP_CHROME_EXECUTABLE?{executablePath:process.env.NOWUP_CHROME_EXECUTABLE}:{})});
+ try{for(const width of [390,1440]){
+  const page=await browser.newPage({viewport:{width,height:850}});
+  const square='data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="480" height="480"%3E%3C/svg%3E';
+  const wide='data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="800" height="300"%3E%3C/svg%3E';
+  await page.setContent(`<style>*{box-sizing:border-box}body{margin:0}.nu207-track{display:flex}.nu207-card{flex:0 0 100%;background:#f5f1fa}.nu207-card img{width:100%;height:auto}${css}</style><body class="public-profile-area nu233-store nu187-store-home ${width<901?'nu232-store':'nu233-desktop'}"><main data-native-menu><section class="nu207-banners"><div class="nu207-track"><button class="nu207-card"><img src='${wide}'></button><button class="nu207-card"><img src='${square}'></button></div><div class="nu207-controls">‹ · · ›</div></section></main>`);
+  const frame=await page.locator('.nu207-track').boundingBox();assert.ok(Math.abs(frame.height-frame.width*3/8)<2,JSON.stringify(frame));
+  const image=await page.locator('.nu207-card img').first().boundingBox();assert.ok(Math.abs(image.height-frame.height)<2,JSON.stringify({image,frame}));
+  await page.close();
+ }}finally{await browser.close();}
+});
