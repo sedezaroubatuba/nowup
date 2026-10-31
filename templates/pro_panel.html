@@ -196,7 +196,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <form action="/painel/cardapio/produtos" method="post" enctype="multipart/form-data" class="product-form">
 <label>Nome do produto<input class="input" name="name" maxlength="140" required>
 </label>
-<label>Categoria<select name="category" required>{% for category in product_categories if category.active %}<option value="{{category.name}}">{{category.name}}</option>{% else %}<option value="Geral">Geral</option>{% endfor %}</select>
+<label>Categoria<select name="category" required><option value="__combos256">🍻 Combos — categoria do aplicativo</option><option value="Geral" selected>Geral</option>{% for category in product_categories if category.active and category.name|lower != 'combos' %}<option value="{{category.name}}">{{category.name}}</option>{% endfor %}</select>
 </label>
 <label>Preço<input class="input" name="price" inputmode="decimal" placeholder="Ex.: 29,90" required>
 </label>
@@ -229,7 +229,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <form action="/painel/cardapio/produtos/{{product.id}}" method="post" enctype="multipart/form-data" class="product-form">
 <input type="hidden" name="personalizable" value="{{1 if product.is_dish else ''}}"><label>Adicionais deste produto<select name="extras_mode" data-extras-mode155><option value="none" {% if product.extras_mode=='none' %}selected{% endif %}>Sem adicionais</option><option value="all" {% if product.extras_mode=='all' %}selected{% endif %}>Permitir todos os adicionais da loja</option><option value="selected" {% if product.extras_mode=='selected' %}selected{% endif %}>Selecionar adicionais</option>{% if product.extras_mode=='legacy' %}<option value="legacy" selected>Manter adicionais atuais deste produto</option>{% endif %}</select></label><div class="full" data-shared-picker155>{% for extra in shared_extras %}<label class="check"><input type="checkbox" name="extra_ids" value="{{extra.id}}" {% if extra.id in shared_selected.get(product.id,[]) %}checked{% endif %}> {{extra.name}} · + R$ {{'%.2f'|format(extra.price_cents/100)|replace('.',',')}}{% if not extra.available %} (indisponível){% endif %}</label>{% else %}<p>Cadastre primeiro seus complementos na aba Adicionais.</p>{% endfor %}</div><label>Nome<input class="input" name="name" value="{{product.name}}" required>
 </label>
-<label>Categoria<select name="category" required>{% for category in product_categories if category.active %}<option value="{{category.name}}" {% if category.name==product.category %}selected{% endif %}>{{category.name}}</option>{% endfor %}</select>
+<label>Categoria<select name="category" required><option value="__combos256" {% if product.is_combo256 or product.category|lower == 'combos' %}selected{% endif %}>🍻 Combos — categoria do aplicativo</option>{% if not product.is_combo256 and product.category|lower != 'combos' %}<option value="{{product.category}}" selected>{{product.category}}</option>{% endif %}{% for category in product_categories if category.active and category.name|lower != 'combos' and category.name != product.category %}<option value="{{category.name}}" {% if category.name==product.category and not product.is_combo256 %}selected{% endif %}>{{category.name}}</option>{% endfor %}</select>
 </label>
 <label>Preço<input class="input" name="price" value="{{'%.2f'|format(product.price_cents/100)|replace('.',',')}}" required>
 </label>

@@ -28,3 +28,15 @@ def test_pairs_save_scope_render_and_clear(env):
     with m.db() as c:
         row=c.execute('SELECT * FROM products WHERE id=?',(ids[1],)).fetchone()
         assert row['related256']=='' and row['is_combo256']==0 and row['recommend256']==0
+
+def test_builtin_combo_category_and_regular_promotion(env):
+    m,client,_,pid,_=env
+    for name,category,promo,expected_combo,expected_category in [('Combo direto','__combos256','',1,'Combos'),('Oferta cerveja','Cervejas','8,00',0,'Cervejas')]:
+        response=client.post('/painel/cardapio/produtos',data={'name':name,'category':category,'price':'10,00','promo_price':promo,'available':'1'},follow_redirects=False)
+        assert response.status_code==303,response.text
+        with m.db() as c:
+            product=c.execute('SELECT * FROM products WHERE professional_id=? AND name=? ORDER BY id DESC LIMIT 1',(pid,name)).fetchone()
+            assert product['is_combo256']==expected_combo and product['category']==expected_category
+            if promo:assert product['promo_price_cents']==800
+    panel=client.get('/painel');assert panel.status_code==200
+    assert 'Combos — categoria do aplicativo' in panel.text
