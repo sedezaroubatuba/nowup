@@ -1,0 +1,21 @@
+/* V278: approved third purple storefront; geometry and cart behavior preserved. */
+html body.public-profile-area.nu233-store{background:#faf7ff!important}
+html body.public-profile-area.nu233-store [data-native-menu]{background:transparent!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu-menu-sticky,html body.public-profile-area.nu233-store.nu232-store.nu187-store-home [data-native-menu] .nu-menu-sticky,html body.public-profile-area.nu233-store.nu233-desktop.nu187-store-home [data-native-menu] .nu-menu-sticky{background:linear-gradient(115deg,#3b096d,#6411ac)!important;border-radius:0 0 20px 20px!important;box-shadow:0 6px 16px #57138b20!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu83-catalog-heading{background:transparent!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu83-catalog-heading .nu83-search input,html body.public-profile-area.nu233-store [data-native-menu] .nu83-catalog-heading input[data-product-search]{background:#fff!important;border-color:#e5cff8!important;color:#381651!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu83-catalog-heading input::placeholder{color:#837391!important;opacity:1}
+html body.public-profile-area.nu233-store [data-native-menu] .nu83-catalog-heading .nu187-back,html body.public-profile-area.nu233-store [data-native-menu] .nu83-catalog-heading .nu168-trigger{background:#ffffff0d!important;color:#fff!important;border:1px solid #a33df0!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu248-slide-toggle{background:linear-gradient(110deg,#8612df,#9b15ed)!important;color:#fff!important;border:1px solid #c68aef!important}
+html body.public-profile-area.nu233-store [data-native-menu] .menu-category-nav{background:transparent!important}
+html body.public-profile-area.nu233-store [data-native-menu] .menu-category-nav.nu274-categories>button.active{box-shadow:0 0 0 2px #cda0ef!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu190-showcase .nu201-card.nu190-card,html body.public-profile-area.nu233-store [data-native-menu] .nu191-grid .nu201-card.nu190-card{background:#fff!important;border:1px solid #ad78d1!important;box-shadow:0 4px 12px #6411ac17!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu190-showcase .nu201-card.nu190-card strong,html body.public-profile-area.nu233-store [data-native-menu] .nu191-grid .nu201-card.nu190-card strong{color:#650ab3!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu190-showcase .nu190-category>header h2{color:#35095b!important;position:relative;padding-bottom:8px}
+html body.public-profile-area.nu233-store [data-native-menu] .nu190-showcase .nu190-category>header h2::after{content:'';position:absolute;bottom:0;left:40px;width:40px;height:4px;background:#8512d6;border-radius:4px}
+html body.public-profile-area.nu233-store [data-native-menu] .nu229-category-icon{background:#ecdafa!important;color:#7914c6!important;border-radius:50%!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu190-showcase .nu190-category>header>button,html body.public-profile-area.nu233-store [data-native-menu] .nu219-less{background:#eeddfa!important;color:#7112b5!important;border:0!important;border-radius:18px!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu190-indicator{color:#7a11c9!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu190-category{border-color:#e4d4ee!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu201-open:disabled{background:#eeebf1!important;color:#97909e!important;opacity:1!important}
+html body.public-profile-area.nu233-store [data-native-menu] :is(button,input):focus-visible{outline:3px solid #b48bda!important;outline-offset:2px}
