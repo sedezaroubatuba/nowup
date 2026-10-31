@@ -23,7 +23,7 @@
       const photo=product?.querySelector('img');
       const thumb=document.createElement(photo?'img':'span');
       thumb.className='nu143-product-thumb';
-      if(photo){thumb.src=photo.src;thumb.alt='';thumb.addEventListener('error',()=>{thumb.replaceWith(Object.assign(document.createElement('span'),{className:'nu143-product-thumb',textContent:'🍽'}));},{once:true});}
+      if(photo){thumb.src=photo.dataset.src258||photo.getAttribute('src')||photo.currentSrc||photo.src;thumb.alt='';thumb.decoding='async';thumb.addEventListener('error',()=>{thumb.replaceWith(Object.assign(document.createElement('span'),{className:'nu143-product-thumb',textContent:'🍽'}));},{once:true});}
       else{thumb.textContent='🍽';thumb.setAttribute('aria-hidden','true');}
       row.prepend(thumb);
       const name=row.querySelector('b')?.textContent||'produto';
