@@ -29,14 +29,17 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (nav && nav.parentElement !== bar) bar.append(nav);
     // The slideshow belongs to the page flow, never the sticky search controls.
     body.classList.toggle('nu237-banner-hidden', !home);
-    body.classList.remove('nu248-slide-collapsed');
+    if (body.classList.contains('nu248-slide-collapsed')) body.classList.remove('nu248-slide-collapsed');
     const height = Math.ceil(bar.getBoundingClientRect().height);
-    body.style.setProperty('--nu232-sticky-height', height + 'px');
+    setSize('--nu232-sticky-height', height + 'px');
     const dock = root.querySelector('.nu83-cart-dock:not([hidden])');
     const dockHeight = dock && getComputedStyle(dock).position === 'fixed' && dock.getBoundingClientRect().height > 0 ? dock.getBoundingClientRect().height + 24 : 20;
     // Four complete cards (2x2), after the cover has scrolled out of view.
     const cardHeight = Math.max(150, Math.min(240, Math.floor((window.innerHeight - height - 44 - 32 - dockHeight - 8) / 2)));
-    body.style.setProperty('--nu232-card-height', cardHeight + 'px');
+    setSize('--nu232-card-height', cardHeight + 'px');
+  }
+  function setSize(name, value) {
+    if (body.style.getPropertyValue(name) !== value) body.style.setProperty(name, value);
   }
   function schedule() {
     if (!queued) {queued = true; requestAnimationFrame(measure);}
@@ -49,10 +52,17 @@ document.addEventListener('DOMContentLoaded', () => {
     intro.classList.toggle('nu233-has-cover', !!cover?.style.backgroundImage && cover.style.backgroundImage !== 'none');
     schedule();
   }
-  new MutationObserver(schedule).observe(root, {childList: true, subtree: true});
-  new MutationObserver(schedule).observe(body, {attributes: true, attributeFilter: ['class']});
+  // Text, quantities and photo changes do not alter the sticky controls.
+  new MutationObserver(records => {
+    if (records.some(r => [...r.addedNodes, ...r.removedNodes].some(n =>
+      n.nodeType === 1 && (n.matches('.nu207-banners,.nu83-cart-dock') || n.querySelector('.nu207-banners,.nu83-cart-dock'))))) schedule();
+  }).observe(root, {childList: true, subtree: true});
+  let homeState = body.classList.contains('nu187-store-home');
+  new MutationObserver(() => {
+    const home = body.classList.contains('nu187-store-home');
+    if (home !== homeState) {homeState = home; schedule();}
+  }).observe(body, {attributes: true, attributeFilter: ['class']});
   new ResizeObserver(schedule).observe(bar);
-  window.addEventListener('scroll', schedule, {passive: true});
   window.addEventListener('resize', schedule, {passive: true});
   window.visualViewport?.addEventListener('resize', schedule, {passive: true});
   mobile.addEventListener('change', enable);
@@ -60,3 +70,4 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('nowup-slide-ready286', schedule);
   enable();
 });
+

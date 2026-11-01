@@ -12,13 +12,21 @@ function removeEdgeWhite274(data,width,height){
 if(typeof module!=='undefined')module.exports={removeEdgeWhite274};
 if(typeof document!=='undefined')(()=>{
  const cache=new Map();
+ const pending=new Set();let scheduled=false;
+ const idle=fn=>window.requestIdleCallback?window.requestIdleCallback(fn,{timeout:1500}):setTimeout(fn,100);
+ function enqueue(img){if(!img.matches('.nu256-highlight>img'))return;pending.add(img);schedule();}
+ function schedule(){if(scheduled||!pending.size||document.hidden)return;scheduled=true;idle(()=>{scheduled=false;if(document.hidden)return;const img=pending.values().next().value;pending.delete(img);if(img?.isConnected)process(img);schedule();});}
+ // Keep pixel processing away from loading/scroll handlers, one visible photo at a time.
+ const observer=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){observer.unobserve(e.target);enqueue(e.target);}}),{rootMargin:'120px'}):null;
+ function watch(img){if(!img.matches('.nu256-highlight>img'))return;if(observer)observer.observe(img);else enqueue(img);}
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule();});
  function process(img){
   if(!img.matches('.nu256-highlight>img')||!img.complete||!img.naturalWidth)return;
   const src=img.currentSrc||img.src;if(!src||src.startsWith('data:')||src.includes('product-placeholder.svg')||img.dataset.cutout274===src)return;
   img.dataset.cutout274=src;
   if(cache.has(src)){const result=cache.get(src);if(result)img.src=result;return;}
   try{
-   const scale=Math.min(1,640/Math.max(img.naturalWidth,img.naturalHeight)),w=Math.max(1,Math.round(img.naturalWidth*scale)),h=Math.max(1,Math.round(img.naturalHeight*scale));
+   const scale=Math.min(1,320/Math.max(img.naturalWidth,img.naturalHeight)),w=Math.max(1,Math.round(img.naturalWidth*scale)),h=Math.max(1,Math.round(img.naturalHeight*scale));
    const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,w,h);const pixels=ctx.getImageData(0,0,w,h);
    const corner=[0,(w-1)*4,(h-1)*w*4,(w*h-1)*4];
    if(corner.filter(p=>Math.min(...pixels.data.slice(p,p+3))>=240||pixels.data[p+3]<12).length<3){cache.set(src,null);return;}
@@ -27,7 +35,8 @@ if(typeof document!=='undefined')(()=>{
    const result=output.toDataURL('image/png');if(cache.size>=60)cache.delete(cache.keys().next().value);cache.set(src,result);img.src=result;
   }catch(_){cache.set(src,null); /* Non-readable images keep their original source. */}
  }
- document.addEventListener('load',e=>{if(e.target.tagName==='IMG')process(e.target);},true);
- const scan=()=>document.querySelectorAll('.nu256-highlight>img').forEach(process);
+ document.addEventListener('load',e=>{if(e.target.tagName==='IMG')watch(e.target);},true);
+ const scan=()=>document.querySelectorAll('.nu256-highlight>img').forEach(watch);
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',scan);else scan();
 })();
+
