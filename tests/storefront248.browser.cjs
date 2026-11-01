@@ -91,7 +91,7 @@ test('idle store stays settled and scrolling does not remeasure the whole layout
   await page.evaluate(()=>{for(let i=0;i<30;i++){window.dispatchEvent(new Event('scroll'));const row=document.createElement('span');row.textContent='Quantidade '+i;document.querySelector('.nu190-showcase').append(row);}document.body.classList.add('nu143-has-cart');});
   await page.waitForTimeout(160);assert.equal(await page.evaluate(()=>window.measures306),0);
   await page.evaluate(()=>{document.querySelector('.nu83-catalog-heading').style.height='80px';});
-  await page.waitForFunction(()=>document.body.style.getPropertyValue('--nu232-sticky-height')==='80px');
+  await page.waitForFunction(()=>parseInt(document.body.style.getPropertyValue('--nu232-sticky-height'),10)===Math.ceil(document.querySelector('.nu-menu-sticky').getBoundingClientRect().height));
   assert.ok(await page.evaluate(()=>window.measures306)>0);
  }finally{await browser.close();}
 });
