@@ -2,6 +2,10 @@ name: Storefront banner checks
 on:
   pull_request:
     paths:
+      - 'app.py'
+      - 'nowup_runtime238.py'
+      - 'nowup_admin227.py'
+      - 'tests/combos284.browser.cjs'
       - 'static/storefront232.*'
       - 'static/store-app256.js'
       - 'tests/storeapp256.browser.cjs'
@@ -21,6 +25,10 @@ on:
   push:
     branches: [codex/categorias-icones-v230]
     paths:
+      - 'app.py'
+      - 'nowup_runtime238.py'
+      - 'nowup_admin227.py'
+      - 'tests/combos284.browser.cjs'
       - 'static/storefront232.*'
       - 'static/store-app256.js'
       - 'tests/storeapp256.browser.cjs'

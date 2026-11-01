@@ -70,7 +70,7 @@ async def security_headers_and_csrf(request: Request, call_next):
     response.headers["Content-Security-Policy"]="base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'"
     if request.url.scheme=="https" or os.getenv("NOWUP_HTTPS")=="1":response.headers["Strict-Transport-Security"]="max-age=31536000"
     if request.url.path in ("/entrar","/admin/codigo","/redefinir-senha","/recuperar-senha"):
-        response.headers["Referrer-Policy"]="no-referrer"
+        response.headers["Referrer-Policy"]="same-origin"
     response.headers["Permissions-Policy"]="camera=(), microphone=(), geolocation=(self)"
     if ('text/html' in response.headers.get('content-type','') or
             request.url.path.startswith(('/api/','/admin','/painel','/cliente','/pedido/'))):

@@ -130,3 +130,24 @@ test('suggested personalized product uses its existing chooser before adding',as
  await page.getByRole('button',{name:'Adicionar Produto 2',exact:true}).click();assert.equal(await page.evaluate(()=>window.chooser310),true);assert.equal(await page.evaluate(()=>window.NOWUP_CART160.quantity(2)),0);assert.match(await page.locator('[data-cart-total]').textContent(),/10,00/);
  }finally{await browser.close();}
 });
+
+test('Chrome auth forms preserve Origin on desktop and mobile with private referrer policy',async()=>{
+ const http=require('node:http');
+ const policy=read('app.py').match(/response\.headers\["Referrer-Policy"\]="(same-origin)"/)[1];
+ const received=[];
+ const server=http.createServer((req,res)=>{
+  if(req.method==='POST'){received.push(req.headers);res.end('submitted');return;}
+  res.setHeader('Content-Type','text/html');res.setHeader('Referrer-Policy',policy);
+  res.end('<form method="post" action="/entrar"><input name="email" value="test@example.invalid"><button>Entrar</button></form>');
+ });
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const origin=`http://127.0.0.1:${server.address().port}`;
+ const browser=await launch();
+ try{for(const width of [390,1280]){
+  const page=await browser.newPage({viewport:{width,height:844}});
+  await page.goto(origin+'/entrar');await Promise.all([page.waitForURL(origin+'/entrar',{waitUntil:'load'}),page.getByRole('button',{name:'Entrar'}).click()]);
+  await page.waitForFunction(()=>document.body.textContent==='submitted');await page.close();
+ }
+ assert.equal(received.length,2);for(const headers of received){assert.equal(headers.origin,origin);assert.equal(headers['sec-fetch-site'],'same-origin');}
+ }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
+});
