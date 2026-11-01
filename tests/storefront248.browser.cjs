@@ -81,3 +81,29 @@ test('wide slideshow keeps its height with a square lazy-loading placeholder',as
   await page.close();
  }}finally{await browser.close();}
 });
+
+
+test('idle store stays settled and scrolling does not remeasure the whole layout',async()=>{
+ const {browser,page}=await setup(390);try{
+  await page.waitForTimeout(250);
+  await page.evaluate(()=>{window.measures306=0;const bar=document.querySelector('.nu-menu-sticky'),rect=bar.getBoundingClientRect.bind(bar);bar.getBoundingClientRect=()=>{window.measures306++;return rect();};});
+  await page.waitForTimeout(160);assert.equal(await page.evaluate(()=>window.measures306),0);
+  await page.evaluate(()=>{for(let i=0;i<30;i++){window.dispatchEvent(new Event('scroll'));const row=document.createElement('span');row.textContent='Quantidade '+i;document.querySelector('.nu190-showcase').append(row);}document.body.classList.add('nu143-has-cart');});
+  await page.waitForTimeout(160);assert.equal(await page.evaluate(()=>window.measures306),0);
+  await page.evaluate(()=>{document.querySelector('.nu83-catalog-heading').style.height='80px';});
+  await page.waitForFunction(()=>parseInt(document.body.style.getPropertyValue('--nu232-sticky-height'),10)===Math.ceil(document.querySelector('.nu-menu-sticky').getBoundingClientRect().height));
+  assert.ok(await page.evaluate(()=>window.measures306)>0);
+ }finally{await browser.close();}
+});
+
+test('highlight photos are processed only near the screen and outside load handlers',async()=>{
+ const browser=await chromium.launch({headless:true,...(process.env.NOWUP_CHROME_EXECUTABLE?{executablePath:process.env.NOWUP_CHROME_EXECUTABLE}:{})});try{
+ const page=await browser.newPage({viewport:{width:390,height:850}});
+ await page.setContent('<div style="height:2000px"></div><article class="nu256-highlight"><img width="100" height="100"></article>');
+ await page.evaluate(()=>{window.reads306=0;window.callbacks306=[];window.requestIdleCallback=fn=>{window.callbacks306.push(fn);};const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(...a){const c=original.apply(this,a),read=c.getImageData.bind(c);c.getImageData=(...v)=>{window.reads306++;return read(...v);};return c;};const c=document.createElement('canvas');c.width=c.height=100;const ctx=c.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,100,100);ctx.fillStyle='purple';ctx.fillRect(30,30,40,40);window.photo306=c.toDataURL();});
+ await page.addScriptTag({content:fs.readFileSync(path.join(root,'static/offer-photos274.js'),'utf8')});
+ await page.evaluate(()=>{document.querySelector('img').src=window.photo306;});
+ await page.waitForTimeout(150);assert.equal(await page.evaluate(()=>window.reads306),0);assert.equal(await page.evaluate(()=>window.callbacks306.length),0);
+ await page.locator('img').scrollIntoViewIfNeeded();await page.waitForFunction(()=>window.callbacks306.length>0);assert.equal(await page.evaluate(()=>window.reads306),0);
+ }finally{await browser.close();}
+});
