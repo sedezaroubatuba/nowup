@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
+from nowup_templates308 import Jinja2Templates
 from email_validator import validate_email, EmailNotValidError
 from mailing import send_verification, configured
 
@@ -64,3 +64,4 @@ def resend(email: str=Form(...)):
     conn.commit(); conn.close()
     send_verification(normalized,u["name"],token)
     return RedirectResponse("/cadastro/aguardando?reenviado=1",303)
+

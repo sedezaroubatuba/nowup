@@ -3,7 +3,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from fastapi import APIRouter, Request, Form, HTTPException
 from fastapi.responses import RedirectResponse
-from fastapi.templating import Jinja2Templates
+from nowup_templates308 import Jinja2Templates
 from mailing import send_email, configured as email_configured
 
 BASE = Path(__file__).resolve().parent
@@ -109,6 +109,7 @@ def create_secure_session(uid: int, dest: str, admin: bool=False):
 def secure_login(request: Request, email: str=Form(...),password: str=Form(...),tipo: str=Form("")):
     from nowup_auth247 import check as limit247
     limit247(db,request,email)
+    if len(password)>128:return RedirectResponse("/entrar?erro=1",303)
     normalized=email.strip().lower()
     conn=db(); u=conn.execute("SELECT * FROM users WHERE email=? AND is_active=1",(normalized,)).fetchone(); conn.close()
     suffix=f"&tipo={tipo}" if tipo in ("cliente","profissional","admin") else ""
@@ -144,14 +145,17 @@ def admin_code_page(request: Request):
 def admin_code_verify(request: Request, code:str=Form(...)):
     challenge=request.cookies.get("nowup_admin_challenge")
     if not challenge: return RedirectResponse("/entrar?tipo=admin",303)
-    conn=db(); row=conn.execute("SELECT * FROM admin_login_codes WHERE challenge=?",(challenge,)).fetchone()
+    conn=db(); conn.execute("BEGIN IMMEDIATE"); row=conn.execute("SELECT c.* FROM admin_login_codes c JOIN users u ON u.id=c.user_id WHERE c.challenge=? AND u.role='admin' AND u.is_active=1",(challenge,)).fetchone()
     if not row or row["expires_at"]<=datetime.now(timezone.utc).isoformat() or row["attempts"]>=5:
         if row: conn.execute("DELETE FROM admin_login_codes WHERE challenge=?",(challenge,)); conn.commit()
         conn.close(); resp=RedirectResponse("/entrar?tipo=admin&erro=2fa_expirado",303); resp.delete_cookie("nowup_admin_challenge"); return resp
     valid=hmac.compare_digest(hashlib.sha256(code.strip().encode()).hexdigest(),row["code_hash"])
     if not valid:
         conn.execute("UPDATE admin_login_codes SET attempts=attempts+1 WHERE challenge=?",(challenge,)); conn.commit(); conn.close(); return RedirectResponse("/admin/codigo?erro=1",303)
-    uid=row["user_id"]; conn.execute("DELETE FROM admin_login_codes WHERE challenge=?",(challenge,)); conn.commit(); conn.close(); resp=create_secure_session(uid,"/admin",admin=True); resp.delete_cookie("nowup_admin_challenge"); return resp
+    uid=row["user_id"]
+    editorial=conn.execute("SELECT cms_role FROM cms_permissions WHERE user_id=?",(uid,)).fetchone()
+    destination="/admin/cms" if editorial and editorial["cms_role"]!="admin" else "/admin"
+    conn.execute("DELETE FROM admin_login_codes WHERE challenge=?",(challenge,)); conn.commit(); conn.close(); resp=create_secure_session(uid,destination,admin=True); resp.delete_cookie("nowup_admin_challenge"); return resp
 
 @router.get("/admin/entrar")
 def force_admin_login(request: Request):
@@ -161,3 +165,4 @@ def force_admin_login(request: Request):
     resp=RedirectResponse("/entrar?tipo=admin",303)
     resp.delete_cookie("nowup_session")
     return resp
+

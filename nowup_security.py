@@ -12,6 +12,12 @@ def session_user(conn, token):
         (token, datetime.now(timezone.utc).isoformat(), datetime.now(timezone.utc).isoformat())).fetchone()
     if row is None:
         return None
+    # Editorial accounts must never inherit the platform's Super ADM privileges.
+    if 'role' in row.keys() and row['role']=='admin':
+        exists=conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='cms_permissions'").fetchone()
+        permission=conn.execute('SELECT cms_role FROM cms_permissions WHERE user_id=?',(row['id'],)).fetchone() if exists else None
+        if permission and permission['cms_role']!='admin':
+            row=dict(row);row['role']='cms'
     try:
         access = conn.execute('SELECT end FROM adm227_access WHERE session_hash=?',
             (hashlib.sha256(token.encode()).hexdigest(),)).fetchone()
@@ -31,3 +37,4 @@ def revoke_session(conn, token_hash):
             if conn.execute("SELECT 1 FROM sqlite_master WHERE name='push_subscriptions'").fetchone():
                 conn.execute('DELETE FROM push_subscriptions WHERE session_hash=?', (token_hash,))
     conn.execute('DELETE FROM adm227_team_sessions WHERE token_hash=?', (token_hash,))
+

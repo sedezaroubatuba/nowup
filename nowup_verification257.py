@@ -62,7 +62,7 @@ def require_review(c,pid):
     if row and row['status']!='verified': raise HTTPException(400,'Confira os anexos em Verificação de lojistas antes de aprovar a loja.')
 
 def register(g):
-    G.update(g); app=g['app']; app.add_event_handler('startup',initialize)
+    G.update(g); app=g['app']; app.router.add_event_handler('startup',initialize)
     def admin(request,c):
         import nowup_admin227 as adm
         actor=adm.auth(request,c,'stores')
@@ -122,3 +122,4 @@ def register(g):
             c.execute('INSERT INTO merchant_audit257 VALUES(?,?,?,?)',(p['id'],u['id'],'resubmitted',g['now_iso']()));c.commit()
         finally:c.close()
         return RedirectResponse('/painel/documentos',303)
+
