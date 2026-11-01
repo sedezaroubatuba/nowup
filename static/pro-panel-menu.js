@@ -12,11 +12,17 @@
     empty.style.gridColumn = '1 / -1';
     empty.hidden = true;
     grid.append(empty);
+    const search=dashboard.querySelector('[data-pro-search]');
+    let activeButton=buttons.find(button=>button.classList.contains('active'))||buttons[0];
+    search?.addEventListener('input',()=>filter(activeButton));
     function filter(button) {
+      activeButton=button;
+      const query=normalize(search?.value);
       const selected = normalize(button.dataset.proCategory);
       let visibleCount = 0;
       grid.querySelectorAll('[data-pro-product]').forEach(card => {
-        const visible = selected === 'all' || (selected === 'promocoes' ? card.dataset.featured === '1' : normalize(card.dataset.category) === selected);
+        const categoryMatch = selected === 'all' || (selected === 'combos' ? card.dataset.combo === '1' || normalize(card.dataset.category) === 'combos' : selected === 'promocoes' ? card.dataset.featured === '1' : normalize(card.dataset.category) === selected);
+        const visible = categoryMatch && (!query || normalize((card.dataset.name||card.querySelector('summary b')?.textContent||'')+' '+(card.dataset.productId||'')).includes(query));
         card.hidden = !visible;
         card.style.setProperty('display', visible ? 'block' : 'none', 'important');
         if (visible) visibleCount++;
@@ -26,6 +32,7 @@
         item.classList.toggle('active', active);
         item.setAttribute('aria-pressed', String(active));
       });
+      empty.textContent=query?'Nenhum produto encontrado para esta pesquisa.':'Nenhum produto nesta categoria.';
       empty.hidden = visibleCount > 0;
       empty.style.setProperty('display', visibleCount ? 'none' : 'block', 'important');
     }
