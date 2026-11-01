@@ -47,7 +47,12 @@ async def timing(request:Request):
     return RedirectResponse('/admin/banners-inicio?salvo=1',303)
 @router.post('/admin/banners-inicio/salvar')
 async def save(request:Request):
-    admin(request);f=await request.form();bid=number(f.get('id',0),0,2147483647)
+    f=await request.form()
+    from starlette.concurrency import run_in_threadpool
+    return await run_in_threadpool(save_worker308,request,f)
+
+def save_worker308(request,f):
+    admin(request);bid=number(f.get('id',0),0,2147483647)
     title=str(f.get('title','')).strip()[:140]
     if not title:raise HTTPException(400,'Preencha o título')
     position=number(f.get('position',0),0,999)
@@ -69,3 +74,4 @@ def delete(request:Request,bid:int):
     with closing(G['db']()) as c,c:
         if not c.execute('DELETE FROM home_banners210 WHERE id=?',(bid,)).rowcount:raise HTTPException(404,'Banner não encontrado')
     return RedirectResponse('/admin/banners-inicio?salvo=1',303)
+

@@ -36,6 +36,10 @@ async def timing(request:Request):
 @router.post('/painel/banners/salvar')
 async def save(request:Request):
     f=await request.form()
+    from starlette.concurrency import run_in_threadpool
+    return await run_in_threadpool(save_worker308,request,f)
+
+def save_worker308(request,f):
     try:bid=int(f.get('id',0));ids=list(dict.fromkeys(int(v) for v in f.getlist('products')))
     except (ValueError,TypeError):raise HTTPException(400,'Seleção de produtos inválida')
     title=str(f.get('title','')).strip()[:100];mode=f.get('mode');active=int(f.get('active')=='1')
@@ -74,3 +78,4 @@ def public(slug:str):
             if ids or b['mode']=='info':items.append({'title':b['title'],'image':'/uploads/'+b['image'],'mode':b['mode'],'ids':ids})
         return JSONResponse({'seconds':s[0] if s else 2,'items':items},headers={'Cache-Control':'no-store'})
     finally:c.close()
+

@@ -390,6 +390,10 @@ async def change(request:Request):
  if int(request.headers.get('content-length','0') or 0)>5000000:fail(413,'Requisição acima do limite.')
  try:body=await request.json()
  except ValueError:fail(400,'Conteúdo inválido.')
+ from starlette.concurrency import run_in_threadpool
+ return await run_in_threadpool(change_worker308,request,body)
+
+def change_worker308(request,body):
  if not isinstance(body,dict) or not isinstance(body.get('changes'),list) or len(body['changes'])>50:fail(400,'Alterações inválidas.')
  why=clean(body.get('reason',''),500,True)
  with connection() as c:
@@ -528,6 +532,9 @@ def team_entry(request:Request):
  return form_page('Entrar na equipe NowUp','<form method="post"><label>E-mail<input name="email" type="email" autocomplete="username" required></label><label>Senha<input name="password" type="password" autocomplete="current-password" required></label><button>Receber código por e-mail</button></form><a href="/entrar?tipo=admin">Sou Super ADM</a><p>O código de confirmação exige o envio de e-mail configurado no servidor.</p>')
 @router.post('/admin/super/equipe/entrar')
 def team_login(request:Request,email:str=Form(...),password:str=Form(...)):
+ from nowup_auth247 import check
+ check(G['db'],request,email)
+ if len(password)>128:fail(400,'Senha inválida.')
  with connection() as c:
   limited(c,'login:'+tokenhash(email.strip().lower())+':'+tokenhash(request.client.host if request.client else ''))
   m=next((s for s in rows(c,'staff') if s['email']==email.strip().lower() and s['enabled']),None)
@@ -557,3 +564,4 @@ def logout(request:Request):
  with connection() as c:
   a=auth(request,c);c.execute("UPDATE adm227_access SET end=?,state='Deslogado' WHERE session_hash=?",(stamp(),a['session']));__import__('nowup_security').revoke_session(c,a['session']);audit(c,a,'Saída do Super ADM');c.commit()
  resp=JSONResponse({'ok':True,'next':'/admin/super/equipe/entrar'});resp.delete_cookie('nowup_team227',path='/admin/super');return resp
+

@@ -8,5 +8,6 @@ def register(app, current_user):
         user = current_user(request)
         destination = '/entrar?pwa=1'
         if user:
-            destination = {'professional': '/painel', 'admin': '/admin'}.get(user['role'], '/cliente')
+            destination = {'professional': '/painel', 'admin': '/admin', 'cms': '/admin/cms'}.get(user['role'], '/cliente')
         return RedirectResponse(destination, status_code=303, headers={'Cache-Control': 'no-store'})
+

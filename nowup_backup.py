@@ -100,14 +100,8 @@ def create_archive(directory):
         if destination.execute('PRAGMA integrity_check').fetchone()[0]!='ok':
             raise RuntimeError('A cópia do banco não passou na verificação de integridade.')
         # All upload filename columns in the DB snapshot must be present.
-        referenced=set()
-        tables=[r[0] for r in destination.execute("SELECT name FROM sqlite_master WHERE type='table'")]
-        for table in tables:
-            quoted='"'+table.replace('"','""')+'"'
-            columns=[r[1] for r in destination.execute('PRAGMA table_info('+quoted+')') if 'filename' in r[1]]
-            for column in columns:
-                col='"'+column.replace('"','""')+'"'
-                referenced.update(str(r[0]) for r in destination.execute('SELECT '+col+' FROM '+quoted) if r[0])
+        from nowup_hardening308 import image_references
+        referenced=image_references(destination)
     finally: destination.close(); source.close()
     files={}
     for name in referenced:
@@ -278,3 +272,4 @@ def download(request:Request):
         shutil.rmtree(directory)
         raise HTTPException(409,'Não foi possível gerar a cópia completa. Confira os caminhos e as imagens cadastradas.') from exc
     return FileResponse(archive,filename='NOWUP-BACKUP-'+datetime.now(ZONE).strftime('%Y%m%d-%H%M%S')+'.zip',media_type='application/zip',headers={'Cache-Control':'no-store'},background=BackgroundTask(shutil.rmtree,directory))
+

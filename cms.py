@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Optional
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
-from fastapi.templating import Jinja2Templates
+from nowup_templates308 import Jinja2Templates
 from PIL import Image
 
 BASE=Path(__file__).resolve().parent
@@ -28,7 +28,7 @@ def current_user(request):
     c=db(); r=session_user(c,token); c.close(); return dict(r) if r else None
 def cms_role(request):
     u=current_user(request)
-    if not u or u["role"]!="admin": raise HTTPException(403,"Acesso administrativo necessário")
+    if not u or u["role"] not in ("admin","cms"): raise HTTPException(403,"Acesso administrativo necessário")
     c=db(); p=c.execute("SELECT cms_role FROM cms_permissions WHERE user_id=?",(u["id"],)).fetchone(); c.close(); return u,(p["cms_role"] if p else "admin")
 def allow(request,*roles):
     u,r=cms_role(request)
@@ -43,11 +43,8 @@ def public_context(request,**extra):
     return {"request":request,"settings":d,"categories":cats,"user":current_user(request),**extra}
 def save_image(upload):
     if not upload or not upload.filename:return ""
-    raw=upload.file.read(6*1024*1024)
-    if len(raw)>5*1024*1024:raise HTTPException(413,"Imagem maior que 5 MB")
-    try:
-        im=Image.open(io.BytesIO(raw)).convert("RGB"); im.thumbnail((1920,1920)); name=f"cms-{secrets.token_hex(12)}.webp"; im.save(UPLOAD_DIR/name,"WEBP",quality=86,method=6); return name
-    except Exception as e:raise HTTPException(400,"Imagem inválida") from e
+    from nowup_hardening308 import save_photo
+    return save_photo(upload,UPLOAD_DIR)
 
 def init_cms_db():
     c=db(); c.executescript("""
@@ -130,6 +127,7 @@ def leads_csv(request:Request):
 
 @router.post("/admin/cms/usuarios/salvar")
 def user_save(request:Request,name:str=Form(...),email:str=Form(...),password:str=Form(...),cms_role_value:str=Form("editor")):
+    if not 12<=len(password)<=128:raise HTTPException(400,'Use uma senha de 12 a 128 caracteres')
     allow(request,"admin");role=cms_role_value if cms_role_value in ("admin","editor","author") else "editor";c=db()
     try:
         cur=c.execute("INSERT INTO users(role,name,email,password_hash,email_verified,is_active,created_at) VALUES('admin',?,?,?,?,1,?)",(name[:120],email.strip().lower(),hash_password(password),1,now_iso()));c.execute("INSERT INTO cms_permissions(user_id,cms_role) VALUES(?,?)",(cur.lastrowid,role));c.commit()
@@ -164,3 +162,4 @@ def contact_page(request:Request):return templates.TemplateResponse("cms_contact
 @router.post("/contato")
 def contact_submit(name:str=Form(...),email:str=Form(""),phone:str=Form(""),subject:str=Form(""),message:str=Form(...)):
     c=db();c.execute("INSERT INTO cms_leads(name,email,phone,subject,message,created_at) VALUES(?,?,?,?,?,?)",(name[:120],email[:160],phone[:40],subject[:160],message[:3000],now_iso()));c.commit();c.close();return RedirectResponse("/contato?enviado=1",303)
+

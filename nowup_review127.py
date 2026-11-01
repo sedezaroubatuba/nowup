@@ -32,7 +32,7 @@ def install(g):
     app=g['app'];db=g['db'];now=g['now_iso'];auth=g['require_user']
     def startup():
         c=db();initialize(c);c.commit();c.close()
-    app.add_event_handler('startup',startup)
+    app.router.add_event_handler('startup',startup)
     g['ORDER_STATUS_LABELS'].update(reviewing='Pedido em revisão',awaiting_approval='Aguardando aprovação do cliente',revision_approved='Alteração aprovada',confirmed='Pedido confirmado')
     def data(oid):
         c=db()
@@ -97,3 +97,4 @@ def install(g):
             c.execute('UPDATE order_revisions SET state=? WHERE id=?',(state,r['id']));notify(c,o,'Resposta à revisão',msg,True);c.commit()
             return RedirectResponse('/pedido/'+token,303)
         finally:c.close()
+

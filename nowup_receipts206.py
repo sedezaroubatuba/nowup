@@ -52,7 +52,8 @@ async def upload(request:Request,order_id:int,file:UploadFile=File(...),request_
     finally:c.close()
     raw=await file.read(LIMIT+1)
     await file.close()
-    content,mime,ext=clean_content(raw)
+    from starlette.concurrency import run_in_threadpool
+    content,mime,ext=await run_in_threadpool(clean_content,raw)
     request_id=request_id.strip()
     if not request_id or len(request_id)>100 or any(x not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_' for x in request_id):
         raise HTTPException(400,'Identificador de envio inválido. Tente novamente.')
@@ -91,3 +92,4 @@ def download(request:Request,order_id:int,receipt_id:int):
     return Response(data,media_type=mime if mime=='image/jpeg' else 'application/octet-stream',headers={
         'Content-Disposition':('inline' if mime=='image/jpeg' else 'attachment')+'; filename="'+filename+'"',
         'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"sandbox; default-src 'none'",'Cross-Origin-Resource-Policy':'same-origin'})
+

@@ -18,8 +18,8 @@ from urllib.error import HTTPError, URLError
 
 from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+from nowup_hardening308 import PublicFiles, save_photo, retire_photos, log_storage, RequestLimit308
+from nowup_templates308 import Jinja2Templates
 from PIL import Image, ImageOps
 from email_validator import validate_email, EmailNotValidError
 from admin_customization import router as admin_customization_router
@@ -40,14 +40,15 @@ MAX_PHOTOS = 10
 MAX_UPLOAD = 5 * 1024 * 1024
 ADMIN_SESSION_MINUTES = 30
 
-app = FastAPI(title="NowUp", version="1.0.0")
+app = FastAPI(title="NowUp", version="1.0.0", docs_url=None, redoc_url=None, openapi_url=None)
+app.add_middleware(RequestLimit308)
 from nowup_feedback270 import install as install_feedback270
 install_feedback270(app)
 app.include_router(admin_customization_router)
 app.include_router(email_verification_router)
 app.include_router(cms_router)
-app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+app.mount("/static", PublicFiles(directory=BASE / "static"), name="static")
+app.mount("/uploads", PublicFiles(directory=UPLOAD_DIR, images_only=True), name="uploads")
 from nowup_combo_pack305 import read_pack
 templates = Jinja2Templates(directory=str(BASE / "templates"))
 templates.env.filters["combo_pack305"]=read_pack
@@ -65,6 +66,10 @@ async def security_headers_and_csrf(request: Request, call_next):
     response.headers["X-Content-Type-Options"]="nosniff"
     response.headers["X-Frame-Options"]="DENY"
     response.headers["Referrer-Policy"]="strict-origin-when-cross-origin"
+    response.headers["Content-Security-Policy"]="base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'"
+    if request.url.scheme=="https" or os.getenv("NOWUP_HTTPS")=="1":response.headers["Strict-Transport-Security"]="max-age=31536000"
+    if request.url.path in ("/entrar","/admin/codigo","/redefinir-senha","/recuperar-senha"):
+        response.headers["Referrer-Policy"]="no-referrer"
     response.headers["Permissions-Policy"]="camera=(), microphone=(), geolocation=(self)"
     if ('text/html' in response.headers.get('content-type','') or
             request.url.path.startswith(('/api/','/admin','/painel','/cliente','/pedido/'))):
@@ -1339,7 +1344,7 @@ def signup_customer(name: str=Form(...), email: str=Form(...), phone: str=Form("
         return RedirectResponse("/cadastro/cliente?erro=admin",303)
     if not normalize_phone(phone):
         return RedirectResponse("/cadastro/cliente?erro=telefone",303)
-    if len(password)<8:
+    if not 8<=len(password)<=128:
         return RedirectResponse("/cadastro/cliente?erro=senha",303)
     if password != password_confirm:
         return RedirectResponse("/cadastro/cliente?erro=confirmacao",303)
@@ -1389,7 +1394,7 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
         return RedirectResponse("/cadastro/profissional?erro=admin",303)
     if not normalize_phone(phone):
         return RedirectResponse("/cadastro/profissional?erro=telefone",303)
-    if len(password)<8:
+    if not 8<=len(password)<=128:
         return RedirectResponse("/cadastro/profissional?erro=senha",303)
     if password != password_confirm:
         return RedirectResponse("/cadastro/profissional?erro=confirmacao",303)
@@ -1452,7 +1457,9 @@ def forgot_password_page(request: Request):
     return templates.TemplateResponse("forgot_password.html", context(request))
 
 @app.post("/recuperar-senha")
-def forgot_password(email: str=Form(...)):
+def forgot_password(request: Request, email: str=Form(...)):
+    from nowup_auth247 import check
+    check(db,request,email,kind='reset')
     normalized=normalize_email(email)
     if normalized:
         conn=db(); user=conn.execute("SELECT id,name,email FROM users WHERE email=? AND is_active=1",(normalized,)).fetchone()
@@ -1476,10 +1483,19 @@ def reset_password_page(request: Request, token: str=""):
 
 @app.post("/redefinir-senha")
 def reset_password(token: str=Form(...), password: str=Form(...), password_confirm: str=Form(...)):
-    row=valid_reset_token(token)
-    if not row: return RedirectResponse("/redefinir-senha?token="+quote(token),303)
-    if len(password)<8 or password!=password_confirm: return RedirectResponse("/redefinir-senha?erro=1&token="+quote(token),303)
-    conn=db(); conn.execute("UPDATE users SET password_hash=? WHERE id=?",(hash_password(password),row["user_id"])); conn.execute("UPDATE password_reset_tokens SET used=1 WHERE token_hash=?",(row["token_hash"],)); conn.execute("DELETE FROM sessions WHERE user_id=?",(row["user_id"],)); conn.commit(); conn.close()
+    if len(password)>128 or password!=password_confirm:return RedirectResponse("/redefinir-senha?erro=1&token="+quote(token),303)
+    conn=db()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row=conn.execute("SELECT t.*,u.role FROM password_reset_tokens t JOIN users u ON u.id=t.user_id WHERE token_hash=? AND used=0 AND expires_at>? AND u.is_active=1",(hashlib.sha256(token.encode()).hexdigest(),now_iso())).fetchone()
+        if not row:return RedirectResponse("/redefinir-senha?token="+quote(token),303)
+        if len(password)<(12 if row['role']=='admin' else 8):return RedirectResponse("/redefinir-senha?erro=1&token="+quote(token),303)
+        conn.execute("UPDATE password_reset_tokens SET used=1 WHERE token_hash=? AND used=0",(row['token_hash'],))
+        conn.execute("UPDATE users SET password_hash=? WHERE id=?",(hash_password(password),row['user_id']))
+        conn.execute("DELETE FROM sessions WHERE user_id=?",(row['user_id'],))
+        conn.execute("DELETE FROM admin_login_codes WHERE user_id=?",(row['user_id'],))
+        conn.commit()
+    finally:conn.close()
     return RedirectResponse("/entrar?senha_redefinida=1",303)
 
 @app.post("/sair")
@@ -1882,9 +1898,6 @@ def pro_product_edit(request: Request, product_id: int, name: str=Form(...), des
     fn=product["image_filename"]
     if photo and photo.filename:
         new_fn=save_image(photo)
-        if fn:
-            try: (UPLOAD_DIR/fn).unlink(missing_ok=True)
-            except OSError: pass
         fn=new_fn
     conn.execute("UPDATE products SET name=?,description=?,category=?,price_cents=?,image_filename=?,available=?,updated_at=?,promo_price_cents=?,featured=?,max_quantity=? WHERE id=?",(name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,now_iso(),promo_cents285,1 if featured else 0,max(1,min(99,max_quantity)),product_id)); configure_personalization153(conn,product_id,bool(personalizable),max_choices) if extras_mode=="legacy" else configure_shared155(conn,p["id"],product_id,extras_mode,extra_ids,max_choices)
     conn.execute("UPDATE products SET sold_cold=? WHERE id=? AND professional_id=?",(1 if sold_cold else 0,product_id,p["id"]))
@@ -1892,6 +1905,7 @@ def pro_product_edit(request: Request, product_id: int, name: str=Form(...), des
     if is_combo256:conn.execute('UPDATE products SET is_dish=1 WHERE id=?',(product_id,))
     conn.execute("UPDATE products SET is_combo256=?,recommend256=?,related256=? WHERE id=? AND professional_id=?",(bool(is_combo256),bool(recommend256),pair_ids256,product_id,p["id"]))
     conn.commit(); conn.close()
+    if fn!=product["image_filename"]:retire_photos(db,UPLOAD_DIR,[product["image_filename"]])
     return RedirectResponse("/painel?ok=combo#combos-loja" if is_combo256 else "/painel?ok=produto#cardapio",303)
 
 @app.post("/painel/cardapio/aviso-carrinho")
@@ -1988,11 +2002,10 @@ def pro_product_option_delete(request: Request, option_id: int):
 def pro_product_delete(request: Request, product_id: int):
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=?",(product_id,p["id"])).fetchone()
     if product:
-        if product["image_filename"]:
-            try: (UPLOAD_DIR/product["image_filename"]).unlink(missing_ok=True)
-            except OSError: pass
         conn.execute("DELETE FROM products WHERE id=?",(product_id,)); conn.commit()
-    conn.close(); return RedirectResponse("/painel?ok=produto-excluido#cardapio",303)
+    conn.close()
+    if product:retire_photos(db,UPLOAD_DIR,[product["image_filename"]])
+    return RedirectResponse("/painel?ok=produto-excluido#cardapio",303)
 
 @app.post("/painel/pedidos/{order_id}/status")
 def pro_order_status(request: Request, order_id: int, status: str=Form(...), reason: str=Form("")):
@@ -2161,17 +2174,12 @@ def pro_identity(request: Request, avatar: Optional[UploadFile]=File(None), cove
     avatar_fn=p["avatar_filename"] or ""; cover_fn=p["cover_filename"] or ""
     if avatar and avatar.filename:
         new_avatar=save_image(avatar)
-        if avatar_fn:
-            try: (UPLOAD_DIR/avatar_fn).unlink(missing_ok=True)
-            except OSError: pass
         avatar_fn=new_avatar
     if cover and cover.filename:
         new_cover=save_image(cover)
-        if cover_fn:
-            try: (UPLOAD_DIR/cover_fn).unlink(missing_ok=True)
-            except OSError: pass
         cover_fn=new_cover
     conn.execute("UPDATE professionals SET avatar_filename=?,cover_filename=? WHERE id=?",(avatar_fn,cover_fn,p["id"])); conn.commit(); conn.close()
+    retire_photos(db,UPLOAD_DIR,[p["avatar_filename"],p["cover_filename"]])
     return RedirectResponse("/painel?ok=identidade#identidade",303)
 
 @app.post("/painel/identidade/{image_type}/excluir")
@@ -2180,11 +2188,10 @@ def pro_identity_delete(request: Request, image_type: str):
     column={"perfil":"avatar_filename","capa":"cover_filename"}.get(image_type)
     if column:
         filename=p[column] or ""
-        if filename:
-            try: (UPLOAD_DIR/filename).unlink(missing_ok=True)
-            except OSError: pass
         conn.execute(f"UPDATE professionals SET {column}='' WHERE id=?",(p["id"],)); conn.commit()
-    conn.close(); return RedirectResponse("/painel?ok=imagem-removida#identidade",303)
+    conn.close()
+    if column:retire_photos(db,UPLOAD_DIR,[filename])
+    return RedirectResponse("/painel?ok=imagem-removida#identidade",303)
 
 @app.post("/painel/publicidade")
 def pro_ad_images(request: Request, featured_image: Optional[UploadFile]=File(None), slide_image: Optional[UploadFile]=File(None)):
@@ -2193,28 +2200,13 @@ def pro_ad_images(request: Request, featured_image: Optional[UploadFile]=File(No
     for upload,column,enabled in ((featured_image,"featured_image_filename",p["featured"]),(slide_image,"slide_image_filename",p["in_slider"])):
         if upload and upload.filename and enabled:
             filename=save_image(upload); old=p[column] or ""
-            if old:
-                try: (UPLOAD_DIR/old).unlink(missing_ok=True)
-                except OSError: pass
             updates.append(f"{column}=?"); values.append(filename)
     if updates:
         values.append(p["id"]); conn.execute(f"UPDATE professionals SET {','.join(updates)} WHERE id=?",values); conn.commit()
-    conn.close(); return RedirectResponse("/painel?ok=publicidade#publicidade",303)
+    conn.close(); retire_photos(db,UPLOAD_DIR,[p["featured_image_filename"],p["slide_image_filename"]]); return RedirectResponse("/painel?ok=publicidade#publicidade",303)
 
 def save_image(upload: UploadFile):
-    if upload.content_type not in {"image/jpeg","image/png","image/webp"}:
-        raise HTTPException(400,"Formato inválido. Use JPG, PNG ou WebP")
-    data=upload.file.read(MAX_UPLOAD+1)
-    if len(data)>MAX_UPLOAD: raise HTTPException(400,"Imagem maior que 5MB")
-    try:
-        im=Image.open(io.BytesIO(data)); im.verify()
-        im=Image.open(io.BytesIO(data))
-        if im.width*im.height>24_000_000: raise HTTPException(400,"Imagem com resolução muito alta")
-        im=ImageOps.exif_transpose(im).convert("RGB")
-        im.thumbnail((1600,1600))
-    except Exception: raise HTTPException(400,"Arquivo não é uma imagem válida")
-    filename=secrets.token_hex(16)+".jpg"; im.save(UPLOAD_DIR/filename,"JPEG",quality=88,optimize=True)
-    return filename
+    return save_photo(upload, UPLOAD_DIR, MAX_UPLOAD)
 
 @app.post("/painel/fotos")
 def upload_photo(request: Request, photo: UploadFile=File(...), caption: str=Form("")):
@@ -2237,13 +2229,13 @@ def set_cover(request: Request, photo_id:int):
 def delete_photo(request: Request, photo_id:int):
     u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone(); ph=conn.execute("SELECT * FROM photos WHERE id=? AND professional_id=?",(photo_id,p["id"])).fetchone()
     if ph:
-        try: (UPLOAD_DIR/ph["filename"]).unlink(missing_ok=True)
-        except: pass
         conn.execute("DELETE FROM photos WHERE id=?",(photo_id,)); conn.commit()
         if ph["is_cover"]:
             nxt=conn.execute("SELECT id FROM photos WHERE professional_id=? ORDER BY id LIMIT 1",(p["id"],)).fetchone()
             if nxt: conn.execute("UPDATE photos SET is_cover=1 WHERE id=?",(nxt["id"],)); conn.commit()
-    conn.close(); return RedirectResponse("/painel#fotos",303)
+    conn.close()
+    if ph:retire_photos(db,UPLOAD_DIR,[ph["filename"]])
+    return RedirectResponse("/painel#fotos",303)
 
 @app.post("/painel/publicar")
 def publish_post(request: Request, text: str=Form(...), post_type: str=Form("post"), photo: Optional[UploadFile]=File(None)):
@@ -2673,12 +2665,10 @@ def admin_banner_edit(request: Request, bid:int, link:str=Form(""), brightness:i
     fn=banner["image_filename"] or ""
     if image and image.filename:
         new_fn=save_image(image)
-        if fn:
-            try: (UPLOAD_DIR/fn).unlink(missing_ok=True)
-            except OSError: pass
         fn=new_fn
     brightness=max(40,min(160,brightness)); zoom=max(100,min(200,zoom)); position_x=max(0,min(100,position_x)); position_y=max(0,min(100,position_y)); desktop_height=max(240,min(600,desktop_height)); mobile_height=max(180,min(500,mobile_height))
     conn.execute("UPDATE banners SET title='',subtitle='',link=?,image_filename=?,template=1,background_color='#000000',text_color='#ffffff',font_family='Inter',brightness=?,zoom=?,position_x=?,position_y=?,desktop_height=?,mobile_height=? WHERE id=?",(clean_link(link),fn,brightness,zoom,position_x,position_y,desktop_height,mobile_height,bid)); conn.commit(); conn.close()
+    if fn!=banner["image_filename"]:retire_photos(db,UPLOAD_DIR,[banner["image_filename"]])
     return RedirectResponse("/admin#publicidade",303)
 
 @app.post("/admin/banners/{bid}/alternar")
@@ -2697,8 +2687,7 @@ def admin_hero_cover(request: Request, image:Optional[UploadFile]=File(None), br
     for key,value in values: conn.execute("INSERT INTO site_settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",(key,str(value)))
     conn.commit(); conn.close()
     if old and fn != old:
-        try: (UPLOAD_DIR/old).unlink(missing_ok=True)
-        except OSError: pass
+        retire_photos(db,UPLOAD_DIR,[old])
     return RedirectResponse("/admin#aparencia",303)
 
 @app.post("/admin/banners/{bid}/mover/{direction}")
@@ -2719,8 +2708,7 @@ def admin_move_banner(request: Request, bid:int, direction:str):
 def admin_delete_banner(request: Request, bid:int):
     require_user(request,"admin"); conn=db(); banner=conn.execute("SELECT image_filename FROM banners WHERE id=?",(bid,)).fetchone(); conn.execute("DELETE FROM banners WHERE id=?",(bid,)); conn.commit(); conn.close()
     if banner and banner["image_filename"]:
-        try: (UPLOAD_DIR/banner["image_filename"]).unlink(missing_ok=True)
-        except OSError: pass
+        retire_photos(db,UPLOAD_DIR,[banner["image_filename"]])
     return RedirectResponse("/admin#publicidade",303)
 
 @app.get("/anuncio/{bid}")
@@ -2779,8 +2767,8 @@ def order_chat_send(request: Request, order_id: int, message: str=Form(...)):
 import nowup_backup
 nowup_backup.configure(require_user, DB_PATH, UPLOAD_DIR)
 app.include_router(nowup_backup.router)
-app.add_event_handler("startup", nowup_backup.start)
-app.add_event_handler("shutdown", nowup_backup.stop)
+app.router.add_event_handler("startup", nowup_backup.start)
+app.router.add_event_handler("shutdown", nowup_backup.stop)
 
 import nowup_reports74
 nowup_reports74.configure(db, require_user, templates, context)
@@ -2789,8 +2777,8 @@ app.include_router(nowup_reports74.router)
 import nowup_push75
 nowup_push75.configure(db, require_user)
 app.include_router(nowup_push75.router)
-app.add_event_handler("startup", nowup_push75.start)
-app.add_event_handler("shutdown", nowup_push75.stop)
+app.router.add_event_handler("startup", nowup_push75.start)
+app.router.add_event_handler("shutdown", nowup_push75.stop)
 
 
 # V91: vitrine de refeições, sem alterar o rodízio V90 das lojas.
@@ -2802,20 +2790,20 @@ register_food_feed(app, db, get_settings, active_cities, shop_status, public_bus
 import nowup_admin97
 nowup_admin97.configure(db, require_user, templates, context)
 app.include_router(nowup_admin97.router)
-app.add_event_handler("startup", nowup_admin97.init_support)
+app.router.add_event_handler("startup", nowup_admin97.init_support)
 
 # V107: optional private merchant ledger and split payment records.
 import nowup_sales107
 nowup_sales107.configure(db, require_user, templates, context)
 app.include_router(nowup_sales107.router)
-app.add_event_handler("startup", nowup_sales107.initialize)
+app.router.add_event_handler("startup", nowup_sales107.initialize)
 
 # V112: customer status alerts and durable push updates.
 import nowup_alerts112
 nowup_alerts112.configure(db, require_user)
 app.include_router(nowup_alerts112.router)
-app.add_event_handler("startup", nowup_alerts112.start)
-app.add_event_handler("shutdown", nowup_alerts112.stop)
+app.router.add_event_handler("startup", nowup_alerts112.start)
+app.router.add_event_handler("shutdown", nowup_alerts112.stop)
 
 
 # V127: revisão explícita, sem modificar o pedido antes da aprovação.
@@ -2898,20 +2886,20 @@ def alerts203(request: Request, after: int = 0):
 import nowup_admin205
 nowup_admin205.configure(globals())
 app.include_router(nowup_admin205.router)
-app.add_event_handler("startup", nowup_admin205.initialize)
+app.router.add_event_handler("startup", nowup_admin205.initialize)
 
 
 # V206: comprovantes privados no chat; sem confirmação automática de pagamento.
 import nowup_receipts206
 nowup_receipts206.configure(globals())
 app.include_router(nowup_receipts206.router)
-app.add_event_handler("startup",nowup_receipts206.initialize)
+app.router.add_event_handler("startup",nowup_receipts206.initialize)
 
 # V207: banners opcionais configuráveis no painel do lojista.
 import nowup_banners207
 nowup_banners207.configure(globals())
 app.include_router(nowup_banners207.router)
-app.add_event_handler('startup',nowup_banners207.initialize)
+app.router.add_event_handler('startup',nowup_banners207.initialize)
 
 # V211: banners da página inicial, com gestão no ADM.
 import nowup_home210
@@ -2922,7 +2910,7 @@ app.include_router(nowup_home210.router)
 import nowup_admin227
 nowup_admin227.configure(globals())
 app.include_router(nowup_admin227.router)
-app.add_event_handler('startup', nowup_admin227.initialize)
+app.router.add_event_handler('startup', nowup_admin227.initialize)
 
 
 # Merchant Kanban: authenticated board refresh using the current store only.
@@ -2957,3 +2945,8 @@ nowup_verification257.register(globals())
 
 
 
+
+
+@app.on_event("startup")
+def storage_audit308():
+    log_storage(db, UPLOAD_DIR)
