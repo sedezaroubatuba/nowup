@@ -32,3 +32,16 @@
 html body.professional-area .nu198-bottom{grid-template-columns:repeat(5,minmax(0,1fr))!important}
 .nu301-combo-form textarea{min-height:80px}
 
+
+.nu303-comparison{padding:12px;margin:12px 0;border:1px solid #bde8cc;background:#f2fff6;border-radius:12px}
+.nu303-comparison[hidden]{display:none!important}
+.nu303-comparison p{margin:4px 0!important}
+.nu303-separate{color:#6c7280;font-size:13px;line-height:1.4}
+.nu303-comparison>.nu303-separate{text-decoration:line-through}
+.nu303-comparison>strong{display:block;color:#7134c6;font-size:20px}
+.nu303-saving{display:block!important;padding:7px 9px!important;background:#d9f9e4!important;color:#086129!important;border-radius:9px;font-weight:750!important;font-size:13px!important;line-height:1.35}
+[data-switch-combo303][hidden]{display:none!important}
+.nu301-combo-item input[type=text]{width:100%;box-sizing:border-box;min-height:44px}
+
+
+.nu301-quantity-option>img{width:44px;height:44px;object-fit:contain;border-radius:7px;flex-shrink:0}

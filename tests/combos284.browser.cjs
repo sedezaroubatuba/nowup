@@ -60,3 +60,24 @@ test('customer distributes four units between flavors and cannot exceed the comb
  }finally{await browser.close();}
 });
 
+
+test('product combo switch keeps category and computes current catalog savings without charging again',async()=>{
+ const browser=await launch();try{
+ const page=await browser.newPage({viewport:{width:390,height:844}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.setContent(`<!doctype html><div class="pro-dashboard"><form><label>Este produto é um combo?<select name="is_combo256" data-combo-type303><option value="0">Não</option><option value="1">Sim</option></select></label><select name="category"><option>Combos de whisky</option></select><label>Preço<input name="price" value="30,00"></label><select name="extras_mode"><option value="none">Sem adicionais</option></select><div class="nu192-editor" data-editor192=""></div><button type="submit">Salvar produto</button></form></div><script type="application/json" id="combo-catalog298">[{"id":1,"name":"Red Bull","available":true,"unit_price_cents":1000}]</script><script>${read('static/combo-prices303.js')}</script><script>${read('static/combo-editor301.js')}</script><script>${read('static/custom196.js')}</script><script>${read('static/compact200.js')}</script><script>document.querySelector('form').addEventListener('submit',e=>{e.preventDefault();window.saved304=Object.fromEntries(new FormData(e.target));window.payloadCount304=new FormData(e.target).getAll('customization192').length;});</script>`);
+ await page.selectOption('[data-combo-type303]','1');await page.getByRole('button',{name:'+ Adicionar grupo de escolhas',exact:true}).click();await page.getByLabel('Nome do grupo de escolhas',{exact:true}).fill('Energéticos');await page.getByLabel('Unidades incluídas neste grupo',{exact:true}).fill('4');await page.getByLabel('Buscar produto para o combo',{exact:true}).fill('Red');await page.locator('[data-import-product301="1"]').click();assert.match(await page.locator('[data-switch-combo303] .nu303-comparison').textContent(),/10,00/);
+ await page.getByRole('button',{name:'Salvar produto',exact:true}).click();let saved=await page.evaluate(()=>window.saved304);assert.equal(saved.category,'Combos de whisky');assert.equal(saved.price,'30,00');assert.equal(saved.is_combo256,'1');assert.equal(await page.evaluate(()=>window.payloadCount304),1);assert.equal(JSON.parse(saved.customization192).groups[0].max,4);
+ await page.selectOption('[data-combo-type303]','0');await page.getByRole('button',{name:'Salvar produto',exact:true}).click();assert.equal(await page.evaluate(()=>window.saved304.is_combo256),'0');assert.equal(await page.evaluate(()=>window.payloadCount304),1);assert.deepEqual(errors,[]);
+ }finally{await browser.close();}
+});
+test('combo comparison follows selected flavors and excludes manual freebies',async()=>{
+ const browser=await launch();try{
+ const page=await browser.newPage({viewport:{width:390,height:844}});
+ const config={ingredients:[],combo_items:[{product_id:1,name:'Red Bull',quantity:4,group_id301:'drink'}],combo_manual:[{name:'Canudo',quantity:4}],groups:[{id:'drink',name:'Energéticos',min:4,max:4,options:['Normal','Zero'],product_ids:[1,2],quantity_mode:true}],utensils:false,notes:true};
+ await page.setContent(`<!doctype html><article class="menu-product nu151-dish-open" data-product data-id="1" data-combo256="1" data-price="3000" data-combo-prices303='{"1":1000,"2":1200}' data-custom192='${JSON.stringify(config)}'><div class="menu-product-info"><h3>Combo</h3><div class="product-buy"></div></div></article><script>${read('static/combo-prices303.js')}</script><script>${read('static/custom196.js')}</script>`);
+ assert.match(await page.locator('[data-comparison303]').textContent(),/a partir de/);
+ await page.getByRole('button',{name:'Aumentar Normal',exact:true}).click();await page.getByRole('button',{name:'Aumentar Normal',exact:true}).click();await page.getByRole('button',{name:'Aumentar Zero',exact:true}).click();await page.getByRole('button',{name:'Aumentar Zero',exact:true}).click();
+ await page.evaluate(()=>window.NOWUP_CUSTOM192.snapshot(document.querySelector('[data-product]')));assert.match(await page.locator('[data-comparison303]').textContent(),/44,00/);assert.match(await page.locator('[data-comparison303]').textContent(),/14,00/);assert.doesNotMatch(await page.locator('[data-comparison303]').textContent(),/a partir de/);
+ }finally{await browser.close();}
+});
+
