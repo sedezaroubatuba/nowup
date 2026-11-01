@@ -23,3 +23,18 @@ test('combo registration exposes item quantities and preserves them on submit',a
  }finally{await browser.close();}
 });
 
+
+test('mobile combo search shows store products and saves the selected product ID',async()=>{
+ const browser=await launch();try{
+ const page=await browser.newPage({viewport:{width:390,height:844}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.setContent(`<!doctype html><meta name="viewport" content="width=device-width"><style>[hidden]{display:none!important}${read('static/custom196.css')}</style><script type="application/json" id="combo-catalog298">[{"id":1,"name":"Red Bull 250 ml","available":true},{"id":2,"name":"Gelo de coco","available":true},{"id":3,"name":"Produto esgotado","available":false}]</script><form><select name="category"><option value="__combos256">Combos</option></select><input name="description" value="Acompanha copos e canudos"><select name="extras_mode"><option value="none">Sem adicionais</option></select><div class="nu192-editor" data-editor192=""></div><button type="submit">Salvar</button></form><script>${read('static/custom196.js')}</script><script>document.querySelector('form').addEventListener('submit',e=>{e.preventDefault();window.saved300=JSON.parse(new FormData(e.target).get('customization192'));});</script>`);
+ await page.getByRole('button',{name:'+ Adicionar item',exact:true}).click();
+ const input=page.getByLabel('Pesquisar produto da loja',{exact:true});await input.fill('Red');
+ const result=page.locator('[data-select-product300="1"]');assert.equal(await result.isVisible(),true);assert.equal(await page.locator('[data-select-product300="3"]').count(),0);
+ const bounds=await result.boundingBox();assert.ok(bounds.width>250&&bounds.x>=0&&bounds.x+bounds.width<=390,JSON.stringify(bounds));
+ await result.click();assert.equal(await input.inputValue(),'Red Bull 250 ml · #1');await page.getByLabel('Quantidade incluída',{exact:true}).fill('4');
+ await page.getByRole('button',{name:'Salvar',exact:true}).click();assert.deepEqual(await page.evaluate(()=>window.saved300.combo_items),[{product_id:1,name:'Red Bull 250 ml',quantity:4}]);
+ await input.fill('inexistente');assert.equal(await page.getByText('Nenhum produto encontrado. Tente outro nome.').isVisible(),true);
+ assert.deepEqual(errors,[]);
+ }finally{await browser.close();}
+});
