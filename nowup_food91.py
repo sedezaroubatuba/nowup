@@ -58,7 +58,7 @@ def register_food_feed(app, db, get_settings, active_cities, shop_status, public
                 rows = conn.execute("""SELECT pr.* FROM products pr
                     WHERE pr.professional_id=? AND pr.available=1
                     AND pr.max_quantity>0 AND trim(pr.image_filename)!=''
-                    AND (pr.is_combo256=1 OR lower(pr.category)='combos' OR NOT EXISTS(SELECT 1 FROM product_categories pc
+                    AND (lower(pr.category)='combos' OR NOT EXISTS(SELECT 1 FROM product_categories pc
                         WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category))
                       OR EXISTS(SELECT 1 FROM product_categories pc
                         WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) AND pc.active=1))
@@ -68,10 +68,10 @@ def register_food_feed(app, db, get_settings, active_cities, shop_status, public
                     p = dict(row)
                     regular = int(p['price_cents'] or 0)
                     promo = int(p['promo_price_cents'] or 0)
-                    is_combo = bool(p.get('is_combo256')) or str(p.get('category', '')).strip().lower() == 'combos'
+                    is_combo = bool(p.get('is_combo256'))
                     is_promotion = 0 < promo < regular
                     if kind == 'promotions' and not is_promotion: continue
-                    if kind == 'combos' and not is_combo: continue
+                    if kind == 'combos' and not (is_combo and str(p.get('category', '')).strip().lower() == 'combos'): continue
                     price = promo if promo > 0 else regular
                     items.append({'id': p['id'], 'name': p['name'], 'shop': store['display_name'],
                         'price_cents': price, 'regular_price_cents': regular, 'is_combo': is_combo,
@@ -84,3 +84,4 @@ def register_food_feed(app, db, get_settings, active_cities, shop_status, public
                 headers={'Cache-Control': 'no-store'})
         finally:
             conn.close()
+

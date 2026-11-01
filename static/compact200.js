@@ -19,15 +19,15 @@
   options.before(question);
   const originalDisabled=new WeakMap();options.querySelectorAll('input,select,textarea,button').forEach(el=>originalDisabled.set(el,el.disabled));
   function sync(){
-   const combo=['__combos256','combos'].includes(form.querySelector('[name=category]')?.value.toLowerCase());question.hidden=combo;const simple=radios[0].checked&&!combo;form.dataset.simple200=String(simple);options.hidden=simple;
+   const type303=form.querySelector('[data-combo-type303]');const combo=type303?type303.value==='1':['__combos256','combos'].includes(form.querySelector('[name=category]')?.value.toLowerCase());question.hidden=combo;const simple=radios[0].checked&&!combo;form.dataset.simple200=String(simple);options.hidden=simple||!!type303&&combo;
    options.querySelectorAll('input,select,textarea,button').forEach(el=>{
     if(el.name==='customization192'||el===mode)return;
-    if(simple){if(!el.dataset.disabled200)originalDisabled.set(el,el.disabled);el.dataset.disabled200='1';el.disabled=true;}
+    if(simple||!!type303&&combo){if(!el.dataset.disabled200)originalDisabled.set(el,el.disabled);el.dataset.disabled200='1';el.disabled=true;}
     else if(el.dataset.disabled200){el.disabled=!!originalDisabled.get(el);delete el.dataset.disabled200;}
    });
    if(mode){mode.disabled=false;if(!simple)mode.dispatchEvent(new Event('change',{bubbles:true}));}
   }
-  radios.forEach(r=>r.addEventListener('change',sync));form.querySelector('[name=category]')?.addEventListener('change',sync);sync();
+  form.querySelector('[data-combo-type303]')?.addEventListener('change',sync);radios.forEach(r=>r.addEventListener('change',sync));form.querySelector('[name=category]')?.addEventListener('change',sync);sync();
   form.addEventListener('submit',()=>{if(form.dataset.simple200==='true'&&mode)mode.value='none';},true);
   // Secondary fields remain available without occupying the simple registration form.
   const extra=document.createElement('details');extra.className='nu200-secondary';
@@ -39,4 +39,5 @@
   if(extra.children.length>1){const save=form.querySelector('button:not([type]),button[type=submit]');if(save)save.before(extra);else form.append(extra);}
  });
 })();
+
 

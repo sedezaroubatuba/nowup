@@ -2,6 +2,7 @@ from __future__ import annotations
 import nowup_storeapp257
 import nowup_storeapp256
 import nowup_neighborhoods267
+from nowup_combos303 import attach_prices, current_price, combo_kind
 import nowup_categories230
 import nowup_included195
 from nowup_custom192 import parse_config, save_config, charge_options, validate_customization, bind_combo_products
@@ -1114,9 +1115,10 @@ def profile(request: Request, slug: str):
     if p["is_premium"] and p["offer_mode"] in ("menu","catalog"):
         products=conn.execute("""SELECT pr.* FROM products pr
           WHERE pr.professional_id=?
-          AND (pr.is_combo256=1 OR lower(pr.category)='combos' OR NOT EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category))
+          AND (lower(pr.category)='combos' OR NOT EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category))
             OR EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) AND pc.active=1))
           ORDER BY COALESCE((SELECT pc.sort_order FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) LIMIT 1),999999),pr.category,pr.sort_order,pr.id DESC""",(p["id"],)).fetchall()
+        products=attach_prices(conn,p["id"],products)
         menu_categories=[]
         for product in products:
             category=(product["category"] or "Geral").strip() or "Geral"
@@ -1144,9 +1146,10 @@ def native_menu(request: Request, slug: str):
         conn.close(); return RedirectResponse(f"/p/{slug}?recurso=premium",303)
     products=conn.execute("""SELECT pr.* FROM products pr
       WHERE pr.professional_id=?
-      AND (pr.is_combo256=1 OR lower(pr.category)='combos' OR NOT EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category))
+      AND (lower(pr.category)='combos' OR NOT EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category))
         OR EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) AND pc.active=1))
       ORDER BY COALESCE((SELECT pc.sort_order FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) LIMIT 1),999999),pr.category,pr.sort_order,pr.id DESC""",(p["id"],)).fetchall()
+    products=attach_prices(conn,p["id"],products)
     menu_categories=[]
     for product in products:
         category=(product["category"] or "Geral").strip() or "Geral"
@@ -1518,7 +1521,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     photos=conn.execute("SELECT * FROM photos WHERE professional_id=? ORDER BY is_cover DESC,id DESC",(p["id"],)).fetchall()
     posts=conn.execute("SELECT * FROM posts WHERE professional_id=? ORDER BY id DESC LIMIT 20",(p["id"],)).fetchall()
     products=conn.execute("SELECT * FROM products WHERE professional_id=? ORDER BY category,sort_order,id DESC",(p["id"],)).fetchall()
-    combo_catalog298=[{"id":row["id"],"name":row["name"],"available":bool(row["available"]),"image_filename":row["image_filename"]} for row in products if not row["is_combo256"] and row["category"].casefold()!="combos"]
+    combo_catalog298=[{"id":row["id"],"name":row["name"],"available":bool(row["available"]),"image_filename":row["image_filename"],"unit_price_cents":current_price(row)} for row in products if not row["is_combo256"] and row["category"].casefold()!="combos"]
     product_options={}
     for row in conn.execute("""SELECT po.* FROM product_options po JOIN products pr ON pr.id=po.product_id
       WHERE pr.professional_id=? ORDER BY po.sort_order,po.id""",(p["id"],)).fetchall():
@@ -1830,8 +1833,7 @@ def configure_personalization153(conn, product_id, enabled, max_choices):
 def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None)):
     from nowup_promotions285 import promotional_cents
     promo_cents285=promotional_cents(price_to_cents(price),promo_price,promo_mode,promo_percent,promo_enabled,price_to_cents)
-    is_combo256=bool(is_combo256) or category.strip().casefold() in ('__combos256','combos')
-    if is_combo256: category='Combos'
+    is_combo256,category=combo_kind(category,is_combo256)
     custom192=parse_config(customization192) if customization192 or is_combo256 else None
     if custom192 and custom192["free_count"]>max_choices:raise HTTPException(400,"A quantidade grátis não pode superar o máximo de adicionais.")
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); fn=""
@@ -1858,8 +1860,7 @@ def pro_product_add(request: Request, name: str=Form(...), description: str=Form
 def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None)):
     from nowup_promotions285 import promotional_cents
     promo_cents285=promotional_cents(price_to_cents(price),promo_price,promo_mode,promo_percent,promo_enabled,price_to_cents)
-    is_combo256=bool(is_combo256) or category.strip().casefold() in ('__combos256','combos')
-    if is_combo256: category='Combos'
+    is_combo256,category=combo_kind(category,is_combo256)
     custom192=parse_config(customization192) if customization192 or is_combo256 else None
     if custom192 and custom192["free_count"]>max_choices:raise HTTPException(400,"A quantidade grátis não pode superar o máximo de adicionais.")
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=?",(product_id,p["id"])).fetchone()
@@ -2949,5 +2950,6 @@ nowup_opening260.install(globals())
 
 import nowup_verification257
 nowup_verification257.register(globals())
+
 
 
