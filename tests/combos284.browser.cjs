@@ -102,3 +102,31 @@ test('compact combo cart keeps full choices and a single line price',async()=>{
  await page.locator('[data-plus]').click();assert.match(await page.locator('.nu305-line-price').textContent(),/300,00/);assert.equal(await page.locator('[data-cart-quantity]').inputValue(),'2');
  }finally{await browser.close();}
 });
+
+
+require('./pairs256.test.cjs');
+async function cartPreview310(browser,width=390){
+ const page=await browser.newPage({viewport:{width,height:844}});await page.route('https://cart310.test/**',r=>r.fulfill({body:'<!doctype html>'}));await page.goto('https://cart310.test/p/loja/menu');
+ await page.evaluate(()=>{window.NOWUP_MENU={customerId:1,open:true};localStorage.setItem('nowup-cart:u:1:/p/loja',JSON.stringify([['1:base',{productId:1,name:'Compra principal',unitPrice:1000,quantity:1,options:[],max:99}]]));});
+ const products=Array.from({length:9},(_,i)=>{const id=i+1;return `<article hidden data-product data-id="${id}" data-name="Produto ${id}" data-price="${id===1?1000:id*100}" data-max="99" data-dish="0" data-available256="${id===3?0:1}" data-recommend256="${id===1?0:1}"><input data-product-quantity value="1"><button data-add>Adicionar</button></article>`;}).join('');
+ await page.setContent(`<style>*{box-sizing:border-box}body{margin:0}dialog{width:calc(100vw - 24px);max-width:860px;padding:12px;border:0}${read('static/offers256.css')}${read('static/pairs310.css')}</style><main data-native-menu>${products}<dialog data-cart-dialog143><div data-cart-items></div><span data-cart-total></span><button data-checkout>Continuar pedido</button></dialog></main><dialog data-checkout-dialog></dialog><script>${read('static/menu88.js')}</script><script>${read('static/pairs256.js')}</script>`);
+ await page.evaluate(()=>document.querySelector('[data-cart-dialog143]').showModal());await page.waitForSelector('.nu256-pair');return page;
+}
+test('cart suggestions cap at five, scroll sideways and only charge after Add',async()=>{
+ const browser=await launch();try{for(const width of [320,390,1000]){
+ const page=await cartPreview310(browser,width),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ assert.equal(await page.locator('.nu256-pair').count(),5);assert.deepEqual(await page.locator('.nu256-pair').evaluateAll(rows=>rows.map(r=>r.dataset.pair310)),['2','4','5','6','7']);assert.equal(await page.locator('.cart-item').count(),1);assert.match(await page.locator('[data-cart-total]').textContent(),/10,00/);
+ const track=page.locator('.nu310-pair-track');assert.ok(await track.evaluate(e=>e.scrollWidth>e.clientWidth));assert.equal(await track.evaluate(e=>getComputedStyle(e).overflowX),'auto');
+ const bounds=await page.locator('[data-cart-dialog143]').boundingBox();assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width+1,JSON.stringify(bounds));
+ await page.getByRole('button',{name:'Ver sugestão 5: Produto 7',exact:true}).click();await page.waitForFunction(()=>{const track=document.querySelector('.nu310-pair-track');return track.scrollLeft+track.clientWidth>=track.scrollWidth-2&&document.querySelector('.nu310-pair-counter').textContent==='5/5';});
+ await page.getByRole('button',{name:'Ver sugestão 1: Produto 2',exact:true}).click();await page.waitForTimeout(350);
+ await page.getByRole('button',{name:'Adicionar Produto 2',exact:true}).click();await page.waitForFunction(()=>document.querySelectorAll('.cart-item').length===2);
+ assert.match(await page.locator('[data-cart-total]').textContent(),/12,00/);await page.waitForFunction(()=>!document.querySelector('[data-pair310="2"]'));assert.equal(await page.locator('.nu256-pair').count(),5);assert.deepEqual(errors,[]);await page.close();
+ }}finally{await browser.close();}
+});
+test('suggested personalized product uses its existing chooser before adding',async()=>{
+ const browser=await launch();try{
+ const page=await cartPreview310(browser);await page.evaluate(()=>{const card=document.querySelector('[data-product][data-id="2"]');card.dataset.dish='1';const choose=document.createElement('button');choose.className='nu151-choose';choose.onclick=()=>window.chooser310=true;card.append(choose);});
+ await page.getByRole('button',{name:'Adicionar Produto 2',exact:true}).click();assert.equal(await page.evaluate(()=>window.chooser310),true);assert.equal(await page.evaluate(()=>window.NOWUP_CART160.quantity(2)),0);assert.match(await page.locator('[data-cart-total]').textContent(),/10,00/);
+ }finally{await browser.close();}
+});
