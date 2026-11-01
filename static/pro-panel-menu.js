@@ -50,6 +50,27 @@
     const dashboard = document.querySelector('.pro-dashboard');
     if (!dashboard) return;
     initProductFilters(dashboard);
+    const comboSearch = dashboard.querySelector('[data-search-combos301]');
+    const comboList = dashboard.querySelector('[data-combos-list301]');
+    if (comboSearch && comboList) {
+      const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+      const empty = document.createElement('p');
+      empty.textContent = 'Nenhum combo encontrado para esta pesquisa.';
+      empty.setAttribute('role', 'status');
+      empty.hidden = true;
+      comboList.after(empty);
+      comboSearch.addEventListener('input', () => {
+        const query = normalize(comboSearch.value);
+        let visible = 0;
+        comboList.querySelectorAll('[data-combo-card301]').forEach(card => {
+          const match = normalize(card.dataset.name).includes(query);
+          card.hidden = !match;
+          card.style.setProperty('display', match ? 'block' : 'none', 'important');
+          if (match) visible++;
+        });
+        empty.hidden = !query || visible > 0;
+      });
+    }
 
     const menuToggle = dashboard.querySelector('[data-pro-menu-toggle]');
     const sidebar = dashboard.querySelector('.pro-sidebar');
