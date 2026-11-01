@@ -1,3 +1,4 @@
+{% import 'pairs256.html' as cart310 %}
 {% macro combo_form301(product=None) %}
 <form action="/painel/cardapio/produtos{% if product %}/{{product.id}}{% endif %}" method="post" enctype="multipart/form-data" class="product-form nu301-combo-form" data-combo-editor301="1">
 <input type="hidden" name="combo_editor301" value="1"><label>Categoria do combo<select name="category" required><option value="Combos" {% if not product or product.category|lower == 'combos' %}selected{% endif %}>Combos — aba geral do app</option>{% if product and product.category|lower != 'combos' %}<option value="{{product.category}}" selected>{{product.category}}</option>{% endif %}{% for category in product_categories if category.active and category.name|lower != 'combos' and (not product or category.name != product.category) %}<option value="{{category.name}}">{{category.name}}</option>{% endfor %}</select><small>Use uma categoria da sua loja ou escolha Combos para divulgar na aba geral do app.</small></label><input type="hidden" name="is_combo256" value="1"><input type="hidden" name="extras_mode" value="none">
@@ -10,6 +11,7 @@
 <label class="full">Foto do combo<input class="input" type="file" name="photo" accept="image/*" {% if product and product.image_filename %}data-preview250="/uploads/{{product.image_filename}}"{% endif %}></label>
 <label class="full">Descrição do combo<textarea name="description" maxlength="600" placeholder="Descreva o combo e as informações para o cliente.">{{product.description if product else ''}}</textarea></label>
 <label class="check"><input type="checkbox" name="available" value="1" {% if not product or product.available %}checked{% endif %}> Combo disponível para pedidos</label>
+{{cart310.highlight(product)}}
 <div class="nu192-editor full" data-editor192="{{product.customization192 if product else ''}}"></div>
 <button class="btn primary" type="submit">{{'Salvar alterações do combo' if product else 'Salvar combo'}}</button>
 </form>
@@ -31,4 +33,5 @@
 </div><p class="muted" data-combos-empty301 hidden>Nenhum combo encontrado.</p>
 {% else %}<p>Ative um plano com cardápio para cadastrar combos.</p>{% endif %}
 </section>
+
 
