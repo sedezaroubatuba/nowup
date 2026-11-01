@@ -33,3 +33,13 @@ html body .nu83-cart-dock button *{color:#fff!important}.nu143-has-cart .native-
 body:has(.nu143-cart-dialog[open]){overflow:hidden}
 
 html body .nu143-cart-dialog .nu144-continue{display:block!important;width:100%!important;min-height:48px!important;margin:10px 0!important;padding:12px!important;border:1px solid #7036c6!important;border-radius:14px!important;background:#fff!important;color:#7036c6!important;font-size:16px!important;font-weight:700!important;cursor:pointer}
+
+
+/* Compact combo summaries: complete choices remain available to expand. */
+html body .nu143-cart-dialog .nu305-combo-cart{background:#f8f4ff!important;border-color:#ddcdf4!important}
+html body .nu143-cart-dialog .nu305-line-price{display:block;color:#7134c6;font-size:19px;font-weight:800;margin:7px 0}
+html body .nu143-cart-dialog .nu305-combo-details{border-top:1px solid #e6dcf2;margin:9px 0 6px;padding-top:8px}
+html body .nu143-cart-dialog .nu305-combo-details summary{color:#7134c6;font-size:14px;font-weight:700;cursor:pointer;min-height:36px;display:list-item}
+html body .nu143-cart-dialog .nu305-combo-details p{white-space:normal;overflow-wrap:anywhere;font-size:13px;line-height:1.5;margin:6px 0}
+html body .nu143-cart-dialog .nu305-principal{font-weight:700;color:#35274b!important}
+html body .nu143-cart-dialog .nu305-combo-summary>small{line-height:1.45}

@@ -85,10 +85,15 @@ def parse_config(raw):
     for index, item in enumerate(items):
         if 'product_id' in item:
             output['combo_items'][index]['product_id'] = integer(item['product_id'], 1, 2147483647, 'Produto do combo')
+        if 'principal' in item and not isinstance(item['principal'], bool):fail('Produto principal inválido.')
+        if item.get('principal'):
+            if item.get('group_id301'):fail('O produto principal deve ser fixo, sem grupo de escolhas.')
+            output['combo_items'][index]['principal'] = True
         if item.get('group_id301'):
             gid = item['group_id301']
             if not isinstance(gid, str) or not gid.isalnum() or len(gid) > 40:fail('Grupo do combo inválido.')
             output['combo_items'][index]['group_id301'] = gid
+    if sum(bool(i.get('principal')) for i in output['combo_items']) > 1:fail('Selecione somente um produto principal por combo.')
     manual = data.get('combo_manual', [])
     if not isinstance(manual, list) or len(manual) > 20 or any(not isinstance(i, dict) for i in manual):fail('Itens manuais inválidos.')
     manual_names = names([i.get('name') for i in manual], 'Itens manuais', 20)
@@ -121,6 +126,7 @@ def bind_combo_products(conn, professional_id, config, product_id=None):
         seen.add(row['id'])
         entry = {'product_id': row['id'], 'name': row['name'], 'quantity': item['quantity']}
         if item.get('group_id301'):entry['group_id301'] = item['group_id301']
+        if item.get('principal'):entry['principal'] = True
         items.append(entry)
     config['combo_items'] = items
     for group in config['groups']:
@@ -184,6 +190,8 @@ def validate_customization(config, raw, notes, utensils):
             parts.append(group['name'] + ': ' + ', '.join((str(values.count(v)) + ' × ' + v) if group.get('quantity_mode') else v for v in dict.fromkeys(values)))
     if not isinstance(utensils, bool):
         fail('Opção de talheres inválida.')
+    principal = [i for i in config.get('combo_items', []) if i.get('principal')]
+    if principal:parts.append('Produto principal: ' + ', '.join(str(i['quantity']) + ' × ' + i['name'] for i in principal))
     if config.get('combo_manual'):
         parts.append('Incluído: ' + ', '.join(str(i['quantity']) + ' × ' + i['name'] for i in config['combo_manual']))
     if utensils and not config['utensils']:
@@ -191,5 +199,6 @@ def validate_customization(config, raw, notes, utensils):
     if config['utensils']:
         parts.append('Talheres: sim (garfo e faca)' if utensils else 'Talheres: não')
     return ' · '.join(parts)
+
 
 

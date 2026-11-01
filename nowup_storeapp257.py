@@ -1,5 +1,6 @@
 """Independent WhatsApp checkout, with shared server-side cart validation."""
 import json
+from nowup_combo_pack305 import build_pack
 import re
 import secrets
 from datetime import datetime,timezone
@@ -51,6 +52,8 @@ def validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighbor
         if not product:
             raise HTTPException(400,"Um produto do carrinho ficou indisponível. Atualize o cardápio antes de enviar o pedido.")
         if product:
+            product=dict(product)
+            user_notes305=item_notes
             quantities255[pid]=quantities255.get(pid,0)+qty
             if quantities255[pid]>min(99,max(1,product["max_quantity"] or 99)):
                 raise HTTPException(400,"Quantidade acima do limite do produto. Revise o carrinho.")
@@ -60,6 +63,7 @@ def validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighbor
             utensils=raw.get("utensils",False)
             try:item_notes=g['validate_customization'](g['parse_config'](product["customization192"]),raw.get("customization",{}),item_notes,utensils)
             except HTTPException:raise
+            product['combo_pack305']=build_pack(g['parse_config'](product['customization192']),raw.get('customization',{}),user_notes305) if product.get('is_combo256') else ''
             try: g['validate_choices89'](conn,pid,chosen)
             except HTTPException: raise
             unit=(product["promo_price_cents"] if product["promo_price_cents"]>0 else product["price_cents"])+extras
@@ -157,7 +161,7 @@ def install(g):
                 conn.execute("UPDATE orders SET payment_method=?,order_code=?,order_origin='external' WHERE id=?",(payment_method,code,oid))
                 conn.execute('INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)',(oid,'new',created))
                 for product,qty,item_notes,chosen,unit in clean:
-                    item=conn.execute('INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes) VALUES(?,?,?,?,?,?)',(oid,product['id'],product['name'],qty,unit,item_notes))
+                    item=conn.execute('INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes,combo_pack305) VALUES(?,?,?,?,?,?,?)',(oid,product['id'],product['name'],qty,unit,item_notes,product.get('combo_pack305','')))
                     for option in chosen:conn.execute('INSERT INTO order_item_options(order_item_id,option_id,option_name,price_cents) VALUES(?,?,?,?)',(item.lastrowid,option['id'],option['name'],option['price_cents']))
                 conn.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(p['user_id'],'Novo pedido no NowUp',code+' — '+name,'/painel#pedido-'+str(oid),created))
                 g['nowup_push75'].enqueue_on_connection(conn,p['user_id'],oid)
@@ -173,3 +177,4 @@ def install(g):
             else:conn.rollback()
             return JSONResponse(result,headers=HEADERS)
         finally:conn.close()
+
