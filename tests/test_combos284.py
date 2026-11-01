@@ -17,6 +17,12 @@ def test_combo_items_validation_and_required_choices():
 def test_combo_creation_edit_and_render(env):
     m,client,_,pid,_=env
     config={'combo_items':[{'name':'Jack Apple 1L','quantity':1},{'name':'Red Bull','quantity':4}], 'groups':[{'id':'drink','name':'Escolha o energético','min':1,'max':1,'options':['Tradicional','Sem açúcar']}], 'utensils':False,'notes':True}
+    ids={}
+    for name in ['Jack Apple 1L','Red Bull','Tradicional','Sem açúcar']:
+        assert client.post('/painel/cardapio/produtos',data={'name':name,'category':'Bebidas','price':'10,00','available':'1','extras_mode':'none'},follow_redirects=False).status_code==303
+        with m.db() as c:ids[name]=c.execute('SELECT id FROM products WHERE professional_id=? AND name=? ORDER BY id DESC',(pid,name)).fetchone()['id']
+    for item in config['combo_items']:item['product_id']=ids[item['name']]
+    config['groups'][0]['product_ids']=[ids[name] for name in config['groups'][0]['options']]
     form={'name':'Combo personalizável 284','category':'__combos256','description':'Whisky e 4 energéticos.','price':'259,90','available':'1','extras_mode':'none','customization192':json.dumps(config)}
     assert client.post('/painel/cardapio/produtos',data=form,follow_redirects=False).status_code==303
     with m.db() as c:
@@ -52,3 +58,4 @@ def test_percent_promotion_saved_as_checkout_price(env):
     with m.db() as c:assert c.execute('SELECT promo_price_cents FROM products WHERE id=?',(product_id,)).fetchone()[0]==0
     panel=client.get('/painel')
     assert 'Desconto em %' in panel.text and '/static/promotions285.js?v=285' in panel.text
+

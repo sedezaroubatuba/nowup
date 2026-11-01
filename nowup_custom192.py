@@ -18,7 +18,7 @@ def names(values, label, limit=40):
         fail(label + ': lista inválida.')
     result = []
     for value in values:
-        if not isinstance(value, str) or not value.strip() or len(value.strip()) > 100:
+        if not isinstance(value, str) or not value.strip() or len(value.strip()) > 140:
             fail(label + ': nome inválido.')
         value = value.strip()
         if value.casefold() in {s.casefold() for s in result}:
@@ -63,7 +63,13 @@ def parse_config(raw):
         options = names(group.get('options'), title, 30)
         maximum = integer(group.get('max', 1), 1, len(options), title)
         minimum = integer(group.get('min', 0), 0, maximum, title)
-        clean_groups.append({'id': gid, 'name': title, 'min': minimum, 'max': maximum, 'options': options})
+        clean_group = {'id': gid, 'name': title, 'min': minimum, 'max': maximum, 'options': options}
+        if 'product_ids' in group:
+            refs = group['product_ids']
+            if not isinstance(refs, list) or len(refs) != len(options):
+                fail('Selecione os produtos das opções de troca.')
+            clean_group['product_ids'] = [integer(ref, 1, 2147483647, title) for ref in refs]
+        clean_groups.append(clean_group)
     free_enabled = data.get('free_enabled', False)
     output = {'ingredients': clean_ingredients, 'groups': clean_groups,
             'free_enabled': free_enabled, 'free_count': integer(data.get('free_count', 0), 0, 20, 'Gratuitos') if free_enabled else 0,
@@ -73,8 +79,45 @@ def parse_config(raw):
         fail('Cadastre até 40 itens no combo.')
     item_names = names([item.get('name') for item in items], 'Itens do combo')
     output['combo_items'] = [{'name': name, 'quantity': integer(items[i].get('quantity'), 1, 99, name)} for i, name in enumerate(item_names)]
+    for index, item in enumerate(items):
+        if 'product_id' in item:
+            output['combo_items'][index]['product_id'] = integer(item['product_id'], 1, 2147483647, 'Produto do combo')
     if 'included195' in data:output['included195'] = data['included195']
     return output
+
+
+def bind_combo_products(conn, professional_id, config, product_id=None):
+    """Resolve references using this store only; names/prices from requests are untrusted."""
+    rows = conn.execute("SELECT id,name,available,is_combo256,category FROM products WHERE professional_id=?", (professional_id,)).fetchall()
+    catalog = {row['id']: row for row in rows if row['id'] != product_id and not row['is_combo256'] and row['category'].casefold() != 'combos'}
+    def resolve(ref, name):
+        if ref is None:  # Migrate old text entries only when an exact store product exists.
+            matches = [row for row in catalog.values() if row['name'].casefold() == name.casefold()]
+            row = matches[0] if len(matches) == 1 else None
+        else:
+            row = catalog.get(integer(ref, 1, 2147483647, 'Produto do combo'))
+        if row is None or not row['available']:
+            fail('Selecione um produto disponível da própria loja para cada item e opção do combo.')
+        return row
+    if not config.get('combo_items'):
+        fail('Selecione pelo menos um produto para compor o combo.')
+    items = []
+    seen = set()
+    for item in config.get('combo_items', []):
+        row = resolve(item.get('product_id'), item['name'])
+        if row['id'] in seen:
+            fail('Não repita o produto no combo. Ajuste a quantidade.')
+        seen.add(row['id'])
+        items.append({'product_id': row['id'], 'name': row['name'], 'quantity': item['quantity']})
+    config['combo_items'] = items
+    for group in config['groups']:
+        refs = group.get('product_ids', [None] * len(group['options']))
+        resolved = [resolve(ref, name) for ref, name in zip(refs, group['options'])]
+        if len({row['id'] for row in resolved}) != len(resolved):
+            fail('Não repita produtos no mesmo grupo de escolhas.')
+        group['product_ids'] = [row['id'] for row in resolved]
+        group['options'] = [row['name'] for row in resolved]
+    return config
 
 
 def save_config(conn, product_id, config):
@@ -123,3 +166,4 @@ def validate_customization(config, raw, notes, utensils):
     if config['utensils']:
         parts.append('Talheres: sim (garfo e faca)' if utensils else 'Talheres: não')
     return ' · '.join(parts)
+
