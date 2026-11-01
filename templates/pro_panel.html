@@ -26,7 +26,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <h2>Menu da loja</h2>
 <a href="#inicio" data-nav198>⌂ Início</a>
 <a href="#pedidos-ativos" data-nav198>▤ Sala de pedidos</a>
-<a href="#produtos-loja" data-nav198>▦ Produtos</a>
+<a href="#produtos-loja" data-nav198>▦ Produtos</a><a href="#combos-loja" data-nav198>🍻 Combos / Cadastrar combo</a>
 <a href="#categorias-loja" data-nav198>▤ Categorias</a>
 <a href="#bairros-entrega265" data-nav198>📍 Bairros atendidos</a>
 <a href="#relatorios" data-nav198>↗ Relatórios</a>
@@ -53,7 +53,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <a class="nu221-store-link" href="/p/{{pro.slug}}" rel="noopener">↗ Ver minha loja</a><p class="nu221-store-hint">Veja como o cliente vê sua loja.</p>
 <nav class="nu198-grid" aria-label="Acessos principais da loja">
 <a class="nu198-tile" href="#pedidos-ativos" data-nav198><span aria-hidden="true">▤</span>Pedidos</a>
-<a class="nu198-tile" href="#produtos-loja" data-nav198><span aria-hidden="true">▦</span>Produtos</a>
+<a class="nu198-tile" href="#produtos-loja" data-nav198><span aria-hidden="true">▦</span>Produtos</a><a class="nu198-tile" href="#combos-loja" data-nav198><span aria-hidden="true">🍻</span>Cadastrar combo</a>
 <a class="nu198-tile" href="#perfil" data-nav198><span aria-hidden="true">⌂</span>Minha loja</a>
 <a class="nu198-tile" href="#relatorios" data-nav198><span aria-hidden="true">▥</span>Relatórios</a></nav>
 <details class="nu221-extra"><summary>Mais acessos de produtos</summary><nav><a class="btn soft" href="#novo-produto" data-nav198>＋ Cadastrar produto</a><a class="btn soft" href="#categorias-loja" data-nav198>Categorias e posições</a><a class="btn soft" href="#acompanhamentos-combos" data-nav198>Acompanhamentos e combos</a></nav></details>
@@ -197,7 +197,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <form action="/painel/cardapio/produtos" method="post" enctype="multipart/form-data" class="product-form">
 <label>Nome do produto<input class="input" name="name" maxlength="140" required>
 </label>
-<label>Categoria<select name="category" required><option value="__combos256">🍻 Combos — categoria do aplicativo</option><option value="Geral" selected>Geral</option>{% for category in product_categories if category.active and category.name|lower != 'combos' %}<option value="{{category.name}}">{{category.name}}</option>{% endfor %}</select>
+<label>Categoria<select name="category" required><option value="Geral" selected>Geral</option>{% for category in product_categories if category.active and category.name|lower != 'combos' %}<option value="{{category.name}}">{{category.name}}</option>{% endfor %}</select>
 </label>
 <label>Preço normal (R$)<input class="input" name="price" inputmode="decimal" placeholder="Ex.: 29,90" required>
 </label>
@@ -219,7 +219,8 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </form>
 </details>
 
-<section id="produtos-loja" class="panel full" aria-label="Pesquisar e editar produtos"><h3>Produtos e combos</h3><label for="pesquisar-produtos299">Pesquisar produtos</label><input id="pesquisar-produtos299" class="input" type="search" data-pro-search placeholder="Digite o nome ou código do produto" autocomplete="off" style="width:100%;min-height:48px;margin:8px 0 12px"><nav class="menu-category-nav pro-product-filters" aria-label="Filtrar produtos do painel"><button type="button" class="active" data-pro-category="all">Todos</button><button type="button" data-pro-category="combos">🍻 Combos</button><button type="button" data-pro-category="promocoes">Promoções</button>{% for category in product_categories if category.name|lower != 'combos' %}<button type="button" data-pro-category="{{category.name}}">{{category.name}}</button>{% endfor %}</nav><p class="muted">Escolha Combos para localizar e editar seus combos cadastrados.</p></section><div class="product-admin-grid" data-pro-products>{% for product in products %}<details class="product-admin-card" data-pro-product data-category="{{product.category}}" data-featured="{{1 if product.featured else 0}}" data-name="{{product.name}}" data-product-id="{{product.id}}" data-combo="{{1 if product.is_combo256 or product.category|lower == 'combos' else 0}}">
+<section id="produtos-loja" class="panel full" aria-label="Pesquisar e editar produtos"><h3>Produtos</h3><label for="pesquisar-produtos299">Pesquisar produtos</label><input id="pesquisar-produtos299" class="input" type="search" data-pro-search placeholder="Digite o nome ou código do produto" autocomplete="off" style="width:100%;min-height:48px;margin:8px 0 12px"><nav class="menu-category-nav pro-product-filters" aria-label="Filtrar produtos do painel"><button type="button" class="active" data-pro-category="all">Todos</button><a class="btn soft" href="#combos-loja" data-nav198>🍻 Combos</a><button type="button" data-pro-category="promocoes">Promoções</button>{% for category in product_categories if category.name|lower != 'combos' %}<button type="button" data-pro-category="{{category.name}}">{{category.name}}</button>{% endfor %}</nav><p class="muted">Para montar ou editar um combo, abra a área Combos.</p></section>
+<div class="product-admin-grid" data-pro-products>{% for product in products if not product.is_combo256 and product.category|lower != 'combos' %}<details class="product-admin-card" data-pro-product data-category="{{product.category}}" data-featured="{{1 if product.featured else 0}}" data-name="{{product.name}}" data-product-id="{{product.id}}" data-combo="{{1 if product.is_combo256 or product.category|lower == 'combos' else 0}}">
 <summary>{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" onerror="this.onerror=null;this.src='/static/product-placeholder.svg'" alt="">{% else %}<span class="product-placeholder">🍽</span>{% endif %}<div>
 <b>{{product.name}}</b><small>Código: {{product.id}}</small>
 <small>{{product.category}} · R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</small>
@@ -259,6 +260,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </div>{% endfor %}</div>
 {% endif %}
 </section>
+{% include 'combos301.html' %}
 <section class="panel" id="adicionais"><h2>Adicionais da loja</h2><p>Cadastre uma vez e selecione no cadastro de cada produto. Permitir todos também inclui os novos adicionais que você cadastrar depois.</p>{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}
 <form action="/painel/adicionais-loja" method="post" class="product-form"><label>Nome<input class="input" name="name" maxlength="100" placeholder="Bacon, cheddar, salada…" required></label><label>Preço normal (R$)<input class="input" name="price" value="0,00" inputmode="decimal" required></label><label class="check"><input type="checkbox" name="available" value="1" checked> Disponível</label><button class="btn primary">Cadastrar adicional</button></form>
 {% for extra in shared_extras %}<details><summary>{{extra.name}} · R$ {{'%.2f'|format(extra.price_cents/100)|replace('.',',')}} · {{'Disponível' if extra.available else 'Indisponível'}}</summary><form action="/painel/adicionais-loja" method="post" class="product-form"><input type="hidden" name="extra_id" value="{{extra.id}}"><label>Nome<input class="input" name="name" value="{{extra.name}}" maxlength="100" required></label><label>Preço normal (R$)<input class="input" name="price" value="{{'%.2f'|format(extra.price_cents/100)|replace('.',',')}}" inputmode="decimal" required></label><label class="check"><input type="checkbox" name="available" value="1" {% if extra.available %}checked{% endif %}> Disponível</label><button class="btn primary">Salvar em todos os produtos vinculados</button></form></details>{% else %}<p>Nenhum adicional compartilhado cadastrado.</p>{% endfor %}
@@ -599,11 +601,12 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <script src="/static/panel-back-top.js?v=70" defer></script>
 
 <link rel="manifest" href="/static/nowup-lojista.webmanifest"><script src="/static/pro-push75.js?v=112" defer></script>
-<link rel="stylesheet" href="/static/order-review127.css?v=127"><script src="/static/order-review127.js?v=127" defer></script><link rel="stylesheet" href="/static/custom196.css?v=300"><script type="application/json" id="included-catalog195">{{included_catalog195|tojson}}</script><script type="application/json" id="combo-catalog298">{{combo_catalog298|tojson}}</script><script defer src="/static/custom196.js?v=300"></script><link rel="stylesheet" href="/static/pro198.css?v=198"><script defer src="/static/pro198.js?v=228"></script>
-<nav class="nu198-bottom" aria-label="Navegação do lojista"><a href="#inicio" data-nav198><span aria-hidden="true">⌂</span>Início</a><a href="#produtos-loja" data-nav198><span aria-hidden="true">▦</span>Produtos</a><a href="#pedidos-ativos" data-nav198><span aria-hidden="true">▤</span>Pedidos</a><a href="#configuracoes" data-nav198><span aria-hidden="true">☷</span>Mais</a></nav>
-<link rel="stylesheet" href="/static/compact200.css?v=200"><script defer src="/static/compact200.js?v=285"></script><script defer src="/static/notification-status200.js?v=200"></script><link rel="stylesheet" href="/static/pro221.css?v=221"><script defer src="/static/pro221.js?v=221"></script><link rel="stylesheet" href="/static/merchant228.css?v=228"><script defer src="/static/merchant228.js?v=228"></script><link rel="stylesheet" href="/static/merchant-feedback270.css?v=270"><script defer src="/static/merchant-feedback270.js?v=270"></script>
+<link rel="stylesheet" href="/static/order-review127.css?v=127"><script src="/static/order-review127.js?v=127" defer></script><link rel="stylesheet" href="/static/custom196.css?v=301"><script type="application/json" id="included-catalog195">{{included_catalog195|tojson}}</script><script type="application/json" id="combo-catalog298">{{combo_catalog298|tojson}}</script><script defer src="/static/combo-editor301.js?v=301"></script><script defer src="/static/custom196.js?v=301"></script><link rel="stylesheet" href="/static/pro198.css?v=198"><script defer src="/static/pro198.js?v=228"></script>
+<nav class="nu198-bottom" aria-label="Navegação do lojista"><a href="#inicio" data-nav198><span aria-hidden="true">⌂</span>Início</a><a href="#produtos-loja" data-nav198><span aria-hidden="true">▦</span>Produtos</a><a href="#combos-loja" data-nav198><span aria-hidden="true">🍻</span>Combos</a><a href="#pedidos-ativos" data-nav198><span aria-hidden="true">▤</span>Pedidos</a><a href="#configuracoes" data-nav198><span aria-hidden="true">☷</span>Mais</a></nav>
+<link rel="stylesheet" href="/static/compact200.css?v=200"><script defer src="/static/compact200.js?v=301"></script><script defer src="/static/notification-status200.js?v=200"></script><link rel="stylesheet" href="/static/pro221.css?v=221"><script defer src="/static/pro221.js?v=221"></script><link rel="stylesheet" href="/static/merchant228.css?v=228"><script defer src="/static/merchant228.js?v=228"></script><link rel="stylesheet" href="/static/merchant-feedback270.css?v=270"><script defer src="/static/merchant-feedback270.js?v=270"></script>
 <link rel="stylesheet" href="/static/promotions285.css?v=285"><script defer src="/static/promotions285.js?v=285"></script>
 {% endblock %}
+
 
 
 

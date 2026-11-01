@@ -61,9 +61,12 @@ def parse_config(raw):
         ids.add(gid)
         title = names([group.get('name')], 'Grupo')[0]
         options = names(group.get('options'), title, 30)
-        maximum = integer(group.get('max', 1), 1, len(options), title)
+        quantity_mode = group.get('quantity_mode', False)
+        if not isinstance(quantity_mode, bool):fail('Modo de quantidade inválido.')
+        maximum = integer(group.get('max', 1), 1, 99 if quantity_mode else len(options), title)
         minimum = integer(group.get('min', 0), 0, maximum, title)
         clean_group = {'id': gid, 'name': title, 'min': minimum, 'max': maximum, 'options': options}
+        if quantity_mode:clean_group['quantity_mode'] = True
         if 'product_ids' in group:
             refs = group['product_ids']
             if not isinstance(refs, list) or len(refs) != len(options):
@@ -82,6 +85,14 @@ def parse_config(raw):
     for index, item in enumerate(items):
         if 'product_id' in item:
             output['combo_items'][index]['product_id'] = integer(item['product_id'], 1, 2147483647, 'Produto do combo')
+        if item.get('group_id301'):
+            gid = item['group_id301']
+            if not isinstance(gid, str) or not gid.isalnum() or len(gid) > 40:fail('Grupo do combo inválido.')
+            output['combo_items'][index]['group_id301'] = gid
+    manual = data.get('combo_manual', [])
+    if not isinstance(manual, list) or len(manual) > 20 or any(not isinstance(i, dict) for i in manual):fail('Itens manuais inválidos.')
+    manual_names = names([i.get('name') for i in manual], 'Itens manuais', 20)
+    output['combo_manual'] = [{'name': name, 'quantity': integer(manual[i].get('quantity'), 1, 99, name)} for i, name in enumerate(manual_names)]
     if 'included195' in data:output['included195'] = data['included195']
     return output
 
@@ -108,7 +119,9 @@ def bind_combo_products(conn, professional_id, config, product_id=None):
         if row['id'] in seen:
             fail('Não repita o produto no combo. Ajuste a quantidade.')
         seen.add(row['id'])
-        items.append({'product_id': row['id'], 'name': row['name'], 'quantity': item['quantity']})
+        entry = {'product_id': row['id'], 'name': row['name'], 'quantity': item['quantity']}
+        if item.get('group_id301'):entry['group_id301'] = item['group_id301']
+        items.append(entry)
     config['combo_items'] = items
     for group in config['groups']:
         refs = group.get('product_ids', [None] * len(group['options']))
@@ -117,6 +130,11 @@ def bind_combo_products(conn, professional_id, config, product_id=None):
             fail('Não repita produtos no mesmo grupo de escolhas.')
         group['product_ids'] = [row['id'] for row in resolved]
         group['options'] = [row['name'] for row in resolved]
+    for item in items:
+        if item.get('group_id301'):
+            group = next((g for g in config['groups'] if g['id'] == item['group_id301']), None)
+            if not group or not group.get('quantity_mode') or group['min'] != item['quantity'] or group['max'] != item['quantity'] or item['product_id'] not in group.get('product_ids', []):
+                fail('Confira os produtos e as quantidades do grupo do combo.')
     return config
 
 
@@ -152,18 +170,26 @@ def validate_customization(config, raw, notes, utensils):
     if removed:
         parts.append('Retirar: ' + ', '.join(removed))
     for group in config['groups']:
-        values = names(groups.get(group['id'], []), group['name'], 30)
+        raw_values = groups.get(group['id'], [])
+        if group.get('quantity_mode'):
+            if not isinstance(raw_values, list) or len(raw_values) > 99 or any(not isinstance(v, str) or not v.strip() or len(v) > 140 for v in raw_values):fail('Quantidades do combo inválidas.')
+            values = raw_values
+        else:
+            values = names(raw_values, group['name'], 30)
         if not set(values) <= set(group['options']):
             fail(group['name'] + ': uma opção não está mais disponível.')
         if not group['min'] <= len(values) <= group['max']:
             fail(f"{group['name']}: escolha de {group['min']} a {group['max']} opções.")
         if values:
-            parts.append(group['name'] + ': ' + ', '.join(values))
+            parts.append(group['name'] + ': ' + ', '.join((str(values.count(v)) + ' × ' + v) if group.get('quantity_mode') else v for v in dict.fromkeys(values)))
     if not isinstance(utensils, bool):
         fail('Opção de talheres inválida.')
+    if config.get('combo_manual'):
+        parts.append('Incluído: ' + ', '.join(str(i['quantity']) + ' × ' + i['name'] for i in config['combo_manual']))
     if utensils and not config['utensils']:
         fail('Talheres não estão disponíveis para este produto.')
     if config['utensils']:
         parts.append('Talheres: sim (garfo e faca)' if utensils else 'Talheres: não')
     return ' · '.join(parts)
+
 

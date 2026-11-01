@@ -38,3 +38,24 @@ test('mobile combo search shows store products and saves the selected product ID
  assert.deepEqual(errors,[]);
  }finally{await browser.close();}
 });
+
+test('dedicated combo form imports store products, offers quantities and manual accessories',async()=>{
+ const browser=await launch();try{
+ const page=await browser.newPage({viewport:{width:390,height:844}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.setContent(`<!doctype html><style>[hidden]{display:none!important}${read('static/custom196.css')}</style><div class="pro-dashboard"><section id="combos-loja"><h2>Cadastrar combo</h2><form data-combo-editor301="1"><input type="hidden" name="category" value="__combos256"><input name="name" value="Combo teste"><div class="nu192-editor" data-editor192=""></div><button type="submit">Salvar combo</button></form></section></div><script type="application/json" id="combo-catalog298">[{"id":1,"name":"Red Bull","available":true},{"id":2,"name":"Red Bull sem açúcar","available":true},{"id":3,"name":"Gelo de coco","available":true}]</script><script>${read('static/combo-editor301.js')}</script><script>${read('static/custom196.js')}</script><script>${read('static/compact200.js')}</script><script>document.querySelector('form').addEventListener('submit',e=>{e.preventDefault();window.combo301=JSON.parse(new FormData(e.target).get('customization192'));});</script>`);
+ await page.getByRole('button',{name:'+ Buscar produto da loja',exact:true}).click();
+ const search=page.getByLabel('Buscar produto para o combo',{exact:true});await search.fill('Red');await page.locator('[data-import-product301="1"]').click();await search.fill('sem');await page.locator('[data-import-product301="2"]').click();await page.getByLabel('Unidades incluídas neste grupo',{exact:true}).fill('4');
+ await page.getByRole('button',{name:'+ Adicionar item manual',exact:true}).click();await page.getByLabel('Nome do item manual',{exact:true}).fill('Copo');await page.getByLabel('Quantidade do item manual',{exact:true}).fill('4');
+ await page.getByRole('button',{name:'Salvar combo',exact:true}).click();const config=await page.evaluate(()=>window.combo301);assert.equal(config.combo_items[0].product_id,1);assert.equal(config.combo_items[0].quantity,4);assert.deepEqual(config.groups[0].product_ids,[1,2]);assert.deepEqual(config.combo_manual,[{name:'Copo',quantity:4}]);assert.equal(await page.locator('.nu200-question').count(),0);assert.deepEqual(errors,[]);
+ }finally{await browser.close();}
+});
+test('customer distributes four units between flavors and cannot exceed the combo limit',async()=>{
+ const browser=await launch();try{
+ const page=await browser.newPage({viewport:{width:390,height:844}}),config={ingredients:[],combo_items:[{name:'Red Bull',quantity:4}],combo_manual:[{name:'Copo',quantity:4}],groups:[{id:'drink','name':'Energéticos','min':4,'max':4,'options':['Red Bull','Red Bull sem açúcar'],'product_ids':[1,2],quantity_mode:true}],utensils:false,notes:true};
+ await page.setContent(`<!doctype html><style>[hidden]{display:none!important}${read('static/custom196.css')}</style><article class="menu-product nu151-dish-open" data-product data-id="1" data-combo256="1" data-custom192='${JSON.stringify(config)}'><div class="product-buy"></div></article><script>${read('static/custom196.js')}</script>`);
+ await page.getByRole('button',{name:'Aumentar Red Bull',exact:true}).click();await page.getByRole('button',{name:'Aumentar Red Bull',exact:true}).click();await page.getByRole('button',{name:'Aumentar Red Bull sem açúcar',exact:true}).click();await page.getByRole('button',{name:'Aumentar Red Bull sem açúcar',exact:true}).click();
+ assert.equal(await page.getByLabel('Quantidade de Red Bull',{exact:true}).inputValue(),'2');assert.equal(await page.getByLabel('Quantidade de Red Bull sem açúcar',{exact:true}).inputValue(),'2');assert.equal(await page.getByRole('button',{name:'Aumentar Red Bull',exact:true}).isDisabled(),true);
+ const snap=await page.evaluate(()=>{const card=document.querySelector('[data-product]'),customization=window.NOWUP_CUSTOM192.snapshot(card);window.NOWUP_CUSTOM192.validate(card,{options:[],customization});return customization;});assert.deepEqual(snap.groups.drink,['Red Bull','Red Bull','Red Bull sem açúcar','Red Bull sem açúcar']);assert.equal(await page.getByText('4 × Copo',{exact:true}).count(),1);
+ }finally{await browser.close();}
+});
+
