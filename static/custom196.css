@@ -14,3 +14,21 @@
 .nu192-editor .nu300-product-result strong{font-size:16px;overflow-wrap:anywhere}
 .nu192-editor .nu300-product-result small{display:block;font-size:13px;color:#654d7c}
 .nu192-editor .nu300-results p{margin:6px;font-size:14px;color:#654d7c}
+
+.nu301-combo-item{padding:16px;border:1px solid #d9c5f1;border-radius:14px;margin:14px 0;min-width:0}
+.nu301-combo-item>input[type=search]{width:100%!important;min-height:48px;box-sizing:border-box}
+.nu301-combo-item>label{display:grid;gap:8px;margin:14px 0}
+.nu301-selected-product{display:flex;align-items:center;gap:10px;padding:10px;background:#f4efff;border-radius:10px;margin:8px 0}
+.nu301-selected-product img,.nu300-product-result img{object-fit:contain;border-radius:8px}
+.nu301-selected-product strong{flex:1;min-width:0;overflow-wrap:anywhere}
+.nu301-selected-product button{margin-left:auto}
+.nu301-quantity-option{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #eee}
+.nu301-quantity-option>span{flex:1;overflow-wrap:anywhere}
+.nu301-counter{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.nu301-counter button{width:38px;height:40px;border:0;border-radius:9px;color:#fff;background:#7134c6;font-size:22px}
+.nu301-counter button:disabled{opacity:.4}
+.nu301-counter input{height:40px!important;width:45px!important;min-width:0!important;padding:7px 2px!important;text-align:center;box-sizing:border-box}
+.nu301-quantity-group>small{display:block;margin:10px 0;font-weight:700;color:#7134c6}
+html body.professional-area .nu198-bottom{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+.nu301-combo-form textarea{min-height:80px}
+

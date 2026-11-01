@@ -2,7 +2,7 @@
 (() => {
  'use strict';
  document.querySelectorAll('.pro-dashboard [data-editor192]').forEach((host,index)=>{
-  const form=host.closest('form');if(!form||form.dataset.compact200)return;form.dataset.compact200='1';
+  const form=host.closest('form');if(!form||form.dataset.comboEditor301||form.dataset.compact200)return;form.dataset.compact200='1';
   let config=null;try{config=JSON.parse(host.dataset.editor192||'null');}catch(_){}
   const mode=form.querySelector('[name=extras_mode]');
   const meta=config?.included195||{};
@@ -39,3 +39,4 @@
   if(extra.children.length>1){const save=form.querySelector('button:not([type]),button[type=submit]');if(save)save.before(extra);else form.append(extra);}
  });
 })();
+

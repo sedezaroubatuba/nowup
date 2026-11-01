@@ -1,0 +1,33 @@
+/* Dedicated combo editor: linked store products and explicit manual accessories. */
+(() => {
+ 'use strict';
+ const make=(tag,text,attrs={})=>{const n=document.createElement(tag);if(text)n.textContent=text;Object.entries(attrs).forEach(([k,v])=>n.setAttribute(k,v));return n;};
+ const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+ window.NOWUP_COMBO301=(host,form,config)=>{
+  if(host.dataset.ready301)return;host.dataset.ready301='1';host.replaceChildren();
+  let all=[];try{all=JSON.parse(document.getElementById('combo-catalog298')?.textContent||'[]');}catch(_){}
+  const catalog=all.filter(p=>p.available),items=make('div'),manual=make('div'),field=make('input','',{type:'hidden',name:'customization192'}),error=make('p','',{role:'alert',class:'nu192-error'});
+  host.append(make('h3','Produtos incluídos no combo'),make('p','Busque os produtos já vendidos na sua loja. Defina quantas unidades entram em cada combo.'),items);
+  const linked=new Set((config.combo_items||[]).map(i=>i.group_id301).filter(Boolean));
+  const legacy=(config.groups||[]).filter(g=>!linked.has(g.id));
+  function addItem(data={quantity:1},group=null){
+   const box=make('fieldset','',{class:'nu301-combo-item'}),title=make('legend','Produto da loja'),selected=make('div','',{class:'nu301-selected'}),search=make('input','',{type:'search',placeholder:'Pesquisar produto da própria loja','aria-label':'Buscar produto para o combo',autocomplete:'off'}),results=make('div','',{class:'nu300-results',role:'group','aria-label':'Produtos da loja encontrados'}),countLabel=make('label','Quantidade incluída neste combo'),count=make('input','',{type:'number',min:'1',max:'99',step:'1',value:String(data.quantity||1),'aria-label':'Unidades incluídas neste grupo',required:''}),remove=make('button','Remover este item',{type:'button',class:'btn soft'});
+   const chosen=[];const gid=data.group_id301||'combo'+Math.random().toString(36).slice(2);
+   const candidates=group?.product_ids||[data.product_id];candidates.filter(Boolean).forEach(id=>{const p=catalog.find(p=>p.id===id);if(p)chosen.push(p);});
+   if(!chosen.length&&data.name){const matches=catalog.filter(p=>p.name===data.name);if(matches.length===1)chosen.push(matches[0]);}
+   function summary(){selected.replaceChildren();chosen.forEach(p=>{const row=make('div','',{class:'nu301-selected-product'});if(p.image_filename){const img=make('img','',{src:'/uploads/'+encodeURIComponent(p.image_filename),alt:'',width:'44',height:'44'});img.onerror=()=>img.remove();row.append(img);}row.append(make('strong',p.name));const del=make('button','×',{type:'button','aria-label':'Retirar '+p.name});del.onclick=()=>{chosen.splice(chosen.indexOf(p),1);summary();render();};row.append(del);selected.append(row);});title.textContent=chosen[0]?.name||'Produto da loja';}
+   function render(){results.replaceChildren();const query=norm(search.value),found=catalog.filter(p=>!chosen.some(c=>c.id===p.id)&&norm(p.name+' '+p.id).includes(query));results.hidden=false;
+    found.slice(0,20).forEach(p=>{const button=make('button','',{type:'button',class:'nu300-product-result','data-import-product301':String(p.id)});if(p.image_filename){const img=make('img','',{src:'/uploads/'+encodeURIComponent(p.image_filename),alt:'',width:'40',height:'40'});img.onerror=()=>img.remove();button.append(img);}button.append(make('strong',p.name),make('small','Selecionar produto da loja'));button.onclick=()=>{chosen.push(p);search.value='';results.hidden=true;summary();};results.append(button);});
+    if(!found.length)results.append(make('p',catalog.length?'Nenhum produto encontrado.':'Cadastre primeiro os produtos que serão vendidos na loja.'));
+   }
+   search.oninput=render;search.onfocus=render;results.hidden=true;summary();countLabel.append(count);remove.onclick=()=>box.remove();
+   box.append(selected,search,results,make('small','Para permitir a escolha de sabores, selecione também os outros produtos/sabores neste mesmo grupo.'),countLabel,remove);
+   box._value=()=>{if(!chosen.length)throw Error('Selecione ao menos um produto da loja em cada item.');const quantity=Number(count.value);if(!Number.isInteger(quantity)||quantity<1||quantity>99)throw Error('Confira a quantidade incluída.');const first=chosen[0];return {item:{product_id:first.id,name:first.name,quantity,group_id301:gid},group:{id:gid,name:first.name,min:quantity,max:quantity,options:chosen.map(p=>p.name),product_ids:chosen.map(p=>p.id),quantity_mode:true}};};items.append(box);
+  }
+  (config.combo_items||[]).forEach(i=>addItem(i,(config.groups||[]).find(g=>g.id===i.group_id301)));
+  const add=make('button','+ Buscar produto da loja',{type:'button',class:'btn primary'});add.onclick=()=>{addItem();items.lastElementChild.querySelector('input[type=search]').focus();};host.append(add,make('h3','Itens manuais'),make('p','Opcional: copos, canudos e outros acessórios que não precisam de cadastro no catálogo.'),manual);
+  function addManual(data={name:'',quantity:1}){const row=make('div','',{class:'nu192-row'}),name=make('input','',{type:'text',maxlength:'140',placeholder:'Ex.: copo ou canudo','aria-label':'Nome do item manual',required:''}),quantity=make('input','',{type:'number',min:'1',max:'99',step:'1',value:String(data.quantity),'aria-label':'Quantidade do item manual',required:''}),del=make('button','×',{type:'button','aria-label':'Remover item manual'});name.value=data.name;del.onclick=()=>row.remove();row.append(name,quantity,del);row._value=()=>({name:name.value.trim(),quantity:Number(quantity.value)});manual.append(row);}
+  (config.combo_manual||[]).forEach(addManual);const addAccessory=make('button','+ Adicionar item manual',{type:'button',class:'btn soft'});addAccessory.onclick=()=>addManual();host.append(addAccessory,field,error);
+  form.addEventListener('submit',e=>{error.textContent='';try{const values=[...items.children].map(n=>n._value());if(!values.length)throw Error('Busque os produtos da loja que vão compor este combo.');if(values.length+legacy.length>10)throw Error('Cadastre até 10 grupos de produtos por combo.');const chosen=values.map(v=>v.item.product_id);if(new Set(chosen).size!==chosen.length)throw Error('Não repita o mesmo produto em grupos diferentes. Ajuste a quantidade.');field.value=JSON.stringify({...config,combo_items:values.map(v=>v.item),combo_manual:[...manual.children].map(n=>n._value()),groups:[...legacy,...values.map(v=>v.group)],ingredients:[],utensils:false,free_enabled:false,free_count:0,notes:true,included195:{side_ids:[],drink_ids:[],side_count:1,side_required:false,is_combo:false}});}catch(err){e.preventDefault();error.textContent=err.message;}});
+ };
+})();
