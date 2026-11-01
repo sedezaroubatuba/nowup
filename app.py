@@ -1,6 +1,7 @@
 from __future__ import annotations
 import nowup_storeapp257
 import nowup_storeapp256
+import nowup_marketing309
 import nowup_neighborhoods267
 from nowup_combos303 import attach_prices, current_price, combo_kind
 import nowup_categories230
@@ -661,6 +662,7 @@ def init_db():
     nowup_storeapp257.initialize(conn)
     import nowup_auth247
     nowup_auth247.initialize(conn)
+    nowup_marketing309.initialize(conn)
     nowup_included195.initialize(conn)
     ensure_column(conn, "orders", "customer_id", "INTEGER REFERENCES users(id) ON DELETE SET NULL")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_customer238 ON orders(customer_id,id DESC)")
@@ -1333,7 +1335,7 @@ def social_click(slug: str, network: str):
 def signup_customer_page(request: Request): return templates.TemplateResponse("signup_customer.html", context(request))
 
 @app.post("/cadastro/cliente")
-def signup_customer(name: str=Form(...), email: str=Form(...), phone: str=Form(""), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), address: str=Form(""), neighborhood: str=Form(""), city: str=Form(""), state: str=Form("")):
+def signup_customer(name: str=Form(...), email: str=Form(...), phone: str=Form(""), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), address: str=Form(""), neighborhood: str=Form(""), city: str=Form(""), state: str=Form(""), marketing_email309: Optional[str]=Form(None), marketing_whatsapp309: Optional[str]=Form(None)):
     if not all(v.strip() for v in (name,address,neighborhood,city)) or state not in nowup_admin205.UFS:
         return RedirectResponse("/cadastro/cliente?erro=endereco",303)
     normalized_email=normalize_email(email)
@@ -1361,6 +1363,7 @@ def signup_customer(name: str=Form(...), email: str=Form(...), phone: str=Form("
         )
         uid=cur.lastrowid
         conn.execute("UPDATE users SET address=?,neighborhood=?,city=?,state=? WHERE id=?",(address.strip()[:300],neighborhood.strip()[:120],city.strip()[:120],state,uid))
+        nowup_marketing309.save(conn,uid,marketing_email309=="1",marketing_whatsapp309=="1",source="signup")
         conn.commit()
     except sqlite3.IntegrityError:
         conn.close(); return RedirectResponse("/cadastro/cliente?erro=email",303)
@@ -2124,8 +2127,9 @@ def customer_panel(request: Request):
       ORDER BY o.id DESC LIMIT 30""",(u["id"],)).fetchall()
     notifications=conn.execute("SELECT * FROM notifications WHERE user_id=? ORDER BY id DESC LIMIT 30",(u["id"],)).fetchall()
     unread_notifications=conn.execute("SELECT COUNT(*) FROM notifications WHERE user_id=? AND read_at=''",(u["id"],)).fetchone()[0]
+    prefs309=nowup_marketing309.preferences(conn,u["id"])
     conn.close()
-    return templates.TemplateResponse("customer_panel.html", context(request, reviews=reviews, favorites=favorites, orders=orders, notifications=notifications, unread_notifications=unread_notifications, status_labels=ORDER_STATUS_LABELS))
+    return templates.TemplateResponse("customer_panel.html", context(request, prefs309=prefs309, reviews=reviews, favorites=favorites, orders=orders, notifications=notifications, unread_notifications=unread_notifications, status_labels=ORDER_STATUS_LABELS))
 
 @app.post("/cliente/conta")
 def customer_account_update(request: Request, name: str=Form(...), phone: str=Form(""), address: str=Form(""), neighborhood: str=Form(""), preferred_payment: str=Form("pix"), address_reference: str=Form("")):
@@ -2950,3 +2954,12 @@ nowup_verification257.register(globals())
 @app.on_event("startup")
 def storage_audit308():
     log_storage(db, UPLOAD_DIR)
+
+@app.post("/cliente/comunicacoes")
+def customer_marketing309(request: Request, marketing_email309: Optional[str]=Form(None), marketing_whatsapp309: Optional[str]=Form(None)):
+    user=require_user(request,"customer");conn=db()
+    try:
+        nowup_marketing309.save(conn,user['id'],marketing_email309=="1",marketing_whatsapp309=="1")
+        conn.commit()
+    finally:conn.close()
+    return RedirectResponse('/cliente?ok=comunicacoes#comunicacoes',303)

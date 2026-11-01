@@ -1,0 +1,8 @@
+{% set choices309=prefs309|default({}) %}
+<fieldset style="grid-column:1/-1;min-width:0;margin:8px 0;padding:16px;border:1px solid #dfd2ef;border-radius:14px;background:#faf7ff">
+<legend style="padding:0 6px;font-weight:700;color:#6430a4">Promoções e cupons (opcional)</legend>
+<p style="margin:0 0 12px;line-height:1.45">Escolha por onde deseja receber ofertas do NowUp:</p>
+<label style="display:flex;align-items:flex-start;gap:10px;line-height:1.45;margin:10px 0"><input type="checkbox" name="marketing_email309" value="1" style="width:20px;height:20px;flex:0 0 20px;margin:2px 0" {% if choices309.get('email') %}checked{% endif %}><span>Quero receber promoções e cupons do NowUp por <strong>e-mail</strong>.</span></label>
+<label style="display:flex;align-items:flex-start;gap:10px;line-height:1.45;margin:10px 0"><input type="checkbox" name="marketing_whatsapp309" value="1" style="width:20px;height:20px;flex:0 0 20px;margin:2px 0" {% if choices309.get('whatsapp') %}checked{% endif %}><span>Quero receber promoções e cupons do NowUp por <strong>WhatsApp</strong>.</span></label>
+<small style="display:block;line-height:1.45;color:#685c75">Você pode alterar ou cancelar essas autorizações em Minha conta.</small>
+</fieldset>
