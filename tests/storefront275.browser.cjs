@@ -29,3 +29,20 @@ test('large sideways combo showcase, two tall cards per row and no combo duplica
   await page.locator('[data-category-filter="cervejas"]').click();assert.ok(await page.locator('.nu277-promotions-grid').isHidden());assert.deepEqual(errors,[]);
  }finally{await browser.close();}
 });
+
+
+test('approved compact combo keeps readable prices, double outline and carousel at mobile widths',async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:process.env.NOWUP_CHROME_EXECUTABLE||undefined,args:['--no-sandbox']});try{
+ for(const width of [320,390,430,1440]){
+  const page=await browser.newPage({viewport:{width,height:844}});await page.setContent(fixture);await page.waitForSelector('.nu275-combo-card');
+  await page.locator('.nu275-combo-card').first().evaluate(card=>{card.querySelector('h3').textContent='Combo Jack Daniel’s 1 litro com Red Bull';const content=card.querySelector('.nu190-card-content'),price=content.querySelector('.nu289-combo-price');price.querySelector('strong').textContent='R$ 249,90';const separate=document.createElement('small');separate.className='nu303-separate';separate.textContent='Avulsos: R$ 264,00';const saving=document.createElement('small');saving.className='nu303-saving';saving.textContent='Economize R$ 14,10';price.after(separate,saving);});
+  const card=page.locator('.nu275-combo-card').first(),box=await card.boundingBox();assert.ok(box.height<300,JSON.stringify({width,box}));
+  assert.equal(await card.evaluate(e=>getComputedStyle(e).borderColor),'rgb(118, 43, 192)');assert.match(await card.evaluate(e=>getComputedStyle(e).boxShadow),/255, 120, 40/);
+  for(const selector of ['h3','.nu289-combo-price','.nu289-combo-price strong','.nu303-saving','.nu284-combo-open']){
+   const child=await card.locator(selector).boundingBox();assert.ok(child.x>=box.x&&child.x+child.width<=box.x+box.width+1&&child.y+child.height<=box.y+box.height+1,JSON.stringify({width,selector,box,child}));
+  }
+  const track=page.locator('.nu275-combo-section .nu190-track');assert.equal(await track.evaluate(e=>getComputedStyle(e).overflowX),'auto');assert.ok(await track.evaluate(e=>e.scrollWidth>e.clientWidth));
+  await page.close();
+ }
+ }finally{await browser.close();}
+});
