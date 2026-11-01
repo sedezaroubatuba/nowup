@@ -17,7 +17,7 @@
   const c=card._custom192=parse(card.dataset.custom192)||{...defaults,utensils:card.dataset.combo256!=='1'};
   if(c.ingredients.length||c.groups.length||c.utensils&&card.dataset.custom192)card.dataset.dish='1';
   const section=el('div','',{class:'nu192-choices'});
-  if(card.dataset.combo256==='1'&&c.combo_items?.length){const included=el('section','',{class:'nu284-combo-items'});included.append(el('h3','O que vem no combo'));c.combo_items.forEach(i=>included.append(el('p',i.quantity+' × '+i.name)));(c.combo_manual||[]).forEach(i=>included.append(el('p',i.quantity+' × '+i.name)));section.append(included);}
+  if(card.dataset.combo256==='1'&&c.combo_items?.length){const included=el('section','',{class:'nu284-combo-items'});included.append(el('h3','O que vem no combo'));c.combo_items.forEach(i=>included.append(el('p',i.quantity+' × '+(c.groups.find(g=>g.id===i.group_id301)?.name||i.name))));(c.combo_manual||[]).forEach(i=>included.append(el('p',i.quantity+' × '+i.name)));section.append(included);}
   if(c.ingredients.length){const box=el('fieldset');box.append(el('legend','Ingredientes do produto'),el('small','Desmarque o que não quiser. O preço permanece o mesmo.'));for(const i of c.ingredients){const label=el('label');const input=el('input','',{type:'checkbox','data-ingredient192':'',value:i.name});input.checked=true;input.disabled=!i.removable;label.append(input,el('span',i.name+(i.removable?'':' · ingrediente fixo')));box.append(label);}section.append(box);}
   for(const g of c.groups){
    if(g.quantity_mode){
