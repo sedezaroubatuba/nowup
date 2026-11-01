@@ -1,0 +1,16 @@
+/* Desktop catalog: two rows and inline expansion, preserving the mobile catalog. */
+@media(min-width:901px){
+html body.public-profile-area.nu187-store-home [data-native-menu]>.container{max-width:1440px!important;margin-inline:auto!important;padding-inline:24px!important;display:grid!important;grid-template-columns:190px minmax(0,1fr)!important;column-gap:24px!important;align-items:start}
+html body.public-profile-area.nu187-store-home [data-native-menu]>.container>*{grid-column:2;min-width:0}
+html body.public-profile-area.nu187-store-home [data-native-menu] .menu-category-nav{grid-column:1!important;grid-row:1 / span 12!important;position:sticky!important;top:80px!important;display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;overflow-y:auto!important;overflow-x:hidden!important;max-height:calc(100dvh - 96px)!important;width:100%!important;align-self:start!important;gap:8px!important;margin:0!important;padding:4px!important}
+html body.public-profile-area.nu187-store-home [data-native-menu] .menu-category-nav>button{width:100%!important;white-space:normal!important;justify-content:flex-start!important;min-height:44px!important}
+html body.public-profile-area.nu187-store-home [data-native-menu] .nu190-category{scroll-margin-top:110px;margin-bottom:28px!important}
+html body.public-profile-area.nu187-store-home [data-native-menu] .nu190-showcase .nu312-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px!important;overflow:visible!important}
+html body.public-profile-area.nu187-store-home [data-native-menu] .nu190-showcase .nu312-grid>.nu201-card{display:flex!important;flex-direction:column!important;align-items:stretch!important;width:auto!important;max-width:none!important;min-width:0!important;height:auto!important;min-height:250px!important;padding:10px!important;border:1.5px solid #7934cc!important;border-radius:12px!important;background:#fff!important}
+html body.public-profile-area.nu187-store-home [data-native-menu] .nu190-showcase .nu312-grid>.nu201-card>img{height:135px!important;width:100%!important;object-fit:contain!important}
+html body.public-profile-area.nu187-store-home [data-native-menu] .nu190-showcase .nu312-grid .nu190-card-content{flex:1;display:flex;flex-direction:column;min-width:0}
+html body.public-profile-area.nu187-store-home [data-native-menu] .nu190-showcase .nu312-grid .nu-cart-actions262{margin-top:auto}
+html body.public-profile-area.nu187-store-home [data-native-menu] .nu190-showcase .nu312-grid h3{font-size:14px!important}
+.nu312-more{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;border:2px solid #7934cc;border-radius:12px;background:#fff;color:#6b1bcb;cursor:pointer;min-height:250px;font:inherit}
+.nu312-more strong{font-size:20px}.nu312-more small{font-size:13px}.nu312-plus{display:grid;place-items:center;border-radius:50%;background:#6b1bcb;color:#fff;width:64px;height:64px;font-size:48px}.nu312-more:hover{background:#f7f2ff}.nu312-more:focus-visible{outline:3px solid #126fea;outline-offset:3px}
+}
