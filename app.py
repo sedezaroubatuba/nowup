@@ -48,7 +48,9 @@ app.include_router(email_verification_router)
 app.include_router(cms_router)
 app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+from nowup_combo_pack305 import read_pack
 templates = Jinja2Templates(directory=str(BASE / "templates"))
+templates.env.filters["combo_pack305"]=read_pack
 templates.env.globals["delivery_neighborhoods267"]=nowup_neighborhoods267.names
 templates.env.globals["canonical_neighborhood267"]=nowup_neighborhoods267.canonical
 templates.env.globals["category_icon230"] = nowup_categories230.icon
@@ -645,6 +647,7 @@ def init_db():
     ensure_column(conn, "orders", "address_reference", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "orders", "change_for_cents", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "products", "sold_cold", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "order_items", "combo_pack305", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "products", "is_combo256", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "products", "recommend256", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "products", "related256", "TEXT NOT NULL DEFAULT ''")
@@ -1074,7 +1077,7 @@ def attach_cart_assets144(response):
         return response
     assets=[]
     if '/static/cart144.css' not in body:
-        assets.append('<link rel="stylesheet" href="/static/cart144.css?v=144">')
+        assets.append('<link rel="stylesheet" href="/static/cart144.css?v=305">')
     if '/static/cart144.js' not in body:
         assets.append('<script src="/static/cart144.js?v=144" defer></script>')
     if '/static/categories142.js' not in body:
@@ -1235,7 +1238,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
         order_code=f"NU-{order_id:06d}"; conn.execute("UPDATE orders SET payment_method=?,order_code=?,order_origin=? WHERE id=?",(payment_method,order_code,"external" if order_channel=="external" or p["plan_active"]=="cardapio" else "nowup",order_id))
         conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)",(order_id,"new",created))
         for product,qty,item_notes,chosen,unit in clean_items:
-            item_cur=conn.execute("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes) VALUES(?,?,?,?,?,?)",(order_id,product["id"],product["name"],qty,unit,item_notes))
+            item_cur=conn.execute("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes,combo_pack305) VALUES(?,?,?,?,?,?,?)",(order_id,product["id"],product["name"],qty,unit,item_notes,product.get("combo_pack305", "")))
             for option in chosen: conn.execute("INSERT INTO order_item_options(order_item_id,option_id,option_name,price_cents) VALUES(?,?,?,?)",(item_cur.lastrowid,option["id"],option["name"],option["price_cents"]))
         if customer_id and fulfillment_type=="delivery" and save_address:
             conn.execute("UPDATE users SET address=?,neighborhood=?,address_reference=? WHERE id=? AND role='customer'",
@@ -2950,6 +2953,7 @@ nowup_opening260.install(globals())
 
 import nowup_verification257
 nowup_verification257.register(globals())
+
 
 
 

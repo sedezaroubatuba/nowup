@@ -81,3 +81,24 @@ test('combo comparison follows selected flavors and excludes manual freebies',as
  }finally{await browser.close();}
 });
 
+
+test('principal is fixed and singleton groups need no customer selection',async()=>{
+ const browser=await launch();try{
+ const page=await browser.newPage();const config={ingredients:[],combo_items:[{product_id:1,name:'Whisky',quantity:1,principal:true},{product_id:2,name:'Red Bull',quantity:4,group_id301:'drink'}],groups:[{id:'drink',name:'Energéticos',min:4,max:4,quantity_mode:true,options:['Red Bull'],product_ids:[2]}],combo_manual:[],notes:true};
+ await page.setContent(`<article data-product data-combo256="1" data-custom192='${JSON.stringify(config)}'><div class="product-buy"></div></article><script>${read('static/custom196.js')}</script>`);
+ assert.equal(await page.getByText('Produto principal: 1 × Whisky',{exact:true}).count(),1);
+ assert.equal(await page.getByRole('button',{name:'Aumentar Red Bull',exact:true}).count(),0);
+ const snap=await page.evaluate(()=>{const c=document.querySelector('[data-product]'),s=window.NOWUP_CUSTOM192.snapshot(c);window.NOWUP_CUSTOM192.validate(c,{customization:s,options:[]});return s;});assert.deepEqual(snap.groups.drink,['Red Bull','Red Bull','Red Bull','Red Bull']);
+ }finally{await browser.close();}
+});
+test('compact combo cart keeps full choices and a single line price',async()=>{
+ const browser=await launch();try{
+ const page=await browser.newPage();await page.route('https://nowup.test/**',r=>r.fulfill({body:'<!doctype html>'}));await page.goto('https://nowup.test/p/loja/menu');
+ const config={combo_items:[{product_id:1,name:'Whisky',quantity:1,principal:true},{name:'Red Bull',quantity:4,group_id301:'drink'}],groups:[{id:'drink',name:'Energéticos',options:['Normal','Zero']}],combo_manual:[{name:'Canudo',quantity:4}]};
+ await page.evaluate(()=>{window.NOWUP_MENU={customerId:1,open:true};localStorage.setItem('nowup-cart:u:1:/p/loja',JSON.stringify([['100:a',{productId:100,name:'Combo whisky',unitPrice:15000,quantity:1,options:[],customization:{groups:{drink:['Normal','Normal','Zero','Zero']}},customizationSummary:'Energéticos: 2 × Normal, 2 × Zero',max:99}]]));});
+ await page.setContent(`<main data-native-menu><article data-product data-id="100" data-dish="1" data-combo256="1" data-custom192='${JSON.stringify(config)}'></article><div data-cart-items></div><span data-cart-total></span><button data-checkout></button></main><dialog data-checkout-dialog></dialog><script>${read('static/menu88.js')}</script>`);
+ assert.equal(await page.locator('.cart-item .nu305-line-price').count(),1);assert.match(await page.locator('.nu305-combo-summary').textContent(),/Principal: 1 × Whisky/);assert.equal(await page.getByRole('button',{name:'Editar combo',exact:true}).count(),1);
+ await page.getByText('Ver itens escolhidos',{exact:true}).click();assert.equal(await page.getByText('Energéticos: 2 × Normal, 2 × Zero',{exact:true}).isVisible(),true);assert.equal(await page.locator('.cart-item').textContent().then(s=>(s.match(/150,00/g)||[]).length),1);
+ await page.locator('[data-plus]').click();assert.match(await page.locator('.nu305-line-price').textContent(),/300,00/);assert.equal(await page.locator('[data-cart-quantity]').inputValue(),'2');
+ }finally{await browser.close();}
+});
