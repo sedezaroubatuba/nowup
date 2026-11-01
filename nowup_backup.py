@@ -1,6 +1,6 @@
 """Private, encrypted off-site backups. No production restore endpoint."""
 from __future__ import annotations
-import base64, hashlib, json, os, shutil, sqlite3, tempfile, threading, time, zipfile, fcntl
+import base64, hashlib, json, os, shutil, sqlite3, tempfile, threading, time, zipfile, fcntl, logging
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -197,12 +197,14 @@ def external_backup():
                 if state().get('last_week')!=week:
                     upload_backup(client,bucket,encrypted,prefix()+'/weekly/'+week+'.zip.enc')
                 save_state(last_external=now.isoformat(),last_daily=now.date().isoformat(),last_week=week,external_key=key,bytes=encrypted.stat().st_size)
+                logging.getLogger('uvicorn.error').info('NowUp encrypted backup confirmed308 timestamp=%s bytes=%s',now.isoformat(),encrypted.stat().st_size)
             # Retention only follows successful upload confirmation.
             try:prune_remote(client,bucket,'daily',7);prune_remote(client,bucket,'weekly',4)
             except Exception:save_state(warning='Cópia enviada, mas a limpeza de versões antigas falhou.')
             else:save_state(warning='')
         except Exception:
             # No provider credentials or exception payloads in status/logs.
+            logging.getLogger('uvicorn.error').warning('NowUp encrypted backup failed308; previous confirmed copy preserved')
             save_state(error='Backup externo falhou. Confira caminhos, imagens e configuração do armazenamento. Tente novamente.')
             notify_failure()
             raise
