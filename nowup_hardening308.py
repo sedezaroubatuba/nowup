@@ -114,6 +114,6 @@ def log_storage(database,directory):
     try:
         import nowup_backup
         status=storage_status(database,directory);backup=nowup_backup.state()
-        status.update(backup_configured=not nowup_backup.missing_config(),backup_automatic=nowup_backup.automatic_enabled(),backup_last_success=backup.get('last_external',''),backup_error=bool(backup.get('error')))
+        status.update(backup_configured=not nowup_backup.missing_config(),backup_automatic=nowup_backup.automatic_enabled(),backup_last_success=backup.get('last_external',''),backup_error=bool(backup.get('error')),backup_running=bool(backup.get('running')))
         logging.getLogger('uvicorn.error').info('NowUp storage audit308 %s',json.dumps(status))
     except Exception:logging.getLogger('uvicorn.error').warning('NowUp storage audit308 unavailable')
