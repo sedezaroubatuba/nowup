@@ -26,7 +26,7 @@
   if(ingredientLabel&&ingredientBody){mealFields.append(ingredientLabel,ingredientBody);ingredientLabel.hidden=true;ingredientLabel.style.setProperty('display','none','important');}
   form.prepend(mealBox,mealFields);
   const mealHeading319=document.createElement('h3');mealHeading319.textContent='Ingredientes que já vêm no produto';mealFields.prepend(mealHeading319);
-  function syncMeal(event){const meal=mealRadios[1].checked;const type=form.querySelector('[data-combo-type303]');if(meal&&event&&type?.value==='1'){type.value='0';type.dispatchEvent(new Event('change',{bubbles:true}));}form.dataset.meal317=String(meal);mealFields.hidden=!meal;if(ingredientToggle){ingredientToggle.checked=meal;ingredientToggle.dispatchEvent(new Event('change'));}sync();if(meal&&!mealFields.hidden&&!ingredientBody?.querySelector('[aria-label=Ingrediente]'))ingredientBody?.querySelector('button')?.click();}
+  function syncMeal(event){const meal=mealRadios[1].checked;const type=form.querySelector('[data-combo-type303]');if(meal&&event&&type?.value==='1'){type.value='0';type.dispatchEvent(new Event('change',{bubbles:true}));}form.dataset.meal317=String(meal);mealFields.hidden=!meal;if(ingredientToggle){ingredientToggle.checked=meal;ingredientToggle.dispatchEvent(new Event('change'));}sync();if(meal&&!mealFields.hidden&&!ingredientBody?.querySelector('[aria-label=Ingrediente]'))[...ingredientBody.querySelectorAll('button')].find(b=>b.textContent==='+ Adicionar ingrediente')?.click();}
   mealRadios.forEach(r=>r.addEventListener('change',syncMeal));
 
   const originalDisabled=new WeakMap();options.querySelectorAll('input,select,textarea,button').forEach(el=>originalDisabled.set(el,el.disabled));

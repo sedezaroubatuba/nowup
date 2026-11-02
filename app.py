@@ -5,6 +5,7 @@ import nowup_marketing309
 import nowup_neighborhoods267
 from nowup_combos303 import attach_prices, current_price, combo_kind
 import nowup_categories230
+import nowup_ingredients320
 import nowup_included195
 from nowup_custom192 import parse_config, save_config, charge_options, validate_customization, bind_combo_products
 import html
@@ -664,6 +665,7 @@ def init_db():
     nowup_auth247.initialize(conn)
     nowup_marketing309.initialize(conn)
     nowup_included195.initialize(conn)
+    nowup_ingredients320.initialize(conn)
     ensure_column(conn, "orders", "customer_id", "INTEGER REFERENCES users(id) ON DELETE SET NULL")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_customer238 ON orders(customer_id,id DESC)")
     ensure_column(conn, "orders", "tracking_token", "TEXT NOT NULL DEFAULT ''")
@@ -1535,6 +1537,7 @@ def orders_for_day(conn, professional_id, day, status="todos"):
 def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido_status: str="todos", pedido_dia: str="", abrir_pedido: int=0, conta: int=0):
     u=require_user(request,"professional"); conn=db()
     p=conn.execute("SELECT * FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+    ingredient_catalog320=nowup_ingredients320.catalog(conn,p["id"])
     included_catalog195=nowup_included195.catalog(conn,p["id"])
     shared_extras=conn.execute("SELECT * FROM shared_extras155 WHERE professional_id=? ORDER BY name,id",(p["id"],)).fetchall()
     shared_selected={}
@@ -1656,7 +1659,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     kanban=nowup_merchant228.board(conn,p["id"],lower228,upper228,SAO_PAULO_TZ)
     conn.close()
     status=shop_status(p); business_hours=parse_business_hours(p["business_hours"])
-    return templates.TemplateResponse("pro_panel.html", context(request, kanban=kanban, manual=nowup_sales107.panel_data(request,conta), combo_catalog298=combo_catalog298, included_catalog195=included_catalog195, shared_extras=shared_extras, shared_selected=shared_selected, pro=p, photos=photos, posts=posts, products=products, product_groups=product_groups, delivery_zones=delivery_zones, merchant_overview=merchant_overview, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, today_orders=today_orders, day_order_summary=day_order_summary, order_day=order_day.isoformat(), today_day=today.isoformat(), order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
+    return templates.TemplateResponse("pro_panel.html", context(request, kanban=kanban, manual=nowup_sales107.panel_data(request,conta), combo_catalog298=combo_catalog298, ingredient_catalog320=ingredient_catalog320, included_catalog195=included_catalog195, shared_extras=shared_extras, shared_selected=shared_selected, pro=p, photos=photos, posts=posts, products=products, product_groups=product_groups, delivery_zones=delivery_zones, merchant_overview=merchant_overview, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, today_orders=today_orders, day_order_summary=day_order_summary, order_day=order_day.isoformat(), today_day=today.isoformat(), order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
 
 @app.post('/painel/plano')
 def request_store_plan(request: Request, plan: str=Form(...), offer_mode: str=Form('services')):
@@ -1861,6 +1864,7 @@ def pro_product_add(request: Request, name: str=Form(...), description: str=Form
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); fn=""
     if custom192 is not None:
         try:
+            custom192=nowup_ingredients320.bind(conn,p["id"],custom192)
             custom192=nowup_included195.resolve(conn,p["id"],custom192)
             if is_combo256:custom192=bind_combo_products(conn,p["id"],custom192,None)
         except HTTPException:conn.close();raise
@@ -1888,6 +1892,7 @@ def pro_product_edit(request: Request, product_id: int, name: str=Form(...), des
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=?",(product_id,p["id"])).fetchone()
     if custom192 is not None:
         try:
+            custom192=nowup_ingredients320.bind(conn,p["id"],custom192)
             custom192=nowup_included195.resolve(conn,p["id"],custom192)
             if is_combo256:custom192=bind_combo_products(conn,p["id"],custom192,product_id)
         except HTTPException:conn.close();raise
@@ -2865,6 +2870,7 @@ from nowup_pwa182 import register as register_pwa182
 register_pwa182(app, current_user)
 
 nowup_included195.register(app, db, require_user, require_premium_catalog)
+nowup_ingredients320.install(globals())
 
 
 # V203: authenticated notification feed for foreground message/delivery sounds.
