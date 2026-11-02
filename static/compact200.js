@@ -12,7 +12,7 @@
   api.heading.remove();
   if(!meal){
    // Remove food controls from ordinary registration. Keep existing values in the serializer when editing.
-   for(const node of [api.ing.toggle.closest('label'),api.ing.body,api.shared,api.groups.toggle.closest('label'),api.groups.body,api.manualBox321,api.utensils.closest('label'),api.notes.closest('label')])node?.remove();
+   for(const node of [api.ing.toggle.closest('label'),api.ing.body,api.shared,api.groups.toggle.closest('label'),api.groups.body,api.manualBox321,api.questionLabel333,api.utensils.closest('label'),api.notes.closest('label')])node?.remove();
    const modeLabel=api.mode?.closest('label'),picker=form.querySelector('[data-shared-picker155]'),paid=make('details','',{class:'full nu322-settings'});paid.append(make('summary','Adicionais pagos (opcional)'));if(modeLabel)paid.append(modeLabel);if(picker){const fold=make('details');fold.append(make('summary','Selecionar adicionais cadastrados'),picker);paid.append(fold);}paid.append(api.extras);host.before(paid);paid.open=api.mode?.value!=='none';
    const type=form.querySelector('[data-combo-type303]');function sync(){host.hidden=type?.value==='1';paid.hidden=type?.value==='1';}type?.addEventListener('change',sync);sync();
    return;
@@ -30,8 +30,8 @@
   let config={};try{config=JSON.parse(host.dataset.editor192||'{}');}catch(_){}
   window.NOWUP_MEAL_GROUPS324(comboOptions,form,api,config);
   api.shared.remove();api.groups.toggle.closest('label').remove();api.groups.body.remove();
-  const other=make('details','',{class:'full nu322-settings'});other.append(make('summary','Outras opções (opcional)'),api.utensils.closest('label'));other.open=api.utensils.checked;
-  host.before(ingredientBox,paid,combo,api.manualBox321,other);
+  api.utensils.checked=false;api.utensils.closest('label').remove();
+  host.before(ingredientBox,paid,combo,api.manualBox321,api.questionLabel333);
   // Only the hidden configuration and its validation message remain in the original editor host.
  });}
  window.NOWUP_COMPACT328=initializeCompact328;initializeCompact328();

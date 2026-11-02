@@ -94,6 +94,9 @@ def parse_config(raw):
     output = {'ingredients': clean_ingredients, 'groups': clean_groups,
             'free_enabled': free_enabled, 'free_count': integer(data.get('free_count', 0), 0, 20, 'Gratuitos') if free_enabled else 0,
             'utensils': data.get('utensils', False), 'notes': data.get('notes', True)}
+    question=data.get('question333','')
+    if not isinstance(question,str) or len(question.strip())>200:fail('Escreva a pergunta personalizada com até 200 caracteres.')
+    if question.strip():output['question333']=question.strip()
     for flag in ('meal_groups324','meal_combo324'):
         if flag in data:
             if not isinstance(data[flag],bool):fail('Configuração dos grupos da refeição inválida.')
@@ -197,6 +200,12 @@ def validate_customization(config, raw, notes, utensils):
     if not isinstance(groups, dict) or not set(groups) <= {g['id'] for g in config['groups']}:
         fail('As opções do produto mudaram. Atualize o produto.')
     parts = []
+    question=config.get('question333','')
+    answer=raw.get('answer333')
+    if question:
+        if type(answer) is not bool:fail('Responda Sim ou Não: '+question)
+        parts.append(question+': '+('Sim' if answer else 'Não'))
+    elif answer is not None:fail('A pergunta deste produto mudou. Atualize o produto.')
     if notes and not config['notes']:
         fail('Este produto não aceita observações.')
     if notes:
