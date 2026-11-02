@@ -6,19 +6,19 @@ from fastapi.responses import RedirectResponse
 def initialize(conn):
     conn.execute("CREATE TABLE IF NOT EXISTS ingredients320(id INTEGER PRIMARY KEY,professional_id INTEGER NOT NULL REFERENCES professionals(id) ON DELETE CASCADE,name TEXT NOT NULL,image_filename TEXT NOT NULL DEFAULT '')")
     columns={r['name'] for r in conn.execute('PRAGMA table_info(ingredients320)')}
-    for name,definition in [('price_cents','INTEGER'),('extra_id325','INTEGER NOT NULL DEFAULT 0')]:
+    for name,definition in [('deleted327','INTEGER NOT NULL DEFAULT 0'),('price_cents','INTEGER'),('extra_id325','INTEGER NOT NULL DEFAULT 0')]:
         if name not in columns:conn.execute(f'ALTER TABLE ingredients320 ADD COLUMN {name} {definition}')
     tables={r['name'] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     if 'shared_extras155' in tables:
         conn.execute("INSERT INTO ingredients320(professional_id,name,price_cents,extra_id325) SELECT e.professional_id,e.name,e.price_cents,e.id FROM shared_extras155 e WHERE e.id=(SELECT MIN(e2.id) FROM shared_extras155 e2 WHERE e2.professional_id=e.professional_id AND lower(e2.name)=lower(e.name)) AND NOT EXISTS(SELECT 1 FROM ingredients320 i WHERE i.professional_id=e.professional_id AND lower(i.name)=lower(e.name))")
-        conn.execute("UPDATE ingredients320 SET extra_id325=(SELECT e.id FROM shared_extras155 e WHERE e.professional_id=ingredients320.professional_id AND lower(e.name)=lower(ingredients320.name) ORDER BY e.id LIMIT 1),price_cents=(SELECT e.price_cents FROM shared_extras155 e WHERE e.professional_id=ingredients320.professional_id AND lower(e.name)=lower(ingredients320.name) ORDER BY e.id LIMIT 1) WHERE extra_id325=0 AND EXISTS(SELECT 1 FROM shared_extras155 e WHERE e.professional_id=ingredients320.professional_id AND lower(e.name)=lower(ingredients320.name))")
+        conn.execute("UPDATE ingredients320 SET extra_id325=(SELECT e.id FROM shared_extras155 e WHERE e.professional_id=ingredients320.professional_id AND lower(e.name)=lower(ingredients320.name) ORDER BY e.id LIMIT 1),price_cents=(SELECT e.price_cents FROM shared_extras155 e WHERE e.professional_id=ingredients320.professional_id AND lower(e.name)=lower(ingredients320.name) ORDER BY e.id LIMIT 1) WHERE deleted327=0 AND extra_id325=0 AND EXISTS(SELECT 1 FROM shared_extras155 e WHERE e.professional_id=ingredients320.professional_id AND lower(e.name)=lower(ingredients320.name))")
     if 'included_choices195' in tables:
         conn.execute("INSERT INTO ingredients320(professional_id,name) SELECT c.professional_id,c.name FROM included_choices195 c WHERE c.kind='side' AND NOT EXISTS(SELECT 1 FROM ingredients320 i WHERE i.professional_id=c.professional_id AND lower(i.name)=lower(c.name)) GROUP BY c.professional_id,lower(c.name)")
     conn.execute('CREATE UNIQUE INDEX IF NOT EXISTS ingredient_name320 ON ingredients320(professional_id,lower(name))')
 
 
 def catalog(conn, store_id):
-    return [dict(row) for row in conn.execute('SELECT * FROM ingredients320 WHERE professional_id=? ORDER BY name,id',(store_id,))]
+    return [dict(row) for row in conn.execute('SELECT * FROM ingredients320 WHERE professional_id=? AND deleted327=0 ORDER BY name,id',(store_id,))]
 
 
 def bind(conn, store_id, config):
@@ -45,7 +45,10 @@ def install(g):
             current=None
             if ingredient_id:
                 current=conn.execute('SELECT * FROM ingredients320 WHERE id=? AND professional_id=?',(ingredient_id,store['id'])).fetchone()
-                if not current:raise HTTPException(404,'Ingrediente não encontrado.')
+                if not current or current['deleted327']:raise HTTPException(404,'Ingrediente não encontrado.')
+            if not ingredient_id:
+                archived=conn.execute('SELECT * FROM ingredients320 WHERE professional_id=? AND lower(name)=lower(?) AND deleted327=1',(store['id'],name)).fetchone()
+                if archived:current=archived;ingredient_id=archived['id']
             duplicate=conn.execute('SELECT id FROM ingredients320 WHERE professional_id=? AND lower(name)=lower(?) AND id!=?',(store['id'],name,ingredient_id)).fetchone()
             if duplicate:return RedirectResponse('/painel?erro=ingrediente-duplicado#ingredientes320',303)
             cents=g['price_to_cents'](price) if price.strip() else None
@@ -60,9 +63,25 @@ def install(g):
             elif extra_id:
                 conn.execute('UPDATE shared_extras155 SET name=?,available=0 WHERE id=? AND professional_id=?',(name,extra_id,store['id']))
             image=g['save_image'](photo) if photo and photo.filename else (current['image_filename'] if current else '')
-            if current:conn.execute('UPDATE ingredients320 SET name=?,image_filename=?,price_cents=?,extra_id325=? WHERE id=? AND professional_id=?',(name,image,cents,extra_id,ingredient_id,store['id']))
+            if current:conn.execute('UPDATE ingredients320 SET name=?,image_filename=?,price_cents=?,extra_id325=?,deleted327=0 WHERE id=? AND professional_id=?',(name,image,cents,extra_id,ingredient_id,store['id']))
             else:conn.execute('INSERT INTO ingredients320(professional_id,name,image_filename,price_cents,extra_id325) VALUES(?,?,?,?,?)',(store['id'],name,image,cents,extra_id))
             if extra_id:g['sync_shared155'](conn,store['id'])
             conn.commit()
         finally:conn.close()
         return RedirectResponse('/painel?ok=ingrediente#ingredientes320',303)
+
+    @g['app'].post('/painel/cardapio/ingredientes320/{ingredient_id}/excluir')
+    def delete(request:Request,ingredient_id:int):
+        user=g['require_user'](request,'professional');conn=g['db']()
+        try:
+            store=g['require_premium_catalog'](conn,user['id'])
+            item=conn.execute('SELECT * FROM ingredients320 WHERE id=? AND professional_id=? AND deleted327=0',(ingredient_id,store['id'])).fetchone()
+            if not item:raise HTTPException(404,'Item não encontrado.')
+            conn.execute('UPDATE ingredients320 SET deleted327=1 WHERE id=? AND professional_id=?',(ingredient_id,store['id']))
+            if item['extra_id325']:
+                conn.execute('UPDATE shared_extras155 SET available=0 WHERE id=? AND professional_id=?',(item['extra_id325'],store['id']))
+                g['sync_shared155'](conn,store['id'])
+            conn.execute("UPDATE included_choices195 SET available=0 WHERE professional_id=? AND kind='side' AND lower(name)=lower(?)",(store['id'],item['name']))
+            conn.commit()
+        finally:conn.close()
+        return RedirectResponse('/painel?ok=item-excluido#ingredientes320',303)
