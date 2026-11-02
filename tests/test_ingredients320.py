@@ -79,3 +79,24 @@ def test_existing_registries_merge_idempotently(conn):
     bread=next(r for r in rows if r['name']=='Pão')
     assert bread['extra_id325']==7 and bread['price_cents']==200
     assert next(r for r in rows if r['name']=='Bacon')['extra_id325']==8
+
+def test_delete_owned_item_preserves_history_and_survives_initialize(env):
+    m,client,_,store_id,other_store=env
+    assert client.post('/painel/cardapio/ingredientes320',data={'name':'Excluir teste','price':'2,00'},follow_redirects=False).status_code==303
+    with m.db() as c:
+        item=dict(c.execute('SELECT * FROM ingredients320 WHERE professional_id=? AND name=?',(store_id,'Excluir teste')).fetchone())
+        foreign=c.execute('INSERT INTO ingredients320(professional_id,name) VALUES(?,?)',(other_store,'Privado excluir')).lastrowid
+        c.commit()
+    assert client.post(f'/painel/cardapio/ingredientes320/{foreign}/excluir',follow_redirects=False).status_code==404
+    response=client.post(f'/painel/cardapio/ingredientes320/{item["id"]}/excluir',follow_redirects=False)
+    assert response.status_code==303 and 'item-excluido' in response.headers['location']
+    with m.db() as c:
+        initialize(c);initialize(c)
+        assert item['id'] not in [r['id'] for r in catalog(c,store_id)]
+        assert c.execute('SELECT available FROM shared_extras155 WHERE id=?',(item['extra_id325'],)).fetchone()[0]==0
+        assert c.execute('SELECT image_filename FROM ingredients320 WHERE id=?',(item['id'],)).fetchone() is not None
+    assert client.post('/painel/cardapio/ingredientes320',data={'name':'Excluir teste','price':'3,00'},follow_redirects=False).status_code==303
+    with m.db() as c:
+        restored=next(r for r in catalog(c,store_id) if r['name']=='Excluir teste')
+        assert restored['price_cents']==300
+    panel=client.get('/painel');assert 'Excluir item' in panel.text and 'Salvar alterações' in panel.text
