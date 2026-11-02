@@ -1666,7 +1666,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     kanban=nowup_merchant228.board(conn,p["id"],lower228,upper228,SAO_PAULO_TZ)
     conn.close()
     status=shop_status(p); business_hours=parse_business_hours(p["business_hours"])
-    return templates.TemplateResponse("pro_panel.html", context(request, kanban=kanban, manual=nowup_sales107.panel_data(request,conta), combo_catalog298=combo_catalog298, meal_ids322=meal_ids322, ingredient_catalog320=ingredient_catalog320, included_catalog195=included_catalog195, shared_extras=shared_extras, shared_selected=shared_selected, pro=p, photos=photos, posts=posts, products=products, product_groups=product_groups, delivery_zones=delivery_zones, merchant_overview=merchant_overview, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, today_orders=today_orders, day_order_summary=day_order_summary, order_day=order_day.isoformat(), today_day=today.isoformat(), order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
+    return templates.TemplateResponse("pro_panel.html", context(request, kanban=kanban, manual=nowup_sales107.panel_data(request,conta), combo_catalog298=combo_catalog298, pair_catalog328=[{"id":row["id"],"name":row["name"]} for row in products], meal_ids322=meal_ids322, ingredient_catalog320=ingredient_catalog320, included_catalog195=included_catalog195, shared_extras=shared_extras, shared_selected=shared_selected, pro=p, photos=photos, posts=posts, products=products, product_groups=product_groups, delivery_zones=delivery_zones, merchant_overview=merchant_overview, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, today_orders=today_orders, day_order_summary=day_order_summary, order_day=order_day.isoformat(), today_day=today.isoformat(), order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
 
 @app.post('/painel/plano')
 def request_store_plan(request: Request, plan: str=Form(...), offer_mode: str=Form('services')):
@@ -1861,6 +1861,13 @@ def configure_personalization153(conn, product_id, enabled, max_choices):
         gid=conn.execute("INSERT INTO product_option_groups(product_id,name,min_choices,max_choices) VALUES(?,'Adicionais',0,?)",(product_id,max_choices)).lastrowid
     conn.execute("UPDATE product_options SET group_id=? WHERE product_id=? AND group_id=0",(gid,product_id))
 
+def catalog_return328(request, fallback):
+    target=request.query_params.get('return_to328','')
+    allowed={'novo-produto','produtos-loja','lanches-refeicoes322','novo-lanche322','cadastrar-combo','combos-loja','ingredientes320','adicionais'}
+    if target in allowed or re.fullmatch(r'(?:produto|combo)-editor328-[1-9][0-9]*',target):
+        fallback=fallback.split('#',1)[0]+'#'+target
+    return RedirectResponse(fallback,303)
+
 @app.post("/painel/cardapio/produtos")
 def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None)):
     from nowup_promotions285 import promotional_cents
@@ -1887,7 +1894,7 @@ def pro_product_add(request: Request, name: str=Form(...), description: str=Form
     else:configure_shared155(conn,p["id"],cur.lastrowid,extras_mode,extra_ids,max_choices)
     if custom192 is not None:save_config(conn,cur.lastrowid,custom192)
     if is_combo256:conn.execute('UPDATE products SET is_dish=1 WHERE id=?',(cur.lastrowid,))
-    conn.commit(); conn.close(); return RedirectResponse("/painel?ok=combo#combos-loja" if is_combo256 else "/painel?ok=refeicao#lanches-refeicoes322" if custom192 and custom192.get("is_meal317") else "/painel?ok=produto#produtos-loja",303)
+    conn.commit(); conn.close(); return catalog_return328(request,"/painel?ok=combo#combos-loja" if is_combo256 else "/painel?ok=refeicao#lanches-refeicoes322" if custom192 and custom192.get("is_meal317") else "/painel?ok=produto#novo-produto")
 
 @app.post("/painel/cardapio/produtos/{product_id}")
 def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None)):
@@ -1922,7 +1929,7 @@ def pro_product_edit(request: Request, product_id: int, name: str=Form(...), des
     conn.execute("UPDATE products SET is_combo256=?,recommend256=?,related256=? WHERE id=? AND professional_id=?",(bool(is_combo256),bool(recommend256),pair_ids256,product_id,p["id"]))
     conn.commit(); conn.close()
     if fn!=product["image_filename"]:retire_photos(db,UPLOAD_DIR,[product["image_filename"]])
-    return RedirectResponse("/painel?ok=combo#combos-loja" if is_combo256 else "/painel?ok=refeicao#lanches-refeicoes322" if custom192 and custom192.get("is_meal317") else "/painel?ok=produto#cardapio",303)
+    return catalog_return328(request,"/painel?ok=combo#combos-loja" if is_combo256 else "/painel?ok=refeicao#lanches-refeicoes322" if custom192 and custom192.get("is_meal317") else f"/painel?ok=produto#produto-editor328-{product_id}")
 
 @app.post("/painel/cardapio/aviso-carrinho")
 def pro_cart_notice143(request: Request, cart_notice: str=Form("")):

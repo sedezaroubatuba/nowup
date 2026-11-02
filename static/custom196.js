@@ -45,7 +45,10 @@
   card.querySelector('.product-options,.nu85-note,.product-buy')?.before(section);
  });
  // The editor uses the existing product form and submits one validated configuration.
- document.querySelectorAll('[data-editor192]').forEach(host=>{
+ function initializeEditors328(scope=document){scope.querySelectorAll('[data-editor192]').forEach(host=>{
+  if(host.dataset.ready328)return;
+  if(host.closest('.pro-dashboard')){for(let parent=host.parentElement;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS'&&!parent.open)return;}
+  host.dataset.ready328='1';
   const form=host.closest('form'),initial=parse(host.dataset.editor192);let c=initial||{...defaults,utensils:false};
   if(form?.dataset.comboEditor301&&window.NOWUP_COMBO301){window.NOWUP_COMBO301(host,form,c);return;}
   const type303=form.querySelector('[data-combo-type303]');
@@ -130,7 +133,10 @@
    function syncType303(){const active=type303.value==='1';comboHost303.hidden=!active;comboHost303.querySelectorAll('input,select,button,textarea').forEach(n=>n.disabled=!active);field.disabled=active;comboItems.hidden=true;if(active)comboHost303._syncCombo305?.();if(mode){mode.value=active?'none':legacyMode303;mode.dispatchEvent(new Event('change',{bubbles:true}));}const priceLabel=form.querySelector('[name=price]')?.closest('label');if(priceLabel?.firstChild?.nodeType===3)priceLabel.firstChild.textContent=active?'Preço final do combo (R$) — desconto já incluído':'Preço normal (R$)';}
    type303.addEventListener('change',syncType303);syncType303();
   }
- });
+ });}
+ window.NOWUP_EDITORS328=initializeEditors328;
+ initializeEditors328();
+ document.addEventListener('toggle',event=>{if(event.target.tagName==='DETAILS'&&event.target.open){initializeEditors328(event.target);window.NOWUP_COMPACT328?.(event.target);}},true);
 })();
 
 

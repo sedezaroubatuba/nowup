@@ -6,12 +6,12 @@
 {% macro fields(products, current=none) %}
 <fieldset class="full"><legend>Leve junto no carrinho</legend>
 {{highlight(current)}}
-<div class="nu273-picker" data-pair-picker273>
+<details class="nu273-picker" data-pair-picker273 data-selected328="{{current.related256 if current else ''}}"><summary>Selecionar produtos combináveis</summary>
 <label>Buscar produtos para combinar<input class="input" type="search" data-pair-search273 placeholder="Digite o nome do produto" autocomplete="off"></label>
-<p class="muted" data-pair-status273 role="status" aria-live="polite">Marque os produtos que deseja sugerir.</p>
+<p class="muted" data-pair-status273 role="status" aria-live="polite">Abra para selecionar os produtos.</p>
 <div class="nu273-options" role="group" aria-label="Produtos combináveis">
-{% for other in products if not current or other.id != current.id %}<label class="check" data-pair-option273><input type="checkbox" name="related256" value="{{other.id}}" {% if current and other.id|string in (current.related256 or '').split(',') %}checked{% endif %}> <span>{{other.name}}</span></label>{% else %}<p>Nenhum outro produto cadastrado.</p>{% endfor %}
-</div></div>
+{% if current %}{% for ref in (current.related256 or '').split(',') if ref %}<input type="hidden" name="related256" value="{{ref}}" data-pair-seed328>{% endfor %}{% endif %}
+</div></details>
 <small>Selecione até 20 itens da sua loja. Ao comprar este produto, o cliente verá até 5 sugestões em “Leve junto”, contando os destaques da loja e os produtos combinados. O cliente escolhe se deseja adicionar.</small>
 </fieldset>
 {% endmacro %}
