@@ -71,7 +71,7 @@
     let config={};try{config=JSON.parse(card?.dataset.custom192||'{}');}catch(_){}
     const entries=config.combo_items||[],groups=config.groups||[];
     const principal=entries.find(i=>i.principal)||entries.find(i=>i.quantity===1&&groups.find(g=>g.id===i.group_id301)?.options?.length===1);
-    let short='';
+    let short=config.combo_notice316?`<p style="white-space:pre-wrap"><strong>Aviso do combo:</strong> ${esc(config.combo_notice316)}</p>`:'';
     if(principal)short+=`<small class="nu305-principal">Principal: ${esc(principal.quantity)} × ${esc(principal.name)}</small>`;
     const included=entries.filter(i=>i!==principal).map(i=>`${i.quantity} × ${groups.find(g=>g.id===i.group_id301)?.name||i.name}`);
     if(included.length)short+=`<small>${esc(included.join(' · '))}</small>`;

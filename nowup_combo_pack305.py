@@ -21,7 +21,7 @@ def build_pack(config, selected, note=''):
         if group['id'] not in done:
             for name,quantity in Counter(choices.get(group['id'],[])).items():add(name,quantity,'included',group['name'])
     for item in config.get('combo_manual',[]):add(item['name'],item['quantity'],'manual','Itens manuais')
-    return json.dumps({'version':1,'items':rows,'note':str(note)[:300]},ensure_ascii=False,separators=(',',':')) if rows else ''
+    return json.dumps({'version':1,'items':rows,'note':str(note)[:300],'notice316':str(config.get('combo_notice316',''))[:600]},ensure_ascii=False,separators=(',',':')) if rows else ''
 
 
 def read_pack(value):
@@ -31,5 +31,6 @@ def read_pack(value):
         for row in data['items']:
             if not isinstance(row,dict) or not isinstance(row.get('name'),str) or len(row['name'])>140 or type(row.get('quantity')) is not int or not 1<=row['quantity']<=99 or row.get('role') not in ('principal','included','manual'):return None
         if not isinstance(data.get('note',''),str):return None
+        if not isinstance(data.get('notice316',''),str) or len(data.get('notice316',''))>600:return None
         return data
     except (ValueError,TypeError):return None
