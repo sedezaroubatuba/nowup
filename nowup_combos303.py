@@ -1,5 +1,7 @@
 """Read-only current catalog prices for comparing combos with separate purchases."""
+import json
 from fastapi import HTTPException
+from nowup_ingredients320 import catalog as ingredient_catalog329, attach_photos329
 from nowup_custom192 import parse_config
 
 
@@ -18,13 +20,15 @@ def attach_prices(conn, store_id, products):
     catalog=conn.execute('SELECT id,price_cents,promo_price_cents,image_filename FROM products WHERE professional_id=? AND available=1 AND is_combo256=0',(store_id,)).fetchall()
     prices={str(r['id']):current_price(r) for r in catalog}
     images={str(r['id']):r['image_filename'] for r in catalog if r['image_filename']}
-    item_images={str(r["id"]):r["image_filename"] for r in conn.execute("SELECT id,image_filename FROM ingredients320 WHERE professional_id=?",(store_id,)) if r["image_filename"]}
+    ingredients329=ingredient_catalog329(conn,store_id)
+    item_images={str(r["id"]):r["image_filename"] for r in ingredients329 if r["image_filename"]}
     output=[]
     for source in products:
         row=dict(source);row['combo_prices303']={};row['combo_images303']={}
         if row.get('customization192'):
             try:
-                config=parse_config(row.get('customization192',''))
+                config=attach_photos329(parse_config(row.get('customization192','')),ingredients329)
+                row['customization192']=json.dumps(config,ensure_ascii=False)
                 ids={str(i['product_id']) for i in config.get('combo_items',[]) if i.get('product_id')}
                 for group in config.get('groups',[]):
                     ids.update(str(i) for i in group.get('product_ids',[]))
