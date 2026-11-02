@@ -1,1 +1,37 @@
-{% extends 'base.html' %}{% block content %}<div class="container formCard"><h1>Documentos da loja</h1><p>Situação: {{p.status or 'Cadastro anterior a este processo'}}</p><p>{{p.reason or ''}}</p>{% if p.status in ['correction','pending'] %}<p>Reenvie todas as fotos legíveis. JPG, PNG ou WebP; até 5 MB cada.</p><form method="post" enctype="multipart/form-data">{% for key,label in fields257.items() %}<label>{{label}}<input name="{{key}}" value="{{p[key]}}" required maxlength="180"></label>{% endfor %}{% for key,label in docs257.items() %}<label>{{label}}<input type="file" name="{{key}}" accept="image/jpeg,image/png,image/webp" required></label>{% endfor %}<button class="btn primary">Reenviar para análise</button></form>{% endif %}</div>{% endblock %}
+{% extends 'base.html' %}
+{% block title %}Documentos da loja | NowUp{% endblock %}
+{% block content %}
+<style>
+.merchant-documents314{width:min(920px,calc(100% - 32px));margin:28px auto;padding:28px;background:#fff;color:#292039;border:1px solid #e7dff0;border-radius:18px;box-shadow:0 5px 20px #32105b08;box-sizing:border-box}
+.merchant-documents314 h1{color:#6028a5;font-size:28px;line-height:1.2;margin:0 0 16px}
+.merchant-documents314 p{color:#4c4358;line-height:1.6;overflow-wrap:anywhere}
+.merchant-documents314 .documents-status314{display:inline-block;padding:8px 12px;background:#f2eafa;color:#51218a;border-radius:10px;margin:0 0 12px}
+.merchant-documents314 form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:22px}
+.merchant-documents314 label{display:grid;gap:8px;min-width:0;color:#292039;font-weight:600}
+.merchant-documents314 input{width:100%;min-width:0;box-sizing:border-box;min-height:46px;padding:11px;border:1px solid #d9d0e4;border-radius:10px;background:#fff;color:#292039;font:inherit}
+.merchant-documents314 input:focus-visible,.merchant-documents314 a:focus-visible,.merchant-documents314 button:focus-visible{outline:3px solid #7c3bc6;outline-offset:3px}
+.merchant-documents314 .documents-actions314{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:12px;margin-top:16px}
+.merchant-documents314 .btn.primary{background:#7134c6;color:#fff;border:1px solid #7134c6;min-height:46px}
+.merchant-documents314 .btn.soft{background:#f2eafa;color:#51218a;border:1px solid #e1d2f0;min-height:44px}
+@media(max-width:600px){.merchant-documents314{padding:20px;margin:18px auto}.merchant-documents314 h1{font-size:24px}.merchant-documents314 form{grid-template-columns:1fr}.merchant-documents314 input{font-size:16px}.merchant-documents314 .documents-actions314 .btn{width:100%;text-align:center}}
+</style>
+<section class="merchant-documents314" aria-labelledby="documents-title314">
+<h1 id="documents-title314">Documentos da loja</h1>
+{% set status_labels314 = {'pending':'Aguardando análise','correction':'Correção solicitada','verified':'Documentação verificada','rejected':'Documentação não aprovada'} %}
+<p class="documents-status314"><strong>Situação:</strong> {{status_labels314.get(p.status, p.status or 'Cadastro anterior à verificação de documentos')}}</p>
+{% if p.reason %}<p><strong>Orientação da análise:</strong> {{p.reason}}</p>{% endif %}
+{% if p.status in ['correction','pending'] %}
+<p>Reenvie todas as fotos legíveis. Formatos JPG, PNG ou WebP, com até 5 MB por imagem.</p>
+<form method="post" enctype="multipart/form-data">
+{% for key,label in fields257.items() %}<label>{{label}}<input name="{{key}}" value="{{p[key] or ''}}" required maxlength="180"></label>{% endfor %}
+{% for key,label in docs257.items() %}<label>{{label}}<input type="file" name="{{key}}" accept="image/jpeg,image/png,image/webp" required></label>{% endfor %}
+<div class="documents-actions314"><button class="btn primary" type="submit">Reenviar para análise</button><a class="btn soft" href="/painel">Voltar ao painel</a></div>
+</form>
+{% else %}
+{% if not p.status %}<p>Seu cadastro foi criado antes deste processo de verificação. Não há reenvio de documentos disponível nesta tela no momento.</p>
+{% elif p.status == 'verified' %}<p>A documentação da sua loja foi verificada. Não é necessário reenviar os documentos nesta tela.</p>
+{% else %}<p>O reenvio fica disponível enquanto a documentação aguarda análise ou quando uma correção é solicitada.</p>{% endif %}
+<div class="documents-actions314"><a class="btn primary" href="/painel">Voltar ao painel</a></div>
+{% endif %}
+</section>
+{% endblock %}
