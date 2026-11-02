@@ -786,6 +786,14 @@ def startup():
     source=sqlite3.connect(DB_PATH, timeout=15); target=sqlite3.connect(destination)
     try: source.backup(target)
     finally: target.close(); source.close()
+    # Apply the owner-requested retirement after the pre-change database backup.
+    from nowup_retire_legacy331 import apply as retire_legacy331
+    conn=db()
+    try:
+        retired331=retire_legacy331(conn);conn.commit()
+        import logging
+        logging.getLogger('uvicorn.error').info('NowUp legacy retirement331: %s options retired',retired331)
+    finally:conn.close()
     for old in sorted(backup_dir.glob("nowup-*.db"),reverse=True)[7:]: old.unlink(missing_ok=True)
 
 def select_home_stores90(conn, rows, visitor_key, visit_date):
