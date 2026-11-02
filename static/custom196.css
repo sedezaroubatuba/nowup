@@ -49,3 +49,7 @@ html body.professional-area .nu198-bottom{grid-template-columns:repeat(5,minmax(
 
 .nu305-principal{padding:10px;border-radius:9px;background:#f0e7fc;color:#4d2386;font-weight:750}
 .nu305-packing{margin:12px 0}.nu305-pack-unit{background:#fbf8ff}.nu305-pack-unit h4{color:#5d2995}.nu305-pack-unit li{line-height:1.5;overflow-wrap:anywhere}.nu305-pack-unit small{color:#647080;font-size:12px}
+
+/* Photos from the unified registry in paid extras, including the product dialog. */
+.product-options label>img.nu332-extra-photo{width:44px!important;height:44px!important;max-width:44px!important;object-fit:contain!important;flex:0 0 44px!important;border-radius:8px;margin:0!important}
+.product-options label>.nu332-extra-name{flex:1;min-width:0;overflow-wrap:anywhere}

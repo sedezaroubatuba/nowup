@@ -1144,8 +1144,8 @@ def profile(request: Request, slug: str):
             category=(product["category"] or "Geral").strip() or "Geral"
             if category not in menu_categories: menu_categories.append(category)
         product_options={}
-        for row in conn.execute("""SELECT po.* FROM product_options po JOIN products pr ON pr.id=po.product_id
-          WHERE pr.professional_id=? AND po.available=1 ORDER BY po.sort_order,po.id""",(p["id"],)).fetchall():
+        for row in nowup_ingredients320.option_photos332(conn,p["id"],conn.execute("""SELECT po.* FROM product_options po JOIN products pr ON pr.id=po.product_id
+          WHERE pr.professional_id=? AND po.available=1 ORDER BY po.sort_order,po.id""",(p["id"],)).fetchall()):
             product_options.setdefault(row["product_id"],[]).append(row)
     product_groups,delivery_zones=menu_rules89(conn,p["id"])
     current=current_user(request); can_review=False
@@ -1175,8 +1175,8 @@ def native_menu(request: Request, slug: str):
         category=(product["category"] or "Geral").strip() or "Geral"
         if category not in menu_categories: menu_categories.append(category)
     product_options={}
-    for row in conn.execute("""SELECT po.* FROM product_options po JOIN products pr ON pr.id=po.product_id
-      WHERE pr.professional_id=? AND po.available=1 ORDER BY po.sort_order,po.id""",(p["id"],)).fetchall():
+    for row in nowup_ingredients320.option_photos332(conn,p["id"],conn.execute("""SELECT po.* FROM product_options po JOIN products pr ON pr.id=po.product_id
+      WHERE pr.professional_id=? AND po.available=1 ORDER BY po.sort_order,po.id""",(p["id"],)).fetchall()):
         product_options.setdefault(row["product_id"],[]).append(row)
     conn.execute("UPDATE professionals SET menu_clicks=menu_clicks+1 WHERE id=?",(p["id"],))
     conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"menu_click",now_iso())); conn.commit()
