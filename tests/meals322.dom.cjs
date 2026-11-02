@@ -11,7 +11,13 @@ assert.equal(save(meal).is_meal317,true);assert.equal(save(meal).ingredients.len
 const combo=[...meal.querySelectorAll('label')].find(l=>l.textContent.includes('Oferecer como combo'));combo.querySelector('input').click();
 let first=meal.querySelector('.nu324-group');first.querySelector('[aria-label="Nome do grupo de escolhas"]').value='Acompanhamento';first.querySelector('[data-import-meal324="2"]').click();
 click(meal,'+ Adicionar grupo de escolhas');let second=meal.querySelectorAll('.nu324-group')[1];second.querySelector('[aria-label="Nome do grupo de escolhas"]').value='Bebidas';second.querySelector('[data-import-meal324="1"]').click();second.querySelector('[aria-label="Quantidade deste grupo"]').value='4';
-let c=save(meal);assert.equal(c.meal_groups324,true);assert.equal(c.meal_combo324,true);assert.equal(c.groups.length,2);assert.equal(c.groups[0].max,1);assert.equal(c.groups[1].max,4);assert.deepEqual(c.groups[1].product_ids,[1]);assert.equal(c.ingredients.length,2);assert.equal(c.ingredients[0].removable,false);assert.equal(c.ingredients[1].ingredient_id320,3);assert.ok(meal.querySelector('img[src*="cheese.png"]'));assert.equal(c.combo_items.length,0);
+let c=save(meal);assert.equal(c.meal_groups324,true);assert.equal(c.meal_combo324,true);assert.equal(c.groups.length,2);assert.equal(c.groups[0].max,1);assert.equal(c.groups[1].max,4);assert.deepEqual(c.groups[1].item_refs325,[{kind:'product',id:1}]);assert.equal(c.ingredients.length,2);assert.equal(c.ingredients[0].removable,false);assert.equal(c.ingredients[1].ingredient_id320,3);assert.ok(meal.querySelector('img[src*="cheese.png"]'));assert.equal(c.combo_items.length,0);
+assert.equal(meal.querySelector('[data-search320]').closest('details').open,false);
+assert.equal(meal.querySelector('[aria-label=Ingrediente]').closest('details').open,false);
+assert.equal(meal.querySelector('[data-shared-picker155]').closest('details').open,false);
+first.querySelector('[data-import-meal324="3"]').click();
+first.querySelector('[aria-label="Item manual do grupo"]').value='Arroz manual';click(first,'+ Digitar manualmente');
+c=save(meal);assert.deepEqual(c.groups[0].options,['Batata frita','Queijo','Arroz manual']);assert.deepEqual(c.groups[0].item_refs325,[{kind:'product',id:2},{kind:'item',id:3},{kind:'manual'}]);
 meal.querySelector('[name=extras_mode]').value='selected';meal.querySelector('[name=extras_mode]').dispatchEvent(new w.Event('change'));meal.querySelector('[name=extra_ids]').checked=true;assert.equal(new w.FormData(meal).get('extra_ids'),'5');
 combo.querySelector('input').click();c=save(meal);assert.equal(c.meal_combo324,false);assert.deepEqual(c.groups,[]);
 // Ordinary product can still become a bundle in the same form.

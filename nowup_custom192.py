@@ -80,6 +80,15 @@ def parse_config(raw):
             if not isinstance(refs, list) or len(refs) != len(options):
                 fail('Selecione os produtos das opções de troca.')
             clean_group['product_ids'] = [integer(ref, 1, 2147483647, title) for ref in refs]
+        if 'item_refs325' in group:
+            refs=group['item_refs325']
+            if not isinstance(refs,list) or len(refs)!=len(options):fail('Confira os itens do grupo.')
+            clean_refs=[]
+            for ref in refs:
+                if not isinstance(ref,dict) or ref.get('kind') not in ('product','item','manual'):fail('Origem do item inválida.')
+                kind=ref['kind']
+                clean_refs.append({'kind':kind,'id':integer(ref.get('id'),1,2147483647,title)} if kind!='manual' else {'kind':'manual'})
+            clean_group['item_refs325']=clean_refs
         clean_groups.append(clean_group)
     free_enabled = data.get('free_enabled', False)
     output = {'ingredients': clean_ingredients, 'groups': clean_groups,
