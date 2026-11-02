@@ -47,6 +47,14 @@ def parse_config(raw):
         fail('Ingredientes inválidos.')
     clean_names = names([i.get('name') for i in ingredients], 'Ingredientes')
     clean_ingredients = [{'name': name, 'removable': ingredients[i].get('removable', True)} for i, name in enumerate(clean_names)]
+    for index, ingredient in enumerate(ingredients):
+        if ingredient.get('ingredient_id320') is not None:
+            clean_ingredients[index]['ingredient_id320']=integer(ingredient['ingredient_id320'],1,2147483647,'Ingrediente')
+        image=ingredient.get('image_filename','')
+        if image:
+            import re
+            if not isinstance(image,str) or not re.fullmatch(r'[A-Za-z0-9_.-]{1,200}',image):fail('Foto de ingrediente inválida.')
+            clean_ingredients[index]['image_filename']=image
     groups = data.get('groups', [])
     if not isinstance(groups, list) or len(groups) > 10:
         fail('Cadastre até 10 grupos de opções.')

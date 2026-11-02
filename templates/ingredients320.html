@@ -1,0 +1,12 @@
+<details id="ingredientes320" class="menu-category-manager" {% if request.query_params.get('ok')=='ingrediente' or request.query_params.get('erro')=='ingrediente-duplicado' %}open{% endif %}>
+<summary class="btn soft">＋ Cadastrar ingredientes</summary>
+<p>Cadastre uma vez e escolha os ingredientes nos lanches e refeições. A foto é opcional.</p>
+{% if request.query_params.get('erro')=='ingrediente-duplicado' %}<p role="alert">Este ingrediente já está cadastrado. Escolha-o na lista abaixo.</p>{% endif %}
+{% if request.query_params.get('ok')=='ingrediente' %}<p role="status">Ingrediente salvo. Volte ao produto e selecione-o em Lanche ou refeição.</p>{% endif %}
+<form action="/painel/cardapio/ingredientes320" method="post" enctype="multipart/form-data" class="product-form">
+<label>Nome do ingrediente<input class="input" name="name" maxlength="100" placeholder="Ex.: arroz, feijão, alface ou queijo" required></label>
+<label>Foto (opcional)<input class="input" type="file" name="photo" accept="image/*"></label><button class="btn primary">Cadastrar ingrediente</button>
+</form>
+{% for ingredient in ingredient_catalog320 %}<details><summary>{% if ingredient.image_filename %}<img src="/uploads/{{ingredient.image_filename}}" alt="" width="40" height="40" style="object-fit:cover;border-radius:8px;vertical-align:middle"> {% endif %}{{ingredient.name}}</summary>
+<form action="/painel/cardapio/ingredientes320" method="post" enctype="multipart/form-data" class="product-form"><input type="hidden" name="ingredient_id" value="{{ingredient.id}}"><label>Nome<input class="input" name="name" maxlength="100" value="{{ingredient.name}}" required></label><label>Trocar foto (opcional)<input class="input" type="file" name="photo" accept="image/*"></label><button class="btn soft">Salvar ingrediente</button></form></details>{% endfor %}
+</details>
