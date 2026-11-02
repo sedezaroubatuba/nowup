@@ -1,6 +1,6 @@
 """Independent WhatsApp checkout, with shared server-side cart validation."""
 import json
-from nowup_combo_pack305 import build_pack
+from nowup_combo_pack305 import build_pack, read_pack
 import re
 import secrets
 from datetime import datetime,timezone
@@ -140,6 +140,8 @@ def install(g):
         for product,qty,item_notes,chosen,unit in clean:
             lines.append(f"{qty}x {product['name']} — {money(unit*qty)}")
             for option in chosen:lines.append('  + '+option['name']+' ('+money(option['price_cents'])+')')
+            pack316=read_pack(product.get('combo_pack305',''))
+            if pack316 and pack316.get('notice316'):lines.append('  Aviso do combo: '+pack316['notice316'])
             if item_notes:lines.append('  Obs.: '+item_notes)
         lines+=['','Subtotal: '+money(subtotal),'Entrega: '+money(fee),'Total: '+money(total),'Recebimento: '+('Entrega' if fulfillment_type=='delivery' else 'Retirada no local')]
         if fulfillment_type=='delivery':lines+=['Endereço: '+address.strip(),'Bairro: '+area]
