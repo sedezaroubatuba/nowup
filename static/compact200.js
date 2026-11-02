@@ -3,7 +3,8 @@
  'use strict';
  const make=(tag,text,attrs={})=>{const node=document.createElement(tag);if(text)node.textContent=text;Object.entries(attrs).forEach(([k,v])=>node.setAttribute(k,v));return node;};
  const section=title=>{const box=make('fieldset','',{class:'nu322-section full'});box.append(make('legend',title));return box;};
- document.querySelectorAll('.pro-dashboard [data-editor192]').forEach(host=>{
+ function initializeCompact328(scope=document){scope.querySelectorAll('.pro-dashboard [data-editor192], [data-editor192]').forEach(host=>{
+  if(!host.closest('.pro-dashboard'))return;
   const form=host.closest('form'),api=host._editor321;if(!form||!api||form.dataset.comboEditor301||form.dataset.compact200)return;
   form.dataset.compact200='322';form.dataset.extras317='true';form.dataset.simple200='false';
   const meal=form.dataset.mealEditor322==='1';form.dataset.meal317=String(meal);
@@ -32,5 +33,6 @@
   const other=make('details','',{class:'full nu322-settings'});other.append(make('summary','Outras opções (opcional)'),api.utensils.closest('label'));other.open=api.utensils.checked;
   host.before(ingredientBox,paid,combo,api.manualBox321,other);
   // Only the hidden configuration and its validation message remain in the original editor host.
- });
+ });}
+ window.NOWUP_COMPACT328=initializeCompact328;initializeCompact328();
 })();

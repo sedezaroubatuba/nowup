@@ -68,7 +68,7 @@ def install(g):
             if extra_id:g['sync_shared155'](conn,store['id'])
             conn.commit()
         finally:conn.close()
-        return RedirectResponse('/painel?ok=ingrediente#ingredientes320',303)
+        return g['catalog_return328'](request,'/painel?ok=ingrediente#ingredientes320')
 
     @g['app'].post('/painel/cardapio/ingredientes320/{ingredient_id}/excluir')
     def delete(request:Request,ingredient_id:int):

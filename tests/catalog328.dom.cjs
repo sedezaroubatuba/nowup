@@ -1,0 +1,18 @@
+const {JSDOM}=require('jsdom'),fs=require('fs'),assert=require('node:assert/strict');
+const form='<form action="/painel/cardapio/produtos"><label>Nome<input name="name" value="Produto" required></label><label>Preço<input name="price" value="10" required></label><select name="extras_mode"><option value="none">Nenhum</option></select><div data-editor192></div><button type="submit">Salvar</button></form>';
+const dom=new JSDOM('<div class="pro-dashboard">'+Array.from({length:100},(_,i)=>`<details id="produto-editor328-${i+1}" data-product-id="${i+1}">${form}</details>`).join('')+'</div>',{runScripts:'outside-only',url:'https://nowup.local/painel#produtos-loja'}),w=dom.window,d=w.document;
+for(const file of ['combo-editor301.js','custom196.js','meal-groups324.js','compact200.js','pro-next138.js'])w.eval(fs.readFileSync('static/'+file,'utf8'));
+assert.equal(d.querySelectorAll('[data-ready328]').length,0);
+const card=d.querySelector('details');card.open=true;card.dispatchEvent(new w.Event('toggle'));
+assert.equal(d.querySelectorAll('[data-ready328]').length,1);assert.equal(d.querySelectorAll('[name=customization192]').length,1);
+card.dispatchEvent(new w.Event('toggle'));assert.equal(d.querySelectorAll('[name=customization192]').length,1);
+const f=card.querySelector('form'),button=f.querySelector('button[type=submit]');
+f.dispatchEvent(new w.SubmitEvent('submit',{bubbles:true,cancelable:true,submitter:button}));assert.equal(new URL(f.action).searchParams.get('return_to328'),card.id);assert.equal(button.disabled,true);
+w.dispatchEvent(new w.Event('pageshow'));assert.equal(button.disabled,false);
+console.log('100 closed editors: 0 initialized; opening one initializes exactly 1; save preserves target; pageshow restores button.');
+const picker=d.createElement('details');picker.dataset.pairPicker273='';picker.dataset.selected328='2';picker.innerHTML='<summary>Selecionar</summary><input data-pair-search273><p data-pair-status273></p><div class="nu273-options"><input type="hidden" name="related256" value="2" data-pair-seed328></div>';f.append(picker);
+const catalog=d.createElement('script');catalog.id='pair-catalog328';catalog.textContent=JSON.stringify([{id:1,name:'Um'},{id:2,name:'Dois'},{id:3,name:'Três'}]);d.body.append(catalog);
+w.eval(fs.readFileSync('static/pair-search273.js','utf8'));
+assert.deepEqual(Array.from(new w.FormData(f).getAll('related256')),['2']);assert.equal(picker.querySelectorAll('[data-pair-option273]').length,0);
+picker.open=true;picker.dispatchEvent(new w.Event('toggle'));assert.equal(picker.querySelectorAll('[data-pair-option273]').length,2);assert.deepEqual(Array.from(new w.FormData(f).getAll('related256')),['2']);
+console.log('Related selections preserved before/after deferred rendering; own product excluded.');
