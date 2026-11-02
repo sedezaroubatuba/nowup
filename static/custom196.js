@@ -36,7 +36,7 @@
      input._plus301=plus;controls.push(input);
      function set(value){const other=controls.filter(i=>i!==input).reduce((n,i)=>n+(Number(i.value)||0),0);input.value=String(Math.max(0,Math.min(g.max-other,parseInt(value,10)||0)));sync();}
      plus.onclick=()=>{set(Number(input.value)+1);input.dispatchEvent(new Event('input',{bubbles:true}));};minus.onclick=()=>{set(Number(input.value)-1);input.dispatchEvent(new Event('input',{bubbles:true}));};input.oninput=()=>set(input.value);
-     const imageName=(parse(card.dataset.comboImages303)||{})[String(g.product_ids?.[g.options.indexOf(name)])];if(imageName){const image=el('img','',{src:'/uploads/'+encodeURIComponent(imageName),alt:'',width:'44',height:'44',loading:'lazy'});image.onerror=()=>image.remove();row.append(image);}amount.append(minus,input,plus);row.append(el('span',name),amount);box.append(row);
+     const optionIndex=g.options.indexOf(name),ref=g.item_refs325?.[optionIndex],imageMap=parse(card.dataset.comboImages303)||{};const imageName=ref?imageMap[ref.kind+':'+ref.id]:imageMap[String(g.product_ids?.[optionIndex])];if(imageName){const image=el('img','',{src:'/uploads/'+encodeURIComponent(imageName),alt:'',width:'44',height:'44',loading:'lazy'});image.onerror=()=>image.remove();row.append(image);}amount.append(minus,input,plus);row.append(el('span',name),amount);box.append(row);
     });
     box.append(count);sync();section.append(box);continue;
    }
