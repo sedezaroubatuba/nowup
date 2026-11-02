@@ -50,3 +50,32 @@ def test_authenticated_registry_create_optional_photo_and_store_scope(env):
     duplicate=client.post('/painel/cardapio/ingredientes320',data={'name':'Arroz'},follow_redirects=False)
     assert 'ingrediente-duplicado' in duplicate.headers['location']
     panel=client.get('/painel');assert panel.status_code==200 and 'Cadastrar ingredientes' in panel.text
+
+def test_unified_item_price_and_included_use(env):
+    m,client,_,store_id,other_store=env
+    assert client.post('/painel/cardapio/ingredientes320',data={'name':'Bacon unificado','price':'5,00'},follow_redirects=False).status_code==303
+    with m.db() as c:
+        item=c.execute('SELECT * FROM ingredients320 WHERE professional_id=? AND name=?',(store_id,'Bacon unificado')).fetchone()
+        extra=c.execute('SELECT * FROM shared_extras155 WHERE id=?',(item['extra_id325'],)).fetchone()
+        assert item['price_cents']==extra['price_cents']==500
+        assert bind(c,store_id,parse_config({'ingredients':[{'name':'Bacon unificado','ingredient_id320':item['id']}]}))['ingredients'][0]['name']=='Bacon unificado'
+    response=client.post('/painel/cardapio/ingredientes320',data={'name':'Bacon unificado','ingredient_id':item['id'],'price':''},follow_redirects=False)
+    assert response.status_code==303
+    with m.db() as c:
+        assert c.execute('SELECT price_cents FROM ingredients320 WHERE id=?',(item['id'],)).fetchone()[0] is None
+        assert c.execute('SELECT available FROM shared_extras155 WHERE id=?',(extra['id'],)).fetchone()[0]==0
+    assert client.post('/painel/cardapio/ingredientes320',data={'name':'Arroz simples'},follow_redirects=False).status_code==303
+    with m.db() as c:
+        assert c.execute('SELECT extra_id325 FROM ingredients320 WHERE professional_id=? AND name=?',(store_id,'Arroz simples')).fetchone()[0]==0
+
+def test_existing_registries_merge_idempotently(conn):
+    conn.execute('CREATE TABLE shared_extras155(id INTEGER PRIMARY KEY,professional_id,name,price_cents,available)')
+    conn.execute('CREATE TABLE included_choices195(id INTEGER PRIMARY KEY,professional_id,kind,name,available)')
+    conn.executemany('INSERT INTO shared_extras155 VALUES(?,?,?,?,?)',[(7,10,'Pão',200,1),(8,10,'Bacon',500,1)])
+    conn.executemany('INSERT INTO included_choices195 VALUES(?,?,?,?,?)',[(9,10,'side','Bacon',1),(10,10,'side','Legumes',1)])
+    initialize(conn);initialize(conn)
+    rows=catalog(conn,10)
+    assert len(rows)==4
+    bread=next(r for r in rows if r['name']=='Pão')
+    assert bread['extra_id325']==7 and bread['price_cents']==200
+    assert next(r for r in rows if r['name']=='Bacon')['extra_id325']==8

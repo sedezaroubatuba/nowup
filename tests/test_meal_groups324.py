@@ -41,3 +41,14 @@ def test_exact_counts_configuration_and_description_only(conn):
     assert 'Sem tomate' in validate_customization(c,{},'Sem tomate',False)
     c['meal_combo324']=True
     with pytest.raises(HTTPException):resolve(conn,10,c)
+
+def test_unified_registry_and_manual_accompaniments(conn):
+    from nowup_ingredients320 import initialize
+    initialize(conn)
+    conn.executemany('INSERT INTO ingredients320(id,professional_id,name) VALUES(?,?,?)',[(1,10,'Legumes do cadastro'),(2,20,'Item privado')])
+    c=parse_config({'is_meal317':True,'meal_groups324':True,'meal_combo324':True,'groups':[{'id':'acomp','name':'Acompanhamentos','min':1,'max':1,'quantity_mode':True,'options':['Nome adulterado','Arroz manual'],'item_refs325':[{'kind':'item','id':1},{'kind':'manual'}]}]})
+    resolved=resolve(conn,10,c)
+    assert resolved['groups'][0]['options']==['Legumes do cadastro','Arroz manual']
+    assert 'Legumes do cadastro' in validate_customization(resolved,{'groups':{'acomp':['Legumes do cadastro']}},'',False)
+    c['groups'][0]['item_refs325'][0]['id']=2
+    with pytest.raises(HTTPException):resolve(conn,10,c)
