@@ -1,3 +1,19 @@
-(()=>{'use strict';const details=document.querySelector('body.professional-area #novo-produto'),form=details?.querySelector('form');if(!form)return;const key='nowup-next-product:'+location.pathname;form.addEventListener('submit',()=>{try{sessionStorage.setItem(key,JSON.stringify({category:form.elements.category?.value,time:Date.now()}))}catch(_){}});let state;try{state=JSON.parse(sessionStorage.getItem(key)||'null');sessionStorage.removeItem(key)}catch(_){}if(new URLSearchParams(location.search).get('ok')!=='produto')return;
-if(!state||Date.now()-state.time>120000)state={};details.open=true;const select=form.elements.category;if(select&&[...select.options].some(o=>o.value===state.category))select.value=state.category;const message=document.createElement('p');message.className='nu-next-success138';message.setAttribute('role','status');message.textContent='Produto cadastrado! Próximo produto.';if(!details.querySelector('[role="status"]'))form.prepend(message);function reveal(){details.open=true;const top=document.querySelector('.v60-top')?.getBoundingClientRect().height||0;window.scrollTo({top:Math.max(0,details.getBoundingClientRect().top+window.scrollY-top-12),behavior:'instant'})}requestAnimationFrame(()=>{reveal();form.elements.name?.focus({preventScroll:true})});setTimeout(reveal,300)})();
-(()=>{if(new URLSearchParams(location.search).get('ok')==='categoria-ordenada'){const box=document.getElementById('categorias-loja');if(box)box.open=true}})();
+/* Saving returns to the catalog without reopening or refocusing registration. */
+(()=>{'use strict';
+ document.addEventListener('submit',event=>{
+  const form=event.target;if(!form.matches('.pro-dashboard form[action^="/painel/cardapio/produtos"]')||event.defaultPrevented)return;
+  if(form.dataset.saving326){event.preventDefault();return;}
+  form.dataset.saving326='1';form.setAttribute('aria-busy','true');
+  const button=event.submitter;if(button){button.dataset.label326=button.textContent;button.disabled=true;button.textContent='Salvando…';}
+ });
+ window.addEventListener('pageshow',()=>document.querySelectorAll('[data-saving326]').forEach(form=>{
+  delete form.dataset.saving326;form.removeAttribute('aria-busy');form.querySelectorAll('[data-label326]').forEach(button=>{button.textContent=button.dataset.label326;button.disabled=false;delete button.dataset.label326;});
+ }));
+ const ok=new URLSearchParams(location.search).get('ok');
+ if(ok==='produto'){
+  const form=document.getElementById('novo-produto');if(form)form.open=false;
+  const catalog=document.getElementById('produtos-loja');
+  if(catalog){const message=document.createElement('p');message.setAttribute('role','status');message.textContent='Produto salvo com sucesso!';catalog.prepend(message);}
+ }
+ if(ok==='categoria-ordenada'){const box=document.getElementById('categorias-loja');if(box)box.open=true;}
+})();

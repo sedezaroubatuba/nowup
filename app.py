@@ -1887,7 +1887,7 @@ def pro_product_add(request: Request, name: str=Form(...), description: str=Form
     else:configure_shared155(conn,p["id"],cur.lastrowid,extras_mode,extra_ids,max_choices)
     if custom192 is not None:save_config(conn,cur.lastrowid,custom192)
     if is_combo256:conn.execute('UPDATE products SET is_dish=1 WHERE id=?',(cur.lastrowid,))
-    conn.commit(); conn.close(); return RedirectResponse("/painel?ok=combo#combos-loja" if is_combo256 else "/painel?ok=refeicao#lanches-refeicoes322" if custom192 and custom192.get("is_meal317") else "/painel?ok=produto#novo-produto",303)
+    conn.commit(); conn.close(); return RedirectResponse("/painel?ok=combo#combos-loja" if is_combo256 else "/painel?ok=refeicao#lanches-refeicoes322" if custom192 and custom192.get("is_meal317") else "/painel?ok=produto#produtos-loja",303)
 
 @app.post("/painel/cardapio/produtos/{product_id}")
 def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None)):
