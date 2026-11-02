@@ -1,0 +1,10 @@
+const {JSDOM}=require('jsdom'),fs=require('fs'),assert=require('node:assert/strict');
+const dom=new JSDOM('<article data-product data-id="10"><div class="product-buy"></div></article><div class="pro-dashboard"><form data-meal-editor322="1"><label>Nome<input name="name" value="Lanche"></label><input name="price" value="20"><select name="extras_mode"><option value="none">Nenhum</option></select><div data-editor192></div><button type="submit">Salvar</button></form></div>',{runScripts:'outside-only'}),w=dom.window,d=w.document,card=d.querySelector('article');
+card.dataset.custom192=JSON.stringify({question333:'Deseja guardanapos?',ingredients:[],groups:[],utensils:false,notes:true});
+for(const file of ['combo-editor301.js','custom196.js','meal-groups324.js','compact200.js'])w.eval(fs.readFileSync('static/'+file,'utf8'));
+const api=w.NOWUP_CUSTOM192;
+assert.equal(card.querySelectorAll('[data-answer333]').length,2);assert.throws(()=>api.validate(card,{options:[],customization:api.snapshot(card)}),/Sim ou Não/);
+card.querySelector('[value=yes]').click();assert.equal(api.snapshot(card).answer333,true);
+api.show(card,{customization:{answer333:false,removed:[],groups:{}}});assert.equal(card.querySelector('[value=no]').checked,true);assert.equal(api.snapshot(card).answer333,false);assert.match(api.describe(card,api.snapshot(card)),/guardanapos\?: Não/);
+const form=d.querySelector('form'),question=form.querySelector('[aria-label="Pergunta personalizada"]');assert(question);question.value='Deseja molho separado?';form.dispatchEvent(new w.Event('submit',{cancelable:true}));const config=JSON.parse(new w.FormData(form).get('customization192'));assert.equal(config.question333,'Deseja molho separado?');assert.equal(config.utensils,false);assert(!form.textContent.includes('Perguntar se o cliente precisa de talheres'));
+console.log('Merchant-written question serializes; client yes/no validation, snapshot and edit restoration passed.');
