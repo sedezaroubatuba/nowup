@@ -35,6 +35,23 @@ def bind(conn, store_id, config):
     return config
 
 
+def attach_photos329(config, items):
+    """Refresh linked ingredient photos and match legacy names within this store only."""
+    by_id={item['id']:item for item in items}
+    by_name={}
+    normalize=lambda name:' '.join(name.casefold().split())
+    for item in items:
+        by_name.setdefault(normalize(item['name']),[]).append(item)
+    for ingredient in config.get('ingredients',[]):
+        ref=ingredient.get('ingredient_id320')
+        matches=by_name.get(normalize(ingredient['name']),[])
+        item=by_id.get(ref) if ref else (matches[0] if len(matches)==1 else None)
+        if item:
+            ingredient.pop('image_filename',None)
+            if item.get('image_filename'):ingredient['image_filename']=item['image_filename']
+    return config
+
+
 def install(g):
     @g['app'].post('/painel/cardapio/ingredientes320')
     def save(request:Request,name:str=Form(...),ingredient_id:int=Form(0),photo:UploadFile=File(None),price:str=Form("")):
