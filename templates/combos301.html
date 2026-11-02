@@ -23,7 +23,7 @@
 <details class="product-create" id="cadastrar-combo"><summary class="btn primary">＋ Cadastrar combo</summary>{{combo_form301()}}</details>
 <label for="pesquisa-combos301">Pesquisar combos cadastrados</label><input class="input" type="search" id="pesquisa-combos301" placeholder="Digite o nome do combo" data-search-combos301>
 <div class="product-admin-grid" data-combos-list301>
-{% for product in products if product.is_combo256 or product.category|lower == 'combos' %}
+{% for product in products if (product.is_combo256 or product.category|lower == 'combos') and product.id not in meal_ids322|default([]) %}
 <details class="product-admin-card" data-combo-card301 data-name="{{product.name}}">
 <summary>{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" alt="">{% endif %}<div><b>{{product.name}}</b><small>Editar combo · R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</small></div></summary>
 {{combo_form301(product)}}

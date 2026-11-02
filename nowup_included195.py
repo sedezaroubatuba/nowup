@@ -38,16 +38,16 @@ def resolve(conn, professional_id, config):
             if not row:
                 raise HTTPException(400, 'Um acompanhamento ou bebida está indisponível ou não pertence à sua loja.')
             options.append(row['name'])
-        if kind == 'drink':
-            product_ids = meta.get('drink_product_ids', []) if clean['is_combo'] else []
-            if not isinstance(product_ids,list) or len(product_ids)>30 or any(type(i) is not int or i<1 for i in product_ids) or len(set(product_ids))!=len(product_ids):
-                raise HTTPException(400,'Seleção de bebidas da loja inválida.')
-            for product_id in product_ids:
-                row=conn.execute('SELECT name FROM products WHERE id=? AND professional_id=? AND available=1 AND is_combo256=0',(product_id,professional_id)).fetchone()
-                if not row:raise HTTPException(400,'Uma bebida está indisponível ou não pertence à sua loja.')
-                if row['name'] not in options:options.append(row['name'])
-            if len(options)>30:raise HTTPException(400,'Selecione até 30 bebidas.')
-            if product_ids:clean['drink_product_ids']=product_ids
+        product_key='drink_product_ids' if kind=='drink' else 'side_product_ids'
+        product_ids=meta.get(product_key,[]) if kind!='drink' or clean['is_combo'] else []
+        if not isinstance(product_ids,list) or len(product_ids)>30 or any(type(i) is not int or i<1 for i in product_ids) or len(set(product_ids))!=len(product_ids):
+            raise HTTPException(400,'Seleção de bebidas ou acompanhamentos da loja inválida.')
+        for product_id in product_ids:
+            row=conn.execute('SELECT name FROM products WHERE id=? AND professional_id=? AND available=1 AND is_combo256=0',(product_id,professional_id)).fetchone()
+            if not row:raise HTTPException(400,'Uma bebida ou acompanhamento está indisponível ou não pertence à sua loja.')
+            if row['name'] not in options:options.append(row['name'])
+        if len(options)>30:raise HTTPException(400,'Selecione até 30 opções por grupo.')
+        if product_ids:clean[product_key]=product_ids
         clean[key] = ids
         if kind == 'side':
             count = integer(meta.get('side_count', 1), 1, 30, 'Acompanhamentos')
@@ -56,10 +56,10 @@ def resolve(conn, professional_id, config):
                 if count > len(options):
                     raise HTTPException(400, 'A quantidade de acompanhamentos supera as opções selecionadas.')
                 groups.append({'id': 'side195', 'name': 'Escolha seus acompanhamentos', 'min': count if clean['side_required'] else 0, 'max': count, 'options': options})
-        elif clean['is_combo']:
-            if not options:
-                raise HTTPException(400, 'Selecione pelo menos uma bebida para este combo.')
+        elif clean['is_combo'] and options:
             groups.append({'id': 'drink195', 'name': 'Escolha sua bebida', 'min': 1, 'max': 1, 'options': options})
+    if clean['is_combo'] and not any(g['id'] in ('side195','drink195') for g in groups):
+        raise HTTPException(400,'Selecione pelo menos uma bebida ou acompanhamento para este combo.')
     output = parse_config({**config, 'groups': groups})
     output['included195'] = clean
     return output
