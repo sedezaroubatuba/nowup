@@ -19,3 +19,15 @@ def test_drinks_are_resolved_from_own_store_and_keep_names():
     c=resolve(conn,10,config([1]));assert c['groups'][0]['options']==['Coca-Cola'];assert c['included195']['drink_product_ids']==[1]
     for ids in [[2],[3],[999],[True],[1,1]]:
         with pytest.raises(HTTPException):resolve(conn,10,config(ids))
+
+
+def test_description_only_meal_opens_personalization_and_accepts_notes():
+    from nowup_custom192 import save_config
+    conn=sqlite3.connect(':memory:')
+    conn.execute("CREATE TABLE products(id INTEGER PRIMARY KEY,customization192 TEXT,is_dish INTEGER DEFAULT 0)")
+    conn.execute("INSERT INTO products(id) VALUES(1)")
+    config=parse_config({'is_meal317':True,'ingredients':[],'notes':True})
+    save_config(conn,1,config)
+    assert conn.execute('SELECT is_dish FROM products WHERE id=1').fetchone()[0]==1
+    assert 'Sem tomate' in validate_customization(config,{},'Sem tomate',False)
+    conn.close()

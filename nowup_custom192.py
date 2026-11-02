@@ -162,7 +162,7 @@ def bind_combo_products(conn, professional_id, config, product_id=None):
 def save_config(conn, product_id, config):
     conn.execute('UPDATE products SET customization192=? WHERE id=?',
                  (json.dumps(config, ensure_ascii=False), product_id))
-    if config['ingredients'] or config['groups'] or config['utensils']:
+    if config.get('is_meal317') or config['ingredients'] or config['groups'] or config['utensils']:
         conn.execute('UPDATE products SET is_dish=1 WHERE id=?', (product_id,))
 
 
