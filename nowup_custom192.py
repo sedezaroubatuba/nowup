@@ -85,6 +85,10 @@ def parse_config(raw):
     output = {'ingredients': clean_ingredients, 'groups': clean_groups,
             'free_enabled': free_enabled, 'free_count': integer(data.get('free_count', 0), 0, 20, 'Gratuitos') if free_enabled else 0,
             'utensils': data.get('utensils', False), 'notes': data.get('notes', True)}
+    for flag in ('meal_groups324','meal_combo324'):
+        if flag in data:
+            if not isinstance(data[flag],bool):fail('Configuração dos grupos da refeição inválida.')
+            output[flag]=data[flag]
     items = data.get('combo_items', [])
     if not isinstance(items, list) or len(items) > 40 or any(not isinstance(item, dict) for item in items):
         fail('Cadastre até 40 itens no combo.')

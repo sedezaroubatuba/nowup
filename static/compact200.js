@@ -19,19 +19,16 @@
   api.notes.checked=true;api.notes.closest('label').remove();api.ing.toggle.checked=true;api.ing.toggle.closest('label').remove();api.ing.sync();
   const ingredientBox=section('Ingredientes (opcional)'),importBox=make('details'),importTitle=make('summary','Importar ingredientes cadastrados');importBox.append(importTitle,api.ingredientSearch320,api.ingredientPicker320,api.ingredientLink320);
   // Selected ingredients stay visible; importing never replaces the manual list.
-  api.ing.body.querySelector(':scope > p')?.remove();ingredientBox.append(make('p','Digite os ingredientes ou importe do cadastro. Marque como obrigatório o que o cliente não poderá retirar.'),api.list,api.addIngredient,importBox);api.ing.body.remove();api.addIngredient.textContent='+ Digitar ingrediente';
+  api.ing.body.querySelector(':scope > p')?.remove();ingredientBox.append(make('p','Digite ou importe ingredientes e marque os obrigatórios. Se preferir, escreva tudo só na descrição; o cliente informa na observação o que deseja retirar.'),api.list,api.addIngredient,importBox);api.ing.body.remove();api.addIngredient.textContent='+ Digitar ingrediente';
   function optionalRows(){api.list.querySelectorAll('[aria-label=Ingrediente]').forEach(input=>input.required=false);}
   api.addIngredient.addEventListener('click',optionalRows);api.ingredientPicker320.addEventListener('click',optionalRows);optionalRows();
   const paid=section('Adicionais pagos'),modeLabel=api.mode?.closest('label'),picker=form.querySelector('[data-shared-picker155]');if(modeLabel)paid.append(modeLabel);if(picker)paid.append(picker);paid.append(api.extras);
-  const combo=section('Combo'),comboOptions=make('div');api.comboLabel.lastChild.textContent=' Oferecer este lanche ou refeição como combo';combo.append(api.comboLabel,comboOptions);
-  const principal=make('p','');function name(){principal.textContent='Principal: '+(form.querySelector('[name=name]')?.value.trim()||'o próprio lanche ou refeição');}form.querySelector('[name=name]')?.addEventListener('input',name);name();comboOptions.append(principal,make('small','Escolha bebidas, batata ou outros acompanhamentos já incluídos no preço do combo.'));
-  const sides=make('details'),sideTitle=make('summary','Batata e acompanhamentos');sides.append(sideTitle,api.sidePicker,api.sideCountLabel,api.requiredLabel);
-  const drinks=make('details'),drinkTitle=make('summary','Bebidas');drinks.append(drinkTitle,api.drinkBody);comboOptions.append(drinks,sides);
-  sides.open=!!sides.querySelector('input:checked');drinks.open=!!drinks.querySelector('input:checked');if(sides.open||drinks.open)api.isCombo.checked=true;
-  function syncCombo(){comboOptions.hidden=!api.isCombo.checked;api.drinkBody.hidden=false;comboOptions.querySelectorAll('input[type=number]').forEach(input=>input.disabled=!api.isCombo.checked);}
-  api.isCombo.addEventListener('change',syncCombo);syncCombo();api.shared.remove();
-  const other=make('details','',{class:'full nu322-settings'});other.append(make('summary','Outras opções (opcional)'),api.groups.toggle.closest('label'),api.groups.body,api.utensils.closest('label'));
-  other.open=api.groups.toggle.checked||api.utensils.checked;
+  const combo=section('Itens que vão neste combo'),comboOptions=make('div');api.comboLabel.lastChild.textContent=' Oferecer como combo';combo.append(api.comboLabel,comboOptions);
+  const principal=make('p','');function name(){principal.textContent='Principal: '+(form.querySelector('[name=name]')?.value.trim()||'o próprio lanche ou refeição');}form.querySelector('[name=name]')?.addEventListener('input',name);name();combo.append(principal);combo.append(comboOptions);
+  let config={};try{config=JSON.parse(host.dataset.editor192||'{}');}catch(_){}
+  window.NOWUP_MEAL_GROUPS324(comboOptions,form,api,config);
+  api.shared.remove();api.groups.toggle.closest('label').remove();api.groups.body.remove();
+  const other=make('details','',{class:'full nu322-settings'});other.append(make('summary','Outras opções (opcional)'),api.utensils.closest('label'));other.open=api.utensils.checked;
   host.before(ingredientBox,paid,combo,api.manualBox321,other);
   // Only the hidden configuration and its validation message remain in the original editor host.
  });
