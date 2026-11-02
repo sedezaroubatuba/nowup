@@ -58,3 +58,12 @@ def test_separate_registration_save_edit_render_and_preservation(env,tmp_path):
         edited=c.execute('SELECT * FROM products WHERE id=?',(saved['id'],)).fetchone()
         assert edited['description']=='Descrição atualizada'
         assert parse_config(edited['customization192'])['included195']['side_product_ids']==[plain['id']]
+
+    grouped={**config,'meal_groups324':True,'meal_combo324':True,'groups':[{'id':'escolha324','name':'Escolha sua bebida','min':4,'max':4,'quantity_mode':True,'options':[plain['name']],'product_ids':[plain['id']]}]}
+    meal['customization192']=json.dumps(grouped)
+    response=client.post('/painel/cardapio/produtos/'+str(saved['id']),data=meal,follow_redirects=False)
+    assert response.status_code==303 and 'lanches-refeicoes322' in response.headers['location']
+    with m.db() as c:
+        cfg=parse_config(c.execute('SELECT customization192 FROM products WHERE id=?',(saved['id'],)).fetchone()[0])
+        assert cfg['meal_groups324'] and cfg['groups'][0]['max']==4 and cfg['notes']
+        assert cfg['ingredients'][0]['name']=='Pão' and not cfg['ingredients'][0]['removable']

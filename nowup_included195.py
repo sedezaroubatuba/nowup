@@ -19,6 +19,9 @@ def catalog(conn, professional_id):
 
 
 def resolve(conn, professional_id, config):
+    if config.get('meal_groups324'):
+        from nowup_meal_groups324 import resolve as resolve_meal_groups324
+        return resolve_meal_groups324(conn,professional_id,config)
     meta = config.get('included195')
     if meta is None:
         return config
