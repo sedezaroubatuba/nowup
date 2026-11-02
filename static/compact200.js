@@ -23,14 +23,14 @@
   for(const [value,title] of [['no','Não'],['yes','Sim']]){const label=document.createElement('label'),radio=document.createElement('input');radio.type='radio';radio.name='meal317-'+index;radio.value=value;radio.checked=(value==='yes')===initialMeal;label.append(radio,document.createTextNode(title));mealBox.append(label);mealRadios.push(radio);}
   const mealFields=document.createElement('div');mealFields.className='nu200-options';const ingredientToggle=[...host.querySelectorAll('label')].find(n=>n.textContent==='Ingredientes do produto')?.querySelector('input');
   const ingredientLabel=ingredientToggle?.closest('label'),ingredientBody=ingredientLabel?.nextElementSibling;
-  if(ingredientLabel&&ingredientBody){mealFields.append(ingredientLabel,ingredientBody);ingredientLabel.hidden=true;}
+  if(ingredientLabel&&ingredientBody){mealFields.append(ingredientLabel,ingredientBody);ingredientLabel.hidden=true;ingredientLabel.style.setProperty('display','none','important');}
   question.before(mealBox,mealFields);
   function syncMeal(){const meal=mealRadios[1].checked;form.dataset.meal317=String(meal);mealFields.hidden=!meal;if(ingredientToggle){ingredientToggle.checked=meal;ingredientToggle.dispatchEvent(new Event('change'));}sync();}
   mealRadios.forEach(r=>r.addEventListener('change',syncMeal));
 
   const originalDisabled=new WeakMap();options.querySelectorAll('input,select,textarea,button').forEach(el=>originalDisabled.set(el,el.disabled));
   function sync(){
-   const type303=form.querySelector('[data-combo-type303]');const combo=type303?type303.value==='1':['__combos256','combos'].includes(form.querySelector('[name=category]')?.value.toLowerCase());question.hidden=combo;mealBox.hidden=combo;mealFields.hidden=combo||form.dataset.meal317!=='true';const simple=radios[0].checked&&!combo;form.dataset.extras317=String(!simple);form.dataset.simple200=String(simple&&form.dataset.meal317!=='true');options.hidden=simple||!!type303&&combo;
+   const type303=form.querySelector('[data-combo-type303]');const combo=type303?type303.value==='1':['__combos256','combos'].includes(form.querySelector('[name=category]')?.value.toLowerCase());question.hidden=combo;mealBox.hidden=combo;mealFields.hidden=combo||form.dataset.meal317!=='true';ingredientBody?.querySelectorAll('input,button').forEach(n=>n.disabled=combo||form.dataset.meal317!=='true');const simple=radios[0].checked&&!combo;form.dataset.extras317=String(!simple);form.dataset.simple200=String(simple&&form.dataset.meal317!=='true');options.hidden=simple||!!type303&&combo;
    options.querySelectorAll('input,select,textarea,button').forEach(el=>{
     if(el.name==='customization192'||el===mode)return;
     if(simple||!!type303&&combo){if(!el.dataset.disabled200)originalDisabled.set(el,el.disabled);el.dataset.disabled200='1';el.disabled=true;}
