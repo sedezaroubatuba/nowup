@@ -1,4 +1,5 @@
 """Reusable ingredient names and optional photos scoped to one merchant."""
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from fastapi import Request, Form, File, UploadFile, HTTPException
 from fastapi.responses import RedirectResponse
 
@@ -68,8 +69,14 @@ def install(g):
                 if archived:current=archived;ingredient_id=archived['id']
             duplicate=conn.execute('SELECT id FROM ingredients320 WHERE professional_id=? AND lower(name)=lower(?) AND id!=?',(store['id'],name,ingredient_id)).fetchone()
             if duplicate:return RedirectResponse('/painel?erro=ingrediente-duplicado#ingredientes320',303)
-            cents=g['price_to_cents'](price) if price.strip() else None
-            if cents is not None and cents<0:raise HTTPException(400,'Informe um preço válido para o adicional.')
+            if not price.strip():raise HTTPException(400,'Informe o preço do item. Use 0,00 se ele não tiver cobrança como adicional.')
+            try:
+                raw=price.strip().replace('R$','').replace(' ','')
+                if ',' in raw:raw=raw.replace('.','').replace(',','.')
+                amount=Decimal(raw)
+                if not amount.is_finite() or amount<0:raise InvalidOperation
+                cents=int((amount*100).quantize(Decimal('1'),rounding=ROUND_HALF_UP))
+            except (InvalidOperation,ValueError,OverflowError):raise HTTPException(400,'Informe um preço válido, igual ou maior que zero.')
             extra_id=current['extra_id325'] if current else 0
             if cents is not None:
                 if not extra_id:

@@ -33,7 +33,7 @@ def test_authenticated_registry_create_optional_photo_and_store_scope(env):
     import io
     from PIL import Image
     m,client,_,store_id,other_store=env
-    response=client.post('/painel/cardapio/ingredientes320',data={'name':'Arroz'},follow_redirects=False)
+    response=client.post('/painel/cardapio/ingredientes320',data={'name':'Arroz','price':'0,00'},follow_redirects=False)
     assert response.status_code==303
     with m.db() as c:
         row=c.execute('SELECT * FROM ingredients320 WHERE professional_id=? AND name=?',(store_id,'Arroz')).fetchone()
@@ -41,13 +41,13 @@ def test_authenticated_registry_create_optional_photo_and_store_scope(env):
         c.execute('INSERT INTO ingredients320(professional_id,name,image_filename) VALUES(?,?,?)',(other_store,'Ingrediente privado',''))
         foreign=c.execute('SELECT id FROM ingredients320 WHERE professional_id=?',(other_store,)).fetchone()['id'];c.commit()
     png=io.BytesIO();Image.new('RGB',(24,24),'green').save(png,format='PNG')
-    response=client.post('/painel/cardapio/ingredientes320',data={'name':'Alface'},files={'photo':('alface.png',png.getvalue(),'image/png')},follow_redirects=False)
+    response=client.post('/painel/cardapio/ingredientes320',data={'name':'Alface','price':'1,00'},files={'photo':('alface.png',png.getvalue(),'image/png')},follow_redirects=False)
     assert response.status_code==303
     with m.db() as c:
         photo=c.execute('SELECT * FROM ingredients320 WHERE professional_id=? AND name=?',(store_id,'Alface')).fetchone()
         assert photo['image_filename']
     assert client.post('/painel/cardapio/ingredientes320',data={'name':'Tentativa','ingredient_id':foreign},follow_redirects=False).status_code==404
-    duplicate=client.post('/painel/cardapio/ingredientes320',data={'name':'Arroz'},follow_redirects=False)
+    duplicate=client.post('/painel/cardapio/ingredientes320',data={'name':'Arroz','price':'0,00'},follow_redirects=False)
     assert 'ingrediente-duplicado' in duplicate.headers['location']
     panel=client.get('/painel');assert panel.status_code==200 and 'Cadastrar ingredientes' in panel.text
 
@@ -60,13 +60,13 @@ def test_unified_item_price_and_included_use(env):
         assert item['price_cents']==extra['price_cents']==500
         assert bind(c,store_id,parse_config({'ingredients':[{'name':'Bacon unificado','ingredient_id320':item['id']}]}))['ingredients'][0]['name']=='Bacon unificado'
     response=client.post('/painel/cardapio/ingredientes320',data={'name':'Bacon unificado','ingredient_id':item['id'],'price':''},follow_redirects=False)
-    assert response.status_code==303
+    assert response.status_code==400
     with m.db() as c:
-        assert c.execute('SELECT price_cents FROM ingredients320 WHERE id=?',(item['id'],)).fetchone()[0] is None
-        assert c.execute('SELECT available FROM shared_extras155 WHERE id=?',(extra['id'],)).fetchone()[0]==0
-    assert client.post('/painel/cardapio/ingredientes320',data={'name':'Arroz simples'},follow_redirects=False).status_code==303
+        assert c.execute('SELECT price_cents FROM ingredients320 WHERE id=?',(item['id'],)).fetchone()[0]==500
+        assert c.execute('SELECT available FROM shared_extras155 WHERE id=?',(extra['id'],)).fetchone()[0]==1
+    assert client.post('/painel/cardapio/ingredientes320',data={'name':'Arroz simples','price':'0,00'},follow_redirects=False).status_code==303
     with m.db() as c:
-        assert c.execute('SELECT extra_id325 FROM ingredients320 WHERE professional_id=? AND name=?',(store_id,'Arroz simples')).fetchone()[0]==0
+        assert c.execute('SELECT extra_id325 FROM ingredients320 WHERE professional_id=? AND name=?',(store_id,'Arroz simples')).fetchone()[0]>0
 
 def test_existing_registries_merge_idempotently(conn):
     conn.execute('CREATE TABLE shared_extras155(id INTEGER PRIMARY KEY,professional_id,name,price_cents,available)')
@@ -100,3 +100,26 @@ def test_delete_owned_item_preserves_history_and_survives_initialize(env):
         restored=next(r for r in catalog(c,store_id) if r['name']=='Excluir teste')
         assert restored['price_cents']==300
     panel=client.get('/painel');assert 'Excluir item' in panel.text and 'Salvar alterações' in panel.text
+
+
+def test_required_price_on_create_edit_and_zero(env):
+    m,client,_,store_id,_=env
+    for price in [None,'','   ','-1,00','abc','NaN','Infinity']:
+        data={'name':'Preço obrigatório 330'}
+        if price is not None:data['price']=price
+        assert client.post('/painel/cardapio/ingredientes320',data=data,follow_redirects=False).status_code==400
+    with m.db() as c:
+        assert not c.execute('SELECT id FROM ingredients320 WHERE professional_id=? AND name=?',(store_id,'Preço obrigatório 330')).fetchone()
+    assert client.post('/painel/cardapio/ingredientes320',data={'name':'Preço obrigatório 330','price':'0,00'},follow_redirects=False).status_code==303
+    with m.db() as c:
+        item=c.execute('SELECT * FROM ingredients320 WHERE professional_id=? AND name=?',(store_id,'Preço obrigatório 330')).fetchone()
+        assert item['price_cents']==0
+    assert client.post('/painel/cardapio/ingredientes320',data={'name':'Preço obrigatório 330','ingredient_id':item['id'],'price':'2,50'},follow_redirects=False).status_code==303
+    with m.db() as c:
+        updated=c.execute('SELECT price_cents FROM ingredients320 WHERE id=?',(item['id'],)).fetchone()[0]
+        assert updated==250
+    from bs4 import BeautifulSoup
+    panel=BeautifulSoup(client.get('/painel').text,'html.parser')
+    fields=panel.select('#ingredientes320 input[name=price]')
+    assert fields and all(field.has_attr('required') for field in fields)
+    assert not panel.select('#ingredientes320 input[name=photo][required]')
