@@ -1,0 +1,33 @@
+{% macro meal_form322(product=None) %}
+<form action="/painel/cardapio/produtos{% if product %}/{{product.id}}{% endif %}" method="post" enctype="multipart/form-data" class="product-form nu322-meal-form" data-meal-editor322="1">
+<input type="hidden" name="is_combo256" value="0"><input type="hidden" name="personalizable" value="1">
+<label class="full">Nome do produto<input class="input" name="name" maxlength="140" value="{{product.name if product else ''}}" placeholder="Ex.: X-bacon ou prato executivo" required></label>
+<label class="full">Descrição completa do produto<textarea name="description" maxlength="600" placeholder="Descreva o lanche ou refeição e o que vem incluído.">{{product.description if product else ''}}</textarea></label>
+<label>Categoria<select name="category" required>{% if product %}<option value="{{product.category}}" selected>{{product.category}}</option>{% else %}<option value="Lanches e refeições" selected>Lanches e refeições</option>{% endif %}{% for category in product_categories if category.active and (not product or category.name != product.category) %}<option value="{{category.name}}">{{category.name}}</option>{% endfor %}</select></label>
+<label>Preço (R$)<input class="input" name="price" inputmode="decimal" value="{{'%.2f'|format(product.price_cents/100)|replace('.',',') if product else ''}}" placeholder="Ex.: 25,00" required></label>
+<label class="full">Foto (opcional)<input class="input" type="file" name="photo" accept="image/*" {% if product and product.image_filename %}data-preview250="/uploads/{{product.image_filename}}"{% endif %}></label>
+<label>Adicionais pagos<select name="extras_mode" data-extras-mode155><option value="none" {% if not product or product.extras_mode=='none' %}selected{% endif %}>Sem adicionais</option><option value="all" {% if product and product.extras_mode=='all' %}selected{% endif %}>Todos os adicionais da loja</option><option value="selected" {% if product and product.extras_mode=='selected' %}selected{% endif %}>Selecionar adicionais</option>{% if product and product.extras_mode=='legacy' %}<option value="legacy" selected>Manter adicionais atuais</option>{% endif %}</select></label>
+<div class="full" data-shared-picker155>{% for extra in shared_extras %}<label class="check"><input type="checkbox" name="extra_ids" value="{{extra.id}}" {% if product and extra.id in shared_selected.get(product.id,[]) %}checked{% endif %}> {{extra.name}} · + R$ {{'%.2f'|format(extra.price_cents/100)|replace('.',',')}}{% if not extra.available %} (indisponível){% endif %}</label>{% else %}<p>Cadastre os adicionais e preços em <a href="#adicionais" data-nav198>Adicionais da loja</a>.</p>{% endfor %}</div>
+<div class="nu192-editor full" data-editor192="{{product.customization192 if product else ''}}" data-max192="{% if product %}{% for g in product_groups.get(product.id,[]) if g.name=='Adicionais' %}{{g.max_choices}}{% endfor %}{% else %}3{% endif %}"></div>
+<details class="full nu322-settings"><summary>Mais informações</summary>
+{{promotions285.fields(product)}}
+{{pairs256.fields(products,product)}}
+<label>Máximo por pedido<input class="input" type="number" name="max_quantity" min="1" max="99" value="{{product.max_quantity if product else 99}}"></label>
+<label class="check"><input type="checkbox" name="available" value="1" {% if not product or product.available %}checked{% endif %}> Disponível para pedidos</label>
+<label class="check"><input type="checkbox" name="sold_cold" value="1" {% if product and product.sold_cold %}checked{% endif %}> Produto vendido gelado</label>
+<label class="check"><input type="checkbox" name="featured" value="1" {% if product and product.featured %}checked{% endif %}> Colocar em destaque</label>
+</details>
+<button class="btn primary" type="submit">{{'Salvar alterações' if product else 'Salvar lanche ou refeição'}}</button>
+</form>
+{% endmacro %}
+<section class="panel menu-manager" id="lanches-refeicoes322">
+<nav class="nu322-tabs" aria-label="Tipo de cadastro"><a class="btn soft" href="#produtos-loja" data-nav198>Produtos</a><a class="btn primary" href="#lanches-refeicoes322" data-nav198>Lanches e refeições</a></nav>
+<h2>Lanches e refeições</h2>
+{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}
+{% if request.query_params.get('ok')=='refeicao' %}<p role="status">Lanche ou refeição salvo!</p>{% endif %}
+<details class="product-create" id="novo-lanche322" open><summary class="btn primary">＋ Cadastrar lanche ou refeição</summary>{{meal_form322()}}</details>
+<h3>Lanches e refeições cadastrados</h3>
+{% for product in products if product.id in meal_ids322 %}<details class="product-admin-card" data-meal-card322 data-product-id="{{product.id}}"><summary>{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" alt="">{% endif %}<b>{{product.name}}</b> · R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</summary>{{meal_form322(product)}}<form action="/painel/cardapio/produtos/{{product.id}}/excluir" method="post" data-confirm-delete><button class="btn danger tiny">Excluir lanche ou refeição</button></form></details>{% else %}<p>Nenhum lanche ou refeição cadastrado.</p>{% endfor %}
+{% include 'ingredients320.html' %}
+{% else %}<p>Ative um plano com cardápio para cadastrar lanches e refeições.</p>{% endif %}
+</section>
