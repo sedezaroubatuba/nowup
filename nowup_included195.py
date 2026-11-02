@@ -38,6 +38,16 @@ def resolve(conn, professional_id, config):
             if not row:
                 raise HTTPException(400, 'Um acompanhamento ou bebida está indisponível ou não pertence à sua loja.')
             options.append(row['name'])
+        if kind == 'drink':
+            product_ids = meta.get('drink_product_ids', []) if clean['is_combo'] else []
+            if not isinstance(product_ids,list) or len(product_ids)>30 or any(type(i) is not int or i<1 for i in product_ids) or len(set(product_ids))!=len(product_ids):
+                raise HTTPException(400,'Seleção de bebidas da loja inválida.')
+            for product_id in product_ids:
+                row=conn.execute('SELECT name FROM products WHERE id=? AND professional_id=? AND available=1 AND is_combo256=0',(product_id,professional_id)).fetchone()
+                if not row:raise HTTPException(400,'Uma bebida está indisponível ou não pertence à sua loja.')
+                if row['name'] not in options:options.append(row['name'])
+            if len(options)>30:raise HTTPException(400,'Selecione até 30 bebidas.')
+            if product_ids:clean['drink_product_ids']=product_ids
         clean[key] = ids
         if kind == 'side':
             count = integer(meta.get('side_count', 1), 1, 30, 'Acompanhamentos')

@@ -6,7 +6,7 @@
   let config=null;try{config=JSON.parse(host.dataset.editor192||'null');}catch(_){}
   const mode=form.querySelector('[name=extras_mode]');
   const meta=config?.included195||{};
-  const enabled=!!(config?.ingredients?.length||config?.groups?.length||config?.free_enabled||config?.utensils||config?.notes||meta.side_ids?.length||meta.is_combo||(mode&&mode.value!=='none'));
+  const enabled=!!(config?.groups?.length||config?.free_enabled||config?.utensils||config?.notes||meta.side_ids?.length||meta.is_combo||(mode&&mode.value!=='none'));
   const options=document.createElement('div');options.className='nu200-options';host.before(options);
   const modeLabel=mode?.closest('label'),picker=form.querySelector('[data-shared-picker155]');
   if(modeLabel)options.append(modeLabel);if(picker)options.append(picker);options.append(host);
@@ -17,9 +17,20 @@
    const label=document.createElement('label'),radio=document.createElement('input');radio.type='radio';radio.name='personalization200-'+index;radio.value=value;radio.checked=(value==='yes')===enabled;label.append(radio,document.createTextNode(title));question.append(label);radios.push(radio);
   }
   options.before(question);
+  const mealBox=document.createElement('fieldset');mealBox.className='nu200-question';
+  const mealLegend=document.createElement('legend');mealLegend.textContent='Esse produto é um lanche ou refeição?';mealBox.append(mealLegend);
+  const mealRadios=[];const initialMeal=!!(config?.is_meal317||config?.ingredients?.length);
+  for(const [value,title] of [['no','Não'],['yes','Sim']]){const label=document.createElement('label'),radio=document.createElement('input');radio.type='radio';radio.name='meal317-'+index;radio.value=value;radio.checked=(value==='yes')===initialMeal;label.append(radio,document.createTextNode(title));mealBox.append(label);mealRadios.push(radio);}
+  const mealFields=document.createElement('div');mealFields.className='nu200-options';const ingredientToggle=[...host.querySelectorAll('label')].find(n=>n.textContent==='Ingredientes do produto')?.querySelector('input');
+  const ingredientLabel=ingredientToggle?.closest('label'),ingredientBody=ingredientLabel?.nextElementSibling;
+  if(ingredientLabel&&ingredientBody){mealFields.append(ingredientLabel,ingredientBody);ingredientLabel.hidden=true;ingredientLabel.style.setProperty('display','none','important');}
+  question.before(mealBox,mealFields);
+  function syncMeal(){const meal=mealRadios[1].checked;form.dataset.meal317=String(meal);mealFields.hidden=!meal;if(ingredientToggle){ingredientToggle.checked=meal;ingredientToggle.dispatchEvent(new Event('change'));}sync();}
+  mealRadios.forEach(r=>r.addEventListener('change',syncMeal));
+
   const originalDisabled=new WeakMap();options.querySelectorAll('input,select,textarea,button').forEach(el=>originalDisabled.set(el,el.disabled));
   function sync(){
-   const type303=form.querySelector('[data-combo-type303]');const combo=type303?type303.value==='1':['__combos256','combos'].includes(form.querySelector('[name=category]')?.value.toLowerCase());question.hidden=combo;const simple=radios[0].checked&&!combo;form.dataset.simple200=String(simple);options.hidden=simple||!!type303&&combo;
+   const type303=form.querySelector('[data-combo-type303]');const combo=type303?type303.value==='1':['__combos256','combos'].includes(form.querySelector('[name=category]')?.value.toLowerCase());question.hidden=combo;mealBox.hidden=combo;mealFields.hidden=combo||form.dataset.meal317!=='true';ingredientBody?.querySelectorAll('input,button').forEach(n=>n.disabled=combo||form.dataset.meal317!=='true');const simple=radios[0].checked&&!combo;form.dataset.extras317=String(!simple);form.dataset.simple200=String(simple&&form.dataset.meal317!=='true');options.hidden=simple||!!type303&&combo;
    options.querySelectorAll('input,select,textarea,button').forEach(el=>{
     if(el.name==='customization192'||el===mode)return;
     if(simple||!!type303&&combo){if(!el.dataset.disabled200)originalDisabled.set(el,el.disabled);el.dataset.disabled200='1';el.disabled=true;}
@@ -27,8 +38,8 @@
    });
    if(mode){mode.disabled=false;if(!simple)mode.dispatchEvent(new Event('change',{bubbles:true}));}
   }
-  form.querySelector('[data-combo-type303]')?.addEventListener('change',sync);radios.forEach(r=>r.addEventListener('change',sync));form.querySelector('[name=category]')?.addEventListener('change',sync);sync();
-  form.addEventListener('submit',()=>{if(form.dataset.simple200==='true'&&mode)mode.value='none';},true);
+  form.querySelector('[data-combo-type303]')?.addEventListener('change',sync);radios.forEach(r=>r.addEventListener('change',sync));form.querySelector('[name=category]')?.addEventListener('change',sync);syncMeal();
+  form.addEventListener('submit',()=>{if(radios[0].checked&&mode)mode.value='none';},true);
   // Secondary fields remain available without occupying the simple registration form.
   const extra=document.createElement('details');extra.className='nu200-secondary';
   const summary=document.createElement('summary');summary.textContent='Mais informações do produto';extra.append(summary);

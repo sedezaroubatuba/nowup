@@ -98,6 +98,9 @@ def parse_config(raw):
     if not isinstance(manual, list) or len(manual) > 20 or any(not isinstance(i, dict) for i in manual):fail('Itens manuais inválidos.')
     manual_names = names([i.get('name') for i in manual], 'Itens manuais', 20)
     output['combo_manual'] = [{'name': name, 'quantity': integer(manual[i].get('quantity'), 1, 99, name)} for i, name in enumerate(manual_names)]
+    meal = data.get('is_meal317', bool(clean_ingredients))
+    if not isinstance(meal, bool):fail('Tipo de refeição inválido.')
+    output['is_meal317'] = meal
     notice = data.get('combo_notice316', '')
     if not isinstance(notice, str) or len(notice) > 600:
         fail('O aviso do combo deve ter até 600 caracteres.')
