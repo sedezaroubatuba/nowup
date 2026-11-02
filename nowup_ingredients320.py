@@ -53,6 +53,23 @@ def attach_photos329(config, items):
     return config
 
 
+def option_photos332(conn, store_id, options):
+    """Display the unified registry photo without changing the charged option."""
+    items=catalog(conn,store_id)
+    by_extra={item['extra_id325']:item for item in items if item['extra_id325']}
+    by_name={}
+    normalize=lambda value:' '.join(value.casefold().split())
+    for item in items:by_name.setdefault(normalize(item['name']),[]).append(item)
+    result=[]
+    for source in options:
+        option=dict(source);ref=option.get('shared_extra_id',0)
+        matches=by_name.get(normalize(option['name']),[])
+        item=by_extra.get(ref) if ref else (matches[0] if len(matches)==1 else None)
+        option['image_filename']=item['image_filename'] if item else ''
+        result.append(option)
+    return result
+
+
 def install(g):
     @g['app'].post('/painel/cardapio/ingredientes320')
     def save(request:Request,name:str=Form(...),ingredient_id:int=Form(0),photo:UploadFile=File(None),price:str=Form("")):
