@@ -14,37 +14,8 @@ UPLOAD_DIR=Path(os.getenv("NOWUP_UPLOAD_DIR",BASE/"uploads")); UPLOAD_DIR.mkdir(
 templates=Jinja2Templates(directory=str(BASE/"templates")); router=APIRouter()
 
 def db():
-    c=sqlite3.connect(DB_PATH); c.row_factory=sqlite3.Row; c.execute("PRAGMA foreign_keys=ON"); return c
-def now_iso(): return datetime.now(timezone.utc).isoformat()
-def slugify(v):
-    v=unicodedata.normalize("NFKD",v or "").encode("ascii","ignore").decode().lower()
-    return re.sub(r"[^a-z0-9]+","-",v).strip("-") or secrets.token_hex(4)
-def hash_password(p):
-    s=secrets.token_hex(16); d=hashlib.pbkdf2_hmac("sha256",p.encode(),bytes.fromhex(s),240_000); return f"{s}${d.hex()}"
-def current_user(request):
-    token=request.cookies.get("nowup_session")
-    if not token:return None
-    from nowup_security import session_user
-    c=db(); r=session_user(c,token); c.close(); return dict(r) if r else None
-def cms_role(request):
-    u=current_user(request)
-    if not u or u["role"] not in ("admin","cms"): raise HTTPException(403,"Acesso administrativo necessário")
-    c=db(); p=c.execute("SELECT cms_role FROM cms_permissions WHERE user_id=?",(u["id"],)).fetchone(); c.close(); return u,(p["cms_role"] if p else "admin")
-def allow(request,*roles):
-    u,r=cms_role(request)
-    if r not in roles: raise HTTPException(403,"Seu nível de acesso não permite esta ação")
-    return u,r
-def settings(c=None):
-    own=c is None; c=c or db(); d={r["key"]:r["value"] for r in c.execute("SELECT key,value FROM site_settings")}
-    if own:c.close()
-    return d
-def public_context(request,**extra):
-    c=db(); d=settings(c); cats=c.execute("SELECT * FROM categories WHERE active=1 ORDER BY sort_order,name").fetchall(); c.close()
-    return {"request":request,"settings":d,"categories":cats,"user":current_user(request),**extra}
-def save_image(upload):
-    if not upload or not upload.filename:return ""
-    from nowup_hardening308 import save_photo
-    return save_photo(upload,UPLOAD_DIR)
+    from nowup_database239 import connect
+    return connect(DB_PATH)
 
 def init_cms_db():
     c=db(); c.executescript("""
