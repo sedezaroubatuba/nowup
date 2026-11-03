@@ -205,10 +205,8 @@ def slugify(value: str):
     return value or secrets.token_hex(4)
 
 def db():
-    conn = sqlite3.connect(DB_PATH, timeout=15)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+    from nowup_database239 import connect
+    return connect(DB_PATH)
 
 def hash_password(password: str, salt: Optional[str]=None):
     salt = salt or secrets.token_hex(16)
@@ -778,14 +776,18 @@ def init_db():
 
 @app.on_event("startup")
 def startup():
+    from nowup_database239 import initialize_postgres_helpers
+    initialize_postgres_helpers()
     init_db()
     init_cms_db()
-    # Cópia SQLite consistente; o disco persistente deve incluir a pasta data.
-    backup_dir=DB_PATH.parent/"backups"; backup_dir.mkdir(parents=True,exist_ok=True)
-    destination=backup_dir/f"nowup-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}.db"
-    source=sqlite3.connect(DB_PATH, timeout=15); target=sqlite3.connect(destination)
-    try: source.backup(target)
-    finally: target.close(); source.close()
+    from nowup_database239 import is_postgres
+    if not is_postgres():
+        # Cópia SQLite consistente; o disco persistente deve incluir a pasta data.
+        backup_dir=DB_PATH.parent/"backups"; backup_dir.mkdir(parents=True,exist_ok=True)
+        destination=backup_dir/f"nowup-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}.db"
+        source=sqlite3.connect(DB_PATH, timeout=15); target=sqlite3.connect(destination)
+        try: source.backup(target)
+        finally: target.close(); source.close()
     # Apply the owner-requested retirement after the pre-change database backup.
     from nowup_retire_legacy331 import apply as retire_legacy331
     conn=db()
@@ -794,7 +796,8 @@ def startup():
         import logging
         logging.getLogger('uvicorn.error').info('NowUp legacy retirement331: %s options retired',retired331)
     finally:conn.close()
-    for old in sorted(backup_dir.glob("nowup-*.db"),reverse=True)[7:]: old.unlink(missing_ok=True)
+    if not is_postgres():
+        for old in sorted(backup_dir.glob("nowup-*.db"),reverse=True)[7:]: old.unlink(missing_ok=True)
 
 def select_home_stores90(conn, rows, visitor_key, visit_date):
     """Keep existing sections; rank eligible stores by completed orders and fair rotation.
@@ -1116,6 +1119,7 @@ def attach_cart_assets144(response):
 
 @app.get("/p/{slug}", response_class=HTMLResponse)
 def profile(request: Request, slug: str):
+    current=current_user(request)
     conn=db()
     p=conn.execute("""
       SELECT p.*,
@@ -1148,7 +1152,7 @@ def profile(request: Request, slug: str):
           WHERE pr.professional_id=? AND po.available=1 ORDER BY po.sort_order,po.id""",(p["id"],)).fetchall()):
             product_options.setdefault(row["product_id"],[]).append(row)
     product_groups,delivery_zones=menu_rules89(conn,p["id"])
-    current=current_user(request); can_review=False
+    can_review=False
     if current and current["role"]=="customer":
         can_review=bool(conn.execute("SELECT 1 FROM orders WHERE customer_id=? AND professional_id=? AND status='completed' LIMIT 1",(current["id"],p["id"])).fetchone())
     conn.close()
@@ -1647,7 +1651,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
       SUM(CASE WHEN status='cancelled' THEN 1 ELSE 0 END) cancelled
       FROM orders WHERE professional_id=? AND created_at>=? AND created_at<?""",
       (p["id"],period_lower258,period_upper258)).fetchone()
-    top_products=conn.execute("""SELECT oi.product_name,
+    top_products=conn.execute("""SELECT MIN(oi.product_name) AS product_name,
       SUM(oi.quantity) quantity, SUM(oi.quantity*oi.unit_price_cents) revenue_cents,
       COUNT(DISTINCT oi.order_id) order_count
       FROM order_items oi JOIN orders o ON o.id=oi.order_id
@@ -1659,7 +1663,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     store_notifications=[dict(n,order200=notice_orders200.get(n['id'])) for n in store_notifications]
     latest_notification_id=store_notifications[0]["id"] if store_notifications else 0
     store_client_orders=conn.execute("SELECT id,customer_id,order_code,status,total_cents,created_at FROM orders WHERE professional_id=? ORDER BY id DESC",(p["id"],)).fetchall()
-    store_clients=conn.execute("""SELECT customer_id,customer_name,COUNT(*) AS order_count,
+    store_clients=conn.execute("""SELECT customer_id,MIN(customer_name) AS customer_name,COUNT(*) AS order_count,
       MAX(created_at) AS last_order,
       SUM(CASE WHEN status='completed' THEN total_cents ELSE 0 END) AS completed_cents
       FROM orders WHERE professional_id=? AND customer_id IS NOT NULL
@@ -2992,3 +2996,7 @@ def customer_marketing309(request: Request, marketing_email309: Optional[str]=Fo
         conn.commit()
     finally:conn.close()
     return RedirectResponse('/cliente?ok=comunicacoes#comunicacoes',303)
+
+from nowup_database239 import finalize_postgres_constraints, close_pool
+app.router.add_event_handler("startup", finalize_postgres_constraints)
+app.router.add_event_handler("shutdown", close_pool)

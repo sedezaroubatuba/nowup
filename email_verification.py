@@ -13,9 +13,8 @@ templates=Jinja2Templates(directory=str(BASE/"templates"))
 router=APIRouter()
 
 def db():
-    conn=sqlite3.connect(DB_PATH)
-    conn.row_factory=sqlite3.Row
-    return conn
+    from nowup_database239 import connect
+    return connect(DB_PATH)
 
 @router.get("/cadastro/aguardando",response_class=HTMLResponse)
 def waiting(request: Request):

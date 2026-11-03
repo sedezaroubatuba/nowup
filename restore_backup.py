@@ -9,12 +9,15 @@ def stage_backup(archive,output):
     with zipfile.ZipFile(archive) as z:
         if z.testzip():raise ValueError('Arquivo ZIP danificado.')
         manifest=json.loads(z.read('manifest.json'))
-        if manifest.get('format')!='nowup-backup-v1':raise ValueError('Formato desconhecido.')
+        fmt=manifest.get('format')
+        if fmt not in ('nowup-backup-v1','nowup-backup-v2-postgres'):raise ValueError('Formato desconhecido.')
+        database_entry='database/nowup.db' if fmt=='nowup-backup-v1' else 'database/nowup.pgdump'
+        if manifest.get('database')!=database_entry:raise ValueError('Banco inconsistente no manifesto.')
         expected=manifest['files']
         if len(z.namelist())!=len(set(z.namelist())) or set(z.namelist())!=set(expected)|{'manifest.json'}:raise ValueError('Lista de arquivos inconsistente.')
         for name in expected:
             path=PurePosixPath(name)
-            if path.is_absolute() or '..' in path.parts or not (name=='database/nowup.db' or name.startswith('uploads/')):raise ValueError('Caminho não permitido.')
+            if path.is_absolute() or '..' in path.parts or not (name==database_entry or name.startswith('uploads/')):raise ValueError('Caminho não permitido.')
         output.mkdir(parents=True,mode=0o700)
         try:
             for name,digest in expected.items():
@@ -24,10 +27,16 @@ def stage_backup(archive,output):
                     for chunk in iter(lambda:src.read(1024*1024),b''):h.update(chunk);dst.write(chunk)
                 os.chmod(target,0o600)
                 if h.hexdigest()!=digest:raise ValueError('A verificação de integridade falhou.')
-            conn=sqlite3.connect((output/'database/nowup.db').resolve().as_uri()+'?mode=ro',uri=True)
-            try:
-                if conn.execute('PRAGMA integrity_check').fetchone()[0]!='ok':raise ValueError('Banco inválido.')
-            finally:conn.close()
+            if fmt=='nowup-backup-v1':
+                conn=sqlite3.connect((output/'database/nowup.db').resolve().as_uri()+'?mode=ro',uri=True)
+                try:
+                    if conn.execute('PRAGMA integrity_check').fetchone()[0]!='ok':raise ValueError('Banco inválido.')
+                finally:conn.close()
+            else:
+                import shutil,subprocess
+                if not shutil.which('pg_restore'):raise ValueError('Instale pg_restore para validar o backup PostgreSQL.')
+                result=subprocess.run(['pg_restore','--list',str(output/database_entry)],capture_output=True,timeout=30)
+                if result.returncode:raise ValueError('Dump PostgreSQL inválido.')
             (output/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False))
         except Exception:shutil.rmtree(output);raise
     return len(expected)-1

@@ -85,24 +85,64 @@ def sha256(path):
         for chunk in iter(lambda: stream.read(1024*1024), b''): digest.update(chunk)
     return digest.hexdigest()
 
+def postgres_snapshot(snapshot):
+    """Use one exported MVCC snapshot for the dump and media references."""
+    import shutil
+    import subprocess
+    from nowup_database239 import connect, database_url
+    from nowup_hardening308 import image_references
+    if not shutil.which('pg_dump') or not shutil.which('pg_restore'):
+        raise RuntimeError('Instale pg_dump e pg_restore compatíveis com a versão do PostgreSQL antes de ativar os backups.')
+    conn = connect(None)
+    try:
+        conn.raw.execute('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY')
+        snapshot_id = conn.raw.execute('SELECT pg_export_snapshot()').fetchone()[0]
+        referenced = image_references(conn)
+        environment = dict(os.environ, PGDATABASE=database_url())
+        schema = os.getenv('NOWUP_PG_SCHEMA', 'public')
+        result = subprocess.run(['pg_dump', '--format=custom', '--no-owner', '--no-acl',
+            '--schema='+schema, '--snapshot='+snapshot_id, '--file='+str(snapshot)],
+            env=environment, capture_output=True, timeout=180)
+        if result.returncode:
+            raise RuntimeError('Falha ao exportar PostgreSQL. Confira conectividade e versão do pg_dump.')
+        result = subprocess.run(['pg_restore', '--list', str(snapshot)], capture_output=True, timeout=30)
+        if result.returncode:
+            raise RuntimeError('O arquivo PostgreSQL não passou na conferência do pg_restore.')
+        return referenced
+    finally:
+        conn.close()
+
+
 def create_archive(directory):
     directory=Path(directory)
-    if not _db.is_file() or not _uploads.is_dir():
-        raise RuntimeError('Banco de dados ou pasta de fotos não encontrados. Confira os caminhos.')
-    snapshot=directory/'nowup.db'
-    source=sqlite3.connect(_db.resolve().as_uri()+'?mode=ro',uri=True,timeout=30)
-    destination=sqlite3.connect(snapshot)
-    try:
-        deadline=time.monotonic()+180
-        def progress(*_):
-            if time.monotonic()>deadline: raise RuntimeError('Tempo de cópia do banco excedido.')
-        source.backup(destination,pages=256,progress=progress,sleep=0.05)
-        if destination.execute('PRAGMA integrity_check').fetchone()[0]!='ok':
-            raise RuntimeError('A cópia do banco não passou na verificação de integridade.')
-        # All upload filename columns in the DB snapshot must be present.
-        from nowup_hardening308 import image_references
-        referenced=image_references(destination)
-    finally: destination.close(); source.close()
+    from nowup_database239 import is_postgres
+    from nowup_hardening308 import image_references
+    if not _uploads.is_dir():
+        raise RuntimeError('Pasta de fotos não encontrada.')
+    if is_postgres():
+        snapshot = directory/'nowup.pgdump'
+        database_entry = 'database/nowup.pgdump'
+        backup_format = 'nowup-backup-v2-postgres'
+        referenced = postgres_snapshot(snapshot)
+    else:
+        database_entry = 'database/nowup.db'
+        backup_format = 'nowup-backup-v1'
+        if not _db.is_file() or not _uploads.is_dir():
+            raise RuntimeError('Banco de dados ou pasta de fotos não encontrados. Confira os caminhos.')
+        snapshot=directory/'nowup.db'
+        source=sqlite3.connect(_db.resolve().as_uri()+'?mode=ro',uri=True,timeout=30)
+        destination=sqlite3.connect(snapshot)
+        try:
+            deadline=time.monotonic()+180
+            def progress(*_):
+                if time.monotonic()>deadline: raise RuntimeError('Tempo de cópia do banco excedido.')
+            source.backup(destination,pages=256,progress=progress,sleep=0.05)
+            if destination.execute('PRAGMA integrity_check').fetchone()[0]!='ok':
+                raise RuntimeError('A cópia do banco não passou na verificação de integridade.')
+            # All upload filename columns in the DB snapshot must be present.
+            from nowup_hardening308 import image_references
+            referenced=image_references(destination)
+        finally: destination.close(); source.close()
     files={}
     for name in referenced:
         p=_uploads/name
@@ -112,9 +152,9 @@ def create_archive(directory):
         if p.is_symlink(): raise RuntimeError('A pasta de fotos contém um link simbólico não permitido.')
         if p.is_file(): files[p.relative_to(_uploads).as_posix()]=p
     archive=directory/'nowup-backup.zip'
-    manifest={'format':'nowup-backup-v1','created_at':datetime.now(timezone.utc).isoformat(),'database':'database/nowup.db','files':{}}
+    manifest={'format':backup_format,'created_at':datetime.now(timezone.utc).isoformat(),'database':database_entry,'files':{}}
     with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED,allowZip64=True) as z:
-        z.write(snapshot,'database/nowup.db');manifest['files']['database/nowup.db']=sha256(snapshot)
+        z.write(snapshot,database_entry);manifest['files'][database_entry]=sha256(snapshot)
         for name,p in sorted(files.items()):
             entry='uploads/'+name
             before=p.stat()

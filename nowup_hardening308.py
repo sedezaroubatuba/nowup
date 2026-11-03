@@ -105,9 +105,11 @@ def storage_status(database,directory):
         refs=image_references(conn);root=Path(directory)
         missing=sum(not (root/name).is_file() for name in refs)
         space=shutil.disk_usage(root)
+        postgres = getattr(conn, 'dialect', 'sqlite') == 'postgres'
         return {'referenced_photos':len(refs),'missing_photos':missing,'uploads_on_persistent_disk':root.resolve().is_relative_to('/app/persist'),
-            'database_on_persistent_disk':Path(conn.execute('PRAGMA database_list').fetchone()[2]).resolve().is_relative_to('/app/persist'),
-            'free_mb':space.free//1048576,'database_ok':conn.execute('PRAGMA quick_check').fetchone()[0]=='ok'}
+            'database_on_persistent_disk':not postgres and Path(conn.execute('PRAGMA database_list').fetchone()[2]).resolve().is_relative_to('/app/persist'),
+            'database_backend':'postgres' if postgres else 'sqlite',
+            'free_mb':space.free//1048576,'database_ok':bool(conn.execute('SELECT 1').fetchone()[0]) if postgres else conn.execute('PRAGMA quick_check').fetchone()[0]=='ok'}
     finally:conn.close()
 
 def log_storage(database,directory):
