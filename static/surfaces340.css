@@ -15,4 +15,13 @@ html body .nu250-dialog{background:#fff!important;background-image:none!importan
 html body .nu250-dialog>button{background:#7434c6!important;color:#fff!important}
 html body .nu250-dialog a{color:#6224a6!important}
 html body .nu250-preview{background:#fff!important;color:#6224a6!important}
+html body .image-editor{background:#fff!important;background-image:none!important;color:#203047!important;border:2px solid #7434c6;color-scheme:light;max-height:94dvh;overflow:auto}
+html body .image-editor::backdrop{background:rgba(49,18,83,.55)}
+html body .image-editor :is(h2,p,label){color:#344054!important;opacity:1}
+html body .image-editor h2{color:#6224a6!important}
+html body .image-editor-close{background:#7434c6!important;color:#fff!important;min-width:44px;min-height:44px}
+html body .image-stage{background:#f7f4fb!important;border-color:#7434c6!important}
+html body .image-editor input[type=range]{accent-color:#7434c6}
+html body .image-editor-actions .btn.primary{background:#7434c6!important;color:#fff!important;border-color:#7434c6!important}
+html body .image-editor-actions .btn:not(.primary){background:#fff!important;color:#6224a6!important;border-color:#cfc3df!important}
 @media(max-width:620px){html body .formCard{padding:18px 14px;margin:18px auto;border-radius:18px}html body .formCard input[type=file]{font-size:14px}html body .nu250-dialog{max-height:90dvh;padding:12px}}
