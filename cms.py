@@ -17,6 +17,17 @@ def db():
     from nowup_database239 import connect
     return connect(DB_PATH)
 
+def now_iso():
+    return datetime.now(timezone.utc).isoformat()
+
+def public_context(request, **extra):
+    # Reuse the application's theme, identity and categories without a second auth path.
+    from app import context, templates as shared_templates
+    templates.env.globals.update(shared_templates.env.globals)
+    templates.env.filters.update(shared_templates.env.filters)
+    return context(request, **extra)
+
+
 def init_cms_db():
     c=db(); c.executescript("""
     CREATE TABLE IF NOT EXISTS cms_pages(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT NOT NULL,slug TEXT NOT NULL UNIQUE,content TEXT DEFAULT '',status TEXT NOT NULL DEFAULT 'published',seo_title TEXT DEFAULT '',seo_description TEXT DEFAULT '',created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
