@@ -1,3 +1,4 @@
+from nowup_plans339 import admin_plans
 """Super ADM V227. SQLite/main; sessão existente, RBAC e persistência reais.
 
 Não cria exemplos nem altera planos/valores de contratos durante a instalação.
@@ -40,8 +41,8 @@ CREATE TABLE IF NOT EXISTS adm227_invites(token_hash TEXT PRIMARY KEY,staff_id I
 CREATE TABLE IF NOT EXISTS adm227_limits(key TEXT PRIMARY KEY,started TEXT NOT NULL,attempts INTEGER NOT NULL);
 CREATE INDEX IF NOT EXISTS adm227_audit_date ON adm227_audit(created_at,id);''')
   c.execute("INSERT OR IGNORE INTO adm227_state(id) VALUES(1)")
-  if not c.execute("SELECT 1 FROM adm227_entities WHERE kind='plans'").fetchone():
-   for i,(key,name,price) in enumerate([('start','Start',7900),('pro','Pro',14900),('premium','Premium',24900)],1):put(c,'plans',i,{'id':key,'name':name,'price':price,'features':'Plano de mensalidade; vinculação individual sem migração automática'})
+  from nowup_plans339 import synchronize_admin
+  synchronize_admin(c)
   c.execute('CREATE INDEX IF NOT EXISTS order_items_order255 ON order_items(order_id,id)')
   c.execute('CREATE INDEX IF NOT EXISTS orders_store_date255 ON orders(professional_id,created_at,id)')
   c.execute('CREATE INDEX IF NOT EXISTS adm227_entities_kind255 ON adm227_entities(kind,id)')
@@ -136,7 +137,7 @@ def snapshot(c,a):
  LEFT JOIN (SELECT pc.professional_id,MIN(c.name) name FROM professional_categories pc JOIN categories c ON c.id=pc.category_id GROUP BY pc.professional_id) cat ON cat.professional_id=p.id
  LEFT JOIN (SELECT professional_id,AVG(stars) value FROM reviews GROUP BY professional_id) rating ON rating.professional_id=p.id
  ORDER BY p.id""")]
- sm=metadata(c,'storemeta');stores=[];settings=json.loads(c.execute('SELECT settings FROM adm227_state WHERE id=1').fetchone()[0]);plans=rows(c,'plans')
+ sm=metadata(c,'storemeta');stores=[];settings=json.loads(c.execute('SELECT settings FROM adm227_state WHERE id=1').fetchone()[0]);plans=admin_plans()
  # Existing prices remain unknown unless explicitly registered. Never assign R$79 to an old contract.
  for p in raw_stores:
   m=sm.get(p['id'],{});st={'id':p['id'],'name':p['display_name'],'city':p['city'],'neighborhood':p['neighborhood'],'category':'','approval':p['admission_status'],'online':bool(p['is_active'] and not p['blocked'] and p['admission_status']=='approved' and G['shop_status'](p)['open']),'paused':p['business_status']!='open','blocked':bool(p['blocked'] or not p['is_active']),'demo':bool(p['is_demo']),'featured':bool(p['featured']),'plan':m.get('plan','legacy'),'price':m.get('price',0),'due':p['billing_due_date'],'trialUntil':m.get('trialUntil',''),'cancelledAt':m.get('cancelledAt',''),'subscribedAt':m.get('subscribedAt',p['created_at'][:10]),'method':m.get('method','Pix'),'menu':[],'stage':m.get('stage',{'approved':'Aprovados','pending':'Em Análise','rejected':'Reprovados'}.get(p['admission_status'],'Em Análise')),'prep':p['prep_minutes'],'rating':0,'hoursByDay':m.get('hoursByDay',['']*7),'resources':m.get('resources',[]),'kyc':m.get('kyc',{}),'documents':{},'radius':m.get('radius',0)}
@@ -270,7 +271,8 @@ def update_store(c,a,oid,v,why):
   plan=next((x for x in rows(c,'plans') if x['id']==v['plan']),None)
   if not plan:fail(400,'Plano SaaS não encontrado.')
   m.update(plan=plan['id'],price=plan['price'],subscribedAt=m.get('subscribedAt',localday()))
-  # Commercial price does not silently alter cardápio/vitrine entitlements.
+  columns.update(plan_active=plan['id'],is_premium=1)
+  if p['offer_mode'] not in ('menu','catalog'):columns['offer_mode']='menu'
  if 'price' in v and 'plan' not in v:m['price']=number(v['price'])
  for key in ('trialUntil','cancelledAt','subscribedAt'):
   if key in v:m[key]=validdate(v[key])
@@ -342,7 +344,10 @@ def update_entity(c,a,kind,oid,v,creating,why):
  if kind=='staff':fail(400,'Use a operação própria para funcionários.')
  if kind=='plans':
   if set(v)-{'id','name','price','features'}:fail(400,'Campo de plano inválido.')
-  v={**v,'name':clean(v.get('name',''),60,True),'price':number(v.get('price'),1)}
+  from nowup_plans339 import admin_plans
+  canonical=next((p for p in admin_plans() if p['id']==v.get('id')),None)
+  if canonical is None or any(v.get(k)!=canonical[k] for k in ('name','price','features')):fail(400,'Os planos atuais são Só cardápio/catálogo por R$ 49,90 e Cardápio/catálogo + vitrine por R$ 99,90.')
+  v=canonical
  if kind=='payments':
   if not creating:fail(409,'Pagamentos registrados não podem ser sobrescritos.')
   if set(v)-{'id','store','date','amount','method','reference'}:fail(400,'Campo de pagamento inválido.')

@@ -1233,7 +1233,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
         if not customer_name.strip() or len(customer_name.strip())<2 or not normalize_phone(customer_phone):
             conn.close(); raise HTTPException(400,'Informe nome e WhatsApp válidos')
         if not p["is_premium"] or p["offer_mode"] not in ("menu","catalog"):
-            conn.close(); raise HTTPException(403,"Cardápio ou catálogo disponível somente no plano Premium")
+            conn.close(); raise HTTPException(403,"Ative um plano com cardápio ou catálogo para usar este recurso")
         if request.headers.get('x-nowup-store-app')=='256':order_channel='external'
         from nowup_checkout229 import begin_checkout, completed_response
         existing,checkout_key229,checkout_hash229=begin_checkout(conn,logged['id'],p['id'],request_key,{
@@ -1394,9 +1394,9 @@ def signup_pro_page(request: Request):
 def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Form(...), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), doc_type: str=Form(...), document: str=Form(...), business_type: str=Form("professional"), offer_mode: str=Form("services"), plan: str=Form(...), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[]), address: str=Form(""), state: str=Form(""), legal_name: str=Form(...), owner_name: str=Form(...), owner_cpf: str=Form(...), owner_role: str=Form(...), facade: UploadFile=File(...), company: UploadFile=File(...), identity: UploadFile=File(...), address_proof: UploadFile=File(...)):
     if not all(v.strip() for v in (name,address,neighborhood,city)) or state not in nowup_admin205.UFS:
         return RedirectResponse("/cadastro/profissional?erro=endereco",303)
-    if plan not in ('cardapio','vitrine','ambos'):
+    if plan not in ('cardapio','ambos'):
         return RedirectResponse('/cadastro/profissional?erro=plano',303)
-    if (plan=='vitrine' and offer_mode!='services') or (plan!='vitrine' and offer_mode not in ('menu','catalog')):
+    if offer_mode not in ('menu','catalog'):
         return RedirectResponse('/cadastro/profissional?erro=plano',303)
     import nowup_verification257 as verification
     if doc_type != 'CNPJ': raise HTTPException(400,'Cadastro de lojistas somente com CNPJ.')
@@ -1683,7 +1683,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
 @app.post('/painel/plano')
 def request_store_plan(request: Request, plan: str=Form(...), offer_mode: str=Form('services')):
     user=require_user(request,'professional')
-    if plan not in ('cardapio','vitrine','ambos') or (plan=='vitrine' and offer_mode!='services') or (plan!='vitrine' and offer_mode not in ('menu','catalog')):
+    if plan not in ('cardapio','ambos') or offer_mode not in ('menu','catalog'):
         return RedirectResponse('/painel?erro=plano#plano',303)
     conn=db()
     conn.execute('UPDATE professionals SET plan_requested=?,plan_requested_offer=? WHERE user_id=?',(plan,offer_mode,user['id']))
@@ -1738,7 +1738,7 @@ def price_to_cents(raw: str):
 def require_premium_catalog(conn, user_id: int):
     pro=conn.execute("SELECT * FROM professionals WHERE user_id=?",(user_id,)).fetchone()
     if not pro or not pro["is_premium"] or pro["offer_mode"] not in ("menu","catalog"):
-        raise HTTPException(403,"Cardápio ou catálogo disponível somente no plano Premium")
+        raise HTTPException(403,"Ative um plano com cardápio ou catálogo para usar este recurso")
     return pro
 
 @app.post("/painel/cardapio/categorias")
@@ -2540,7 +2540,7 @@ def admin_review_professional(request: Request, pid:int, decision:str, reason:st
         except Exception: conn.rollback();conn.close();raise
     if decision=='approved' and not pro["email_verified"]:
         conn.rollback(); conn.close(); return RedirectResponse("/admin?erro=email-pendente#profissionais",303)
-    if decision=='approved' and pro['plan_requested'] not in ('cardapio','vitrine','ambos'):
+    if decision=='approved' and pro['plan_requested'] not in ('cardapio','ambos'):
         conn.rollback();conn.close();return RedirectResponse('/admin?erro=plano#profissionais',303)
     if decision=='approved' and not (payment_confirmed=='1' or complimentary=='1'):
         conn.rollback();conn.close();return RedirectResponse('/admin?erro=pagamento#profissionais',303)
@@ -2566,7 +2566,7 @@ def admin_approve_store_plan(request: Request,pid:int,payment_confirmed: str=For
         return RedirectResponse('/admin?erro=pagamento#profissionais',303)
     conn=db();conn.execute('BEGIN IMMEDIATE')
     p=conn.execute("SELECT * FROM professionals WHERE id=? AND admission_status='approved' AND blocked=0",(pid,)).fetchone()
-    if not p or p['plan_requested'] not in ('cardapio','vitrine','ambos'):
+    if not p or p['plan_requested'] not in ('cardapio','ambos'):
         conn.rollback();conn.close();return RedirectResponse('/admin?erro=plano#profissionais',303)
     conn.execute("UPDATE professionals SET plan_active=plan_requested,is_premium=CASE WHEN plan_requested IN ('cardapio','ambos') THEN 1 ELSE 0 END,offer_mode=CASE WHEN plan_requested='vitrine' THEN 'services' WHEN plan_requested_offer IN ('menu','catalog') THEN plan_requested_offer ELSE offer_mode END,plan_granted=?,plan_requested='',plan_requested_offer='' WHERE id=?",(1 if complimentary=='1' else 0,pid))
     conn.commit();conn.close();return RedirectResponse('/admin?ok=plano#profissionais',303)
