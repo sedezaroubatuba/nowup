@@ -20,7 +20,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  const pageSize235=({large:1,pair:2})[root.dataset.carouselLayout]||4;
  const desktop228=matchMedia('(min-width:901px)');
  if(desktop228.matches)root.id='nu312-catalog';
- const desktopSheet312=document.createElement('link');desktopSheet312.rel='stylesheet';desktopSheet312.href='/static/catalog-desktop312.css?v=312';document.head.append(desktopSheet312);
+ const desktopSheet312=document.createElement('link');desktopSheet312.rel='stylesheet';desktopSheet312.href='/static/catalog-desktop312.css?v=348';document.head.append(desktopSheet312);
  const desktopStyle228=document.createElement('style');
  desktopStyle228.textContent=`@media(min-width:901px){
  html body.public-profile-area.nu228-desktop-catalog [data-native-menu] .nu187-intro{display:block!important}

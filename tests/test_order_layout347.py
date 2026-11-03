@@ -48,7 +48,7 @@ def test_tracking_renders_four_separate_products_totals_and_local_dates(env):
     assert len(soup.select('.nu347-order-totals>div'))==3
     assert '405,89' in soup.select_one('.nu347-grand-total').text
     assert '03/11/2026 às 12:59' in soup.select_one('.order-timeline time').text
-    assert soup.select_one('link[href="/static/order-layout347.css?v=347"]')
+    assert soup.select_one('link[href="/static/order-layout347.css?v=348"]')
 
 
 def test_time_and_legacy_notes_helpers():

@@ -14,3 +14,6 @@ html body.public-profile-area.nu187-store-home #nu312-catalog .nu190-showcase .n
 .nu312-more{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;border:2px solid #7934cc;border-radius:12px;background:#fff;color:#6b1bcb;cursor:pointer;min-height:250px;font:inherit}
 .nu312-more strong{font-size:20px}.nu312-more small{font-size:13px}.nu312-plus{display:grid;place-items:center;border-radius:50%;background:#6b1bcb;color:#fff;width:64px;height:64px;font-size:48px}.nu312-more:hover{background:#f7f2ff}.nu312-more:focus-visible{outline:3px solid #126fea;outline-offset:3px}
 }
+
+/* A collapsed card must win over the desktop flex-card rule. */
+@media(min-width:901px){html body.public-profile-area.nu187-store-home #nu312-catalog .nu190-showcase .nu312-grid>.nu201-card[hidden]{display:none!important}}
