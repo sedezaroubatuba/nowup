@@ -847,8 +847,10 @@ def select_home_stores90(conn, rows, visitor_key, visit_date):
     recorded={r[0] for r in conn.execute("SELECT professional_id FROM home_store_exposure90 WHERE visit_date=? AND visitor_key=?",(visit_date,visitor_key))}
     missing238=selected-recorded
     if missing238:
-        conn.executemany("INSERT OR IGNORE INTO home_store_exposure90(visit_date,visitor_key,professional_id,created_at) VALUES(?,?,?,?)",
-                         [(visit_date,visitor_key,pid,stamp) for pid in missing238])
+        # One bounded insert instead of a database round trip for every visible store.
+        values238=[(visit_date,visitor_key,pid,stamp) for pid in sorted(missing238)]
+        conn.execute("INSERT OR IGNORE INTO home_store_exposure90(visit_date,visitor_key,professional_id,created_at) VALUES "+','.join('(?,?,?,?)' for _ in values238),
+                     tuple(value for row in values238 for value in row))
     # Bounded retention for rotation counts, with no order/customer data in this table.
     if conn.execute("SELECT 1 FROM home_store_exposure90 WHERE visit_date<? LIMIT 1",((today-timedelta(days=30)).isoformat(),)).fetchone():
         conn.execute("DELETE FROM home_store_exposure90 WHERE visit_date<?",((today-timedelta(days=30)).isoformat(),))
@@ -856,6 +858,7 @@ def select_home_stores90(conn, rows, visitor_key, visit_date):
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request, q: str="", city: str="", category: str="", business_type: str="", open_now: str=""):
+    user = current_user(request)
     conn = db()
     settings = get_settings(conn)
     cities = active_cities(settings)
@@ -908,7 +911,7 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
       FROM posts po JOIN professionals p ON p.id=po.professional_id
       WHERE p.blocked=0 AND p.admission_status='approved' AND p.plan_active IN ('vitrine','ambos') AND po.post_type!='status' ORDER BY po.id DESC LIMIT 12
     """).fetchall()
-    user=current_user(request); favorite_ids=set()
+    favorite_ids=set()
     if user and user["role"]=="customer":
         favorite_ids={r[0] for r in conn.execute("SELECT professional_id FROM favorites WHERE customer_id=?",(user["id"],)).fetchall()}
     recent_orders=[]

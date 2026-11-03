@@ -17,6 +17,45 @@ def db():
     from nowup_database239 import connect
     return connect(DB_PATH)
 
+
+def current_user(request):
+    from app import current_user as shared_current_user
+    return shared_current_user(request)
+
+def cms_role(request):
+    user = current_user(request)
+    if not user or user['role'] not in ('admin', 'cms'):
+        raise HTTPException(403, 'Acesso administrativo necessário')
+    c = db()
+    try:
+        permission = c.execute('SELECT cms_role FROM cms_permissions WHERE user_id=?', (user['id'],)).fetchone()
+        return user, (permission['cms_role'] if permission else 'admin' if user['role']=='admin' else 'author')
+    finally:
+        c.close()
+
+def allow(request, *roles):
+    user, role = cms_role(request)
+    if role not in roles:
+        raise HTTPException(403, 'Seu nível de acesso não permite esta ação')
+    return user, role
+
+def settings(c=None):
+    from app import get_settings
+    return get_settings(c)
+
+def slugify(value):
+    from app import slugify as shared_slugify
+    return shared_slugify(value)
+
+def hash_password(value):
+    from app import hash_password as shared_hash_password
+    return shared_hash_password(value)
+
+def save_image(upload):
+    from nowup_hardening308 import save_photo
+    return save_photo(upload, UPLOAD_DIR) if upload and upload.filename else ''
+
+
 def now_iso():
     return datetime.now(timezone.utc).isoformat()
 
