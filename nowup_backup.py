@@ -98,7 +98,15 @@ def postgres_snapshot(snapshot):
         conn.raw.execute('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY')
         snapshot_id = conn.raw.execute('SELECT pg_export_snapshot()').fetchone()[0]
         referenced = image_references(conn)
-        environment = dict(os.environ, PGDATABASE=database_url())
+        from psycopg.conninfo import conninfo_to_dict
+        parameters = conninfo_to_dict(database_url())
+        environment = dict(os.environ)
+        for key, variable in {'host':'PGHOST', 'hostaddr':'PGHOSTADDR', 'port':'PGPORT',
+                'user':'PGUSER', 'password':'PGPASSWORD', 'dbname':'PGDATABASE',
+                'sslmode':'PGSSLMODE', 'sslrootcert':'PGSSLROOTCERT', 'sslcert':'PGSSLCERT',
+                'sslkey':'PGSSLKEY', 'connect_timeout':'PGCONNECT_TIMEOUT',
+                'channel_binding':'PGCHANNELBINDING', 'options':'PGOPTIONS'}.items():
+            if key in parameters: environment[variable] = parameters[key]
         schema = os.getenv('NOWUP_PG_SCHEMA', 'public')
         result = subprocess.run(['pg_dump', '--format=custom', '--no-owner', '--no-acl',
             '--schema='+schema, '--snapshot='+snapshot_id, '--file='+str(snapshot)],

@@ -8,7 +8,7 @@ import re
 import sqlite3
 from pathlib import Path
 
-from nowup_database239 import translate
+from nowup_database239 import translate, database_url
 
 
 def quote(name):
@@ -63,7 +63,7 @@ def migrate(path, schema, apply=False):
         from psycopg import sql
         from nowup_database239 import initialize_postgres_helpers, reset_identity_sequences
         # URL comes exclusively from the environment and is never printed.
-        with psycopg.connect(os.environ['DATABASE_URL'], autocommit=False) as target:
+        with psycopg.connect(database_url(), autocommit=False) as target:
             with target.transaction():
                 target.execute(sql.SQL('CREATE SCHEMA {}').format(sql.Identifier(schema)))
                 target.execute(sql.SQL('SET LOCAL search_path TO {}').format(sql.Identifier(schema)))
