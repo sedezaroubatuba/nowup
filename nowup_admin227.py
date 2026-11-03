@@ -144,7 +144,7 @@ def snapshot(c,a):
   if need('stores'):
    st.update(owner=p['owner'],email=p['email'],phone=p['whatsapp'],document=p['document'],address=p['address'],hours=p['opening_hours'],photo='/uploads/'+p['avatar_filename'] if p['avatar_filename'] else '',slug=p['slug'],publicUrl='/p/'+p['slug'])
   else:st.update(owner='',email='',phone='',document='',address='',hours='',photo='')
-  st['category']=p['category229'];st['rating']=round(p['rating229'],1)
+  st['category']=p.get('business_segment346') or p['category229'];st['rating']=round(p['rating229'],1)
   if not need('stores'):st.update(kyc={},documents={})
   if not need('finance','dashboard'):st.update(price=0,due='',trialUntil='',cancelledAt='',subscribedAt='')
   stores.append(st)
@@ -268,6 +268,8 @@ def update_store(c,a,oid,v,why):
   columns['admission_reason']=why[:500]
  if 'due' in v:columns['billing_due_date']=validdate(v['due'])
  if 'plan' in v:
+  from nowup_verification257 import require_review
+  require_review(c,oid,v['plan'])
   plan=next((x for x in rows(c,'plans') if x['id']==v['plan']),None)
   if not plan:fail(400,'Plano SaaS não encontrado.')
   m.update(plan=plan['id'],price=plan['price'],subscribedAt=m.get('subscribedAt',localday()))

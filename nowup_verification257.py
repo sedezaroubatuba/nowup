@@ -56,10 +56,21 @@ def save(c,pid,fields,documents):
     c.execute('INSERT INTO merchant_evidence257(professional_id,legal_name,owner_name,owner_cpf,owner_role) VALUES(?,?,?,?,?)',(pid,*(fields[k].strip()[:180] for k in FIELDS)))
     for kind,content in documents.items(): c.execute('INSERT INTO merchant_documents257 VALUES(?,?,?,?)',(pid,kind,content,'image/jpeg'))
 
-def require_review(c,pid):
+def require_review(c,pid,target_plan=None):
+    p=c.execute('SELECT * FROM professionals WHERE id=?',(pid,)).fetchone()
+    details=dict(p) if p else {}
+    target=target_plan or details.get('plan_requested') or details.get('plan_active')
+    if target=='cardapio':return
+    if details.get('simple_menu346') and target in ('vitrine','ambos'):
+        cities=c.execute("SELECT value FROM site_settings WHERE key='active_cities'").fetchone()
+        enabled=[x.strip() for x in (cities[0] if cities else 'Ubatuba').split(',') if x.strip()]
+        if details.get('city') not in enabled:raise HTTPException(400,'A vitrine não está disponível na cidade desta loja.')
     row=c.execute('SELECT status FROM merchant_evidence257 WHERE professional_id=?',(pid,)).fetchone()
-    # Previously registered stores keep their existing approval; new registrations require evidence review.
-    if row and row['status']!='verified': raise HTTPException(400,'Confira os anexos em Verificação de lojistas antes de aprovar a loja.')
+    if details.get('simple_menu346') and target in ('vitrine','ambos') and not row:
+        raise HTTPException(400,'Para ativar a vitrine, envie o CNPJ e os documentos em Documentos da loja e aguarde a conferência.')
+    # Preserve the existing status of legacy stores, without allowing a new
+    # simplified registration to bypass verification when upgrading.
+    if row and row['status']!='verified':raise HTTPException(400,'Confira os anexos em Verificação de lojistas antes de aprovar a loja.')
 
 def register(g):
     G.update(g); app=g['app']; app.router.add_event_handler('startup',initialize)
@@ -95,7 +106,7 @@ def register(g):
             a=admin(request,c)
             if not c.execute('SELECT 1 FROM merchant_evidence257 WHERE professional_id=?',(pid,)).fetchone():raise HTTPException(404)
             c.execute('UPDATE merchant_evidence257 SET status=?,reason=?,reviewed_by=?,reviewed_at=? WHERE professional_id=?',(decision,reason.strip()[:1000],a['id'],g['now_iso'](),pid))
-            if decision!='verified':c.execute("UPDATE professionals SET blocked=1,admission_status='pending',verified=0 WHERE id=?",(pid,))
+            if decision!='verified':c.execute("UPDATE professionals SET blocked=1,admission_status='pending',verified=0 WHERE id=? AND NOT (simple_menu346=1 AND plan_active='cardapio')",(pid,))
             c.execute('INSERT INTO merchant_audit257 VALUES(?,?,?,?)',(pid,a['id'],decision+':'+reason.strip()[:1000],g['now_iso']()));c.commit()
         finally:c.close()
         return RedirectResponse('/admin/verificacao-lojistas',303)
@@ -104,18 +115,20 @@ def register(g):
     def merchant_page(request:Request):
         u=g['require_user'](request,'professional');c=g['db']()
         try:
-            p=c.execute('SELECT p.id,p.document,e.* FROM professionals p LEFT JOIN merchant_evidence257 e ON e.professional_id=p.id WHERE p.user_id=?',(u['id'],)).fetchone()
+            p=c.execute('SELECT p.id,p.document,p.simple_menu346,p.doc_type,e.* FROM professionals p LEFT JOIN merchant_evidence257 e ON e.professional_id=p.id WHERE p.user_id=?',(u['id'],)).fetchone()
             if not p: raise HTTPException(404)
             return g['templates'].TemplateResponse('merchant_documents257.html',g['context'](request,p=p,fields257=FIELDS,docs257=DOCS))
         finally:c.close()
     @app.post('/painel/documentos')
-    def resubmit(request:Request,legal_name:str=Form(...),owner_name:str=Form(...),owner_cpf:str=Form(...),owner_role:str=Form(...),facade:UploadFile=File(...),company:UploadFile=File(...),identity:UploadFile=File(...),address_proof:UploadFile=File(...)):
+    def resubmit(request:Request,legal_name:str=Form(...),owner_name:str=Form(...),owner_cpf:str=Form(...),owner_role:str=Form(...),facade:UploadFile=File(...),company:UploadFile=File(...),identity:UploadFile=File(...),address_proof:UploadFile=File(...),document:str=Form('')):
         u=g['require_user'](request,'professional');c=g['db']()
         try:
-            p=c.execute('SELECT p.id,p.document,e.status FROM professionals p LEFT JOIN merchant_evidence257 e ON e.professional_id=p.id WHERE p.user_id=?',(u['id'],)).fetchone()
-            if not p or p['status'] not in ('correction','pending'):raise HTTPException(400,'Reenvio disponível após solicitação de correção ou enquanto aguarda análise.')
+            p=c.execute('SELECT p.id,p.document,p.simple_menu346,p.doc_type,e.status FROM professionals p LEFT JOIN merchant_evidence257 e ON e.professional_id=p.id WHERE p.user_id=?',(u['id'],)).fetchone()
+            if not p or (p['status'] not in ('correction','pending') and not (p['simple_menu346'] and p['status'] is None)):raise HTTPException(400,'Reenvio disponível após solicitação de correção ou enquanto aguarda análise.')
             fields=dict(legal_name=legal_name,owner_name=owner_name,owner_cpf=owner_cpf,owner_role=owner_role)
-            docs=evidence(fields,dict(facade=facade,company=company,identity=identity,address_proof=address_proof),p['document'])
+            cnpj=re.sub(r'\D','',document) if p['simple_menu346'] else p['document']
+            docs=evidence(fields,dict(facade=facade,company=company,identity=identity,address_proof=address_proof),cnpj)
+            if p['simple_menu346']:c.execute("UPDATE professionals SET doc_type='CNPJ',document=? WHERE id=?",(cnpj,p['id']))
             c.execute('DELETE FROM merchant_documents257 WHERE professional_id=?',(p['id'],))
             c.execute('DELETE FROM merchant_evidence257 WHERE professional_id=?',(p['id'],))
             save(c,p['id'],fields,docs)

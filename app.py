@@ -571,6 +571,8 @@ def init_db():
       ON product_categories(professional_id,active,sort_order,id);
     """)
     ensure_column(conn, "sessions", "absolute_expires_at238", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "professionals", "simple_menu346", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "professionals", "business_segment346", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "sessions", "store_id345", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "users", "customer_store345", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "users", "customer_email345", "TEXT NOT NULL DEFAULT ''")
@@ -1409,7 +1411,7 @@ def signup_pro_page(request: Request):
     return templates.TemplateResponse("signup_professional.html", context(request, active_cities=active_cities()))
 
 @app.post("/cadastro/profissional")
-def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Form(...), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), doc_type: str=Form(...), document: str=Form(...), business_type: str=Form("professional"), offer_mode: str=Form("services"), plan: str=Form(...), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[]), address: str=Form(""), state: str=Form(""), legal_name: str=Form(...), owner_name: str=Form(...), owner_cpf: str=Form(...), owner_role: str=Form(...), facade: UploadFile=File(...), company: UploadFile=File(...), identity: UploadFile=File(...), address_proof: UploadFile=File(...)):
+def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Form(...), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), doc_type: str=Form("CNPJ"), document: str=Form(""), business_type: str=Form("professional"), offer_mode: str=Form("services"), plan: str=Form(...), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[]), address: str=Form(""), state: str=Form(""), legal_name: str=Form(""), owner_name: str=Form(""), owner_cpf: str=Form(""), owner_role: str=Form(""), facade: Optional[UploadFile]=File(None), company: Optional[UploadFile]=File(None), identity: Optional[UploadFile]=File(None), address_proof: Optional[UploadFile]=File(None), category_choice346: str=Form(""), business_segment346: str=Form("")):
     if not all(v.strip() for v in (name,address,neighborhood,city)) or state not in nowup_admin205.UFS:
         return RedirectResponse("/cadastro/profissional?erro=endereco",303)
     if plan not in ('cardapio','ambos'):
@@ -1417,10 +1419,19 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
     if offer_mode not in ('menu','catalog'):
         return RedirectResponse('/cadastro/profissional?erro=plano',303)
     import nowup_verification257 as verification
-    if doc_type != 'CNPJ': raise HTTPException(400,'Cadastro de lojistas somente com CNPJ.')
+    simple346=plan=='cardapio'
     fields257 = dict(legal_name=legal_name,owner_name=owner_name,owner_cpf=owner_cpf,owner_role=owner_role)
-    docs257 = verification.evidence(fields257,dict(facade=facade,company=company,identity=identity,address_proof=address_proof),document)
+    raw_document346=document.strip()
     document = re.sub(r'\D','',document)
+    docs257={}
+    if not simple346:
+        if doc_type != 'CNPJ': raise HTTPException(400,'Para a vitrine, informe o CNPJ da empresa.')
+        docs257=verification.evidence(fields257,dict(facade=facade,company=company,identity=identity,address_proof=address_proof),document)
+    elif doc_type not in ('CPF','CNPJ') or (raw_document346 and not verification.valid_doc(document,11 if doc_type=='CPF' else 14)):
+        return RedirectResponse('/cadastro/profissional?erro=documento',303)
+    custom346=business_segment346.strip()
+    if len(custom346)>100 or ((category_choice346=='other' or business_type=='other') and not custom346):
+        return RedirectResponse('/cadastro/profissional?erro=segmento',303)
     normalized_email=normalize_email(email)
     admin_email=os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
     if not normalized_email:
@@ -1440,7 +1451,16 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
     if business_type not in ("professional","restaurant","store","convenience","other"):
         business_type="other"
     cities=active_cities()
-    if city not in cities: city=cities[0]
+    city=city.strip()[:120]
+    if not simple346 and city not in cities:
+        return RedirectResponse('/cadastro/profissional?erro=cidade_vitrine',303)
+    selected346=category_ids[:1]
+    if category_choice346:
+        if category_choice346=='other':selected346=[]
+        elif category_choice346.isdigit():selected346=[int(category_choice346)]
+        else:return RedirectResponse('/cadastro/profissional?erro=categoria',303)
+    if not simple346 and not selected346 and not custom346:
+        return RedirectResponse('/cadastro/profissional?erro=categoria',303)
     token,expires=verification_token()
     conn=db()
     try:
@@ -1452,10 +1472,18 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
         offer_mode=offer_mode if offer_mode in ("services","menu","catalog") else "services"
         cur=conn.execute("INSERT INTO professionals(user_id,slug,display_name,doc_type,document,whatsapp,city,neighborhood,cep,description,services,business_type,offer_mode,plan_active,plan_requested,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                          (uid,slug,name.strip(),doc_type,document.strip(),phone.strip(),city.strip(),neighborhood.strip(),cep.strip(),description.strip(),services.strip(),business_type,offer_mode,'none',plan,now_iso())); pid=cur.lastrowid
-        verification.save(conn,pid,fields257,docs257)
+        if docs257: verification.save(conn,pid,fields257,docs257)
+        conn.execute('UPDATE professionals SET simple_menu346=?,business_segment346=? WHERE id=?',(int(simple346),custom346,pid))
+        if selected346:
+            valid346=conn.execute('SELECT id FROM categories WHERE id=? AND active=1',(selected346[0],)).fetchone()
+            if not valid346:
+                conn.rollback();conn.close();return RedirectResponse('/cadastro/profissional?erro=categoria',303)
+        else:
+            conn.execute("INSERT OR IGNORE INTO categories(name,slug,icon,sort_order,active) VALUES('Outros comércios','outros-comercios','🏪',999,1)")
+            selected346=[conn.execute("SELECT id FROM categories WHERE slug='outros-comercios'").fetchone()[0]]
         conn.execute("UPDATE professionals SET address=?,state=? WHERE id=?",(address.strip()[:300],state,pid))
         conn.execute("UPDATE users SET address=?,neighborhood=?,city=?,state=? WHERE id=?",(address.strip()[:300],neighborhood.strip()[:120],city,state,uid))
-        for cid in category_ids[:1]:
+        for cid in selected346:
             conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(pid,cid))
         conn.execute("UPDATE professionals SET blocked=1,admission_status='pending' WHERE id=?",(pid,))
         conn.commit()
@@ -2586,6 +2614,10 @@ def admin_approve_store_plan(request: Request,pid:int,payment_confirmed: str=For
     p=conn.execute("SELECT * FROM professionals WHERE id=? AND admission_status='approved' AND blocked=0",(pid,)).fetchone()
     if not p or p['plan_requested'] not in ('cardapio','ambos'):
         conn.rollback();conn.close();return RedirectResponse('/admin?erro=plano#profissionais',303)
+    from nowup_verification257 import require_review
+    try: require_review(conn,pid,p['plan_requested'])
+    except HTTPException:
+        conn.rollback();conn.close();raise
     conn.execute("UPDATE professionals SET plan_active=plan_requested,is_premium=CASE WHEN plan_requested IN ('cardapio','ambos') THEN 1 ELSE 0 END,offer_mode=CASE WHEN plan_requested='vitrine' THEN 'services' WHEN plan_requested_offer IN ('menu','catalog') THEN plan_requested_offer ELSE offer_mode END,plan_granted=?,plan_requested='',plan_requested_offer='' WHERE id=?",(1 if complimentary=='1' else 0,pid))
     conn.commit();conn.close();return RedirectResponse('/admin?ok=plano#profissionais',303)
 

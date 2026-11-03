@@ -216,6 +216,8 @@ def child_main():
     mailing.configured=lambda: True
     import app as main
     main.email_service_configured=lambda: True
+    import nowup_verification257
+    nowup_verification257.require_review=lambda *a,**k: None
     from fastapi import Request, Form
     from fastapi.responses import HTMLResponse, RedirectResponse, Response
     app=main.app

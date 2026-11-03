@@ -1,0 +1,19 @@
+const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/strict');
+function input(value=''){return {value,required:false,disabled:false,hidden:false,checked:false,listeners:{},addEventListener(kind,fn){this.listeners[kind]=fn},emit(kind='change'){this.listeners[kind]?.()},setCustomValidity(message){this.validationMessage=message}};}
+const cpf=input(),plan=input(),type=input('CNPJ'),documentField=input(),city=input('Ubatuba'),kind=input('store'),other=input(),known=input('1'),segmentField=input(),docs=input();
+type.querySelector=()=>cpf;
+const radios=[known,other],elements={plan,doc_type:type,document:documentField,city,business_type:kind,business_segment346:segmentField};
+const form={elements,querySelectorAll:()=>radios};
+const ids={'merchant-signup346':form,'signup-documents346':docs,'signup-other346':other,'signup-segment346':input(),'signup-document-note346':{},'signup-category-note346':{},'signup-plan-note346':{},'signup-cities-config346':{textContent:'["Ubatuba"]'}};
+const window={addEventListener(){}};
+vm.runInNewContext(fs.readFileSync('static/merchant-signup346.js','utf8'),{document:{getElementById:id=>ids[id]},window});
+assert(docs.hidden&&docs.disabled);
+plan.value='cardapio';plan.emit();assert(docs.hidden&&docs.disabled);assert.equal(documentField.required,false);assert.equal(known.required,false);
+type.value='CPF';city.value='São Sebastião';city.emit('input');assert.equal(city.validationMessage,'');assert.equal(type.value,'CPF');
+plan.value='ambos';plan.emit();assert.equal(docs.hidden,false);assert.equal(docs.disabled,false);assert.equal(documentField.required,true);assert.equal(type.value,'CNPJ');assert(cpf.disabled);assert(known.required);assert(city.validationMessage.includes('Ubatuba'));
+city.value='Ubatuba';city.emit('input');assert.equal(city.validationMessage,'');
+plan.value='cardapio';plan.emit();assert(docs.disabled&&docs.hidden);assert.equal(documentField.required,false);assert.equal(cpf.disabled,false);assert.equal(known.required,false);
+other.checked=true;other.emit();assert.equal(ids['signup-segment346'].hidden,false);assert(segmentField.required&&!segmentField.disabled);
+other.checked=false;known.checked=true;known.emit();assert(ids['signup-segment346'].hidden&&segmentField.disabled);assert.equal(segmentField.required,false);
+kind.value='other';kind.emit();assert(other.checked&&segmentField.required&&!segmentField.disabled);
+console.log('Plan switching, optional CPF/CNPJ, document upload requirements, city restrictions and manual category passed.');

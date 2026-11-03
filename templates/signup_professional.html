@@ -1,24 +1,42 @@
-{% extends 'base.html' %}{% block title %}Cadastro profissional | NowUp{% endblock %}{% block content %}
-<div class="container"><div class="formCard"><h1>Cadastro profissional</h1><p class="muted">Cadastre sua loja com CNPJ. A liberação depende da análise manual dos dados e documentos pelo NowUp.</p>
+{% extends 'base.html' %}{% block title %}Cadastrar minha loja | NowUp{% endblock %}{% block content %}
+<div class="container"><div class="formCard"><h1>Cadastrar minha loja</h1><p class="muted">Escolha seu plano. O cadastro de cardápio ou catálogo é simples; a vitrine inclui análise dos documentos da empresa.</p>
 {% set erro=request.query_params.get('erro') %}
-{% if erro=='email_indisponivel' %}<div class="alert danger">A confirmação de e-mail está temporariamente indisponível. O administrador precisa concluir a configuração.</div>{% elif erro=='envio_email' %}<div class="alert danger">Não foi possível enviar a confirmação. Nenhuma conta foi liberada; tente novamente.</div>{% endif %}
-{% if erro=='plano' %}<div class="alert danger">Selecione um plano e o conteúdo compatível.</div>{% endif %}
-{% if erro=='email_invalido' %}<div class="alert danger">Digite um e-mail real e válido. O domínio do e-mail também é verificado.</div>{% elif erro=='telefone' %}<div class="alert danger">Digite um celular válido com DDD.</div>{% elif erro=='admin' %}<div class="alert danger">Este e-mail está reservado para o administrador. Use outro e-mail para cadastro comum.</div>{% elif erro=='email' %}<div class="alert danger">Este e-mail já está cadastrado. Tente entrar na sua conta.</div>{% elif erro=='senha' %}<div class="alert danger">A senha precisa ter pelo menos 8 caracteres.</div>{% elif erro=='confirmacao' %}<div class="alert danger">As duas senhas não são iguais.</div>{% elif erro=='termos' %}<div class="alert danger">Você precisa aceitar os Termos de Uso e a Política de Privacidade.</div>{% endif %}
-<form method="post" enctype="multipart/form-data"><div class="grid2">
-<input class="input" name="name" placeholder="Nome da loja" required>
-<input class="input" type="email" name="email" placeholder="E-mail" required>
-<input class="input" name="phone" placeholder="Telefone de contato com DDD" required>
-<input class="input" type="password" name="password" placeholder="Senha (mín. 8 caracteres)" minlength="8" required>
-<input class="input" type="password" name="password_confirm" placeholder="Confirme sua senha" minlength="8" required>
-<select name="business_type" required><option value="restaurant">Restaurante ou lanchonete</option><option value="store">Loja ou comércio</option><option value="convenience">Conveniência ou adega</option></select>
-<label>Plano mensal<select name="plan" required><option value="" selected disabled>Escolha um plano</option><option value="cardapio">Só cardápio ou catálogo — R$ 49,90/mês (link próprio)</option><option value="ambos">Cardápio/catálogo + vitrine — R$ 99,90/mês</option></select><small>O ADM confirma o pagamento ou libera uma exceção antes da ativação. Só cardápio não aparece na vitrine.</small></label><label>Conteúdo desejado<select name="offer_mode" required><option value="" selected disabled>Escolha uma opção</option><option value="menu">Cardápio — comidas e bebidas</option><option value="catalog">Catálogo — produtos da loja</option></select><small>Escolha cardápio ou catálogo. Ambos os planos incluem todos os recursos do painel.</small></label>
-<input type="hidden" name="doc_type" value="CNPJ">
-<input class="input" name="document" placeholder="CNPJ da empresa" required>
-<select name="city" required>{% for c in active_cities %}<option value="{{c}}">{{c}}</option>{% endfor %}</select>
-<input class="input" name="neighborhood" placeholder="Bairro">
-<input class="input" name="cep" placeholder="CEP"></div>
-<h3>Empresa e responsável</h3><p>Os anexos são privados e restritos ao Super ADM. Envie fotos legíveis JPG, PNG ou WebP, até 5 MB cada. O CNPJ e o vínculo com a empresa serão conferidos manualmente.</p><label>Razão social<input class="input" name="legal_name" required maxlength="180"></label><label>Nome completo do responsável<input class="input" name="owner_name" required maxlength="180"></label><label>CPF do responsável<input class="input" name="owner_cpf" required maxlength="180"></label><label>Vínculo: titular, sócio ou representante autorizado<input class="input" name="owner_role" required maxlength="180"></label><label>Endereço comercial com número<input class="input" name="address" required maxlength="180"></label><label>Estado (UF)<input class="input" name="state" required maxlength="180"></label><label>Foto da fachada<input type="file" name="facade" accept="image/jpeg,image/png,image/webp" required></label><label>Comprovante do CNPJ<input type="file" name="company" accept="image/jpeg,image/png,image/webp" required></label><label>Documento com foto do responsável<input type="file" name="identity" accept="image/jpeg,image/png,image/webp" required></label><label>Comprovante do endereço comercial<input type="file" name="address_proof" accept="image/jpeg,image/png,image/webp" required></label><h3>Categoria principal</h3><p class="muted">Escolha uma categoria. Escolha o segmento principal da sua loja.</p><div class="checkgrid">{% for c in categories %}<label class="check"><input type="radio" name="category_ids" value="{{c.id}}" required> {{category_icon230(c.name,c.icon)}} {{c.name}}</label>{% endfor %}</div>
-<textarea name="description" placeholder="Breve descrição do seu negócio"></textarea>
-<textarea name="services" placeholder="Produtos, especialidades ou promoções"></textarea>
-<label class="check" style="display:block;margin:12px 0"><input type="checkbox" name="accept_terms" value="1" required> Li e aceito os <a href="/termos"><b>Termos de Uso</b></a> e a <a href="/privacidade"><b>Política de Privacidade</b></a>.</label>
-<button class="btn primary" style="width:100%">Confirmar cadastro profissional</button></form></div></div>{% endblock %}
+{% if erro %}<div class="alert danger" role="alert">{% if erro=='endereco' %}Preencha nome da loja, endereço com número, bairro, cidade e estado.{% elif erro=='documento' %}CPF ou CNPJ é opcional no cardápio. Se informar, confira o tipo e os números.{% elif erro=='segmento' %}Informe seu tipo de comércio em até 100 caracteres.{% elif erro=='cidade_vitrine' %}A vitrine está disponível apenas em {{active_cities|join(', ')}}. Para outras cidades, escolha só cardápio ou catálogo.{% elif erro=='categoria' %}Escolha uma categoria ou informe seu tipo de comércio.{% elif erro=='email_indisponivel' %}A confirmação por e-mail está temporariamente indisponível. Tente novamente mais tarde.{% elif erro=='email' %}Este e-mail já está cadastrado. Entre na sua conta.{% elif erro=='email_invalido' %}Informe um e-mail válido.{% elif erro=='telefone' %}Informe um celular válido com DDD.{% elif erro=='senha' or erro=='confirmacao' %}Confira as senhas: pelo menos 8 caracteres e iguais nos dois campos.{% elif erro=='termos' %}Aceite os Termos de Uso e a Política de Privacidade.{% else %}Confira os dados e o plano selecionado.{% endif %}</div>{% endif %}
+<form id="merchant-signup346" method="post" enctype="multipart/form-data">
+<div class="grid2">
+<label>Plano mensal<select name="plan" id="signup-plan346" required><option value="" selected disabled>Escolha um plano</option><option value="cardapio">Só cardápio ou catálogo — R$ 49,90/mês</option><option value="ambos">Cardápio/catálogo + vitrine — R$ 99,90/mês</option></select></label>
+<label>O que você quer oferecer?<select name="offer_mode" required><option value="" selected disabled>Escolha uma opção</option><option value="menu">Cardápio — comidas e bebidas</option><option value="catalog">Catálogo — produtos da loja</option></select></label>
+</div>
+<p class="alert" id="signup-plan-note346" aria-live="polite">Escolha um plano para ver os dados necessários.</p>
+<small>O ADM confirma o pagamento ou libera uma exceção antes da ativação. Só cardápio ou catálogo usa link próprio e não aparece na vitrine.</small>
+<h2>Dados básicos</h2><div class="grid2">
+<label>Nome da loja<input class="input" name="name" autocomplete="organization" required maxlength="120"></label>
+<label>E-mail<input class="input" type="email" name="email" autocomplete="email" required maxlength="160"></label>
+<label>Celular com DDD<input class="input" name="phone" type="tel" autocomplete="tel" required maxlength="30"></label>
+<label>Senha<input class="input" type="password" name="password" autocomplete="new-password" minlength="8" maxlength="128" required></label>
+<label>Confirme sua senha<input class="input" type="password" name="password_confirm" autocomplete="new-password" minlength="8" maxlength="128" required></label>
+<label>Tipo de comércio<select name="business_type"><option value="restaurant">Restaurante ou lanchonete</option><option value="store">Loja ou comércio</option><option value="convenience">Conveniência ou adega</option><option value="other">Outro — informar manualmente</option></select></label>
+<label>Documento <span id="signup-document-note346">(opcional no cardápio)</span><select name="doc_type"><option value="CNPJ">CNPJ</option><option value="CPF">CPF</option></select><input class="input" name="document" inputmode="numeric" aria-label="Número do CPF ou CNPJ" maxlength="24"></label>
+<label>Endereço com número<input class="input" name="address" autocomplete="street-address" required maxlength="180"></label>
+<label>Bairro<input class="input" name="neighborhood" required maxlength="120"></label>
+<label>Cidade<input class="input" name="city" autocomplete="address-level2" list="signup-cities346" required maxlength="120"><datalist id="signup-cities346">{% for c in active_cities %}<option value="{{c}}">{% endfor %}</datalist></label>
+<label>Estado (UF)<select name="state" autocomplete="address-level1" required><option value="">Selecione</option>{% for uf in ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'] %}<option>{{uf}}</option>{% endfor %}</select></label>
+</div>
+<fieldset id="signup-documents346" hidden disabled style="border:0;padding:0;margin:24px 0">
+<legend><h2>Documentos para a vitrine</h2></legend><p>As fotos são privadas e restritas ao Super ADM. Use JPG, PNG ou WebP, até 5 MB cada.</p><div class="grid2">
+<label>Razão social<input class="input" name="legal_name" required maxlength="180"></label>
+<label>Nome completo do responsável<input class="input" name="owner_name" required maxlength="180"></label>
+<label>CPF do responsável<input class="input" name="owner_cpf" required maxlength="24"></label>
+<label>Vínculo: titular, sócio ou representante<input class="input" name="owner_role" required maxlength="180"></label>
+<label>Foto da fachada<input type="file" name="facade" accept="image/jpeg,image/png,image/webp" required></label>
+<label>Comprovante do CNPJ<input type="file" name="company" accept="image/jpeg,image/png,image/webp" required></label>
+<label>Documento com foto do responsável<input type="file" name="identity" accept="image/jpeg,image/png,image/webp" required></label>
+<label>Comprovante do endereço comercial<input type="file" name="address_proof" accept="image/jpeg,image/png,image/webp" required></label>
+</div></fieldset>
+<h3>Categoria principal <span id="signup-category-note346">(opcional no cardápio)</span></h3><p class="muted">Se seu comércio não estiver na lista, escolha “Outro” e escreva o segmento.</p>
+<div class="checkgrid">{% for c in categories if c.slug!='outros-comercios' %}<label class="check"><input type="radio" name="category_choice346" value="{{c.id}}"> {{category_icon230(c.name,c.icon)}} {{c.name}}</label>{% endfor %}<label class="check"><input id="signup-other346" type="radio" name="category_choice346" value="other"> Outro — informar manualmente</label></div>
+<div id="signup-segment346" hidden><label>Seu tipo de comércio<input class="input" name="business_segment346" maxlength="100" placeholder="Ex.: floricultura, oficina de bicicletas, loja de artesanato"></label></div>
+<details style="margin:20px 0"><summary>Informações adicionais (opcional)</summary><label>CEP<input class="input" name="cep" maxlength="12"></label><label>Descrição do negócio<textarea name="description" maxlength="2000"></textarea></label><label>Produtos e especialidades<textarea name="services" maxlength="2000"></textarea></label></details>
+<label class="check" style="display:block;margin:16px 0"><input type="checkbox" name="accept_terms" value="1" required> Li e aceito os <a href="/termos">Termos de Uso</a> e a <a href="/privacidade">Política de Privacidade</a>.</label>
+<button class="btn primary" style="width:100%">Confirmar cadastro da loja</button>
+</form><script id="signup-cities-config346" type="application/json">{{active_cities|tojson}}</script><script src="/static/merchant-signup346.js?v=346" defer></script></div></div>{% endblock %}

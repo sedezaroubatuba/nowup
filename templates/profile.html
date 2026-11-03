@@ -77,7 +77,7 @@ body.public-profile-area :focus-visible {outline:3px solid #08a5d0;outline-offse
 <div class="container profile-summary">
 <div class="profile-avatar">{% if pro.avatar_filename %}<img src="/uploads/{{pro.avatar_filename}}" alt="{{pro.display_name}}">{% else %}🏪{% endif %}</div>
 <div class="profile-heading">
-<h1>{{pro.display_name}}</h1>
+<h1>{{pro.display_name}}</h1>{% if pro.business_segment346 %}<p class="profile-location">{{pro.business_segment346}}</p>{% endif %}
 <p class="profile-location">📍 {{pro.city}}{% if pro.neighborhood %} · {{pro.neighborhood}}{% endif %}</p>
 <div class="profile-status-badges"><span class="badge {% if shop_status.open %}green{% else %}orange{% endif %}">● {{shop_status.label}}</span>{% if pro.verified %}<span class="badge verified">✓ Verificado</span>{% endif %}{% if pro.featured %}<span class="badge orange">★ Destaque</span>{% endif %}</div>
 <div class="stars">{% if pro.review_count %}★ {{pro.rating}} <span class="muted">({{pro.review_count}} {{'avaliação' if pro.review_count == 1 else 'avaliações'}})</span>{% else %}<span class="muted">☆ Sem avaliações</span>{% endif %}</div>

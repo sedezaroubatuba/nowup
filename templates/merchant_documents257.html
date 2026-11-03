@@ -18,11 +18,11 @@
 <section class="merchant-documents314" aria-labelledby="documents-title314">
 <h1 id="documents-title314">Documentos da loja</h1>
 {% set status_labels314 = {'pending':'Aguardando análise','correction':'Correção solicitada','verified':'Documentação verificada','rejected':'Documentação não aprovada'} %}
-<p class="documents-status314"><strong>Situação:</strong> {{status_labels314.get(p.status, p.status or 'Cadastro anterior à verificação de documentos')}}</p>
+<p class="documents-status314"><strong>Situação:</strong> {% if p.simple_menu346 and not p.status %}Cardápio sem exigência de documentos{% else %}{{status_labels314.get(p.status, p.status or 'Cadastro anterior à verificação de documentos')}}{% endif %}</p>
 {% if p.reason %}<p><strong>Orientação da análise:</strong> {{p.reason}}</p>{% endif %}
-{% if p.status in ['correction','pending'] %}
-<p>Reenvie todas as fotos legíveis. Formatos JPG, PNG ou WebP, com até 5 MB por imagem.</p>
-<form method="post" enctype="multipart/form-data">
+{% if p.status in ['correction','pending'] or (p.simple_menu346 and not p.status) %}
+<p>{% if p.simple_menu346 %}Só cardápio ou catálogo não exige documentos. Preencha esta seção apenas se quiser solicitar a vitrine. {% endif %}Envie todas as fotos legíveis. Formatos JPG, PNG ou WebP, com até 5 MB por imagem.</p>
+<form method="post" enctype="multipart/form-data">{% if p.simple_menu346 %}<label>CNPJ para a vitrine<input name="document" value="{{p.document if p.doc_type=='CNPJ' else ''}}" required maxlength="24"></label>{% endif %}
 {% for key,label in fields257.items() %}<label>{{label}}<input name="{{key}}" value="{{p[key] or ''}}" required maxlength="180"></label>{% endfor %}
 {% for key,label in docs257.items() %}<label>{{label}}<input type="file" name="{{key}}" accept="image/jpeg,image/png,image/webp" required></label>{% endfor %}
 <div class="documents-actions314"><button class="btn primary" type="submit">Reenviar para análise</button><a class="btn soft" href="/painel">Voltar ao painel</a></div>
