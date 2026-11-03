@@ -32,12 +32,15 @@ body.nowup-login-white{background:#fff!important;background-image:none!important
 <div class="loginbox">
 <h2>{% if tipo=='admin' %}Acesso administrativo{% elif tipo=='profissional' %}Entrar como lojista{% elif tipo=='cliente' %}Entrar como cliente{% else %}Entrar na NowUp{% endif %}</h2>
 {% if tipo=='admin' %}<div class="security-note"><b>🔐 Acesso administrativo</b><div class="tiny muted">Use somente suas credenciais de administrador. O painel será tratado como acesso sensível.</div></div>{% endif %}
-<form method="post" action="{{store_app256.login if store_app256 else '/entrar'}}">
+<form id="nowup-login-form349" method="post" action="{{store_app256.login if store_app256 else '/entrar'}}">
 <input type="hidden" name="tipo" value="{{tipo}}">
 <label>E-mail</label><input class="input" type="email" name="email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="email" required>
 <label style="display:block;margin-top:10px">Senha</label><div class="password-row"><input id="nowup-login-password" class="input" type="password" name="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required><button class="password-toggle" type="button" aria-controls="nowup-login-password" aria-pressed="false" onclick="const field=document.getElementById('nowup-login-password');const show=field.type==='password';field.type=show?'text':'password';this.textContent=show?'Ocultar':'Mostrar';this.setAttribute('aria-pressed',String(show));">Mostrar</button></div>
-<button class="btn primary" style="margin-top:14px;width:100%">Entrar</button>
+<p class="muted tiny">Confira seu e-mail e sua senha. Para acessar, toque em Entrar.</p>
+<button id="nowup-login-confirm349" type="button" class="btn primary" style="margin-top:14px;width:100%">Entrar</button>
+<noscript><button type="submit" class="btn primary">Confirmar entrada</button></noscript>
 </form>
+<script src="/static/login-confirm349.js?v=349" defer></script>
 <p style="text-align:right;margin:10px 0 0"><a class="muted tiny" href="{{store_app256.forgot if store_app256 else '/recuperar-senha'}}">Esqueci minha senha</a></p>
 <p class="muted tiny" style="margin-top:16px">Ainda não tem conta?</p>
 <div class="row" style="flex-wrap:wrap"><a class="btn soft" href="{{store_app256.signup if store_app256 else '/cadastro/cliente'}}">Criar conta de cliente</a><a class="btn soft" href="/cadastro/profissional">Cadastrar minha loja</a></div>
