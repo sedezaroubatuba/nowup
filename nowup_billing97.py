@@ -7,7 +7,7 @@ from datetime import date, datetime, timezone
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
-PLANS = {'vitrine': ('Só vitrine', 4990), 'cardapio': ('Só cardápio/catálogo', 4990), 'ambos': ('Vitrine + cardápio/catálogo', 9990)}
+from nowup_plans339 import PLANS
 LABELS = {'pending':'Aguardando pagamento', 'paid':'Pago', 'overdue':'Em atraso', 'failed':'Pagamento recusado', 'cancelled':'Cancelado'}
 
 def next_month(day):
