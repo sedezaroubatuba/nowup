@@ -1,0 +1,10 @@
+{% import 'combo_pack305.html' as combo347 %}
+{% macro line(item, options=[], merchant=false) %}
+<article class="nu347-line" aria-label="{{item.quantity}} × {{item.product_name}}">
+<header class="nu347-item-heading"><div class="nu347-item-title"><span class="nu347-quantity">{{item.quantity}}×</span><h3>{{item.product_name}}</h3></div><strong class="nu347-item-price">R$ {{'%.2f'|format(item.quantity*item.unit_price_cents/100)|replace('.',',')}}</strong></header>
+{% if item.quantity>1 %}<p class="nu347-unit-price">R$ {{'%.2f'|format(item.unit_price_cents/100)|replace('.',',')}} por unidade</p>{% endif %}
+{% if options %}<section class="nu347-extras"><h4>Adicionais / opções</h4><ul>{% for option in options %}<li>{{option.option_name}}</li>{% endfor %}</ul></section>{% endif %}
+{% set pack347=item.combo_pack305|default('')|combo_pack305 %}
+{% if pack347 %}{{combo347.picking(item,merchant)}}{% elif item.notes %}<section class="nu347-observations"><h4>Observações e escolhas</h4><ul>{% for note in item.notes|order_notes347 %}<li>{{note}}</li>{% endfor %}</ul></section>{% endif %}
+</article>
+{% endmacro %}

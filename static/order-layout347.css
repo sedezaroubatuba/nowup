@@ -1,0 +1,48 @@
+/* Shared, readable order lines for the customer, merchant and print view. */
+html body .nu347-lines{display:grid;gap:14px;min-width:0;margin:16px 0}
+html body .nu347-line{display:block;min-width:0;padding:16px;background:#fff;border:1px solid #ded5e9;border-left:4px solid #7136bf;border-radius:14px;color:#292139;overflow-wrap:anywhere}
+html body .nu347-item-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:start;margin:0 0 10px}
+html body .nu347-item-title{display:flex;align-items:flex-start;gap:10px;min-width:0}
+html body .nu347-quantity{display:inline-flex;align-items:center;justify-content:center;flex:none;min-width:36px;min-height:34px;padding:4px 7px;background:#eee4fa;color:#5c279d;border-radius:9px;font-size:16px;font-weight:800;line-height:1.4}
+html body .nu347-item-title h3{margin:3px 0 0;font-size:17px;line-height:1.4;font-weight:750;color:#292139;overflow-wrap:anywhere;min-width:0}
+html body .nu347-item-price{display:block;white-space:nowrap;font-size:17px;line-height:1.5;color:#5c279d;padding-top:3px}
+html body .nu347-line .nu347-unit-price{margin:0 0 12px;color:#665d71;font-size:13px;line-height:1.5}
+html body .nu347-line h4{margin:0 0 7px;color:#4d287b;font-size:14px;line-height:1.5;font-weight:750}
+html body .nu347-line ul{display:grid;gap:7px;margin:0;padding:0 0 0 20px;list-style:disc}
+html body .nu347-line li{padding:0;font-size:14px;line-height:1.55;overflow-wrap:anywhere}
+html body .nu347-extras,html body .nu347-observations{display:block;margin:12px 0 0;padding:12px;background:#f7f3fb;border:1px solid #e9e0f3;border-radius:10px}
+html body .nu347-observations{background:#fff8eb;border-color:#f2e2be}
+html body .nu347-line .nu305-pack-unit{padding:12px!important;margin:12px 0 0!important;background:#f9f6fc;border-color:#dfd1ef!important}
+html body .nu347-line .nu305-pack-unit ul{padding-left:0;list-style:none;gap:0}
+html body .nu347-line .nu305-pack-unit li{padding:8px 0!important;border-bottom:1px solid #ece5f4}
+html body .nu347-line .nu305-pack-unit li:last-child{border-bottom:0}
+html body .nu347-line .nu305-pack-unit li small{display:block;font-size:12px;line-height:1.4;color:#6b5f78;margin:3px 0 0}
+html body .nu347-line .nu305-pack-unit p{display:block;font-size:14px;line-height:1.55;margin:12px 0 0;white-space:pre-wrap}
+html body .nu347-tracking{max-width:1220px;margin:24px auto 70px;min-width:0;padding:0 16px;box-sizing:border-box}
+html body .nu347-tracking .order-hero{padding:22px;background:#f7f2fc;border:1px solid #e4d6f3;border-radius:18px;margin:0 0 20px}
+html body .nu347-tracking .order-hero h1{font-size:26px;margin:8px 0;color:#54268c}
+html body .nu347-tracking .order-hero p{font-size:14px;line-height:1.6;margin:8px 0}
+html body .nu347-tracking .order-check{font-size:26px;color:#5c279d;font-weight:800}
+html body .nu347-tracking .order-live-status{display:inline-block;margin:8px 0;padding:10px 14px;background:#7136bf;color:#fff;border-radius:10px;font-weight:700}
+html body .nu347-tracking .order-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:start;min-width:0}
+html body .nu347-tracking .order-card{display:block;min-width:0;margin:0;padding:20px;background:#fff;border:1px solid #dfd7e9;border-radius:18px;box-sizing:border-box}
+html body .nu347-tracking .order-card h2{margin:0 0 16px;font-size:22px;line-height:1.35;color:#30213f}
+html body .nu347-order-totals{display:grid;gap:10px;border-top:1px solid #e6dfee;padding-top:16px;margin-top:16px}
+html body .nu347-order-totals>div{display:flex;justify-content:space-between;align-items:baseline;gap:16px;font-size:15px;line-height:1.5}
+html body .nu347-order-totals .nu347-grand-total{font-size:20px;font-weight:800;color:#5c279d;padding-top:8px}
+html body .nu347-tracking .order-timeline{display:grid;gap:12px;list-style:none;margin:0 0 20px;padding:0}
+html body .nu347-tracking .order-timeline li{display:grid;gap:5px;padding:12px;border-left:3px solid #7136bf;background:#f8f5fc;border-radius:8px;font-size:15px;line-height:1.5}
+html body .nu347-tracking .order-timeline time{display:block;color:#71657d;font-size:13px}
+@media(min-width:1000px){html body .nu347-tracking .order-layout{grid-template-columns:minmax(0,1.35fr) minmax(320px,.8fr)}}
+@media(max-width:520px){html body .nu347-tracking .order-card{padding:16px}html body .nu347-line{padding:12px}html body .nu347-item-heading{grid-template-columns:minmax(0,1fr);gap:7px}html body .nu347-item-price{padding:0 0 0 46px}html body .nu347-item-title h3{font-size:16px}html body .nu347-item-price{font-size:17px}}
+@media print{html body .nu347-line{box-shadow:none;background:white;border-color:#aaa;break-inside:auto}html body .nu347-line .nu305-pack-unit{break-inside:avoid}html body .nu347-item-price{color:#000}}
+/* Every category collapse control starts at the visible left edge. */
+html body.public-profile-area.nu233-store [data-native-menu] .nu219-category-header,
+html body.public-profile-area [data-native-menu] .nu190-showcase .nu190-category>header.nu347-category-heading{display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:flex-start!important;flex-wrap:wrap!important;gap:10px!important}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu219-less,
+html body.public-profile-area.nu233-store [data-native-menu] .nu190-showcase .nu190-category>header.nu347-category-heading>button.nu347-collapse,
+html body.public-profile-area.nu233-store [data-native-menu] .nu187-intro .nu232-info-toggle{align-self:flex-start!important;margin-left:0!important;margin-right:auto!important;float:none!important;order:-1!important;min-height:44px!important;background:#7136bf!important;border:1px solid #7136bf!important;color:#fff!important;border-radius:10px!important;font-weight:750!important;font-size:14px!important;padding:10px 14px!important;text-align:left!important;cursor:pointer}
+html body.public-profile-area [data-native-menu] .nu347-collapse[hidden]{display:none!important}
+html body.public-profile-area [data-native-menu] :is(.nu219-less,.nu347-collapse,.nu232-info-toggle):focus-visible{outline:3px solid #1876cf;outline-offset:3px}
+
+html body.public-profile-area.nu233-store [data-native-menu] .nu190-showcase .nu312-grid>.nu201-card[hidden]{display:none!important}

@@ -3,7 +3,13 @@ function catalogGroups275(cards){
  const combo=c=>c.dataset.comboLocal303!=='1'&&(c.dataset.combo256==='1'||(c.dataset.combo256===undefined&&(c.dataset.category||'').trim().toLowerCase()==='combos'));
  return {regular:cards.filter(c=>!combo(c)),combos:cards.filter(c=>combo(c)&&c.dataset.available256==='1'),promotions:cards.filter(c=>Number(c.dataset.price)>0&&Number(c.dataset.price)<Number(c.dataset.regular256)&&c.dataset.available256==='1')};
 }
-if(typeof module!=='undefined')module.exports={catalogGroups275};
+function catalogExpansion347({grid,more,collapseButton,load,count,limit,refresh,section}){
+ let expanded=false;
+ function expand(){if(expanded)return;expanded=true;more.remove();load(count);Array.from(grid.children).forEach(card=>card.hidden=false);collapseButton.hidden=false;collapseButton.setAttribute('aria-expanded','true');more.setAttribute('aria-expanded','true');refresh();}
+ function collapse(){expanded=false;Array.from(grid.children).forEach((card,index)=>card.hidden=index>=limit);grid.append(more);more.hidden=false;more.setAttribute('aria-expanded','false');collapseButton.hidden=true;collapseButton.setAttribute('aria-expanded','false');section.scrollIntoView({block:'start',behavior:'auto'});more.focus({preventScroll:true});}
+ return {expand,collapse};
+}
+if(typeof module!=='undefined')module.exports={catalogGroups275,catalogExpansion347};
 if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()=>{
  'use strict';
  const body=document.body,root=document.querySelector('[data-native-menu]');
@@ -39,7 +45,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  categoryHeader.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap';
  categoryTitle.style.margin='0';less.style.cssText='border:1px solid #e6dcf2;background:#f5effc;color:#7132bf;border-radius:10px;padding:10px 14px;min-height:44px;font:inherit;font-size:14px;font-weight:700;cursor:pointer';
  less.addEventListener('click',()=>{const key=selectedCategory;showHome();const section=sections.get(key);if(section){section.scrollIntoView({block:'start',behavior:'auto'});section.querySelector('header button')?.focus({preventScroll:true});}});
- categoryHeader.append(categoryTitle,less);categoryView.append(categoryHeader,categoryCount,categoryEmpty);const categoryCache=new Map();
+ categoryHeader.append(less,categoryTitle);categoryView.append(categoryHeader,categoryCount,categoryEmpty);const categoryCache=new Map();
  const money=cents=>(cents/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
  const resize=()=>window.dispatchEvent(new Event('resize'));
  function showProducts(focus=false){
@@ -120,15 +126,19 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   if(desktop228.matches){
    all.remove();
    const grid=make('div','nu312-grid');grid.id='nu312-category-'+sections.size;
-   let loaded=0,expanded=false;
+   let loaded=0;
+   const limit347=group.cards.length>8?7:group.cards.length;
    const more=make('button','nu312-more');more.type='button';
    more.append(make('span','nu312-plus','+'),make('strong','','Ver todos'),make('small','','Expandir categoria'),make('span','','⌄'));
    more.setAttribute('aria-controls',grid.id);more.setAttribute('aria-expanded','false');
+   const collapse347=make('button','nu347-collapse','Ver menos ⌃');collapse347.type='button';collapse347.hidden=true;
+   collapse347.setAttribute('aria-controls',grid.id);collapse347.setAttribute('aria-expanded','false');collapse347.setAttribute('aria-label','Recolher produtos de '+group.name);
+   if(group.cards.length>8){header.classList.add('nu347-category-heading');header.prepend(collapse347);}
    function load312(limit){while(loaded<Math.min(limit,group.cards.length)){grid.append(compact(group.cards[loaded++],key==='__offers256'));}}
-   function expand312(){if(expanded)return;expanded=true;more.remove();load312(group.cards.length);more.setAttribute('aria-expanded','true');cartRefreshers.forEach(fn=>fn());}
-   load312(group.cards.length>8?7:group.cards.length);
+   const controls347=catalogExpansion347({grid,more,collapseButton:collapse347,load:load312,count:group.cards.length,limit:limit347,refresh:()=>cartRefreshers.forEach(fn=>fn()),section});
+   load312(limit347);
    if(group.cards.length>8)grid.append(more);
-   more.addEventListener('click',expand312);section.nuExpand312=expand312;
+   more.addEventListener('click',controls347.expand);collapse347.addEventListener('click',controls347.collapse);section.nuExpand312=controls347.expand;
    section.append(grid);showcase.append(section);return;
   }
   const track=make('div','nu190-track');track.tabIndex=0;track.setAttribute('aria-label','Produtos de '+group.name+'; deslize para os lados');

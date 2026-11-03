@@ -54,6 +54,9 @@ app.mount("/uploads", PublicFiles(directory=UPLOAD_DIR, images_only=True), name=
 from nowup_combo_pack305 import read_pack
 templates = Jinja2Templates(directory=str(BASE / "templates"))
 templates.env.filters["combo_pack305"]=read_pack
+from nowup_order_layout347 import local_time, note_lines
+templates.env.filters["order_datetime347"]=local_time
+templates.env.filters["order_notes347"]=note_lines
 templates.env.globals["delivery_neighborhoods267"]=nowup_neighborhoods267.names
 templates.env.globals["canonical_neighborhood267"]=nowup_neighborhoods267.canonical
 templates.env.globals["category_icon230"] = nowup_categories230.icon
