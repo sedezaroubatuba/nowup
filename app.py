@@ -3003,3 +3003,7 @@ def customer_marketing309(request: Request, marketing_email309: Optional[str]=Fo
 from nowup_database239 import finalize_postgres_constraints, close_pool
 app.router.add_event_handler("startup", finalize_postgres_constraints)
 app.router.add_event_handler("shutdown", close_pool)
+
+# Isolated administrator playground.
+import nowup_test333
+nowup_test333.install(globals())
