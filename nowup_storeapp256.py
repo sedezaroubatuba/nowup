@@ -27,7 +27,7 @@ def presentation(p):
     slug=p['slug'];prefix='/p/'+quote(slug,safe='')
     return {'slug':slug,'name':p['display_name'],'menu':prefix+'/menu?loja=1',
         'manifest':prefix+'/manifest.webmanifest','icon':prefix+'/app-icon/192.png',
-        'whatsapp':prefix+'/menu/whatsapp','orders':prefix+'/pedidos','logout':prefix+'/sair','login':prefix+'/entrar?tipo=cliente','signup':'/cadastro/cliente?loja='+quote(slug,safe='')}
+        'whatsapp':prefix+'/menu/whatsapp','orders':prefix+'/pedidos','logout':prefix+'/sair','login':prefix+'/entrar?tipo=cliente','signup':prefix+'/cadastro','forgot':prefix+'/recuperar-senha','reset':prefix+'/redefinir-senha','waiting':prefix+'/aguardando','resend':prefix+'/reenviar-verificacao','completion':prefix+'/cart-completion345'}
 
 def page_context(g,request,values):
     p=getattr(request.state,'store_app256',None)
@@ -161,24 +161,14 @@ def install(g):
 
     @app.middleware('http')
     async def return_to_store256(request,call_next):
-        authpaths={'/cadastro/cliente','/cadastro/aguardando','/verificar-email','/entrar','/recuperar-senha','/redefinir-senha'}
-        if request.url.path not in authpaths:return await call_next(request)
-        slug=request.query_params.get('loja') or request.cookies.get('nowup_store_return256','')
-        p=None
-        if slug:
+        # Legacy shared links redirect before credentials are processed. A stale
+        # return cookie must never turn a marketplace login into a store login.
+        slug=request.query_params.get('loja','')
+        targets={'/cadastro/cliente':'signup','/entrar':'login','/recuperar-senha':'forgot'}
+        if slug and request.url.path in targets:
+            from starlette.concurrency import run_in_threadpool
             try:
-                from starlette.concurrency import run_in_threadpool
                 p=await run_in_threadpool(store,g,slug)
+                return RedirectResponse(presentation(p)[targets[request.url.path]],303)
             except HTTPException:pass
-        if p:request.state.store_app256=p
-        response=await call_next(request)
-        if p:
-            location=response.headers.get('location','')
-            if request.url.path=='/entrar' and request.method=='POST' and location=='/':
-                response.headers['location']=presentation(p)['menu']
-                response.delete_cookie('nowup_store_return256',path='/')
-            elif request.url.path in {'/verificar-email','/redefinir-senha'} and location.startswith('/entrar'):
-                response.headers['location']='/p/'+quote(slug,safe='')+'/entrar?'+urlsplit(location).query+'&tipo=cliente'
-            if request.query_params.get('loja'):
-                response.set_cookie('nowup_store_return256',slug,max_age=1800,httponly=True,secure=g['os'].getenv('NOWUP_HTTPS')=='1' or request.url.scheme=='https',samesite='lax',path='/')
-        return response
+        return await call_next(request)

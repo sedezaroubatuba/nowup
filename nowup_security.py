@@ -4,7 +4,7 @@ import sqlite3
 from datetime import datetime, timezone
 
 
-def session_user(conn, token):
+def session_user(conn, token, store_id345=0):
     if not token:
         return None
     row = conn.execute('''SELECT u.* FROM sessions s JOIN users u ON u.id=s.user_id
@@ -12,6 +12,14 @@ def session_user(conn, token):
         (token, datetime.now(timezone.utc).isoformat(), datetime.now(timezone.utc).isoformat())).fetchone()
     if row is None:
         return None
+    session345=conn.execute('SELECT * FROM sessions WHERE token=?',(token,)).fetchone()
+    if session345 is None:return None
+    actual345=session345['store_id345'] if 'store_id345' in session345.keys() else 0
+    user345=row['customer_store345'] if 'customer_store345' in row.keys() else 0
+    if actual345!=store_id345 or user345!=store_id345:return None
+    if store_id345:
+        if row['role']!='customer':return None
+        row=dict(row);row['email']=row['customer_email345']
     # Editorial accounts must never inherit the platform's Super ADM privileges.
     if 'role' in row.keys() and row['role']=='admin':
         exists=conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='cms_permissions'").fetchone()

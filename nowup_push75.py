@@ -36,8 +36,13 @@ def keys():
     public=base64.urlsafe_b64encode(key.public_key().public_bytes(serialization.Encoding.X962,serialization.PublicFormat.UncompressedPoint)).decode().rstrip('=')
     return private, public
 
+def session_token345(request):
+    import app
+    from nowup_storeaccounts345 import identity
+    return identity(vars(app),request)[0] or ''
+
 def session(request):
-    return hashlib.sha256(request.cookies.get('nowup_session','').encode()).hexdigest()
+    return hashlib.sha256(session_token345(request).encode()).hexdigest()
 
 def disable_session(token):
     with _db() as c: c.execute('DELETE FROM push_subscriptions WHERE session_hash=?',(hashlib.sha256(token.encode()).hexdigest(),))

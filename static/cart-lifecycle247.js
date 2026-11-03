@@ -24,7 +24,10 @@
    for(const full of keys){
     const key=full.slice(pendingPrefix.length),match=key.match(/^nowup-cart:(?:whatsapp257:)?u:([1-9]\d*):(\/p\/[a-zA-Z0-9_-]+)$/),pending=read(sessionStorage,full);
     if(!match||!pending||Date.now()-pending.time>86400000){forget(key);continue;}
-    const response=await fetch('/api/cart-completion247?request_key='+encodeURIComponent(pending.token),{credentials:'same-origin',cache:'no-store'});
+    const storeNode=document.getElementById('store-app256');const storeConfig=storeNode?JSON.parse(storeNode.textContent):null;
+    const endpoint=storeConfig?.completion||'/api/cart-completion247';
+    if(storeConfig&&match[2]!=='/p/'+storeConfig.slug)continue;
+    const response=await fetch(endpoint+'?request_key='+encodeURIComponent(pending.token),{credentials:'same-origin',cache:'no-store'});
     if(!response.ok)continue;
     const result=await response.json();if(result.confirmed&&result.path===match[2]){complete(key,pending);forget(key);}
    }

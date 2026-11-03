@@ -253,9 +253,13 @@ def child_main():
         return main.create_session_response(uid,'/painel')
 
     @app.post('/__perfil333')
-    def switch(uid: int=Form(...)):
+    def switch(request: Request,uid: int=Form(...)):
         with main.db() as c: user=c.execute('SELECT * FROM users WHERE id=? AND is_active=1',(uid,)).fetchone()
         if not user: return Response(status_code=404)
+        if user['role']=='customer' and user['customer_store345']:
+            with main.db() as c:p=c.execute('SELECT * FROM professionals WHERE id=?',(user['customer_store345'],)).fetchone()
+            from nowup_storeaccounts345 import session_response
+            return session_response(vars(main),request,dict(p),uid)
         dest={'admin':'/admin/super','professional':'/painel','customer':'/cliente'}[user['role']]
         return main.create_session_response(uid,dest,user['role']=='admin')
 
@@ -268,7 +272,7 @@ def child_main():
                 c.execute('UPDATE users SET email_verified=1')
                 c.execute("UPDATE professionals SET verified=1,blocked=0,admission_status='approved',plan_granted=1,plan_active=CASE WHEN plan_requested IN ('vitrine','cardapio','ambos') THEN plan_requested WHEN plan_active='none' THEN 'ambos' ELSE plan_active END,is_premium=1,offer_mode=CASE WHEN plan_requested_offer IN ('menu','catalog') THEN plan_requested_offer ELSE offer_mode END,plan_requested='',plan_requested_offer=''")
                 c.commit()
-            if request.url.path in ('/cadastro/cliente','/cadastro/profissional') and response.headers.get('location')=='/cadastro/aguardando':
+            if ((request.url.path in ('/cadastro/cliente','/cadastro/profissional') and response.headers.get('location')=='/cadastro/aguardando') or (request.url.path.startswith('/p/') and request.url.path.endswith('/cadastro') and '/aguardando' in response.headers.get('location',''))):
                 return RedirectResponse('/__controle333',303)
         if 'text/html' not in response.headers.get('content-type',''): return response
         body=b''.join([chunk async for chunk in response.body_iterator])

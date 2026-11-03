@@ -88,17 +88,19 @@ async def security_headers_and_csrf(request: Request, call_next):
 @app.middleware("http")
 async def renew_saved_login(request: Request, call_next):
     response = await call_next(request)
-    token = request.cookies.get("nowup_session")
-    if (request.method != "GET" or not token or response.status_code != 200
-            or "text/html" not in response.headers.get("content-type", "")
-            or any(item.startswith("nowup_session=") for item in response.headers.getlist("set-cookie"))):
+    if (request.method != "GET" or response.status_code != 200
+            or "text/html" not in response.headers.get("content-type", "")):
+        return response
+    from nowup_storeaccounts345 import identity
+    token,scope345,cookie345,path345=identity(globals(),request)
+    if not token or any(item.startswith(cookie345+"=") for item in response.headers.getlist("set-cookie")):
         return response
     from nowup_runtime238 import renew_session
     from starlette.concurrency import run_in_threadpool
-    max_age = await run_in_threadpool(renew_session, db, token, SESSION_DAYS)
+    max_age = await run_in_threadpool(renew_session, db, token, SESSION_DAYS, None, scope345)
     if max_age:
-        response.set_cookie("nowup_session", token, max_age=max_age,
-            httponly=True, samesite="lax", path="/",
+        response.set_cookie(cookie345, token, max_age=max_age,
+            httponly=True, samesite="lax", path=path345,
             secure=request.url.scheme == "https" or os.getenv("NOWUP_HTTPS", "0") == "1")
     return response
 
@@ -248,12 +250,21 @@ def unique_slug(conn, name: str, table="professionals"):
 def current_user(request: Request):
     if hasattr(request.state, "user238"):
         return request.state.user238
-    token = request.cookies.get("nowup_session")
-    if not token: return None
-    conn = db()
+    from nowup_storeaccounts345 import identity
+    token,scope345,_,_=identity(globals(),request)
+    if not token and not (scope345 and request.cookies.get('nowup_session')):
+        request.state.user238=None
+        return None
     from nowup_security import session_user
-    row = session_user(conn, token)
-    conn.close()
+    conn = db()
+    try:
+        row = session_user(conn, token, scope345) if token else None
+        # Owners and administrators keep their management preview, never a
+        # marketplace customer's login in a standalone storefront.
+        if not row and scope345:
+            preview=session_user(conn,request.cookies.get('nowup_session'))
+            if preview and preview['role'] in ('admin','professional'):row=preview
+    finally:conn.close()
     request.state.user238 = dict(row) if row else None
     return request.state.user238
 
@@ -560,6 +571,10 @@ def init_db():
       ON product_categories(professional_id,active,sort_order,id);
     """)
     ensure_column(conn, "sessions", "absolute_expires_at238", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "sessions", "store_id345", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "users", "customer_store345", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "users", "customer_email345", "TEXT NOT NULL DEFAULT ''")
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS store_customer_email345 ON users(customer_store345,customer_email345) WHERE customer_store345>0")
     conn.execute("UPDATE sessions SET absolute_expires_at238=? WHERE absolute_expires_at238=''", ((datetime.now(timezone.utc)+timedelta(days=SESSION_ABSOLUTE_DAYS238)).isoformat(),))
     conn.execute("UPDATE sessions SET expires_at=MIN(expires_at,?) WHERE user_id IN (SELECT id FROM users WHERE role IN ('customer','professional'))", ((datetime.now(timezone.utc)+timedelta(days=SESSION_DAYS)).isoformat(),))
     conn.executescript("""
@@ -1338,7 +1353,7 @@ def whatsapp_click(slug: str):
 
 @app.get("/p/{slug}/cardapio")
 def menu_click(slug: str):
-    return RedirectResponse("/p/"+quote(slug,safe="") + "/menu",303)
+    return RedirectResponse("/p/"+quote(slug,safe="") + "/menu?loja=1",303)
 
 @app.get("/p/{slug}/link")
 def external_click(slug: str):
@@ -3007,3 +3022,6 @@ app.router.add_event_handler("shutdown", close_pool)
 # Isolated administrator playground.
 import nowup_test333
 nowup_test333.install(globals())
+
+import nowup_storeaccounts345
+nowup_storeaccounts345.install(globals())

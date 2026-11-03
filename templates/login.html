@@ -18,8 +18,8 @@ body.nowup-login-white{background:#fff!important;background-image:none!important
 @media(max-width:600px){.nowup-login-white .formCard{padding:20px;margin:12px auto}.nowup-login-white h1{font-size:28px!important;line-height:1.2}.nowup-login-white h2{font-size:23px!important}.nowup-login-white .rolecard .tiny{font-size:13px!important}.nowup-login-white .roleicon{font-size:28px!important}}
 </style>
 <div class="container"><div class="formCard">
-<h1>Como você quer entrar?</h1>{% if request.query_params.get('comprar') %}<p role="status">Faça login para comprar</p>{% endif %}
-<p class="muted">Escolha seu tipo de acesso para deixar tudo mais claro.</p>
+<h1>{% if store_app256 %}Entrar em {{store_app256.name}}{% else %}Como você quer entrar?{% endif %}</h1>{% if request.query_params.get('comprar') %}<p role="status">Faça login para comprar</p>{% endif %}
+<p class="muted">{% if store_app256 %}Conta exclusiva desta loja. Seu acesso não é compartilhado com outras lojas ou com o marketplace.{% else %}Escolha seu tipo de acesso para deixar tudo mais claro.{% endif %}</p>
 <div class="rolegrid">
 <a class="rolecard" href="/entrar?tipo=cliente"><span class="roleicon">👤</span><b>Cliente</b><span class="muted tiny">Comprar, acompanhar pedidos e descobrir lojas.</span></a>
 <a class="rolecard" href="/entrar?tipo=profissional"><span class="roleicon">🧰</span><b>Lojista</b><span class="muted tiny">Gerenciar sua loja, produtos e pedidos.</span></a>
@@ -38,7 +38,7 @@ body.nowup-login-white{background:#fff!important;background-image:none!important
 <label style="display:block;margin-top:10px">Senha</label><div class="password-row"><input id="nowup-login-password" class="input" type="password" name="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required><button class="password-toggle" type="button" aria-controls="nowup-login-password" aria-pressed="false" onclick="const field=document.getElementById('nowup-login-password');const show=field.type==='password';field.type=show?'text':'password';this.textContent=show?'Ocultar':'Mostrar';this.setAttribute('aria-pressed',String(show));">Mostrar</button></div>
 <button class="btn primary" style="margin-top:14px;width:100%">Entrar</button>
 </form>
-<p style="text-align:right;margin:10px 0 0"><a class="muted tiny" href="/recuperar-senha">Esqueci minha senha</a></p>
+<p style="text-align:right;margin:10px 0 0"><a class="muted tiny" href="{{store_app256.forgot if store_app256 else '/recuperar-senha'}}">Esqueci minha senha</a></p>
 <p class="muted tiny" style="margin-top:16px">Ainda não tem conta?</p>
 <div class="row" style="flex-wrap:wrap"><a class="btn soft" href="{{store_app256.signup if store_app256 else '/cadastro/cliente'}}">Criar conta de cliente</a><a class="btn soft" href="/cadastro/profissional">Cadastrar minha loja</a></div>
 </div></div></div>{% endblock %}

@@ -26,8 +26,11 @@ def contact_hash(channel,value):
     return hashlib.sha256((channel+':'+value).encode()).hexdigest()
 
 def contacts(conn,uid):
-    user=conn.execute("SELECT email,phone,is_active,email_verified FROM users WHERE id=? AND role='customer'",(uid,)).fetchone()
-    return dict(user) if user else None
+    user=conn.execute("SELECT * FROM users WHERE id=? AND role='customer'",(uid,)).fetchone()
+    if not user:return None
+    data=dict(user)
+    if data.get('customer_store345',0):return None
+    return {key:data[key] for key in ('email','phone','is_active','email_verified')}
 
 def preferences(conn,uid):
     result={'email':False,'whatsapp':False};user=contacts(conn,uid)

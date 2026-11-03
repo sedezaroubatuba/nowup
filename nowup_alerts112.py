@@ -21,6 +21,10 @@ def initialize():
     with connection() as c:c.execute('CREATE TABLE IF NOT EXISTS customer_push112(id INTEGER PRIMARY KEY,event_id INTEGER NOT NULL UNIQUE,user_id INTEGER NOT NULL,payload TEXT NOT NULL,created REAL NOT NULL,next_try REAL NOT NULL,attempts INTEGER NOT NULL DEFAULT 0)')
 
 def enqueue(c,uid,event_id,payload):
+    owner345=c.execute('SELECT p.slug FROM users u JOIN professionals p ON p.id=u.customer_store345 WHERE u.id=?',(uid,)).fetchone()
+    if owner345 and str(payload.get('url','')).startswith('/pedido/'):
+        from urllib.parse import quote
+        payload={**payload,'url':'/p/'+quote(owner345['slug'],safe='')+payload['url']}
     c.execute('INSERT OR IGNORE INTO customer_push112(event_id,user_id,payload,created,next_try) VALUES(?,?,?,?,?)',(event_id,uid,json.dumps(payload,ensure_ascii=False),time.time(),time.time()))
 
 @router.get('/cliente/avisos')
@@ -50,7 +54,7 @@ async def activate(request:Request):
 
 @router.post('/cliente/push/desativar')
 def deactivate(request:Request):
-    check_origin(request);_auth(request,'customer');push.disable_session(request.cookies.get('nowup_session',''));return {'ok':True}
+    check_origin(request);_auth(request,'customer');push.disable_session(push.session_token345(request));return {'ok':True}
 
 @router.post('/cliente/push/testar')
 def test(request:Request):

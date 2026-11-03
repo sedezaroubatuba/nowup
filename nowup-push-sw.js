@@ -5,7 +5,7 @@ self.addEventListener('push',event=>{
 self.addEventListener('notificationclick',event=>{
   event.notification.close();let url;
   try{url=new URL(event.notification.data?.url||'/painel',self.location.origin);}catch(_){url=new URL('/painel',self.location.origin);}
-  if(url.origin!==self.location.origin||!(url.pathname==='/painel'||url.pathname==='/cliente'||/^\/pedido\/[A-Za-z0-9_-]+$/.test(url.pathname)))url=new URL('/painel',self.location.origin);
+  if(url.origin!==self.location.origin||!(url.pathname==='/painel'||url.pathname==='/cliente'||/^\/pedido\/[A-Za-z0-9_-]+$/.test(url.pathname)||/^\/p\/[A-Za-z0-9_-]+\/pedido\/[A-Za-z0-9_-]+$/.test(url.pathname)))url=new URL('/painel',self.location.origin);
   event.waitUntil(clients.openWindow(url.href));
 });
 

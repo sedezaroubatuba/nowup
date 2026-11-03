@@ -31,13 +31,13 @@ def mutation_origin_allowed(request):
     return expected is not None and origin_tuple(request.headers.get('referer', '')) == expected
 
 
-def renew_session(database, token, days=30, now=None):
+def renew_session(database, token, days=30, now=None, store_id345=0):
     now = now or datetime.now(timezone.utc)
     stamp = now.isoformat()
     conn = database()
     try:
         from nowup_security import session_user
-        user = session_user(conn, token)
+        user = session_user(conn, token, store_id345)
         if not user or user['role'] not in ('customer', 'professional'):
             return None
         row = conn.execute('SELECT expires_at,absolute_expires_at238 FROM sessions WHERE token=?', (token,)).fetchone()

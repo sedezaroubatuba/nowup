@@ -111,6 +111,8 @@ def secure_login(request: Request, email: str=Form(...),password: str=Form(...),
     if len(password)>128:return RedirectResponse("/entrar?erro=1",303)
     normalized=email.strip().lower()
     conn=db(); u=conn.execute("SELECT * FROM users WHERE email=? AND is_active=1",(normalized,)).fetchone(); conn.close()
+    if u and 'customer_store345' in u.keys() and u['customer_store345']:
+        u=None
     suffix=f"&tipo={tipo}" if tipo in ("cliente","profissional","admin") else ""
     if not u or not verify_password(password,u["password_hash"]):
         return RedirectResponse(f"/entrar?erro=1{suffix}",303)
