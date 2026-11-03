@@ -1,10 +1,10 @@
-from nowup_plans339 import admin_plans
 """Super ADM V227. SQLite/main; sessão existente, RBAC e persistência reais.
 
 Não cria exemplos nem altera planos/valores de contratos durante a instalação.
 Serviços externos não configurados falham explicitamente, sem falso sucesso.
 """
 from __future__ import annotations
+from nowup_plans339 import admin_plans
 import base64, hashlib, hmac, html, io, json, re, secrets, sqlite3
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone, date
