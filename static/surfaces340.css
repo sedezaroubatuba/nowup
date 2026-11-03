@@ -1,0 +1,18 @@
+/* Shared forms and attachment previews: white surfaces, readable text, NowUp purple. */
+html body .formCard{color-scheme:light;background:#fff!important;background-image:none!important;color:#203047!important;border:1px solid #ded4ed!important;box-shadow:0 10px 30px #54218a12}
+html body .formCard :is(h1,h2,h3,h4,legend){color:#6224a6!important}
+html body .formCard :is(p,label,small,.muted,.tiny,li,strong){color:#344054!important;opacity:1}
+html body .formCard :is(input:not([type=checkbox]):not([type=radio]),select,textarea){background:#fff!important;color:#203047!important;border-color:#cfc3df!important;max-width:100%;min-width:0}
+html body .formCard ::placeholder{color:#667085!important;opacity:1}
+html body .formCard :is(input[type=checkbox],input[type=radio]){accent-color:#7434c6}
+html body .formCard input[type=file]{white-space:normal;overflow-wrap:anywhere;padding:10px}
+html body .formCard input[type=file]::file-selector-button{background:#7434c6;color:#fff;border:0;border-radius:8px;padding:10px 12px;margin-right:10px;font:inherit;cursor:pointer}
+html body :is(.formCard,.nu250-dialog) :focus-visible{outline:3px solid #1769cc;outline-offset:3px}
+html body .formCard :is(.btn.primary,button[type=submit]){background:#7434c6!important;background-image:none!important;color:#fff!important;border-color:#7434c6!important}
+html body .formCard a:not(.btn){color:#6224a6!important;text-decoration:underline;text-underline-offset:3px}
+html body .formCard .alert.danger{background:#fff1f2!important;color:#9f1239!important;border-color:#fecdd3!important}
+html body .nu250-dialog{background:#fff!important;background-image:none!important;color:#203047!important;color-scheme:light;overflow:auto}
+html body .nu250-dialog>button{background:#7434c6!important;color:#fff!important}
+html body .nu250-dialog a{color:#6224a6!important}
+html body .nu250-preview{background:#fff!important;color:#6224a6!important}
+@media(max-width:620px){html body .formCard{padding:18px 14px;margin:18px auto;border-radius:18px}html body .formCard input[type=file]{font-size:14px}html body .nu250-dialog{max-height:90dvh;padding:12px}}
