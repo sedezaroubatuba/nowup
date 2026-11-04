@@ -46,12 +46,13 @@ def test_optional_document_can_be_cpf_or_cnpj(registration,kind,doc):
     assert registered(m,data['email']) is None
 
 
-def test_showcase_still_requires_cnpj_and_all_documents(registration):
-    m,client,payload,category=registration;data=corporate(payload(),category)
+@pytest.mark.parametrize("plan", ["ambos", "completo"])
+def test_showcase_still_requires_cnpj_and_all_documents(registration,plan):
+    m,client,payload,category=registration;data=corporate(payload(),category);data['plan']=plan
     assert send(client,data).status_code==400
     assert registered(m,data['email']) is None
     r=send(client,data,files=files());assert r.status_code==303 and r.headers['location']=='/cadastro/aguardando',r.text
-    p=registered(m,data['email']);assert p['simple_menu346']==0 and p['plan_requested']=='ambos'
+    p=registered(m,data['email']);assert p['simple_menu346']==0 and p['plan_requested']==plan
     with m.db() as c:assert c.execute('SELECT COUNT(*) FROM merchant_documents257 WHERE professional_id=?',(p['id'],)).fetchone()[0]==4
     wrong=corporate(payload(),category);wrong.update(doc_type='CPF',document='52998224725')
     assert send(client,wrong,files=files()).status_code==400

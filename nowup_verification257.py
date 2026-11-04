@@ -61,12 +61,12 @@ def require_review(c,pid,target_plan=None):
     details=dict(p) if p else {}
     target=target_plan or details.get('plan_requested') or details.get('plan_active')
     if target=='cardapio':return
-    if details.get('simple_menu346') and target in ('vitrine','ambos'):
+    if details.get('simple_menu346') and target in ('vitrine','ambos','completo'):
         cities=c.execute("SELECT value FROM site_settings WHERE key='active_cities'").fetchone()
         enabled=[x.strip() for x in (cities[0] if cities else 'Ubatuba').split(',') if x.strip()]
         if details.get('city') not in enabled:raise HTTPException(400,'A vitrine não está disponível na cidade desta loja.')
     row=c.execute('SELECT status FROM merchant_evidence257 WHERE professional_id=?',(pid,)).fetchone()
-    if details.get('simple_menu346') and target in ('vitrine','ambos') and not row:
+    if details.get('simple_menu346') and target in ('vitrine','ambos','completo') and not row:
         raise HTTPException(400,'Para ativar a vitrine, envie o CNPJ e os documentos em Documentos da loja e aguarde a conferência.')
     # Preserve the existing status of legacy stores, without allowing a new
     # simplified registration to bypass verification when upgrading.

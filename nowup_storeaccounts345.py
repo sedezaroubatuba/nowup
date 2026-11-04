@@ -22,9 +22,9 @@ def request_store(g,request):
             try:
                 candidate=store(g,parts[2],active=False)
                 tail='/'.join(parts[3:])
-                if (candidate['plan_active']=='cardapio' or request.query_params.get('loja')=='1'
+                if (tail in ('pedidos','sair') or tail.startswith('pedido/') or (candidate['plan_active'] in ('cardapio','completo') and (candidate['plan_active']=='cardapio' or request.query_params.get('loja')=='1'
                     or request.query_params.get('origem')=='externo' or request.cookies.get(cookie_name(candidate))
-                    or tail in ('entrar','cadastro','recuperar-senha','redefinir-senha','verificar-email','reenviar-verificacao','aguardando','pedidos','sair','menu/whatsapp','cart-completion345') or tail.startswith('pedido/')):
+                    or tail in ('entrar','cadastro','recuperar-senha','redefinir-senha','verificar-email','reenviar-verificacao','aguardando','pedidos','sair','menu/whatsapp','cart-completion345') or tail.startswith('pedido/')))):
                     p=candidate
             except HTTPException: pass
     request.state.scope_store345=p

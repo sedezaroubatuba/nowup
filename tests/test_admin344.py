@@ -8,7 +8,7 @@ def test_super_admin_core_buttons(env):
   c.execute('INSERT INTO sessions(token,user_id,expires_at) VALUES(?,?,?)',('audit-super342',uid,(datetime.now(timezone.utc)+timedelta(hours=1)).isoformat()))
  client.cookies.set('nowup_session','audit-super342')
  state=client.get('/admin/super/api/state');assert state.status_code==200,state.text
- snapshot=state.json();assert {x['id'] for x in snapshot['plans']}=={'cardapio','ambos'}
+ snapshot=state.json();assert {x['id'] for x in snapshot['plans']}=={'cardapio','ambos','completo'}
  def change(kind,oid,value):
   current=client.get('/admin/super/api/state').json()
   return client.post('/admin/super/api/change',json={'revision':current['_meta']['revision'],'reason':'Auditoria isolada de botões do administrador','changes':[{'kind':kind,'id':oid,'value':value}]},headers={'X-Nowup-Admin':'227'})

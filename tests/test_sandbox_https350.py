@@ -26,7 +26,7 @@ def test_playground_preserves_browser_origin_without_allowing_cross_site(env,mon
     control=client.get('/__controle333');assert control.status_code==200
     from bs4 import BeautifulSoup
     plans=BeautifulSoup(control.text,'html.parser').select('select[name=plan] option')
-    assert [p['value'] for p in plans]==['cardapio','ambos']
+    assert [p['value'] for p in plans]==['cardapio','ambos','completo']
     assert 'link próprio' in control.text
     assert client.post('/__loja333',data={'name':'Plano retirado','plan':'vitrine','offer':'menu'}).status_code==400
     # A spoofed forwarding header is discarded by the parent.
@@ -38,6 +38,10 @@ def test_playground_preserves_browser_origin_without_allowing_cross_site(env,mon
     assert combined.status_code==303,combined.text
     combined_panel=client.get('/painel')
     assert combined_panel.status_code==200 and 'Loja combinada351 '+scheme in combined_panel.text
+    complete=client.post('/__loja333',data={'name':'Loja completa352 '+scheme,'plan':'completo','offer':'catalog'})
+    assert complete.status_code==303,complete.text
+    complete_panel=client.get('/painel')
+    assert complete_panel.status_code==200 and '149,90' in complete_panel.text and 'id="cardapio-independente"' in complete_panel.text
     assert client.post('/__loja333',data={'name':'Foreign','plan':'cardapio','offer':'menu'},headers={'Origin':'https://evil.invalid','Sec-Fetch-Site':'cross-site'}).status_code==403
     assert client.post('/admin/modo-teste/sair').status_code==303
     with m.db() as c:assert c.execute('SELECT COUNT(*) FROM professionals').fetchone()[0]==before

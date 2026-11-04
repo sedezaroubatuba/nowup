@@ -65,7 +65,7 @@
   document.addEventListener('click',event=>{
     if(!dock.contains(event.target)||!event.target.closest('[data-cart-summary]'))return;
     event.preventDefault();event.stopImmediatePropagation();refresh();
-    if(!cart.open){savedScroll=window.scrollY;cart.showModal();}
+    if(!cart.open){savedScroll=window.scrollY;if(window.NOWUP_OPEN_ORDER353)window.NOWUP_OPEN_ORDER353(cart);else{root.append(cart);cart.hidden=false;cart.classList.add('nu353-order-dialog');cart.showModal();cart.scrollTop=0;}}
   },true);
   cart.querySelector('[data-cart-close143]')?.addEventListener('click',closeCart);
   cart.addEventListener('click',event=>{

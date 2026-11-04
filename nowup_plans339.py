@@ -1,16 +1,20 @@
-"""Planos comerciais atuais; ambos incluem todos os recursos do lojista."""
+"""Planos comerciais atuais; com permissões por canal de pedidos."""
 FEATURES = ('Todos os recursos do painel do lojista: produtos, combos, ingredientes, '
             'acompanhamentos, adicionais, promoções, banners, slides, configurações '
             'e atualizações disponibilizadas no painel.')
 PLANS = {
     'cardapio': ('Só cardápio/catálogo', 4990),
-    'ambos': ('Cardápio/catálogo + vitrine', 9990),
+    'ambos': ('Vitrine com pedidos no NowUp', 9990),
+    'completo': ('Vitrine + catálogo com link e WhatsApp', 14990),
 }
 
 def admin_plans():
-    return [dict(id=key, name=name, price=price, features=FEATURES +
-                 (' Link próprio, sem exposição na vitrine geral.' if key == 'cardapio'
-                  else ' Link próprio e exposição na vitrine geral.'))
+    descriptions = {
+        'cardapio': ' Link próprio e pedidos no WhatsApp, com Instagram e site; sem exposição na vitrine geral.',
+        'ambos': ' Exposição na vitrine geral, com cardápio e pedidos somente dentro do NowUp.',
+        'completo': ' Exposição na vitrine geral e link próprio com pedidos no WhatsApp, Instagram e site.',
+    }
+    return [dict(id=key, name=name, price=price, features=FEATURES + descriptions[key])
             for key, (name, price) in PLANS.items()]
 
 def synchronize_admin(conn):

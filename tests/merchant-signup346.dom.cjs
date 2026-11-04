@@ -11,6 +11,7 @@ assert(docs.hidden&&docs.disabled);
 plan.value='cardapio';plan.emit();assert(docs.hidden&&docs.disabled);assert.equal(documentField.required,false);assert.equal(known.required,false);
 type.value='CPF';city.value='São Sebastião';city.emit('input');assert.equal(city.validationMessage,'');assert.equal(type.value,'CPF');
 plan.value='ambos';plan.emit();assert.equal(docs.hidden,false);assert.equal(docs.disabled,false);assert.equal(documentField.required,true);assert.equal(type.value,'CNPJ');assert(cpf.disabled);assert(known.required);assert(city.validationMessage.includes('Ubatuba'));
+plan.value='completo';plan.emit();assert(!docs.hidden&&!docs.disabled&&documentField.required&&cpf.disabled);
 city.value='Ubatuba';city.emit('input');assert.equal(city.validationMessage,'');
 plan.value='cardapio';plan.emit();assert(docs.disabled&&docs.hidden);assert.equal(documentField.required,false);assert.equal(cpf.disabled,false);assert.equal(known.required,false);
 other.checked=true;other.emit();assert.equal(ids['signup-segment346'].hidden,false);assert(segmentField.required&&!segmentField.disabled);

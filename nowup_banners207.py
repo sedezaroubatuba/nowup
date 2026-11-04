@@ -69,7 +69,7 @@ def delete(request:Request,bid:int):
 def public(slug:str):
     c=G['db']()
     try:
-        p=c.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved' AND plan_active IN ('cardapio','ambos')",(slug,)).fetchone()
+        p=c.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved' AND plan_active IN ('cardapio','ambos','completo')",(slug,)).fetchone()
         if not p or not p['is_premium'] or p['offer_mode'] not in ('menu','catalog'):raise HTTPException(404,'Loja não encontrada')
         s=c.execute('SELECT seconds FROM store_banner_settings207 WHERE professional_id=?',(p['id'],)).fetchone()
         allowed={r[0] for r in c.execute('SELECT id FROM products WHERE professional_id=?',(p['id'],))};items=[]

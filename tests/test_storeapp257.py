@@ -41,10 +41,10 @@ def test_channels_identity_totals_and_idempotency(channel,mode):
         with m.db() as c:assert c.execute('SELECT COUNT(*) FROM orders').fetchone()[0]==0
 
 
-def test_default_is_both_and_marketplace_remains_internal(channel):
+def test_default_is_whatsapp_and_marketplace_remains_internal(channel):
     m,client,slug,pid,data,product,customer=channel
     result=client.post('/p/'+slug+'/menu/whatsapp',data=data);assert result.status_code==200,result.text
-    assert result.json()['mode']=='both' and result.json()['recorded']
+    assert result.json()['mode']=='whatsapp' and not result.json()['recorded']
     data['request_key']='separate-marketplace-request257'
     native=client.post('/p/'+slug+'/menu/pedido',data=data,headers={'Accept':'application/json'})
     assert native.status_code==200 and native.json()['confirmed']

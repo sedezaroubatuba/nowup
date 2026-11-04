@@ -140,6 +140,7 @@ def test_scoped_customer_can_checkout_without_marketplace_login(setup345,monkeyp
         product=c.execute("INSERT INTO products(professional_id,name,category,price_cents,available,created_at,updated_at) VALUES(?,'Produto exclusivo345','Teste',700,1,?,?)",(a['id'],stamp,stamp)).lastrowid
         uid=c.execute('SELECT id FROM users WHERE customer_store345=?',(a['id'],)).fetchone()[0]
         c.execute('UPDATE professionals SET allows_pickup=1,minimum_order_cents=0 WHERE id=?',(a['id'],))
+        c.execute("INSERT INTO store_menu257(professional_id,whatsapp,mode) VALUES(?,'','both')",(a['id'],))
         c.commit()
     data={'customer_name':'Cliente A','customer_phone':'12999998888','cart_json':json.dumps([{'id':product,'quantity':1}]),'fulfillment_type':'pickup','payment_method':'cash','request_key':'store345-exclusive-checkout'}
     r=client.post('/p/'+a['slug']+'/menu/whatsapp',data=data)

@@ -15,9 +15,9 @@ def test_admin_migration_preserves_old_contract_metadata():
     assert [json.loads(r[0]) for r in c.execute("SELECT data FROM adm227_entities WHERE kind='plans' ORDER BY id")] == admin_plans()
     assert c.execute("SELECT data FROM adm227_entities WHERE kind='storemeta'").fetchone()[0] == '{"plan":"start","price":7900}'
     assert json.loads(c.execute("SELECT data FROM adm227_entities WHERE kind='plans_archive339'").fetchone()[0])['id'] == 'start'
-    assert {k:v[1] for k,v in PLANS.items()} == {'cardapio':4990,'ambos':9990}
+    assert {k:v[1] for k,v in PLANS.items()} == {'cardapio':4990,'ambos':9990,'completo':14990}
 
-@pytest.mark.parametrize('plan', ['cardapio', 'ambos'])
+@pytest.mark.parametrize('plan', ['cardapio', 'ambos', 'completo'])
 def test_both_plans_keep_menu_checkout_and_all_merchant_tools(shop, monkeypatch, plan):
     m, client, slug, pid, url, data, product = shop
     with m.db() as c:
@@ -49,7 +49,7 @@ def test_plan_switch_reuses_store_products_and_link(shop):
     with m.db() as c:
         c.execute("INSERT INTO merchant_evidence257(professional_id,legal_name,owner_name,owner_cpf,owner_role,status) VALUES(?,'Loja teste','Titular teste','52998224725','Titular','verified')",(pid,))
         before = [tuple(r) for r in c.execute('SELECT * FROM products WHERE professional_id=?',(pid,))]
-        for plan in ('cardapio', 'ambos', 'cardapio'):
+        for plan in ('cardapio', 'ambos', 'completo', 'cardapio'):
             adm.update_store(c, {'permissions':['finance']}, pid, {'plan':plan}, 'Troca solicitada pelo lojista')
             p = c.execute('SELECT * FROM professionals WHERE id=?',(pid,)).fetchone()
             assert p['slug'] == slug and p['plan_active'] == plan and p['is_premium'] == 1

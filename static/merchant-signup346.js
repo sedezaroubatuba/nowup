@@ -4,7 +4,7 @@
  const other=document.getElementById('signup-other346'),segment=document.getElementById('signup-segment346');
  const cities=JSON.parse(document.getElementById('signup-cities-config346').textContent);
  function refresh(){
-  const showcase=plan.value==='ambos';docs.hidden=!showcase;docs.disabled=!showcase;
+  const showcase=['ambos','completo'].includes(plan.value);docs.hidden=!showcase;docs.disabled=!showcase;
   type.querySelector('[value="CPF"]').disabled=showcase;
   if(showcase)type.value='CNPJ';documentField.required=showcase;
   document.getElementById('signup-document-note346').textContent=showcase?'(CNPJ obrigatório)':'(opcional)';

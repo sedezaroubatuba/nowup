@@ -43,3 +43,14 @@ html body .nu143-cart-dialog .nu305-combo-details summary{color:#7134c6;font-siz
 html body .nu143-cart-dialog .nu305-combo-details p{white-space:normal;overflow-wrap:anywhere;font-size:13px;line-height:1.5;margin:6px 0}
 html body .nu143-cart-dialog .nu305-principal{font-weight:700;color:#35274b!important}
 html body .nu143-cart-dialog .nu305-combo-summary>small{line-height:1.45}
+
+/* Order content must remain visible when the catalogue switches sections. */
+html body .native-menu dialog.nu353-order-dialog[open] > .menu-cart,
+html body .native-menu dialog.nu353-order-dialog[open] > .menu-cart > .panel {
+  display:block!important;visibility:visible!important;opacity:1!important;
+  height:auto!important;max-height:none!important;content-visibility:visible!important;
+}
+html body .native-menu dialog.nu353-order-dialog[open] > form[data-order-form] {
+  display:grid!important;visibility:visible!important;opacity:1!important;
+  height:auto!important;max-height:none!important;content-visibility:visible!important;
+}

@@ -102,6 +102,7 @@ def install(g):
         number=phone(whatsapp) if whatsapp.strip() else '';conn=g['db']()
         try:
             p=g['require_premium_catalog'](conn,user['id'])
+            if p['plan_active'] not in ('cardapio','completo'):raise HTTPException(403,'Seu plano recebe pedidos somente dentro do NowUp')
             conn.execute('INSERT INTO store_menu257(professional_id,whatsapp,mode) VALUES(?,?,?) ON CONFLICT(professional_id) DO UPDATE SET whatsapp=excluded.whatsapp,mode=excluded.mode',(p['id'],number,mode))
             conn.commit()
         finally:conn.close()
@@ -119,7 +120,7 @@ def install(g):
         conn=g['db']()
         try:
             setting=conn.execute('SELECT whatsapp,mode FROM store_menu257 WHERE professional_id=?',(p['id'],)).fetchone()
-            mode=setting['mode'] if setting else 'both'
+            mode=setting['mode'] if setting else 'whatsapp'
             number=phone((setting['whatsapp'] if setting and setting['whatsapp'] else p['whatsapp'])) if mode!='panel' else ''
             from nowup_checkout229 import begin_checkout,remember_checkout
             identity=user['id'] if user and user['role']=='customer' else 0
@@ -131,7 +132,7 @@ def install(g):
                 conn.rollback();conn.close()
                 return JSONResponse(json.loads(row[0]),headers=HEADERS)
             lock=" FOR UPDATE" if getattr(conn,'dialect','sqlite')=='postgres' else ''
-            fresh=conn.execute("SELECT p.* FROM professionals p JOIN users u ON u.id=p.user_id WHERE p.id=? AND p.blocked=0 AND p.admission_status='approved' AND p.plan_active IN ('cardapio','ambos') AND p.is_premium=1 AND p.offer_mode IN ('menu','catalog') AND u.is_active=1"+lock,(p['id'],)).fetchone()
+            fresh=conn.execute("SELECT p.* FROM professionals p JOIN users u ON u.id=p.user_id WHERE p.id=? AND p.blocked=0 AND p.admission_status='approved' AND p.plan_active IN ('cardapio','completo') AND p.is_premium=1 AND p.offer_mode IN ('menu','catalog') AND u.is_active=1"+lock,(p['id'],)).fetchone()
             if not fresh:raise HTTPException(409,'Loja indisponível')
             p=dict(fresh)
             clean,subtotal,fee,area,total,change=validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighborhood,change_for)
@@ -177,7 +178,11 @@ def install(g):
             if result['recorded']:
                 conn.execute('INSERT INTO store_dispatch257(order_id,response) VALUES(?,?)',(oid,json.dumps(result,ensure_ascii=False)))
                 conn.commit()
-            else:conn.rollback()
+            else:
+                conn.rollback()
+                if fulfillment_type=='delivery' and save_address:
+                    conn.execute("UPDATE users SET address=?,neighborhood=?,address_reference=? WHERE id=? AND role='customer'",(address.strip(),area,address_reference.strip(),identity))
+                    conn.commit()
             return JSONResponse(result,headers=HEADERS)
         finally:conn.close()
 

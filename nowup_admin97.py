@@ -131,7 +131,7 @@ def report(c, params, today=None):
     for p in selected_pros:
         key=(p['city'] or 'Não informada')+' / '+(p['neighborhood'] or 'Não informado')
         locations[key]['stores']+=1
-        locations[key]['active']+=int(not p['blocked'] and p['admission_status']=='approved' and p['plan_active'] in ('vitrine','cardapio','ambos'))
+        locations[key]['active']+=int(not p['blocked'] and p['admission_status']=='approved' and p['plan_active'] in ('vitrine','cardapio','ambos','completo'))
     customers=[dict(r) for r in c.execute("SELECT id,name,phone,email,neighborhood,created_at FROM users WHERE role='customer' ORDER BY id DESC")]
     customer_regions=defaultdict(int)
     for u in customers: customer_regions[u['neighborhood'] or 'Não informado']+=1

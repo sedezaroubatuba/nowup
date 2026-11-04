@@ -74,11 +74,11 @@ def people(c,params,merchant=False):
         if st=='pendentes':clauses.append("p.admission_status='pending'")
         if st=='recusados':clauses.append("p.admission_status='rejected'")
         if st=='novos':clauses.append("julianday(u.created_at)>=julianday('now','-30 days')")
-        due="date(p.billing_due_date)";paid="p.is_demo=0 AND p.plan_granted=0 AND p.plan_active IN ('cardapio','vitrine','ambos')"
+        due="date(p.billing_due_date)";paid="p.is_demo=0 AND p.plan_granted=0 AND p.plan_active IN ('cardapio','vitrine','ambos','completo')"
         if st=='inadimplentes':clauses.append(paid+" AND "+due+"<date('now','-3 hours')")
         if st=='em-dia':clauses.append(paid+" AND "+due+">date('now','-3 hours','+7 days')")
         if st=='a-vencer':clauses.append(paid+" AND "+due+" BETWEEN date('now','-3 hours') AND date('now','-3 hours','+7 days')")
-        if params.get('plano') in ('cardapio','vitrine','ambos'):clauses.append('p.plan_active=?');args.append(params['plano'])
+        if params.get('plano') in ('cardapio','vitrine','ambos','completo'):clauses.append('p.plan_active=?');args.append(params['plano'])
     join='JOIN professionals p ON p.user_id=u.id' if merchant else ''
     owner='o.professional_id=p.id' if merchant else 'o.customer_id=u.id'
     for key,condition in [('pedidos','1=1'),('cancelamentos',"o.status IN ('cancelled','rejected')")]:
@@ -120,7 +120,7 @@ def dashboard(request:Request):
                 if role=='professional':
                     pro=c.execute('SELECT * FROM professionals WHERE user_id=?',(uid,)).fetchone();d['pro']=enrich_profiles([pro])[0]
                     # V72 considera vitrine gratuita; V205 exibe cobrança dos três planos pagos.
-                    if not pro['is_demo'] and not pro['plan_granted'] and pro['plan_active'] in ('cardapio','vitrine','ambos'):
+                    if not pro['is_demo'] and not pro['plan_granted'] and pro['plan_active'] in ('cardapio','vitrine','ambos','completo'):
                         prodata=dict(pro);prodata['is_premium']=1;d['pro'].update({k:v for k,v in enrich_profiles([prodata])[0].items() if k.startswith('billing_')})
                 owner='professional_id' if d['pro'] else 'customer_id';oid=d['pro']['id'] if d['pro'] else uid
                 d['orders']=[dict(r) for r in c.execute('SELECT id,order_code,status,total_cents,created_at FROM orders WHERE '+owner+'=? ORDER BY id DESC LIMIT 30',(oid,))]

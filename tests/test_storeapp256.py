@@ -8,7 +8,7 @@ def shop(checkout,monkeypatch):
     m,client,url,data,pid,customer=checkout
     with m.db() as c:
         p=c.execute('SELECT p.* FROM professionals p JOIN products pr ON pr.professional_id=p.id WHERE pr.id=?',(pid,)).fetchone();slug=p['slug']
-        c.execute("UPDATE professionals SET display_name='Sede Zero',avatar_filename='' WHERE id=?",(p['id'],))
+        c.execute("UPDATE professionals SET display_name='Sede Zero',avatar_filename='',plan_active='completo' WHERE id=?",(p['id'],))
     m.nowup_home210.configure(vars(m))
     return m,client,slug,p['id'],url,data,pid
 

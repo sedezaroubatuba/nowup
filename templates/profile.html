@@ -83,7 +83,7 @@ body.public-profile-area :focus-visible {outline:3px solid #08a5d0;outline-offse
 <div class="stars">{% if pro.review_count %}★ {{pro.rating}} <span class="muted">({{pro.review_count}} {{'avaliação' if pro.review_count == 1 else 'avaliações'}})</span>{% else %}<span class="muted">☆ Sem avaliações</span>{% endif %}</div>
 </div>
 <div class="profile-cta profile-primary-actions">
-{% if pro.plan_active == 'vitrine' and pro.contact_link %}<a class="btn primary" href="{{pro.contact_link}}" target="_blank" rel="noopener">{{'Abrir link da empresa' if pro.contact_target=='external' else 'Conversar pelo WhatsApp'}}</a>{% elif pro.plan_active in ['cardapio','ambos'] %}<a class="btn primary" href="/p/{{pro.slug}}/menu">Ver {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}} e pedir</a>{% endif %}
+{% if pro.plan_active == 'vitrine' and pro.contact_link %}<a class="btn primary" href="{{pro.contact_link}}" target="_blank" rel="noopener">{{'Abrir link da empresa' if pro.contact_target=='external' else 'Conversar pelo WhatsApp'}}</a>{% elif pro.plan_active in ['cardapio','ambos','completo'] %}<a class="btn primary" href="/p/{{pro.slug}}/menu">Ver {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}} e pedir</a>{% endif %}
 {% if pro.address and not pro.hide_address %}<a class="btn soft" href="https://www.google.com/maps/search/?api=1&query={{pro.address|urlencode}}" target="_blank" rel="noopener">📍 Como chegar</a>{% else %}<span class="btn soft disabled">📍 Como chegar</span>{% endif %}
 
 
@@ -92,7 +92,7 @@ body.public-profile-area :focus-visible {outline:3px solid #08a5d0;outline-offse
 
 </div>
 </section>
-{% if pro.plan_active in ['cardapio','ambos'] and pro.is_premium and pro.offer_mode in ['menu','catalog'] %}<section class="native-menu" data-native-menu data-carousel-layout="{{pro.carousel_layout235}}" data-owner200="{{1 if user and user.id==pro.user_id else 0}}">
+{% if pro.plan_active in ['cardapio','ambos','completo'] and pro.is_premium and pro.offer_mode in ['menu','catalog'] %}<section class="native-menu" data-native-menu data-carousel-layout="{{pro.carousel_layout235}}" data-owner200="{{1 if user and user.id==pro.user_id else 0}}">
 <div class="container">
 <header class="nu83-catalog-heading"><h2>{{'Catálogo' if pro.offer_mode=='catalog' else 'Cardápio'}}</h2><label class="nu83-search">Buscar produtos<input class="input" type="search" data-product-search placeholder="Buscar produtos" aria-label="Buscar produtos"></label></header>
 <div class="store-status {% if shop_status.open %}open{% else %}closed{% endif %}"><b>{{shop_status.label}}</b><span>{{shop_status.detail}}</span>{% if not shop_status.open %}<small>Você pode consultar o {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}, mas os pedidos estão pausados neste momento.</small>{% endif %}</div>
@@ -167,9 +167,9 @@ body.public-profile-area :focus-visible {outline:3px solid #08a5d0;outline-offse
 </dialog>
 <footer class="nu83-cart-dock" hidden><button type="button" data-cart-summary><span>🛒 <span data-cart-count>0 itens</span></span><strong>Ver carrinho · <span data-dock-total>R$ 0,00</span></strong></button></footer></section>
 <script>window.NOWUP_MENU={{ {'deliveryFee':pro.delivery_fee_cents,'hasDeliveryZones':delivery_zones|length>0,'minimumOrder':pro.minimum_order_cents,'open':shop_status.open,'ownerView':(user and user.id==pro.user_id) or false,'storeName':pro.display_name,'customerId':user.id if user and user.role=='customer' else none}|tojson }};</script>
-<link rel="stylesheet" href="/static/cart144.css?v=305"><script src="/static/order-savings315.js?v=315"></script><script src="/static/menu88.js?v=316">
+<link rel="stylesheet" href="/static/cart144.css?v=353"><script src="/static/order-savings315.js?v=315"></script><script src="/static/menu88.js?v=353">
 </script>
-<script src="/static/cart144.js?v=296" defer></script><script src="/static/customer-address.js?v=69" defer></script>{% endif %}
+<script src="/static/cart144.js?v=353" defer></script><script src="/static/customer-address.js?v=69" defer></script>{% endif %}
 <section class="section">
 <div class="container profileGrid">
 <main>

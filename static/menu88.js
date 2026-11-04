@@ -127,7 +127,14 @@
   root.querySelectorAll('[data-category-filter]').forEach(b=>b.addEventListener('click',()=>{category=b.dataset.categoryFilter;root.querySelectorAll('[data-category-filter]').forEach(x=>x.classList.toggle('active',x===b));filter();}));
   search?.addEventListener('input',filter);
   root.querySelector('[data-cart-summary]')?.addEventListener('click',()=>{const summary=root.querySelector('.menu-cart');summary?.scrollIntoView({behavior:'smooth',block:'center'});summary?.focus({preventScroll:true});});
-  checkout.addEventListener('click',()=>dialog.showModal());dockCheckout?.addEventListener('click',()=>{if(!checkout.disabled)dialog.showModal()});dialog.querySelector('[data-dialog-close]')?.addEventListener('click',()=>dialog.close());
+  function openOrderDialog353(target){
+    // Keep order dialogs outside catalogue sections that can be hidden by filters.
+    if(target.parentElement!==root)root.append(target);
+    target.hidden=false;target.classList.add('nu353-order-dialog');
+    if(!target.open)target.showModal();target.scrollTop=0;
+  }
+  window.NOWUP_OPEN_ORDER353=openOrderDialog353;
+  checkout.addEventListener('click',()=>openOrderDialog353(dialog));dockCheckout?.addEventListener('click',()=>{if(!checkout.disabled)openOrderDialog353(dialog)});dialog.querySelector('[data-dialog-close]')?.addEventListener('click',()=>dialog.close());
   function checkoutFields(){const delivery=fulfillment?.value==='delivery',address=dialog.querySelector('[data-address]');if(address){address.hidden=!delivery;address.querySelectorAll('input:not([type=checkbox]),select').forEach(i=>i.required=delivery)}const change=dialog.querySelector('[data-change]');if(change)change.hidden=payment?.value!=='cash';render()}
   dialog.querySelector('[data-delivery-zone265]')?.addEventListener('change',render);
   fulfillment?.addEventListener('change',checkoutFields);payment?.addEventListener('change',checkoutFields);// Cart is cleared only after the server confirms a successfully created order.

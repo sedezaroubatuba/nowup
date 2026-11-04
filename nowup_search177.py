@@ -51,7 +51,7 @@ def register(app, db, public_business_scope, shop_status):
             product_sql='''SELECT pr.id,pr.name,pr.description,pr.category,pr.price_cents,pr.promo_price_cents,pr.image_filename,
                 p.slug store_slug,p.display_name store_name,p.city,p.neighborhood,p.business_hours,p.business_status,
                 p.id professional_id FROM products pr JOIN professionals p ON p.id=pr.professional_id
-                WHERE '''+scope+''' AND p.plan_active='ambos' AND p.is_premium=1 AND p.offer_mode IN ('menu','catalog') AND pr.available=1
+                WHERE '''+scope+''' AND p.plan_active IN ('ambos','completo') AND p.is_premium=1 AND p.offer_mode IN ('menu','catalog') AND pr.available=1
                 AND (NOT EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=p.id AND lower(pc.name)=lower(pr.category))
                 OR EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=p.id AND lower(pc.name)=lower(pr.category) AND pc.active=1)) AND '''+product_match
             products=[]
