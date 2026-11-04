@@ -1,10 +1,10 @@
 name: Security and server regression checks
 on:
   pull_request:
-    paths: ['*.py', 'templates/**', 'requirements.txt', 'tests/*.py', '.github/workflows/security308.yml']
+    paths: ['*.py', 'templates/**', 'requirements.txt', 'requirements-dev.txt', 'test_admin205.py', 'tests/*.py', '.github/workflows/security308.yml']
   push:
     branches: [codex/categorias-icones-v230]
-    paths: ['*.py', 'templates/**', 'requirements.txt', 'tests/*.py', '.github/workflows/security308.yml']
+    paths: ['*.py', 'templates/**', 'requirements.txt', 'requirements-dev.txt', 'test_admin205.py', 'tests/*.py', '.github/workflows/security308.yml']
 permissions:
   contents: read
 jobs:
@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install -r requirements.txt pytest httpx2 pip-audit
+      - run: pip install -r requirements-dev.txt pip-audit
       - name: Dependency advisory check
         run: pip-audit -r requirements.txt
       - name: Isolated server suites
@@ -24,6 +24,7 @@ jobs:
           NOWUP_ADMIN_EMAIL: audit308@example.invalid
           NOWUP_ADMIN_PASSWORD: isolated-security-test-password
         run: |
-          for suite in tests/test_*.py; do
+          set -e
+          for suite in tests/test_*.py test_admin205.py; do
             python -m pytest "$suite" -q --disable-warnings
           done

@@ -2,6 +2,8 @@ name: Storefront banner checks
 on:
   pull_request:
     paths:
+      - 'package.json'
+      - 'package-lock.json'
       - 'app.py'
       - 'nowup_runtime238.py'
       - 'nowup_admin227.py'
@@ -25,6 +27,8 @@ on:
   push:
     branches: [codex/categorias-icones-v230]
     paths:
+      - 'package.json'
+      - 'package-lock.json'
       - 'app.py'
       - 'nowup_runtime238.py'
       - 'nowup_admin227.py'
@@ -55,7 +59,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm install --no-save --package-lock=false playwright
+      - run: npm ci
       - name: Use installed Chrome or prepare Chromium
         run: |
           if command -v google-chrome >/dev/null 2>&1; then
@@ -64,7 +68,7 @@ jobs:
             npx playwright install --with-deps chromium
           fi
       - run: node --check static/storefront232.js
-      - run: node --test tests/cart-lifecycle247.test.cjs
+      - run: npm test
       - name: Desktop scroll and mobile slideshow controls
         run: node --test tests/storefront248.browser.cjs tests/upload-preview250.browser.cjs tests/storeapp256.browser.cjs tests/storeapp257.browser.cjs tests/images258.browser.cjs tests/opening260.browser.cjs
 

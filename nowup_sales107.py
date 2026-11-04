@@ -1,3 +1,4 @@
+from nowup_combos303 import current_price
 """Optional merchant sales ledger, isolated from customer orders."""
 from contextlib import contextmanager
 from datetime import datetime, timezone, date, timedelta
@@ -127,7 +128,7 @@ def add_item(c,pid,sid,product_id,quantity,notes):
     p=c.execute('SELECT * FROM products WHERE id=? AND professional_id=? AND available=1',(product_id,pid)).fetchone()
     if not p: raise HTTPException(400,'Produto não disponível no cadastro da sua loja.')
     c.execute('INSERT INTO manual_items107(sale_id,product_id,product_name,category,quantity,unit_price_cents,notes) VALUES(?,?,?,?,?,?,?)',
-      (sid,p['id'],p['name'],p['category'] or 'Sem categoria',quantity,p['promo_price_cents'] if p['promo_price_cents']>0 else p['price_cents'],notes.strip()[:500]))
+      (sid,p['id'],p['name'],p['category'] or 'Sem categoria',quantity,current_price(p),notes.strip()[:500]))
     recalc(c,sid)
 
 def history(c,sid,uid,action,detail):
@@ -163,7 +164,7 @@ def panel_data(request,sale=0):
             payments=[dict(x) for x in c.execute('SELECT * FROM manual_payments107 WHERE sale_id=? ORDER BY id',(sale,))]
             events=[dict(x) for x in c.execute('SELECT * FROM manual_history107 WHERE sale_id=? ORDER BY id DESC LIMIT 100',(sale,))]
             current['paid']=sum(x['cents'] for x in payments);current['remaining']=current['total_cents']-current['paid']
-        products=[dict(x) for x in c.execute('SELECT id,name,CASE WHEN promo_price_cents>0 THEN promo_price_cents ELSE price_cents END price_cents FROM products WHERE professional_id=? AND available=1 ORDER BY name',(p['id'],))]
+        products=[dict(x) for x in c.execute('SELECT id,name,CASE WHEN promo_price_cents>0 AND promo_price_cents<price_cents THEN promo_price_cents ELSE price_cents END price_cents FROM products WHERE professional_id=? AND available=1 ORDER BY name',(p['id'],))]
     return dict(sales=rows,sale=current,items=items,payments=payments,events=events,products=products,token=secrets.token_urlsafe(24),methods=METHODS,history_page=page,history_search=search,history_previous='/painel?'+urlencode({'historico':page-1,'busca':search}) if page>1 else '',history_next='/painel?'+urlencode({'historico':page+1,'busca':search}) if more else '')
 
 def go(sid,channel):

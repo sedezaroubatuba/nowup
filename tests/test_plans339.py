@@ -44,7 +44,10 @@ def test_plan_switch_reuses_store_products_and_link(shop):
     m, client, slug, pid, url, data, product = shop
     adm.configure(vars(m))
     adm.initialize()
+    import nowup_verification257 as verification
+    verification.G.update(vars(m));verification.initialize()
     with m.db() as c:
+        c.execute("INSERT INTO merchant_evidence257(professional_id,legal_name,owner_name,owner_cpf,owner_role,status) VALUES(?,'Loja teste','Titular teste','52998224725','Titular','verified')",(pid,))
         before = [tuple(r) for r in c.execute('SELECT * FROM products WHERE professional_id=?',(pid,))]
         for plan in ('cardapio', 'ambos', 'cardapio'):
             adm.update_store(c, {'permissions':['finance']}, pid, {'plan':plan}, 'Troca solicitada pelo lojista')

@@ -7,7 +7,7 @@
 {% if product and product.featured %}<input type="hidden" name="featured" value="1">{% endif %}
 {% if product and product.sold_cold %}<input type="hidden" name="sold_cold" value="1">{% endif %}
 <label>Nome do combo<input class="input" name="name" maxlength="140" value="{{product.name if product else ''}}" required></label>
-<label>Preço final do combo (R$) — desconto já incluído<input class="input" name="price" inputmode="decimal" value="{{'%.2f'|format((product.promo_price_cents if product.promo_price_cents > 0 else product.price_cents)/100)|replace('.',',') if product else ''}}" placeholder="Ex.: 149,90" required></label>
+<label>Preço final do combo (R$) — desconto já incluído<input class="input" name="price" inputmode="decimal" value="{{'%.2f'|format((current_price348(product))/100)|replace('.',',') if product else ''}}" placeholder="Ex.: 149,90" required></label>
 <label class="full">Foto do combo<input class="input" type="file" name="photo" accept="image/*" {% if product and product.image_filename %}data-preview250="/uploads/{{product.image_filename}}"{% endif %}></label>
 <label class="full">Descrição do combo<textarea name="description" maxlength="600" placeholder="Descreva o combo e as informações para o cliente.">{{product.description if product else ''}}</textarea></label>
 <label class="check"><input type="checkbox" name="available" value="1" {% if not product or product.available %}checked{% endif %}> Combo disponível para pedidos</label>

@@ -41,7 +41,7 @@ test('approved compact combo keeps readable prices, double outline and carousel 
   for(const selector of ['h3','.nu289-combo-price','.nu289-combo-price strong','.nu303-saving','.nu284-combo-open']){
    const child=await card.locator(selector).boundingBox();assert.ok(child.x>=box.x&&child.x+child.width<=box.x+box.width+1&&child.y+child.height<=box.y+box.height+1,JSON.stringify({width,selector,box,child}));
   }
-  const track=page.locator('.nu275-combo-section .nu190-track');assert.equal(await track.evaluate(e=>getComputedStyle(e).overflowX),'auto');assert.ok(await track.evaluate(e=>e.scrollWidth>e.clientWidth));
+  if(width<=900){const track=page.locator('.nu275-combo-section .nu190-track');assert.equal(await track.evaluate(e=>getComputedStyle(e).overflowX),'auto');assert.ok(await track.evaluate(e=>e.scrollWidth>e.clientWidth));}else{assert.equal(await page.locator('.nu275-combo-section .nu312-grid .nu275-combo-card').count(),6);}
   await page.close();
  }
  }finally{await browser.close();}

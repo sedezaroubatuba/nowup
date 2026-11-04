@@ -9,6 +9,9 @@ def test_original_and_independent_login_are_rate_limited(channel,monkeypatch):
  import admin_customization
  m,client,slug,*_=channel;monkeypatch.setattr(admin_customization,'db',m.db)
  for _ in range(10):assert client.post('/p/'+slug+'/entrar',data={'email':'rate258@example.invalid','password':'invalid'},follow_redirects=False).status_code==303
+ assert client.post('/p/'+slug+'/entrar',data={'email':'rate258@example.invalid','password':'invalid'},follow_redirects=False).status_code==429
+ # V345 deliberately isolates store accounts from marketplace accounts.
+ for _ in range(10):assert client.post('/entrar',data={'email':'rate258@example.invalid','password':'invalid'},follow_redirects=False).status_code==303
  assert client.post('/entrar',data={'email':'rate258@example.invalid','password':'invalid'},follow_redirects=False).status_code==429
 
 

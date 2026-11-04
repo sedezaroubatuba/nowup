@@ -86,8 +86,9 @@ def test_store_login_reuses_customer_auth_and_safe_return(shop,monkeypatch):
         calls.append(tipo);r=RedirectResponse('/',303);r.set_cookie('nowup_session','isolated');return r
     monkeypatch.setattr(admin_customization,'secure_login',login)
     result=client.post('/p/'+slug+'/entrar',data={'email':'test@example.invalid','password':'unused'},follow_redirects=False)
-    assert calls==['cliente'] and result.headers['location']=='/p/'+slug+'/menu?loja=1'
-    assert 'nowup_session=' in result.headers['set-cookie']
+    # Store credentials must never be passed to the shared marketplace login.
+    assert calls==[] and result.headers['location']=='/p/'+slug+'/entrar?erro=1'
+    assert 'nowup_session=' not in result.headers.get('set-cookie','')
     assert client.post('/p/not-a-store/entrar',data={'email':'test@example.invalid','password':'unused'},follow_redirects=False).status_code==404
 
 
@@ -95,7 +96,8 @@ def test_signup_context_is_optional_and_does_not_allow_external_redirects(shop):
     m,client,slug,*_=shop
     result=client.get('/cadastro/cliente?loja='+slug);assert result.status_code==200
     assert 'id="store-app256"' in result.text
-    assert 'nowup_store_return256=' in result.headers.get('set-cookie','')
+    assert result.url.path=='/p/'+slug+'/cadastro'
+    assert 'nowup_store_return256=' not in result.headers.get('set-cookie','')
     client.cookies.clear()
     bad=client.get('/cadastro/cliente?loja=https://evil.invalid');assert bad.status_code==200
     assert 'id="store-app256"' not in bad.text
@@ -103,13 +105,14 @@ def test_signup_context_is_optional_and_does_not_allow_external_redirects(shop):
 
 def test_real_customer_login_returns_to_store_and_preserves_session(shop,monkeypatch):
     import admin_customization
-    m,client,slug,*_=shop
+    m,client,slug,pid,*_=shop
     monkeypatch.setattr(admin_customization,'db',m.db)
     with m.db() as c:
-        c.execute("UPDATE users SET password_hash=?,email_verified=1 WHERE email='audit247@example.invalid'",(m.hash_password('storeapp-test-password'),))
+        c.execute("UPDATE users SET password_hash=?,email_verified=1,customer_store345=?,customer_email345=email WHERE email='audit247@example.invalid'",(m.hash_password('storeapp-test-password'),pid))
     response=client.post('/p/'+slug+'/entrar',data={'email':'audit247@example.invalid','password':'storeapp-test-password'},follow_redirects=False)
     assert response.status_code==303 and response.headers['location']=='/p/'+slug+'/menu?loja=1'
-    assert 'nowup_session=' in response.headers['set-cookie']
+    assert 'nowup_loja345_'+str(pid)+'=' in response.headers['set-cookie']
+    assert 'nowup_session=' not in response.headers['set-cookie']
     bad=client.post('/p/'+slug+'/entrar',data={'email':'audit247@example.invalid','password':'wrong'},follow_redirects=False)
     assert bad.headers['location'].startswith('/p/'+slug+'/entrar?erro=1')
 

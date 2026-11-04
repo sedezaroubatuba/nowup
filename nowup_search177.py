@@ -1,3 +1,4 @@
+from nowup_combos303 import current_price
 """Public catalog search; uses current data and makes no database mutations."""
 import re
 import secrets
@@ -71,7 +72,7 @@ def register(app, db, public_business_scope, shop_status):
             for r in products:
                 status=shop_status(r)
                 payload.append({'id':r['id'],'name':r['name'],'store_name':r['store_name'],'city':r['city'],
-                    'price_cents':r['promo_price_cents'] if r['promo_price_cents']>0 else r['price_cents'],
+                    'price_cents':current_price(r),
                     'image':image(r['image_filename']),'open':bool(status['open']),
                     'url':'/p/'+quote(r['store_slug'],safe='')+'/menu?produto='+str(r['id'])+'#produto-'+str(r['id'])})
             return JSONResponse({'products':payload,'stores':[{'name':r['display_name'],'city':r['city'],'open':bool(status['open']),

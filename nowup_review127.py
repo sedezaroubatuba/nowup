@@ -1,3 +1,4 @@
+from nowup_combos303 import current_price
 """Revisões de pedido com aprovação explícita e valores em centavos."""
 import json
 from fastapi import Request, HTTPException
@@ -23,7 +24,7 @@ def build_items(conn,order,keep,quantities,additions):
         if not pid: continue
         p=conn.execute('SELECT * FROM products WHERE id=? AND professional_id=? AND available=1',(int(pid),order['professional_id'])).fetchone()
         if not p or not 1<=int(qty)<=99: raise HTTPException(400,'Substituto indisponível ou quantidade inválida')
-        result.append({'id':None,'product_id':p['id'],'product_name':p['name'],'quantity':int(qty),'unit_price_cents':p['promo_price_cents'] if p['promo_price_cents']>0 else p['price_cents'],'notes':''})
+        result.append({'id':None,'product_id':p['id'],'product_name':p['name'],'quantity':int(qty),'unit_price_cents':current_price(p),'notes':''})
     if not result: raise HTTPException(400,'Sem itens disponíveis: recuse o pedido com motivo')
     if len(result)>100: raise HTTPException(400,'Limite de itens excedido')
     return result,sum(i['quantity']*i['unit_price_cents'] for i in result)+order['delivery_fee_cents']

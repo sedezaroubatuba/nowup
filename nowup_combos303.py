@@ -24,7 +24,9 @@ def attach_prices(conn, store_id, products):
     item_images={str(r["id"]):r["image_filename"] for r in ingredients329 if r["image_filename"]}
     output=[]
     for source in products:
-        row=dict(source);row['combo_prices303']={};row['combo_images303']={}
+        row=dict(source)
+        if 'promo_price_cents' in row and not 0<int(row['promo_price_cents'] or 0)<int(row['price_cents']):row['promo_price_cents']=0
+        row['combo_prices303']={};row['combo_images303']={}
         if row.get('customization192'):
             try:
                 config=attach_photos329(parse_config(row.get('customization192','')),ingredients329)

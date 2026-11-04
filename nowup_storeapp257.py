@@ -1,3 +1,4 @@
+from nowup_combos303 import current_price
 """Independent WhatsApp checkout, with shared server-side cart validation."""
 import json
 from nowup_combo_pack305 import build_pack, read_pack
@@ -66,7 +67,7 @@ def validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighbor
             product['combo_pack305']=build_pack(g['parse_config'](product['customization192']),raw.get('customization',{}),user_notes305) if product.get('is_combo256') else ''
             try: g['validate_choices89'](conn,pid,chosen)
             except HTTPException: raise
-            unit=(product["promo_price_cents"] if product["promo_price_cents"]>0 else product["price_cents"])+extras
+            unit=(current_price(product))+extras
             if unit<0:raise HTTPException(409,"Preço indisponível. Entre em contato com a loja.")
             clean_items.append((product,qty,item_notes,chosen,unit)); subtotal += unit*qty
     if not clean_items: raise HTTPException(400,"Nenhum produto disponível no carrinho")

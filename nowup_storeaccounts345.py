@@ -134,12 +134,12 @@ def install(g):
     @app.post('/p/{slug}/reenviar-verificacao')
     def resend(request:Request,slug:str,email:str=Form(...)):
         p=store(g,slug)
-        from nowup_auth247 import check
-        check(g['db'],request,str(p['id'])+':'+email,kind='verification345')
+        from nowup_auth247 import verification,verification_token348
+        verification(g['db'],request,str(p['id'])+':'+email.strip().lower())
         with g['db']() as c:
             u=customer(c,p,email.strip().lower())
             if u and not u['email_verified']:
-                token,expires=g['verification_token']()
+                token,expires=verification_token348(u)
                 c.execute('UPDATE users SET verification_token=?,verification_expires_at=? WHERE id=?',(token,expires,u['id']));c.commit()
                 send_confirmation(g,p,u['name'],u['customer_email345'],token)
         return RedirectResponse(cookie_path(p)+'aguardando?reenviado=1',303)

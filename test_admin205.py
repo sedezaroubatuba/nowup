@@ -5,6 +5,7 @@ ROOT=Path(__file__).resolve().parent
 if not (ROOT/'app.py').exists():ROOT=ROOT/'adm205'
 sys.path.insert(0,str(ROOT))
 import pytest
+from test_checkout247 import checkout
 from fastapi import FastAPI,HTTPException
 from fastapi.testclient import TestClient
 from fastapi.templating import Jinja2Templates
@@ -17,6 +18,8 @@ def env(tmp_path):
  def db():
   c=sqlite3.connect(path);c.row_factory=sqlite3.Row;c.execute('PRAGMA foreign_keys=ON');return c
  ns={'db':db,'datetime':datetime,'timezone':timezone,'timedelta':timedelta,'SESSION_ABSOLUTE_DAYS238':90,'SESSION_DAYS':30}
+ import nowup_marketing309,nowup_ingredients320,nowup_plans339
+ ns.update(nowup_marketing309=nowup_marketing309,nowup_ingredients320=nowup_ingredients320,nowup_plans339=nowup_plans339)
  tree=ast.parse((ROOT/'app.py').read_text());ensure=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='ensure_column');exec(compile(ast.Module(body=[ensure],type_ignores=[]),'schema','exec'),ns)
  init=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='init_db');part=[]
  for node in init.body:
@@ -40,6 +43,9 @@ def env(tmp_path):
   c.execute("INSERT INTO orders(professional_id,customer_id,customer_name,created_at,updated_at,status,total_cents,neighborhood,fulfillment_type) VALUES(1,2,'Maria','2026-10-18T12:00:00+00:00','2026-10-18T13:00:00+00:00','completed',2500,'Centro','delivery')")
   c.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(1,'completed','2026-10-18T13:00:00+00:00')")
  templates=Jinja2Templates(directory=str(ROOT/'templates'))
+ import app as active_app
+ templates.env.globals.update(active_app.templates.env.globals)
+ templates.env.filters.update(active_app.templates.env.filters)
  def context(r,**kw):return dict({'request':r,'user':auth(r),'settings':{},'categories':[],'banners':[],'business_slides':[]},**kw)
  m.configure(dict(nowup_alerts112=None,db=db,require_user=auth,templates=templates,context=context,normalize_email=lambda x:x.strip().lower() if '@' in x else '',verification_token=lambda:('token','2026-10-19T12:00:00+00:00'),send_verification=lambda *a:True,slugify=lambda s:s.lower().replace(' ','-')))
  legacy.configure(db,auth,templates,context);legacy.init_support();m.initialize();m.initialize()
@@ -113,26 +119,27 @@ def test_category_region(env):
   r=m.regional(c,{'inicio':'2026-10-18','fim':'2026-10-18','cidade':'Ubatuba','estado':'SP','bairro':'Centro'});assert r['sales'][0]['amount']==2500;assert r['delivered'][0]['amount']==2500;assert r['registrations'][0][0]['count']==2
  assert client.get('/admin/central?secao=relatorios&inicio=2026-10-20&fim=2026-10-01').status_code==400
 
-def test_registration_fields(env):
- client,db,ns,tree=env
- from fastapi import Form
- from fastapi.responses import RedirectResponse
- from typing import Optional
+def test_registration_fields(checkout,monkeypatch):
+ # Exercise the current HTTP handler, not extracted historical function bodies.
+ app,client,*_=checkout
  sent=[]
- def verify(*args):sent.append(args);return True
- ns.update(Request=__import__('fastapi').Request,Form=Form,Optional=Optional,sqlite3=sqlite3,RedirectResponse=RedirectResponse,os=__import__('os'),normalize_email=lambda x:x.strip().lower(),normalize_phone=lambda x:x,hash_password=lambda p:'hash',email_service_configured=lambda:True,verification_token=lambda:('verifytoken','2026-10-19T12:00:00+00:00'),now_iso=lambda:'2026-10-18T12:00:00+00:00',send_verification=verify,nowup_admin205=m,active_cities=lambda:['Ubatuba'],unique_slug=lambda c,n:'novo-lojista')
- for name in ('signup_customer','signup_professional'):
-  node=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name==name);node.decorator_list=[];exec(compile(ast.Module(body=[node],type_ignores=[]),'signup','exec'),ns)
+ monkeypatch.setattr(app,'email_service_configured',lambda:True)
+ monkeypatch.setattr(app,'send_verification',lambda *args:sent.append(args) or True)
+ monkeypatch.setattr(app,'normalize_email',lambda value:value.strip().lower())
  common=dict(name='Cliente Novo',email='clientenovo@example.com',phone='12999999999',password='senha1234',password_confirm='senha1234',accept_terms='1')
- r=ns['signup_customer'](**common,address='',neighborhood='',city='',state='');assert 'erro=endereco' in r.headers['location']
- r=ns['signup_customer'](**common,address='Rua X, 100',neighborhood='Estufa II',city='Ubatuba',state='SP');assert r.status_code==303
- with db() as c:
-  u=c.execute('SELECT * FROM users WHERE email=?',(common['email'],)).fetchone();assert u['address']=='Rua X, 100';assert u['state']=='SP';assert u['email_verified']==0;assert u['verification_token']=='verifytoken'
- pro=dict(common,email='novaloja@example.com',name='Nova loja',doc_type='CNPJ',document='123',business_type='store',offer_mode='services',plan='vitrine',city='Ubatuba',neighborhood='Centro',cep='',description='',services='',category_ids=[],address='Rua A, 10',state='SP')
- assert ns['signup_professional'](**pro).status_code==303
- with db() as c:
-  p=c.execute("SELECT * FROM professionals WHERE slug='novo-lojista'").fetchone();assert p['address']=='Rua A, 10';assert p['state']=='SP';assert p['admission_status']=='pending'
- assert len(sent)==2
+ response=client.post('/cadastro/cliente',data={**common,'address':'','neighborhood':'','city':'','state':''},follow_redirects=False)
+ assert 'erro=endereco' in response.headers['location']
+ response=client.post('/cadastro/cliente',data={**common,'address':'Rua X, 100','neighborhood':'Estufa II','city':'Ubatuba','state':'SP'},follow_redirects=False)
+ assert response.status_code==303
+ with app.db() as c:
+  u=c.execute('SELECT * FROM users WHERE email=?',(common['email'],)).fetchone()
+  assert u['address']=='Rua X, 100' and u['state']=='SP' and u['email_verified']==0
+ assert len(sent)==1
+ # Current merchant signup requires an explicit plan; V346 covers optional
+ # documents for menu-only and full evidence before showcase activation.
+ page=client.get('/cadastro/profissional')
+ assert page.status_code==200 and '49,90' in page.text and '99,90' in page.text
+
 
 def test_billing_wrapper_and_csrf(env):
  client,db,ns,tree=env
@@ -148,6 +155,9 @@ def test_template_forms_and_account_deletion(env):
  client,db,ns,tree=env
  from jinja2 import Environment,FileSystemLoader
  e=Environment(loader=FileSystemLoader(str(ROOT/'templates')))
+ import app as active_app
+ e.filters.update(active_app.templates.env.filters)
+ e.globals.update(active_app.templates.env.globals)
  for p in (ROOT/'templates').glob('*.html'):e.get_template(p.name)
  # Account deletions are redirects; no DELETE statements remain in these handlers.
  for name in ('admin_delete_client','admin_delete_professional','admin_delete_all_demo_profiles'):

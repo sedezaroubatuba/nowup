@@ -1,44 +1,39 @@
-# NowUp — MVP funcional
+# NowUp
 
-Sistema web completo para divulgação de profissionais, sem intermediação de pagamentos.
+Cardápio/catálogo digital, pedidos e vitrine regional em FastAPI/Jinja.
+A mensalidade e os pagamentos dos pedidos não estão automatizados pelo Asaas.
 
-## O que funciona
-- Busca por serviço, categoria, cidade, bairro e CEP
-- Cadastro/login separado de cliente e profissional
-- Perfil profissional público com CPF/CNPJ mascarado
-- Até 10 fotos por profissional, com foto de capa
-- Feed de trabalhos publicados
-- Avaliações por clientes autenticados
-- Denúncias privadas por clientes autenticados
-- Contagem de visualizações e cliques no WhatsApp
-- Painel profissional
-- Painel administrativo
-- Categorias criadas/ativadas pelo Admin
-- Profissionais: verificação, destaque e bloqueio
-- Denúncias: revisão/resolução
-- Banners/publicidade
-- Sugestões
-- Cookies, Quem Somos, Privacidade e Termos
-- Banco SQLite persistente
-- Dockerfile para hospedagem
+## Operação atual
+
+- Cadastro e sessões distintos por papel; contas exclusivas no cardápio independente.
+- Catálogo, combos, personalizações, adicionais, promoções, pedidos e painel de separação.
+- Taxa por bairro, pedido mínimo, revisão e acompanhamento do pedido.
+- Documentos de lojistas e comprovantes privados, aprovação manual e trilha administrativa.
+- PostgreSQL opt-in e SQLite para uso local; falha no PostgreSQL não troca para outro banco.
+- Backup externo criptografado quando configurado; verificar status e testar recuperação.
 
 ## Rodar localmente
-```bash
+
+Use Python 3.12. Configure um banco descartável, diretório de fotos e as variáveis
+NOWUP_ADMIN_EMAIL e NOWUP_ADMIN_PASSWORD (mínimo de 12 caracteres) antes da primeira
+inicialização. Não há credencial administrativa padrão suportada.
+
+```
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn app:app --reload
 ```
-Abra: http://127.0.0.1:8000
 
-## Admin de demonstração
-- E-mail: `admin@nowup.local`
-- Senha: `nowup2026`
+Em produção, use HTTPS e NOWUP_HTTPS=1. Para PostgreSQL, configure
+NOWUP_DB_ENGINE=postgres e DATABASE_URL no provedor, sem credenciais no repositório.
+As imagens continuam precisando de armazenamento persistente.
 
-**Troque em produção** usando `NOWUP_ADMIN_EMAIL` e `NOWUP_ADMIN_PASSWORD` antes de criar o banco.
+## Testes e liberação
 
-## Para publicar no domínio
-Hospede o projeto em um servidor/container persistente (VPS, Render, Railway, Fly.io ou similar), mantenha `/data` e `/uploads` em volume persistente e aponte o domínio para a hospedagem. Ative HTTPS e defina `NOWUP_HTTPS=1`.
+Consulte VERIFICACAO-V348.md para comandos, correções, limites, recuperação e pendências.
+O health check /health consulta o banco e capacidade mínima; ele não substitui o
+monitoramento de pedidos nem comprova entrega de notificações.
 
-## Antes do lançamento comercial
-Recomenda-se: política LGPD final, termos revisados por advogado, backups automáticos, e-mail de recuperação de senha, logs/auditoria, proteção CSRF/rate limit, armazenamento de imagens em objeto (S3/Supabase Storage) quando houver escala e migração do SQLite para PostgreSQL quando o uso crescer.
+Antes da expansão comercial, validar cobrança, textos e procedimentos de dados,
+restauração real de backup PostgreSQL, atendimento e capacidade sob carga representativa.

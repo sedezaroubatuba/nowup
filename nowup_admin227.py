@@ -335,7 +335,8 @@ def update_product(c,a,oid,v,why):
  name=clean(v.get('name',r['name']),140,True);price=number(v.get('price',r['price_cents']));cat=clean(v.get('category',r['category']),80,True);status=v.get('status','Aprovado' if r['available'] else 'Pausado')
  if status not in ('Aprovado','Reprovado','Pendente','Pausado'):fail(400,'Moderação inválida.')
  if status=='Aprovado' and price<=0:fail(400,'Informe o preço antes de aprovar.')
- c.execute('UPDATE products SET name=?,price_cents=?,category=?,available=?,updated_at=? WHERE id=?',(name,price,cat,int(status=='Aprovado'),stamp(),oid));put(c,'productmeta',oid,{'id':oid,'status':status})
+ promo=r['promo_price_cents'] if 0<r['promo_price_cents']<price else 0
+ c.execute('UPDATE products SET name=?,price_cents=?,promo_price_cents=?,category=?,available=?,updated_at=? WHERE id=?',(name,price,promo,cat,int(status=='Aprovado'),stamp(),oid));put(c,'productmeta',oid,{'id':oid,'status':status})
 
 def update_entity(c,a,kind,oid,v,creating,why):
  if kind not in KINDS:fail(400,'Tipo de cadastro não permitido.')

@@ -3,7 +3,7 @@ import io
 import secrets
 import sqlite3
 import warnings
-from datetime import datetime,timezone
+from datetime import datetime,timezone,timedelta
 from PIL import Image,ImageOps,UnidentifiedImageError
 from fastapi import APIRouter,Request,UploadFile,File,Form,HTTPException
 from fastapi.responses import JSONResponse,Response
@@ -68,6 +68,11 @@ async def upload(request:Request,order_id:int,file:UploadFile=File(...),request_
         if old:
             if old['order_id']!=order_id:raise HTTPException(409,'Este envio já foi utilizado em outro pedido')
             return JSONResponse({'ok':True,'receipt_id':old['id'],'duplicate':True},headers={'Cache-Control':'no-store'})
+        cutoff=(datetime.now(timezone.utc)-timedelta(minutes=1)).isoformat()
+        recent=c.execute('SELECT COUNT(*) FROM order_receipts206 WHERE sender_id=? AND created_at>=?',(u['id'],cutoff)).fetchone()[0]
+        count,total=c.execute('SELECT COUNT(*),COALESCE(SUM(size_bytes),0) FROM order_receipts206 WHERE order_id=?',(order_id,)).fetchone()
+        if recent>=3:raise HTTPException(429,'Aguarde um minuto antes de enviar outro comprovante.',headers={'Retry-After':'60'})
+        if count>=10 or total+len(content)>20*1024*1024:raise HTTPException(409,'Limite de comprovantes deste pedido atingido. Fale com a loja na conversa.')
         stamp=datetime.now(timezone.utc).isoformat()
         message=c.execute('INSERT INTO order_messages(order_id,sender_role,body,created_at) VALUES(?,?,?,?)',(order_id,'customer','Comprovante enviado pelo cliente. Pagamento aguardando conferência da loja.',stamp))
         cur=c.execute('INSERT INTO order_receipts206(message_id,order_id,sender_id,request_id,filename,content_type,size_bytes,content,created_at) VALUES(?,?,?,?,?,?,?,?,?)',(message.lastrowid,order_id,u['id'],request_id,'comprovante-pedido-'+str(order_id)+'.'+ext,mime,len(content),sqlite3.Binary(content),stamp))

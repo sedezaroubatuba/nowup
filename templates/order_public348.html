@@ -1,0 +1,3 @@
+{% extends 'base.html' %}
+{% block title %}Acompanhar pedido | NowUp{% endblock %}
+{% block content %}<main class="container section"><section class="formCard"><h1>Acompanhamento do pedido</h1><p><strong>{{tracking_status348}}</strong></p><p>Entre na conta usada na compra para consultar itens, endereço, pagamento e conversar com a loja.</p><a class="btn primary" href="{{store_app256.login if store_app256 else '/entrar?tipo=cliente'}}">Entrar na minha conta</a><button class="btn soft" type="button" onclick="location.reload()">Atualizar situação</button></section></main>{% endblock %}

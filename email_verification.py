@@ -1,4 +1,4 @@
-import os, secrets, sqlite3
+import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from fastapi import APIRouter, Request, Form
@@ -29,7 +29,7 @@ def verify(token: str=""):
     if not token:
         return RedirectResponse("/entrar?erro=verificacao",303)
     conn=db()
-    u=conn.execute("SELECT id,role,verification_expires_at FROM users WHERE verification_token=?",(token,)).fetchone()
+    u=conn.execute("SELECT id,role,verification_expires_at FROM users WHERE verification_token=? AND customer_store345=0",(token,)).fetchone()
     if not u:
         conn.close(); return RedirectResponse("/entrar?erro=verificacao",303)
     try:
@@ -44,21 +44,23 @@ def verify(token: str=""):
     return RedirectResponse("/entrar?verificado=1",303)
 
 @router.post("/reenviar-verificacao")
-def resend(email: str=Form(...)):
-    if not configured():
-        return RedirectResponse("/entrar?erro=verificacao",303)
+def resend(request: Request, email: str=Form(...)):
+    from nowup_auth247 import verification, verification_token348
     try:
-        normalized=validate_email(email.strip(),check_deliverability=True).normalized.lower()
+        normalized=validate_email(email.strip(),check_deliverability=False).normalized.lower()
     except EmailNotValidError:
-        return RedirectResponse("/entrar?erro=verificacao",303)
+        verification(db,request,'marketplace:'+email.strip().lower())
+        return RedirectResponse('/entrar?erro=verificacao',303)
+    verification(db,request,'marketplace:'+normalized)
+    if not configured():
+        return RedirectResponse('/entrar?erro=verificacao',303)
     conn=db()
-    u=conn.execute("SELECT id,name,email_verified FROM users WHERE email=?",(normalized,)).fetchone()
+    u=conn.execute("SELECT * FROM users WHERE email=? AND customer_store345=0",(normalized,)).fetchone()
     if not u:
-        conn.close(); return RedirectResponse("/entrar?erro=verificacao",303)
+        conn.close(); return RedirectResponse("/cadastro/aguardando?reenviado=1",303)
     if u["email_verified"]:
-        conn.close(); return RedirectResponse("/entrar?verificado=1",303)
-    token=secrets.token_urlsafe(32)
-    expires=(datetime.now(timezone.utc)+timedelta(hours=24)).isoformat()
+        conn.close(); return RedirectResponse("/cadastro/aguardando?reenviado=1",303)
+    token,expires=verification_token348(u)
     conn.execute("UPDATE users SET verification_token=?,verification_expires_at=? WHERE id=?",(token,expires,u["id"]))
     conn.commit(); conn.close()
     send_verification(normalized,u["name"],token)

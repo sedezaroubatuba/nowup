@@ -42,6 +42,9 @@ MAX_PHOTOS = 10
 MAX_UPLOAD = 5 * 1024 * 1024
 ADMIN_SESSION_MINUTES = 30
 
+from nowup_hardening308 import protect_access_logs348
+protect_access_logs348()
+
 app = FastAPI(title="NowUp", version="1.0.0", docs_url=None, redoc_url=None, openapi_url=None)
 app.add_middleware(RequestLimit308)
 from nowup_feedback270 import install as install_feedback270
@@ -54,6 +57,7 @@ app.mount("/uploads", PublicFiles(directory=UPLOAD_DIR, images_only=True), name=
 from nowup_combo_pack305 import read_pack
 templates = Jinja2Templates(directory=str(BASE / "templates"))
 templates.env.filters["combo_pack305"]=read_pack
+templates.env.globals["current_price348"]=current_price
 from nowup_order_layout347 import local_time, note_lines
 templates.env.filters["order_datetime347"]=local_time
 templates.env.filters["order_notes347"]=note_lines
@@ -70,7 +74,7 @@ async def security_headers_and_csrf(request: Request, call_next):
     response=await call_next(request)
     response.headers["X-Content-Type-Options"]="nosniff"
     response.headers["X-Frame-Options"]="DENY"
-    response.headers["Referrer-Policy"]="strict-origin-when-cross-origin"
+    response.headers.setdefault("Referrer-Policy","strict-origin-when-cross-origin")
     response.headers["Content-Security-Policy"]="base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'"
     if request.url.scheme=="https" or os.getenv("NOWUP_HTTPS")=="1":response.headers["Strict-Transport-Security"]="max-age=31536000"
     if request.url.path in ("/entrar","/admin/codigo","/redefinir-senha","/recuperar-senha"):
@@ -686,6 +690,7 @@ def init_db():
     nowup_ingredients320.initialize(conn)
     ensure_column(conn, "orders", "customer_id", "INTEGER REFERENCES users(id) ON DELETE SET NULL")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_customer238 ON orders(customer_id,id DESC)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_order_rate348 ON orders(customer_id,created_at)")
     ensure_column(conn, "orders", "tracking_token", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "orders", "order_origin", "TEXT NOT NULL DEFAULT 'legacy'")
     conn.execute("CREATE TABLE IF NOT EXISTS guest_order_limits (professional_id INTEGER NOT NULL,phone TEXT NOT NULL,created_at TEXT NOT NULL)")
@@ -1253,6 +1258,8 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
         if not logged or logged['role'] != 'customer':
             conn.close()
             return RedirectResponse('/p/'+quote(slug,safe='')+'/menu?conta=1',303)
+        customer_name=str(logged.get('name') or customer_name).strip()
+        customer_phone=normalize_phone(logged.get('phone') or customer_phone)
         if not customer_name.strip() or len(customer_name.strip())<2 or not normalize_phone(customer_phone):
             conn.close(); raise HTTPException(400,'Informe nome e WhatsApp válidos')
         if not p["is_premium"] or p["offer_mode"] not in ("menu","catalog"):
@@ -1322,6 +1329,13 @@ def order_whatsapp_message(conn, order):
 def order_tracking(request: Request, token: str):
     conn=db(); order=tracked_order(conn,token)
     if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
+    viewer=current_user(request)
+    private348=bool(viewer and viewer['id'] in (order['customer_id'],conn.execute('SELECT user_id FROM professionals WHERE id=?',(order['professional_id'],)).fetchone()[0]))
+    if not private348:
+        if order['created_at']<(datetime.now(timezone.utc)-timedelta(days=7)).isoformat():
+            conn.close();raise HTTPException(404,'Link expirado. Consulte seus pedidos na sua conta.')
+        conn.close()
+        return templates.TemplateResponse('order_public348.html',context(request,tracking_status348=ORDER_STATUS_LABELS.get(order['status'],'Em andamento')),headers={'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow'})
     items=conn.execute("SELECT * FROM order_items WHERE order_id=? ORDER BY id",(order["id"],)).fetchall(); options={}
     for option in conn.execute("""SELECT oio.* FROM order_item_options oio JOIN order_items oi ON oi.id=oio.order_item_id
       WHERE oi.order_id=? ORDER BY oio.id""",(order["id"],)).fetchall(): options.setdefault(option["order_item_id"],[]).append(option)
@@ -1333,18 +1347,27 @@ def order_tracking(request: Request, token: str):
         response.delete_cookie('nowup_cart_completed_token')
         response.delete_cookie('nowup_cart_completed')
     response.headers['Cache-Control']='no-store'
+    response.headers['Referrer-Policy']='no-referrer'
+    response.headers['X-Robots-Tag']='noindex, nofollow'
     return response
 
 @app.get("/pedido/{token}/status")
-def order_tracking_status(token: str):
+def order_tracking_status(request: Request, token: str):
     conn=db(); order=tracked_order(conn,token); conn.close()
+    if order and order['created_at']<(datetime.now(timezone.utc)-timedelta(days=7)).isoformat():
+        viewer=current_user(request)
+        if not viewer or viewer['id']!=order['customer_id']:raise HTTPException(404,'Link expirado')
     if not order: raise HTTPException(404,"Pedido não encontrado")
-    return JSONResponse({"status":order["status"],"label":ORDER_STATUS_LABELS.get(order["status"],order["status"]),"updated_at":order["updated_at"]})
+    return JSONResponse({"status":order["status"],"label":ORDER_STATUS_LABELS.get(order["status"],order["status"]),"updated_at":order["updated_at"]},headers={"Cache-Control":"private, no-store","Referrer-Policy":"no-referrer","X-Robots-Tag":"noindex, nofollow"})
 
 @app.post("/pedido/{token}/whatsapp")
-def order_tracking_whatsapp(token: str):
+def order_tracking_whatsapp(request: Request, token: str):
     conn=db(); order=tracked_order(conn,token)
     if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
+    viewer=current_user(request)
+    owner=conn.execute("SELECT user_id FROM professionals WHERE id=?",(order["professional_id"],)).fetchone()[0]
+    if not viewer or viewer["id"] not in (order["customer_id"],owner):
+        conn.close();raise HTTPException(403,"Entre na conta responsável por este pedido")
     message=order_whatsapp_message(conn,order); conn.execute("UPDATE orders SET whatsapp_opened=1 WHERE id=?",(order["id"],)); conn.commit(); conn.close()
     return RedirectResponse("/pedido/"+quote(token,safe=""),303)
 
@@ -2808,7 +2831,19 @@ def banner_click(bid:int):
     return RedirectResponse(banner["link"] or "/",303)
 
 @app.get("/health")
-def health(): return JSONResponse({"ok":True,"service":"NowUp"})
+def health():
+    import shutil
+    conn=None
+    try:
+        conn=db()
+        conn.execute('SELECT 1').fetchone()
+        if shutil.disk_usage(UPLOAD_DIR).free<10*1024*1024:raise OSError('capacity')
+        return JSONResponse({'ok':True,'service':'NowUp'},headers={'Cache-Control':'no-store'})
+    except Exception:
+        return JSONResponse({'ok':False,'service':'NowUp'},status_code=503,headers={'Cache-Control':'no-store'})
+    finally:
+        if conn is not None:conn.close()
+
 
 # Conversa por pedido: somente o cliente e a loja responsáveis podem acessar.
 def authorized_order_chat(request, order_id):
@@ -2845,12 +2880,18 @@ def order_chat_send(request: Request, order_id: int, message: str=Form(...)):
         conn.close(); raise HTTPException(400,"Escreva uma mensagem de até 1500 caracteres")
     if order["status"] in {"completed","cancelled","rejected"}:
         conn.close(); raise HTTPException(400,"Este pedido foi encerrado")
-    conn.execute("INSERT INTO order_messages(order_id,sender_role,body,created_at) VALUES(?,?,?,?)",(order_id,u["role"],body,now_iso()))
-    recipient=order["owner_id"] if u["role"]=="customer" else order["customer_id"]
-    link=f"/painel#pedido-{order_id}" if u["role"]=="customer" else f"/pedido/{order['tracking_token']}"
-    if recipient:
-        conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(recipient,"Nova mensagem no pedido",body[:180],link,now_iso()))
-    conn.commit(); conn.close(); return JSONResponse({"ok":True})
+    try:
+        conn.execute('BEGIN IMMEDIATE')
+        cutoff=(datetime.now(timezone.utc)-timedelta(minutes=1)).isoformat()
+        count=conn.execute('SELECT COUNT(*) FROM order_messages WHERE order_id=? AND sender_role=? AND created_at>=?',(order_id,u['role'],cutoff)).fetchone()[0]
+        if count>=20:raise HTTPException(429,'Aguarde um minuto antes de enviar mais mensagens.',headers={'Retry-After':'60'})
+        conn.execute("INSERT INTO order_messages(order_id,sender_role,body,created_at) VALUES(?,?,?,?)",(order_id,u["role"],body,now_iso()))
+        recipient=order["owner_id"] if u["role"]=="customer" else order["customer_id"]
+        link=f"/painel#pedido-{order_id}" if u["role"]=="customer" else f"/pedido/{order['tracking_token']}"
+        if recipient:
+            conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(recipient,"Nova mensagem no pedido",body[:180],link,now_iso()))
+        conn.commit(); conn.close(); return JSONResponse({"ok":True})
+    finally:conn.close()
 
 # V71: isolated backup routes and automatic off-site worker.
 import nowup_backup

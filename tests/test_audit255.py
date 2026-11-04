@@ -132,7 +132,7 @@ def test_orders_endpoint_does_not_grant_missing_permissions(panel,monkeypatch):
 def test_concurrent_sqlite_submissions_create_one_committed_order(tmp_path):
  from nowup_checkout229 import begin_checkout,remember_checkout
  path=tmp_path/'parallel.db'
- with sqlite3.connect(path) as c:c.executescript('CREATE TABLE orders(id INTEGER PRIMARY KEY,tracking_token TEXT);CREATE TABLE checkout_requests229(customer_id INTEGER,professional_id INTEGER,request_key TEXT,payload_hash TEXT,order_id INTEGER,created_at TEXT,PRIMARY KEY(customer_id,professional_id,request_key));')
+ with sqlite3.connect(path) as c:c.executescript('CREATE TABLE orders(id INTEGER PRIMARY KEY,tracking_token TEXT,customer_id INTEGER,professional_id INTEGER,created_at TEXT);CREATE TABLE checkout_requests229(customer_id INTEGER,professional_id INTEGER,request_key TEXT,payload_hash TEXT,order_id INTEGER,created_at TEXT,PRIMARY KEY(customer_id,professional_id,request_key));')
  barrier=Barrier(2)
  def submit(i):
   c=sqlite3.connect(path,timeout=10);c.row_factory=sqlite3.Row

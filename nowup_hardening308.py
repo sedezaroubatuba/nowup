@@ -119,3 +119,19 @@ def log_storage(database,directory):
         status.update(backup_configured=not nowup_backup.missing_config(),backup_automatic=nowup_backup.automatic_enabled(),backup_last_success=backup.get('last_external',''),backup_error=bool(backup.get('error')),backup_running=bool(backup.get('running')))
         logging.getLogger('uvicorn.error').info('NowUp storage audit308 %s',json.dumps(status))
     except Exception:logging.getLogger('uvicorn.error').warning('NowUp storage audit308 unavailable')
+
+class PrivateAccessLog348(logging.Filter):
+    """Tracking and recovery tokens must not be copied into access log URLs."""
+    def filter(self,record):
+        if isinstance(record.args,tuple) and len(record.args)==5:
+            import re
+            client,method,path,version,status=record.args
+            path=re.sub(r'(/pedido/)[^/?\s]+',r'\1[private]',str(path))
+            path=re.sub(r'([?&](?:token|code|password|key)=)[^&\s]*',r'\1[private]',path,flags=re.I)
+            record.args=(client,method,path,version,status)
+        return True
+
+
+def protect_access_logs348():
+    logger=logging.getLogger('uvicorn.access')
+    if not any(isinstance(f,PrivateAccessLog348) for f in logger.filters):logger.addFilter(PrivateAccessLog348())

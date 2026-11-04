@@ -38,6 +38,14 @@ def begin_checkout(conn, customer_id, professional_id, request_key, payload):
             row = None
         if row and row['payload_hash'] != digest:
             raise HTTPException(409, 'Este envio já foi usado com outros dados. Atualize a página para fazer um novo pedido.')
+        if not row:
+            cutoff=(datetime.now(timezone.utc)-timedelta(minutes=5)).isoformat()
+            if getattr(conn,'dialect','sqlite')=='postgres':
+                conn.execute('SELECT pg_advisory_xact_lock(?)',(-348000000000000000-int(customer_id),))
+            count=conn.execute('SELECT COUNT(*) FROM orders WHERE customer_id=? AND professional_id=? AND created_at>=?',(customer_id,professional_id,cutoff)).fetchone()[0]
+            total=conn.execute('SELECT COUNT(*) FROM orders WHERE customer_id=? AND created_at>=?',(customer_id,cutoff)).fetchone()[0]
+            if count>=5 or total>=15:
+                raise HTTPException(429,'Você enviou vários pedidos. Confira os pedidos em andamento e aguarde alguns minutos.',headers={'Retry-After':'300','Cache-Control':'no-store'})
         return (row['tracking_token'] if row else None), key, digest
     except Exception:
         conn.rollback()

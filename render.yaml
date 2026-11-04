@@ -4,6 +4,7 @@ services:
     runtime: docker
     plan: starter
     autoDeploy: true
+    healthCheckPath: /health
     envVars:
       - key: NOWUP_DB
         value: /app/persist/nowup.db
