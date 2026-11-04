@@ -31,6 +31,12 @@ COOKIE_PREFIX = 'nu333_'
 HOP = {'connection','transfer-encoding','content-length','content-encoding','keep-alive','upgrade','te','trailer'}
 
 
+def public_scheme350(request):
+    # Render terminates TLS before the application; never trust a browser-supplied
+    # forwarding header when constructing the private child request.
+    return 'https' if os.getenv('NOWUP_HTTPS')=='1' else request.url.scheme
+
+
 def child_environment(directory, secret):
     # An allowlist prevents production DB, mail, R2, Redis and payment keys
     # from leaking into the sandbox, including future integration variables.
@@ -127,7 +133,7 @@ def install(G):
         try:
             await run_in_threadpool(playground.start)
             status,headers,_=await run_in_threadpool(playground.request,'POST','/__login333',
-                [('Host',request.headers.get('host','localhost')),('Origin',str(request.base_url).rstrip('/')),('X-Forwarded-Proto',request.url.scheme),('X-Test-Secret333',playground.secret)],b'')
+                [('Host',request.headers.get('host','localhost')),('Origin',str(request.base_url.replace(scheme=public_scheme350(request))).rstrip('/')),('X-Forwarded-Proto',public_scheme350(request)),('X-Test-Secret333',playground.secret)],b'')
             if status != 303: raise RuntimeError('Falha ao abrir a sessão de teste.')
         except (OSError,RuntimeError,http.client.HTTPException):
             return HTMLResponse('Não foi possível abrir o teste. <a href="'+PREFIX+'">Tentar novamente</a>',status_code=503)
@@ -170,7 +176,7 @@ def install(G):
         for name,value in request.cookies.items():
             if name.startswith(COOKIE_PREFIX): cookies[name[len(COOKIE_PREFIX):]]=value
         headers=[(k,v) for k,v in request.headers.items() if k.lower() not in HOP|{'cookie','accept-encoding','x-test-secret333','x-forwarded-proto'}]
-        headers.extend([('Cookie',cookies.output(header='',sep=';').strip()),('Accept-Encoding','identity'),('X-Forwarded-Proto',request.url.scheme)])
+        headers.extend([('Cookie',cookies.output(header='',sep=';').strip()),('Accept-Encoding','identity'),('X-Forwarded-Proto',public_scheme350(request))])
         path=request.url.path+('?' + request.url.query if request.url.query else '')
         body_parts=[]; body_size=0
         async for chunk in request.stream():
