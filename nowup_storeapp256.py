@@ -27,6 +27,8 @@ def presentation(p):
     slug=p['slug'];prefix='/p/'+quote(slug,safe='')
     return {'slug':slug,'name':p['display_name'],'menu':prefix+'/menu?loja=1',
         'manifest':prefix+'/manifest.webmanifest','icon':prefix+'/app-icon/192.png',
+        'worker':prefix+'/service-worker355.js','scope':prefix+'/',
+        'terms':prefix+'/termos','privacy':prefix+'/privacidade',
         'whatsapp':prefix+'/menu/whatsapp','orders':prefix+'/pedidos','logout':prefix+'/sair','login':prefix+'/entrar?tipo=cliente','signup':prefix+'/cadastro','forgot':prefix+'/recuperar-senha','reset':prefix+'/redefinir-senha','waiting':prefix+'/aguardando','resend':prefix+'/reenviar-verificacao','completion':prefix+'/cart-completion345'}
 
 def page_context(g,request,values):
@@ -56,6 +58,24 @@ def page_context(g,request,values):
 
 def install(g):
     app=g['app']
+    @app.get('/p/{slug}/termos')
+    def store_terms355(request:Request,slug:str):
+        request.state.store_app256=store(g,slug)
+        return g['terms'](request)
+
+    @app.get('/p/{slug}/privacidade')
+    def store_privacy355(request:Request,slug:str):
+        request.state.store_app256=store(g,slug)
+        return g['privacy'](request)
+
+    @app.get('/p/{slug}/service-worker355.js')
+    def store_worker355(slug:str):
+        p=store(g,slug)
+        prefix='/p/'+quote(slug,safe='')+'/'
+        script=(g['BASE']/'static'/'store-worker355.js').read_text(encoding='utf-8')
+        script='const STORE_SCOPE='+json.dumps(prefix)+';\nconst STORE_NAME='+json.dumps(p['display_name'])+';\n'+script
+        return Response(script,media_type='application/javascript',headers={**HEADERS,'Service-Worker-Allowed':prefix})
+
     @app.get('/p/{slug}/manifest.webmanifest')
     def store_manifest256(slug:str):
         p=store(g,slug);view=presentation(p);prefix='/p/'+quote(slug,safe='')+'/'

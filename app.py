@@ -3106,3 +3106,7 @@ import nowup_links352
 nowup_links352.install(globals())
 import nowup_upgrade352
 nowup_upgrade352.install(globals())
+
+# Dedicated catalogue origin can be connected after domain/DNS setup.
+import nowup_menu_origin355
+nowup_menu_origin355.install(globals())

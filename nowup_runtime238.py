@@ -25,6 +25,9 @@ def mutation_origin_allowed(request):
         return False
     base = request.base_url.replace(scheme='https') if os.getenv('NOWUP_HTTPS', '0') == '1' else request.base_url
     target = os.getenv('NOWUP_PUBLIC_ORIGIN') or str(base)
+    from nowup_menu_origin355 import is_menu_host, menu_origin
+    if is_menu_host(request):
+        target = menu_origin()
     expected = origin_tuple(target)
     if 'origin' in request.headers:
         return expected is not None and origin_tuple(request.headers['origin']) == expected

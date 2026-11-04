@@ -19,6 +19,6 @@
   const url=new URL(cfg.menu,location.origin).href;
   try{if(navigator.share)await navigator.share({title:cfg.name,text:'Veja o cardápio de '+cfg.name,url});else{await navigator.clipboard.writeText(url);b.textContent='Link copiado';}}catch(e){if(e.name!=='AbortError'){const box=document.getElementById('store-share-url256');box.hidden=false;box.value=url;box.select();}}
  }));
- if(isSecureContext&&'serviceWorker' in navigator)navigator.serviceWorker.register('/nowup-push-sw.js',{scope:'/',updateViaCache:'none'}).catch(()=>{});
+ if(isSecureContext&&'serviceWorker' in navigator&&cfg.worker&&cfg.scope)navigator.serviceWorker.register(cfg.worker,{scope:cfg.scope,updateViaCache:'none'}).catch(()=>{});
  refresh();
 })();

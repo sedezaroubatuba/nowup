@@ -58,7 +58,8 @@ def customer(c,p,email):
 
 
 def send_confirmation(g,p,user,email,token):
-    base=g['os'].getenv('NOWUP_BASE_URL','').strip().rstrip('/')
+    from nowup_menu_origin355 import email_origin
+    base=email_origin()
     if not base:return False
     link=base+cookie_path(p)+'verificar-email?token='+quote(token,safe='')
     return g['send_email'](email,user,'Confirme seu cadastro em '+p['display_name'],
@@ -159,7 +160,8 @@ def install(g):
                 expires=(datetime.now(timezone.utc)+timedelta(minutes=30)).isoformat()
                 c.execute('DELETE FROM password_reset_tokens WHERE user_id=?',(u['id'],))
                 c.execute('INSERT INTO password_reset_tokens(token_hash,user_id,expires_at) VALUES(?,?,?)',(digest,u['id'],expires));c.commit()
-                base=g['os'].getenv('NOWUP_BASE_URL','').strip().rstrip('/')
+                from nowup_menu_origin355 import email_origin
+                base=email_origin()
                 if base:
                     link=base+cookie_path(p)+'redefinir-senha?token='+quote(raw)
                     g['send_email'](u['customer_email345'],u['name'],'Redefinir senha — '+p['display_name'],'<p><a href="'+html.escape(link,quote=True)+'">Criar nova senha desta loja</a></p><p>O link expira em 30 minutos.</p>')
