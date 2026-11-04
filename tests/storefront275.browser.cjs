@@ -47,3 +47,16 @@ test('approved compact combo keeps readable prices, double outline and carousel 
  }finally{await browser.close();}
 });
 
+
+test('pasted search opens results before the legacy category listener stops propagation',async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:process.env.NOWUP_CHROME_EXECUTABLE||undefined});
+ try{
+  const page=await browser.newPage({viewport:{width:390,height:844}});await page.setContent(fixture);await page.waitForSelector('.nu190-showcase');
+  await page.addScriptTag({content:fs.readFileSync('static/categories142.js','utf8')});
+  const search=page.locator('[data-product-search]');await search.fill('INEXISTENTE354');
+  assert.equal(await page.locator('body').evaluate(b=>b.classList.contains('nu187-store-home')),false);
+  assert.equal(await page.locator('.nu190-showcase').isVisible(),false);
+  assert.equal(await page.locator('[data-product]:visible').count(),0);
+  await search.fill('Cerveja');assert.ok(await page.locator('[data-product]:visible').count()>0);
+ }finally{await browser.close();}
+});

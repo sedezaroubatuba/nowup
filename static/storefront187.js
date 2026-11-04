@@ -181,8 +181,15 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  }
  function sizeCombos275(){const grid=categoryCache.get(selectedCategory)?.grid;if(!['__combos256','__offers256'].includes(selectedCategory)||!grid)return;const top=Math.max(grid.getBoundingClientRect().top,sticky.getBoundingClientRect().bottom+70),dock=root.querySelector('.nu83-cart-dock:not([hidden])'),bottom=dock?dock.getBoundingClientRect().height+18:20;grid.style.setProperty('--nu275-grid-card-height',Math.max(280,Math.min(520,Math.floor(window.innerHeight-top-bottom-10)))+'px');}
  window.addEventListener('resize',()=>requestAnimationFrame(sizeCombos275));
- root.addEventListener('input',event=>{if(event.target===search&&selectedCategory){event.stopImmediatePropagation();filterCategory();}},true);
- root.addEventListener('search',event=>{if(event.target===search&&selectedCategory){event.stopImmediatePropagation();filterCategory();}},true);
+ function searchView354(event){
+  if(event.target!==search)return;
+  if(selectedCategory){event.stopImmediatePropagation();filterCategory();return;}
+  // Legacy target listeners stop propagation. Switch views in capture phase
+  // too, so paste/autofill can search without a preceding click or keydown.
+  if(body.classList.contains('nu187-store-home')&&search.value.trim())showProducts();
+ }
+ root.addEventListener('input',searchView354,true);
+ root.addEventListener('search',searchView354,true);
  if(!originals.length)showcase.append(make('p','nu190-empty','Esta loja ainda não publicou produtos.'));
  function handleCategory297(event){
   const button=event.target.closest('[data-category-filter]');if(!button)return;

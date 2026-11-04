@@ -49,3 +49,6 @@ html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layou
 html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu201-open[hidden],
 html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu-step263[hidden]{display:none!important}
 html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] [data-product].nu-cart-in262 .product-buy>label{display:none!important}
+/* Search switches from carousels to results; forced layouts must respect hidden. */
+html body.public-profile-area [data-native-menu] .nu190-showcase[hidden],
+html body.public-profile-area [data-native-menu] .nu191-category-view[hidden]{display:none!important}
