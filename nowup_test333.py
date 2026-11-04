@@ -244,13 +244,15 @@ def child_main():
         with main.db() as c:
             users=c.execute("SELECT id,name,role FROM users WHERE is_active=1 ORDER BY id").fetchall()
         options=''.join('<option value="'+str(u['id'])+'">'+html.escape(u['name']+' ('+u['role']+')')+'</option>' for u in users)
-        return HTMLResponse('<html lang="pt-BR"><meta name="viewport" content="width=device-width, initial-scale=1"><body style="font:16px system-ui;padding:24px"><h1>🧪 NowUp em teste</h1><p>Escolha como navegar. Todos os dados desta área são de teste.</p><p><a href="/cadastro/profissional">Cadastrar loja</a> · <a href="/cadastro/cliente">Cadastrar cliente</a> · <a href="/">Ver NowUp</a></p><form method="post" action="/__perfil333"><label>Acessar como <select name="uid">'+options+'</select></label> <button>Abrir conta de teste</button></form><h2>Criar loja de teste rapidamente</h2><form method="post" action="/__loja333"><label>Nome <input name="name" required maxlength="120" value="Minha loja de teste"></label><label> Plano <select name="plan"><option value="cardapio">Cardápio</option><option value="vitrine">Vitrine</option><option value="ambos">Vitrine + cardápio</option></select></label><label> Tipo <select name="offer"><option value="menu">Cardápio de alimentação</option><option value="catalog">Catálogo de produtos</option></select></label><button>Criar e acessar loja</button></form><p>Este atalho não exige documentos ou pagamento. Para conferir o formulário completo, use Cadastrar loja.</p><p>Cadastros de teste têm e-mail confirmado e plano liberado automaticamente. Use dados fictícios.</p></body></html>')
+        from nowup_plans339 import PLANS
+        plans=''.join('<option value="'+key+'">'+html.escape(value[0])+'</option>' for key,value in PLANS.items())
+        return HTMLResponse('<html lang="pt-BR"><meta name="viewport" content="width=device-width, initial-scale=1"><body style="font:16px system-ui;padding:24px"><h1>🧪 NowUp em teste</h1><p>Escolha como navegar. Todos os dados desta área são de teste.</p><p><a href="/cadastro/profissional">Cadastrar loja</a> · <a href="/cadastro/cliente">Cadastrar cliente</a> · <a href="/">Ver NowUp</a></p><form method="post" action="/__perfil333"><label>Acessar como <select name="uid">'+options+'</select></label> <button>Abrir conta de teste</button></form><h2>Criar loja de teste rapidamente</h2><form method="post" action="/__loja333"><label>Nome <input name="name" required maxlength="120" value="Minha loja de teste"></label><label> Plano <select name="plan">'+plans+'</select></label><label> Tipo <select name="offer"><option value="menu">Cardápio de alimentação</option><option value="catalog">Catálogo de produtos</option></select></label><button>Criar e acessar loja</button></form><p>Só cardápio/catálogo: link próprio, sem vitrine geral. Cardápio/catálogo + vitrine: link próprio e exposição na vitrine geral.</p><p>Este atalho não exige documentos ou pagamento. Para conferir o formulário completo, use Cadastrar loja.</p><p>Cadastros de teste têm e-mail confirmado e plano liberado automaticamente. Use dados fictícios.</p></body></html>')
 
     @app.post('/__loja333')
     def create_store(name: str=Form(...),plan: str=Form(...),offer: str=Form('menu')):
-        if plan not in ('vitrine','cardapio','ambos') or offer not in ('menu','catalog') or not name.strip():
+        from nowup_plans339 import PLANS
+        if plan not in PLANS or offer not in ('menu','catalog') or not name.strip():
             return Response(status_code=400)
-        offer='services' if plan=='vitrine' else offer
         with main.db() as c:
             email='teste-'+secrets.token_hex(10)+'@example.com'
             uid=c.execute("INSERT INTO users(role,name,email,phone,password_hash,is_active,email_verified,created_at) VALUES('professional',?,?,?, ?,1,1,?)",(name.strip()[:120],email,'12999990000',main.hash_password(secrets.token_urlsafe(32)),main.now_iso())).lastrowid
@@ -278,7 +280,7 @@ def child_main():
         if request.method=='POST' and not request.url.path.startswith('/__'):
             with main.db() as c:
                 c.execute('UPDATE users SET email_verified=1')
-                c.execute("UPDATE professionals SET verified=1,blocked=0,admission_status='approved',plan_granted=1,plan_active=CASE WHEN plan_requested IN ('vitrine','cardapio','ambos') THEN plan_requested WHEN plan_active='none' THEN 'ambos' ELSE plan_active END,is_premium=1,offer_mode=CASE WHEN plan_requested_offer IN ('menu','catalog') THEN plan_requested_offer ELSE offer_mode END,plan_requested='',plan_requested_offer=''")
+                c.execute("UPDATE professionals SET verified=1,blocked=0,admission_status='approved',plan_granted=1,plan_active=CASE WHEN plan_requested IN ('cardapio','ambos') THEN plan_requested WHEN plan_active='none' THEN 'ambos' ELSE plan_active END,is_premium=1,offer_mode=CASE WHEN plan_requested_offer IN ('menu','catalog') THEN plan_requested_offer ELSE offer_mode END,plan_requested='',plan_requested_offer=''")
                 c.commit()
             if ((request.url.path in ('/cadastro/cliente','/cadastro/profissional') and response.headers.get('location')=='/cadastro/aguardando') or (request.url.path.startswith('/p/') and request.url.path.endswith('/cadastro') and '/aguardando' in response.headers.get('location',''))):
                 return RedirectResponse('/__controle333',303)

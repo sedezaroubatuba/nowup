@@ -23,12 +23,21 @@ def test_playground_preserves_browser_origin_without_allowing_cross_site(env,mon
     client.cookies.set('nowup_session',token)
     entered=client.post('/admin/modo-teste/entrar')
     assert entered.status_code==303,entered.text
-    assert client.get('/__controle333').status_code==200
+    control=client.get('/__controle333');assert control.status_code==200
+    from bs4 import BeautifulSoup
+    plans=BeautifulSoup(control.text,'html.parser').select('select[name=plan] option')
+    assert [p['value'] for p in plans]==['cardapio','ambos']
+    assert 'link próprio' in control.text
+    assert client.post('/__loja333',data={'name':'Plano retirado','plan':'vitrine','offer':'menu'}).status_code==400
     # A spoofed forwarding header is discarded by the parent.
     response=client.post('/__loja333',data={'name':'Loja HTTPS350 '+scheme,'plan':'cardapio','offer':'menu'},headers={'X-Forwarded-Proto':'http' if tls else 'https'})
     assert response.status_code==303,response.text
     panel=client.get('/painel');assert panel.status_code==200,panel.text
     assert 'Loja HTTPS350 '+scheme in panel.text
+    combined=client.post('/__loja333',data={'name':'Loja combinada351 '+scheme,'plan':'ambos','offer':'catalog'})
+    assert combined.status_code==303,combined.text
+    combined_panel=client.get('/painel')
+    assert combined_panel.status_code==200 and 'Loja combinada351 '+scheme in combined_panel.text
     assert client.post('/__loja333',data={'name':'Foreign','plan':'cardapio','offer':'menu'},headers={'Origin':'https://evil.invalid','Sec-Fetch-Site':'cross-site'}).status_code==403
     assert client.post('/admin/modo-teste/sair').status_code==303
     with m.db() as c:assert c.execute('SELECT COUNT(*) FROM professionals').fetchone()[0]==before
