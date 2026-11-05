@@ -18,7 +18,7 @@
    return;
   }
   api.notes.checked=true;api.notes.closest('label').remove();api.ing.toggle.checked=true;api.ing.toggle.closest('label').remove();api.ing.sync();
-  const ingredientBox=section('Ingredientes (opcional)'),importBox=make('details'),importTitle=make('summary','Importar itens cadastrados na loja');importBox.append(importTitle,api.ingredientSearch320,api.ingredientPicker320);importBox.append(api.ingredientLink320);
+  const ingredientBox=section('Ingredientes (opcional)'),importBox=make('details'),importTitle=make('summary','Galeria da minha loja — itens cadastrados');importBox.append(importTitle,api.ingredientSearch320,api.ingredientPicker320);importBox.append(api.ingredientLink320);if(api.ingredientStatus361)importBox.append(api.ingredientStatus361);importBox.addEventListener('toggle',()=>{if(importBox.open)api.refreshIngredients361?.();});
   const selectedIngredients325=make('details');selectedIngredients325.append(make('summary','Ingredientes selecionados'),api.list);
   // Selected ingredients stay visible; importing never replaces the manual list.
   api.ing.body.querySelector(':scope > p')?.remove();ingredientBox.append(make('p','Selecione os ingredientes já cadastrados na loja e marque os obrigatórios. Para adicionar novos itens com foto e preço, use Cadastrar item. O cadastro fica salvo para todos os seus lanches e refeições.'),selectedIngredients325,api.addIngredient,importBox);api.ing.body.remove();api.addIngredient.textContent='+ Digitar ingrediente';
