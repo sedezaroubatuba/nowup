@@ -53,3 +53,6 @@ html body.professional-area .nu198-bottom{grid-template-columns:repeat(5,minmax(
 /* Photos from the unified registry in paid extras, including the product dialog. */
 .product-options label>img.nu332-extra-photo{width:44px!important;height:44px!important;max-width:44px!important;object-fit:contain!important;flex:0 0 44px!important;border-radius:8px;margin:0!important}
 .product-options label>.nu332-extra-name{flex:1;min-width:0;overflow-wrap:anywhere}
+
+/* Per-unit meal editors inside combos. */
+.nu364-units{min-width:0}.nu364-units details{max-width:100%;box-sizing:border-box}.nu364-units summary{min-height:44px;overflow-wrap:anywhere}.nu364-units label{flex-wrap:wrap}.nu364-units textarea{width:100%;box-sizing:border-box;min-height:70px}.nu364-units input[type=number]{width:72px!important;height:42px!important}.nu364-units img{object-fit:cover;border-radius:8px}.nu364-units button{white-space:normal;min-height:44px;width:100%}.nu364-units [hidden]{display:none!important}

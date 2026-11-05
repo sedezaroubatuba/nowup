@@ -33,6 +33,8 @@ def test_checkout_keeps_snapshot_per_unit_and_price():
  conn=sqlite3.connect(':memory:');conn.row_factory=sqlite3.Row
  conn.execute('CREATE TABLE products(id,professional_id,available,category,max_quantity,customization192,is_combo256,promo_price_cents,price_cents,name)')
  conn.execute('CREATE TABLE product_categories(professional_id,name,active)')
+ conn.execute('CREATE TABLE ingredients320(id,professional_id,name,image_filename,deleted327)')
+ for pid,name in [(1,'Whisky'),(2,'Red Bull'),(3,'Zero')]:conn.execute('INSERT INTO products VALUES(?,10,1,?,99,?,0,0,1000,?)',(pid,'Bebidas','',name))
  conn.execute('INSERT INTO products VALUES(100,10,1,?,99,?,1,0,15000,?)',('Whisky',json.dumps(config()),'Combo whisky'))
  g={'shop_status':lambda p:{'open':True},'options_single158':lambda *a:([],0),'validate_customization':validate_customization,'parse_config':parse_config,'validate_choices89':lambda *a:None}
  p={'id':10,'allows_pickup':1,'minimum_order_cents':0}

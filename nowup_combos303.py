@@ -3,6 +3,7 @@ import json
 from fastapi import HTTPException
 from nowup_ingredients320 import catalog as ingredient_catalog329, attach_photos329
 from nowup_custom192 import parse_config
+from nowup_combo_units364 import children
 
 
 def combo_kind(category, value):
@@ -22,11 +23,11 @@ def attach_prices(conn, store_id, products):
     images={str(r['id']):r['image_filename'] for r in catalog if r['image_filename']}
     ingredients329=ingredient_catalog329(conn,store_id)
     item_images={str(r["id"]):r["image_filename"] for r in ingredients329 if r["image_filename"]}
-    output=[]
+    output=[];children_cache={};children_loaded=set()
     for source in products:
         row=dict(source)
         if 'promo_price_cents' in row and not 0<int(row['promo_price_cents'] or 0)<int(row['price_cents']):row['promo_price_cents']=0
-        row['combo_prices303']={};row['combo_images303']={}
+        row['combo_prices303']={};row['combo_images303']={};row['combo_children364']={}
         if row.get('customization192'):
             try:
                 config=attach_photos329(parse_config(row.get('customization192','')),ingredients329)
@@ -35,6 +36,10 @@ def attach_prices(conn, store_id, products):
                 for group in config.get('groups',[]):
                     ids.update(str(i) for i in group.get('product_ids',[]))
                     ids.update(str(r['id']) for r in group.get('item_refs325',[]) if r['kind']=='product')
+                if row.get('is_combo256'):
+                    missing=ids-children_loaded
+                    if missing:children_cache.update(children(conn,store_id,missing,ingredients329));children_loaded.update(missing)
+                    row['combo_children364']={key:children_cache[key] for key in ids if key in children_cache}
                 row['combo_prices303']={key:prices[key] for key in ids if key in prices}
                 row['combo_images303']={key:images[key] for key in ids if key in images}
                 for group in config.get('groups',[]):

@@ -109,7 +109,7 @@
         window.NOWUP_CUSTOM192.validate(card,config);
         const notes=String(config.notes||'').trim(),options=config.options||[],utensils=!!config.utensils,customization=config.customization||{removed:[],groups:{}},customizationSummary=window.NOWUP_CUSTOM192.describe(card,customization);
         const id=`${card.dataset.id}:${options.map(o=>o.id).sort().join('-')}:utensils${utensils?1:0}:notes${encodeURIComponent(notes)}:custom${encodeURIComponent(JSON.stringify(customization))}`;
-        const unitPrice=Number(card.dataset.price)+options.reduce((sum,o)=>sum+Number(o.price),0);
+        const unitPrice=Number(card.dataset.price)+options.reduce((sum,o)=>sum+Number(o.price),0)+(window.NOWUP_CUSTOM192.extraPrice364?.(card,customization)||0);
         const old=draft.get(id)||{productId:Number(card.dataset.id),name:card.dataset.name,unitPrice,quantity:0,notes,options,max,utensils,customization,customizationSummary};
         if(old.quantity+1>max)throw new Error('Limite de unidades deste produto atingido.');
         old.quantity++;old.unitPrice=unitPrice;draft.set(id,old);

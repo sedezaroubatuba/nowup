@@ -2,6 +2,7 @@ from nowup_combos303 import current_price
 """Independent WhatsApp checkout, with shared server-side cart validation."""
 import json
 from nowup_combo_pack305 import build_pack, read_pack
+from nowup_combo_units364 import validate_units
 import re
 import secrets
 from datetime import datetime,timezone
@@ -64,10 +65,16 @@ def validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighbor
             utensils=raw.get("utensils",False)
             try:item_notes=g['validate_customization'](g['parse_config'](product["customization192"]),raw.get("customization",{}),item_notes,utensils)
             except HTTPException:raise
-            product['combo_pack305']=build_pack(g['parse_config'](product['customization192']),raw.get('customization',{}),user_notes305) if product.get('is_combo256') else ''
+            combo_units364=[];combo_chosen364=[];combo_price364=0
+            if product.get('is_combo256'):
+                combo_units364,combo_chosen364,combo_price364=validate_units(g,conn,p['id'],g['parse_config'](product['customization192']),raw.get('customization',{}))
+                if combo_units364:item_notes=(item_notes+' · ' if item_notes else '')+' · '.join(unit['name']+' '+str(unit['position'])+': '+(unit['notes'] or 'Completo') for unit in combo_units364)
+            elif raw.get('customization',{}).get('units364'):raise HTTPException(400,'Este produto não é um combo.')
+            product['combo_pack305']=build_pack(g['parse_config'](product['customization192']),raw.get('customization',{}),user_notes305,combo_units364) if product.get('is_combo256') else ''
             try: g['validate_choices89'](conn,pid,chosen)
             except HTTPException: raise
-            unit=(current_price(product))+extras
+            chosen.extend(combo_chosen364)
+            unit=(current_price(product))+extras+combo_price364
             if unit<0:raise HTTPException(409,"Preço indisponível. Entre em contato com a loja.")
             clean_items.append((product,qty,item_notes,chosen,unit)); subtotal += unit*qty
     if not clean_items: raise HTTPException(400,"Nenhum produto disponível no carrinho")
