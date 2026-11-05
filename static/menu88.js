@@ -41,23 +41,16 @@
           feedback.textContent=json.recorded?'Pedido '+json.order_code+' registrado no painel da loja. Aguarde a confirmação.' : 'Pedido preparado para WhatsApp. A confirmação será feita pela loja.';
           const old=checkoutForm229.querySelector('[data-whatsapp-ready257]');if(old)old.remove();
           const ready=document.createElement('div');ready.dataset.whatsappReady257='';
-          if(json.recorded){const heading=document.createElement('h2');heading.className='nu368-sent-title';heading.textContent='Pedido enviado';ready.append(heading);const status=document.createElement('p');status.textContent='Aguardando resposta da loja';ready.append(status);}
           const preview=document.createElement('pre');preview.textContent=json.message;preview.style.cssText='white-space:pre-wrap;font:inherit';ready.append(preview);
           if(validWA){const link=document.createElement('a');link.className='btn primary full-btn';link.href=json.whatsapp_url;link.textContent='Abrir WhatsApp e enviar';link.rel='noopener';link.target='_blank';ready.append(link);const note=document.createElement('p');note.textContent='Toque em Enviar no WhatsApp. '+(json.recorded?'O pedido já está no painel; é a mesma venda.':'');ready.append(note);}
           if(validTrack){const tracking=document.createElement('a');tracking.className='btn soft full-btn';tracking.href=json.redirect;tracking.textContent='Acompanhar pedido';ready.append(tracking);}
-          checkoutForm229.append(ready);
-          if(json.recorded){
-            if(json.mode==='panel'&&validTrack){window.NOWUP_ORDER_TURN368?.prepare(json.redirect);location.assign(json.redirect);}
-            else window.NOWUP_ORDER_TURN368?.reveal();
-          }
-          return;
+          checkoutForm229.append(ready);return;
         }
         if(!response.ok||!json?.confirmed||json.path!==path||!((String(json.redirect||'').startsWith(path+'/pedido/')&&/^[A-Za-z0-9_-]+$/.test(String(json.redirect||'').slice((path+'/pedido/').length)))||/^\/pedido\/[A-Za-z0-9_-]+$/.test(json.redirect||'')))throw new Error(typeof json?.detail==='string'?json.detail:'Envio não confirmado. Confira Meus pedidos antes de tentar novamente.');
         // Clear this exact cart in the current page before navigating; no dependency
         // on cookies, tracking-page scripts or a back/forward cache restoration.
         if(localStorage.getItem(key)===snapshot){cart.clear();localStorage.removeItem(key);localStorage.removeItem(infoKey);sessionStorage.removeItem('nowup-checkout247:'+key);render();}
         feedback.textContent='Pedido enviado com sucesso.';
-        window.NOWUP_ORDER_TURN368?.prepare(json.redirect);
         location.assign(json.redirect);
       }catch(error){feedback.textContent=error.name==='AbortError'?'O envio demorou. Confira Meus pedidos antes de tentar novamente.':error.message;
       }finally{clearTimeout(timeout);checkoutForm229.dataset.submitting229='';if(button){button.disabled=false;button.textContent=original;}}
