@@ -36,7 +36,7 @@ def attach_prices(conn, store_id, products):
                 for group in config.get('groups',[]):
                     ids.update(str(i) for i in group.get('product_ids',[]))
                     ids.update(str(r['id']) for r in group.get('item_refs325',[]) if r['kind']=='product')
-                if row.get('is_combo256'):
+                if row.get('is_combo256') or config.get('meal_combo324'):
                     missing=ids-children_loaded
                     if missing:children_cache.update(children(conn,store_id,missing,ingredients329));children_loaded.update(missing)
                     row['combo_children364']={key:children_cache[key] for key in ids if key in children_cache}

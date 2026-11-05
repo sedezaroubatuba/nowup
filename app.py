@@ -1630,14 +1630,15 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     photos=conn.execute("SELECT * FROM photos WHERE professional_id=? ORDER BY is_cover DESC,id DESC",(p["id"],)).fetchall()
     posts=conn.execute("SELECT * FROM posts WHERE professional_id=? ORDER BY id DESC LIMIT 20",(p["id"],)).fetchall()
     products=conn.execute("SELECT * FROM products WHERE professional_id=? ORDER BY category,sort_order,id DESC",(p["id"],)).fetchall()
-    meal_ids322=set()
+    meal_ids322=set();ingredient_counts365={}
     for row in products:
         try:
             cfg322=parse_config(row['customization192'])
+            ingredient_counts365[row['id']]=len(cfg322.get('ingredients',[]))
             if not row['is_combo256'] and (cfg322.get('is_meal317') or cfg322.get('ingredients')):meal_ids322.add(row['id'])
         except HTTPException:
             pass
-    combo_catalog298=[{"id":row["id"],"name":row["name"],"available":bool(row["available"]),"image_filename":row["image_filename"],"unit_price_cents":current_price(row)} for row in products if not row["is_combo256"] and row["category"].casefold()!="combos"]
+    combo_catalog298=[{"id":row["id"],"name":row["name"],"available":bool(row["available"]),"image_filename":row["image_filename"],"unit_price_cents":current_price(row),"is_meal365":row["id"] in meal_ids322,"ingredient_count365":ingredient_counts365.get(row["id"],0)} for row in products if not row["is_combo256"] and row["category"].casefold()!="combos"]
     product_options={}
     for row in conn.execute("""SELECT po.* FROM product_options po JOIN products pr ON pr.id=po.product_id
       WHERE pr.professional_id=? ORDER BY po.sort_order,po.id""",(p["id"],)).fetchall():

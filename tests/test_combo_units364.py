@@ -100,3 +100,23 @@ def test_whatsapp_lists_each_unit_and_charges_extra_once(combo,monkeypatch):
     assert 'X-frango 1: Retirar: Tomate' in result['message']
     assert 'X-frango 2: Retirar: Cebola' in result['message']
     assert 'X-frango 1: Bacon extra (R$ 3,50)' in result['message']
+
+
+def test_meal_combo_uses_item_refs_and_keeps_outer_drinks_in_one_place(combo):
+    m,client,url,data,store,child,fries,option,raw=combo
+    with m.db() as c:
+        parent=parse_config({'is_meal317':True,'meal_groups324':True,'meal_combo324':True,'ingredients':[{'name':'Molho da casa','removable':True}],'groups':[{'id':'lanches','name':'Lanches','min':2,'max':2,'quantity_mode':True,'options':['X-frango'],'item_refs325':[{'kind':'product','id':child}]},{'id':'batata','name':'Fritas','min':1,'max':1,'quantity_mode':True,'options':['Batata'],'item_refs325':[{'kind':'item','id':29}]}]})
+        c.execute('UPDATE products SET is_combo256=0,customization192=? WHERE id=?',(json.dumps(parent),raw['id']))
+        config=json.loads(c.execute('SELECT customization192 FROM products WHERE id=?',(child,)).fetchone()[0])
+        config.update(meal_combo324=True,meal_groups324=True,groups=[{'id':'bebida','name':'Bebida avulsa','min':1,'max':1,'options':['Coca','Guaraná']}])
+        c.execute('UPDATE products SET customization192=? WHERE id=?',(json.dumps(config),child))
+        metadata=attach_prices(c,store['id'],[dict(c.execute('SELECT * FROM products WHERE id=?',(raw['id'],)).fetchone())])[0]['combo_children364']
+        assert metadata[str(child)]['config']['groups']==[]
+        assert len(metadata[str(child)]['config']['ingredients'])==3
+    raw['customization']['removed']=['Molho da casa']
+    raw['customization']['groups']={'lanches':['X-frango','X-frango'],'batata':['Batata']}
+    for index,unit in enumerate(raw['customization']['units364']):unit['key']='g0u'+str(index)
+    clean,subtotal,*_=check(combo,[raw]);assert subtotal==4850
+    assert len(read_pack(clean[0][0]['combo_pack305'])['units364'])==2
+    assert 'Retirar: Molho da casa' in read_pack(clean[0][0]['combo_pack305'])['details365']
+    data['cart_json']=json.dumps([raw]);result=client.post(url,data=data,follow_redirects=False);assert result.status_code==303,result.text

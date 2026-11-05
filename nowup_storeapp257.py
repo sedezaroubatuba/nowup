@@ -65,12 +65,14 @@ def validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighbor
             utensils=raw.get("utensils",False)
             try:item_notes=g['validate_customization'](g['parse_config'](product["customization192"]),raw.get("customization",{}),item_notes,utensils)
             except HTTPException:raise
+            combo_base_details365=item_notes
             combo_units364=[];combo_chosen364=[];combo_price364=0
-            if product.get('is_combo256'):
+            unit_combo365=bool(product.get('is_combo256') or g['parse_config'](product['customization192']).get('meal_combo324'))
+            if unit_combo365:
                 combo_units364,combo_chosen364,combo_price364=validate_units(g,conn,p['id'],g['parse_config'](product['customization192']),raw.get('customization',{}))
                 if combo_units364:item_notes=(item_notes+' · ' if item_notes else '')+' · '.join(unit['name']+' '+str(unit['position'])+': '+(unit['notes'] or 'Completo') for unit in combo_units364)
             elif raw.get('customization',{}).get('units364'):raise HTTPException(400,'Este produto não é um combo.')
-            product['combo_pack305']=build_pack(g['parse_config'](product['customization192']),raw.get('customization',{}),user_notes305,combo_units364) if product.get('is_combo256') else ''
+            product['combo_pack305']=build_pack(g['parse_config'](product['customization192']),raw.get('customization',{}),user_notes305,combo_units364,combo_base_details365 if not product.get('is_combo256') else '') if unit_combo365 else ''
             try: g['validate_choices89'](conn,pid,chosen)
             except HTTPException: raise
             chosen.extend(combo_chosen364)

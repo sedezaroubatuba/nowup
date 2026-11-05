@@ -13,6 +13,8 @@ def children(conn, store_id, ids, photos=None):
         row=dict(source)
         if str(row['id']) not in ids:continue
         config=attach_photos329(parse_config(row.get('customization192','')),photos)
+        # The outer combo owns its drinks/sides; inherit the meal recipe and extras only.
+        if config.get('meal_combo324'):config['groups']=[]
         editable=bool(config['ingredients'] or config['groups'] or config.get('question333') or config.get('is_meal317'))
         options=[];limits=[]
         if row.get('extras_mode','none')!='none':
@@ -27,9 +29,10 @@ def slots(config, selected):
     def group_rows(group,prefix):
         values=selected.get('groups',{}).get(group['id'],[])
         refs=group.get('product_ids',[])
+        if not refs:refs=[ref.get('id') if ref.get('kind')=='product' else None for ref in group.get('item_refs325',[])]
         for index,name in enumerate(values):
             option=group['options'].index(name)
-            if option<len(refs):rows.append((prefix+'u'+str(index),refs[option]))
+            if option<len(refs) and refs[option]:rows.append((prefix+'u'+str(index),refs[option]))
     for index,item in enumerate(config.get('combo_items',[])):
         group=groups.get(item.get('group_id301'))
         if group:group_rows(group,'i'+str(index));done.add(group['id'])

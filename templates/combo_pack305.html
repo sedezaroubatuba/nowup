@@ -5,6 +5,7 @@
 <h4 style="margin:0 0 8px">{{'Separar' if merchant else 'Composição'}} · Combo {{unit+1}}{% if item.quantity>1 %} de {{item.quantity}}{% endif %}</h4>
 <ul style="list-style:none;padding:0;margin:0">{% for entry in pack['items'] %}<li style="padding:5px 0"><strong>{{entry.quantity}} ×</strong> {{entry.name}}{% if entry.role=='principal' %} <small>— Produto principal</small>{% elif entry.role=='manual' %} <small>— Incluído / manual</small>{% elif entry.group %} <small>— {{entry.group}}</small>{% endif %}</li>{% endfor %}</ul>
 {% for child in pack.units364|default([]) %}<div style="border-top:1px solid #e4d8f0;padding:8px 0"><strong>{{child.name}} {{child.position}}</strong><p>{{child.notes or 'Completo'}}</p>{% for extra in child.options %}<p>+ {{extra.name}} — R$ {{'%.2f'|format(extra.price_cents/100)|replace('.',',')}}</p>{% endfor %}</div>{% endfor %}
+<p>{{pack.details365|default('')}}</p>
 {% if pack.notice316 %}<p style="white-space:pre-wrap"><strong>Aviso do combo:</strong> {{pack.notice316}}</p>{% endif %}
 {% if pack.note %}<p><strong>Observação deste combo:</strong> {{pack.note}}</p>{% endif %}</section>{% endfor %}
 </div>{% endif %}
