@@ -61,6 +61,8 @@
   const cartField=dialog.querySelector('[data-cart-json]'),dialogTotal=dialog.querySelector('[data-dialog-total]'),fulfillment=dialog.querySelector('[data-fulfillment]'),payment=dialog.querySelector('[data-payment]'),dockTotal=root.querySelector('[data-dock-total]'),cartCount=root.querySelector('[data-cart-count]'),dockCheckout=root.querySelector('[data-dock-checkout]');
   document.addEventListener("DOMContentLoaded",()=>render(),{once:true});
   const qty=v=>Math.max(1,Math.min(99,parseInt(v,10)||1));
+  function added366(card){window.NOWUP_CART_BAG366?.added(card);}
+  function card366(id){return [...root.querySelectorAll('[data-product]')].find(card=>Number(card.dataset.id)===Number(id));}
   function baseSubtotal(){let sum=0;cart.forEach(v=>sum+=v.unitPrice*v.quantity);return sum}
   function fee(){if(fulfillment?.value!=='delivery')return 0;const zone=dialog.querySelector('[data-delivery-zone265]');return zone?Number(zone.selectedOptions[0]?.dataset.fee||0):Number(cfg.deliveryFee||0)}
   function save(){try{localStorage.setItem(key,JSON.stringify([...cart]));localStorage.setItem(infoKey,JSON.stringify({name:cfg.storeName||'',updated:Date.now()}));window.dispatchEvent(new Event('nowup-cart-changed'));}catch(_){}}
@@ -95,7 +97,7 @@
       const entry=matches[matches.length-1];if(!entry)return;
       const [id,value]=entry;
       if(delta>0&&(cfg.open===false||value.quantity>=Number(value.max||99)))return;
-      value.quantity+=delta;if(value.quantity<=0)cart.delete(id);render();
+      value.quantity+=delta;if(value.quantity<=0)cart.delete(id);render();if(delta>0)added366(card366(productId));
     },
     get(id){const v=cart.get(id);return v?JSON.parse(JSON.stringify(v)):null;},
     commit(card,configs,replaceId=null){
@@ -114,12 +116,12 @@
         if(old.quantity+1>max)throw new Error('Limite de unidades deste produto atingido.');
         old.quantity++;old.unitPrice=unitPrice;draft.set(id,old);
       }
-      cart.clear();draft.forEach((v,id)=>cart.set(id,v));render();
+      cart.clear();draft.forEach((v,id)=>cart.set(id,v));render();if(!replaceId&&configs.length)added366(card);
     }
   };
-  root.addEventListener('click',e=>{const b=e.target.closest('[data-add]');if(!b||b.disabled||cfg.ownerView)return;const card=b.closest('[data-product]');if(!card)return;const itemNotes=card.querySelector('[data-product-notes]')?.value||'';const options=[...card.querySelectorAll('[data-product-option]:checked')].map(o=>({id:o.value,name:o.dataset.optionName,price:Number(o.dataset.optionPrice||0)}));const utensils=!!card.querySelector('[data-utensils158]')?.checked;const id=`${card.dataset.id}:${options.map(o=>o.id).sort().join('-')}:utensils${utensils?1:0}:notes${encodeURIComponent(itemNotes.trim())}`,amount=card.dataset.dish==='1'?1:qty(card.querySelector('[data-product-quantity]')?.value),unitPrice=Number(card.dataset.price)+options.reduce((s,o)=>s+o.price,0),current=cart.get(id)||{productId:Number(card.dataset.id),name:card.dataset.name,unitPrice,quantity:0,notes:'',options,max:Number(card.dataset.max||99)};current.utensils=utensils;current.notes=itemNotes;current.quantity=Math.min(current.max||99,current.quantity+amount);cart.set(id,current);b.textContent='Adicionado ✓';setTimeout(()=>b.textContent='Adicionar',800);render()});
-  items.addEventListener('click',e=>{const id=e.target.dataset.plus||e.target.dataset.minus||e.target.dataset.remove;if(!id)return;if(e.target.dataset.remove){cart.delete(id);render();return}const v=cart.get(id);v.quantity=Math.min(v.max||99,v.quantity+(e.target.dataset.plus?1:-1));if(v.quantity<1)cart.delete(id);render()});
-  items.addEventListener('input',e=>{const id=e.target.dataset.note||e.target.dataset.cartQuantity;if(!id||!cart.has(id))return;if(e.target.dataset.note!==undefined)cart.get(id).notes=e.target.value;else cart.get(id).quantity=Math.min(cart.get(id).max||99,qty(e.target.value));sync()});items.addEventListener('change',render);
+  root.addEventListener('click',e=>{const b=e.target.closest('[data-add]');if(!b||b.disabled||cfg.ownerView)return;const card=b.closest('[data-product]');if(!card)return;const itemNotes=card.querySelector('[data-product-notes]')?.value||'';const options=[...card.querySelectorAll('[data-product-option]:checked')].map(o=>({id:o.value,name:o.dataset.optionName,price:Number(o.dataset.optionPrice||0)}));const utensils=!!card.querySelector('[data-utensils158]')?.checked;const id=`${card.dataset.id}:${options.map(o=>o.id).sort().join('-')}:utensils${utensils?1:0}:notes${encodeURIComponent(itemNotes.trim())}`,amount=card.dataset.dish==='1'?1:qty(card.querySelector('[data-product-quantity]')?.value),unitPrice=Number(card.dataset.price)+options.reduce((s,o)=>s+o.price,0),current=cart.get(id)||{productId:Number(card.dataset.id),name:card.dataset.name,unitPrice,quantity:0,notes:'',options,max:Number(card.dataset.max||99)};current.utensils=utensils;current.notes=itemNotes;const previous366=current.quantity;current.quantity=Math.min(current.max||99,current.quantity+amount);cart.set(id,current);b.textContent='Adicionado ✓';setTimeout(()=>b.textContent='Adicionar',800);render();if(current.quantity>previous366)added366(card)});
+  items.addEventListener('click',e=>{const id=e.target.dataset.plus||e.target.dataset.minus||e.target.dataset.remove;if(!id)return;if(e.target.dataset.remove){cart.delete(id);render();return}const v=cart.get(id),previous366=v.quantity;v.quantity=Math.min(v.max||99,v.quantity+(e.target.dataset.plus?1:-1));if(v.quantity<1)cart.delete(id);render();if(v.quantity>previous366)added366(card366(v.productId))});
+  items.addEventListener('input',e=>{const id=e.target.dataset.note||e.target.dataset.cartQuantity;if(!id||!cart.has(id))return;if(e.target.dataset.note!==undefined)cart.get(id).notes=e.target.value;else{const v=cart.get(id),before=v.quantity;v.quantity=Math.min(v.max||99,qty(e.target.value));if(v.quantity>before)added366(card366(v.productId));}sync()});items.addEventListener('change',render);
   let category='all';
   const search=root.querySelector('[data-product-search]');
   const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
