@@ -62,3 +62,19 @@ def test_gallery_photo_uses_existing_price_validation_and_store_isolation(env):
     panel = client.get('/painel')
     assert panel.status_code == 200
     assert 'data-import-ingredients357' in panel.text and '/static/ingredient-gallery357.js' in panel.text
+
+
+def test_legacy_tomato_can_complete_price_without_duplicate_or_photo_replacement(env):
+    main, client, _, store, _ = env
+    with main.db() as conn:
+        item_id = conn.execute("INSERT INTO ingredients320(professional_id,name,image_filename,price_cents) VALUES(?,?,?,NULL)",
+                               (store, 'Tomate', 'tomate-original.jpg')).lastrowid
+        conn.commit()
+    response = client.post('/painel/cardapio/ingredientes320',
+                           data={'ingredient_id': str(item_id), 'name': 'Tomate', 'price': '1,50'}, follow_redirects=False)
+    assert response.status_code == 303 and 'ok=ingrediente' in response.headers['location']
+    own = client.get('/painel/galeria-nowup/itens-da-loja').json()
+    matches = [i for i in own if i['name'] == 'Tomate']
+    assert len(matches) == 1
+    assert matches[0]['id'] == item_id and matches[0]['price_cents'] == 150
+    assert matches[0]['image_filename'] == 'tomate-original.jpg'
