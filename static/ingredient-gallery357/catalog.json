@@ -1,0 +1,1055 @@
+[
+  {
+    "id": "01-01",
+    "name": "Pão de hambúrguer brioche",
+    "category": "Pães",
+    "atlas": "01.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 0
+  },
+  {
+    "id": "01-02",
+    "name": "Pão de hambúrguer australiano",
+    "category": "Pães",
+    "atlas": "01.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 1
+  },
+  {
+    "id": "01-03",
+    "name": "Pão tradicional com gergelim",
+    "category": "Pães",
+    "atlas": "01.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 2
+  },
+  {
+    "id": "01-04",
+    "name": "Pão francês / baguete",
+    "category": "Pães",
+    "atlas": "01.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 3
+  },
+  {
+    "id": "01-05",
+    "name": "Pão ciabatta",
+    "category": "Pães",
+    "atlas": "01.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 4
+  },
+  {
+    "id": "01-06",
+    "name": "Pão de forma",
+    "category": "Pães",
+    "atlas": "01.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 5
+  },
+  {
+    "id": "01-07",
+    "name": "Pão integral",
+    "category": "Pães",
+    "atlas": "01.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 6
+  },
+  {
+    "id": "01-08",
+    "name": "Pão de batata",
+    "category": "Pães",
+    "atlas": "01.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 7
+  },
+  {
+    "id": "01-09",
+    "name": "Pão de cebola",
+    "category": "Pães",
+    "atlas": "01.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 8
+  },
+  {
+    "id": "01-10",
+    "name": "Pão de queijo para lanche",
+    "category": "Pães",
+    "atlas": "01.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 9
+  },
+  {
+    "id": "01-11",
+    "name": "Wrap / tortilha",
+    "category": "Pães",
+    "atlas": "01.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 10
+  },
+  {
+    "id": "01-12",
+    "name": "Pão sírio",
+    "category": "Pães",
+    "atlas": "01.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 11
+  },
+  {
+    "id": "02-01",
+    "name": "Hambúrguer 90 g",
+    "category": "Carnes bovinas",
+    "atlas": "02.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 0
+  },
+  {
+    "id": "02-02",
+    "name": "Hambúrguer 120 g",
+    "category": "Carnes bovinas",
+    "atlas": "02.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 1
+  },
+  {
+    "id": "02-03",
+    "name": "Hambúrguer 180 g",
+    "category": "Carnes bovinas",
+    "atlas": "02.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 2
+  },
+  {
+    "id": "02-04",
+    "name": "Hambúrguer smash 70 g",
+    "category": "Carnes bovinas",
+    "atlas": "02.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 3
+  },
+  {
+    "id": "02-05",
+    "name": "Hambúrguer de costela",
+    "category": "Carnes bovinas",
+    "atlas": "02.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 4
+  },
+  {
+    "id": "02-06",
+    "name": "Hambúrguer de picanha",
+    "category": "Carnes bovinas",
+    "atlas": "02.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 5
+  },
+  {
+    "id": "02-07",
+    "name": "Carne desfiada",
+    "category": "Carnes bovinas",
+    "atlas": "02.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 6
+  },
+  {
+    "id": "02-08",
+    "name": "Cupim desfiado",
+    "category": "Carnes bovinas",
+    "atlas": "02.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 7
+  },
+  {
+    "id": "02-09",
+    "name": "Filé mignon em tiras",
+    "category": "Carnes bovinas",
+    "atlas": "02.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 8
+  },
+  {
+    "id": "02-10",
+    "name": "Contrafilé",
+    "category": "Carnes bovinas",
+    "atlas": "02.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 9
+  },
+  {
+    "id": "02-11",
+    "name": "Calabresa fatiada",
+    "category": "Suína e outras proteínas",
+    "atlas": "02.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 10
+  },
+  {
+    "id": "02-12",
+    "name": "Bacon em fatias",
+    "category": "Suína e outras proteínas",
+    "atlas": "02.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 11
+  },
+  {
+    "id": "02-13",
+    "name": "Bacon em cubos / farofa",
+    "category": "Suína e outras proteínas",
+    "atlas": "02.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 12
+  },
+  {
+    "id": "03-01",
+    "name": "Filé de frango grelhado",
+    "category": "Frango",
+    "atlas": "03.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 0
+  },
+  {
+    "id": "03-02",
+    "name": "Frango empanado / crispy",
+    "category": "Frango",
+    "atlas": "03.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 1
+  },
+  {
+    "id": "03-03",
+    "name": "Frango desfiado",
+    "category": "Frango",
+    "atlas": "03.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 2
+  },
+  {
+    "id": "03-04",
+    "name": "Frango a passarinho",
+    "category": "Frango",
+    "atlas": "03.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 3
+  },
+  {
+    "id": "03-05",
+    "name": "Nuggets",
+    "category": "Frango",
+    "atlas": "03.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 4
+  },
+  {
+    "id": "03-06",
+    "name": "Tiras de frango empanado",
+    "category": "Frango",
+    "atlas": "03.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 5
+  },
+  {
+    "id": "03-07",
+    "name": "Frango teriyaki",
+    "category": "Frango",
+    "atlas": "03.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 6
+  },
+  {
+    "id": "04-01",
+    "name": "Lombo suíno",
+    "category": "Suína e outras proteínas",
+    "atlas": "04.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 0
+  },
+  {
+    "id": "04-02",
+    "name": "Pernil desfiado",
+    "category": "Suína e outras proteínas",
+    "atlas": "04.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 1
+  },
+  {
+    "id": "04-03",
+    "name": "Linguiça toscana",
+    "category": "Suína e outras proteínas",
+    "atlas": "04.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 2
+  },
+  {
+    "id": "04-04",
+    "name": "Salsicha",
+    "category": "Suína e outras proteínas",
+    "atlas": "04.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 3
+  },
+  {
+    "id": "04-05",
+    "name": "Salsicha alemã",
+    "category": "Suína e outras proteínas",
+    "atlas": "04.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 4
+  },
+  {
+    "id": "04-06",
+    "name": "Presunto",
+    "category": "Suína e outras proteínas",
+    "atlas": "04.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 5
+  },
+  {
+    "id": "04-07",
+    "name": "Mortadela",
+    "category": "Suína e outras proteínas",
+    "atlas": "04.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 6
+  },
+  {
+    "id": "04-08",
+    "name": "Peito de peru",
+    "category": "Suína e outras proteínas",
+    "atlas": "04.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 7
+  },
+  {
+    "id": "04-09",
+    "name": "Atum",
+    "category": "Suína e outras proteínas",
+    "atlas": "04.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 8
+  },
+  {
+    "id": "04-10",
+    "name": "Camarão empanado",
+    "category": "Suína e outras proteínas",
+    "atlas": "04.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 9
+  },
+  {
+    "id": "04-11",
+    "name": "Ovo frito",
+    "category": "Suína e outras proteínas",
+    "atlas": "04.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 10
+  },
+  {
+    "id": "04-12",
+    "name": "Ovo mexido",
+    "category": "Suína e outras proteínas",
+    "atlas": "04.jpg",
+    "columns": 3,
+    "rows": 4,
+    "cell": 11
+  },
+  {
+    "id": "05-01",
+    "name": "Mussarela fatiada",
+    "category": "Queijos",
+    "atlas": "05.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 0
+  },
+  {
+    "id": "05-02",
+    "name": "Mussarela ralada",
+    "category": "Queijos",
+    "atlas": "05.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 1
+  },
+  {
+    "id": "05-03",
+    "name": "Cheddar cremoso",
+    "category": "Queijos",
+    "atlas": "05.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 2
+  },
+  {
+    "id": "05-04",
+    "name": "Cheddar fatiado",
+    "category": "Queijos",
+    "atlas": "05.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 3
+  },
+  {
+    "id": "05-05",
+    "name": "Catupiry original",
+    "category": "Queijos",
+    "atlas": "05.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 4
+  },
+  {
+    "id": "05-06",
+    "name": "Catupiry cheddar",
+    "category": "Queijos",
+    "atlas": "05.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 5
+  },
+  {
+    "id": "05-07",
+    "name": "Requeijão cremoso",
+    "category": "Queijos",
+    "atlas": "05.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 6
+  },
+  {
+    "id": "05-08",
+    "name": "Queijo prato",
+    "category": "Queijos",
+    "atlas": "05.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 7
+  },
+  {
+    "id": "05-09",
+    "name": "Queijo coalho",
+    "category": "Queijos",
+    "atlas": "05.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 8
+  },
+  {
+    "id": "05-10",
+    "name": "Queijo gorgonzola",
+    "category": "Queijos",
+    "atlas": "05.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 9
+  },
+  {
+    "id": "05-11",
+    "name": "Parmesão ralado",
+    "category": "Queijos",
+    "atlas": "05.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 10
+  },
+  {
+    "id": "05-12",
+    "name": "Queijo minas / frescal",
+    "category": "Queijos",
+    "atlas": "05.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 11
+  },
+  {
+    "id": "05-13",
+    "name": "Cream cheese",
+    "category": "Queijos",
+    "atlas": "05.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 12
+  },
+  {
+    "id": "06-01",
+    "name": "Alface americana",
+    "category": "Vegetais",
+    "atlas": "06.jpg",
+    "columns": 4,
+    "rows": 5,
+    "cell": 0
+  },
+  {
+    "id": "06-02",
+    "name": "Alface crespa",
+    "category": "Vegetais",
+    "atlas": "06.jpg",
+    "columns": 4,
+    "rows": 5,
+    "cell": 1
+  },
+  {
+    "id": "06-03",
+    "name": "Rúcula",
+    "category": "Vegetais",
+    "atlas": "06.jpg",
+    "columns": 4,
+    "rows": 5,
+    "cell": 2
+  },
+  {
+    "id": "06-04",
+    "name": "Tomate",
+    "category": "Vegetais",
+    "atlas": "06.jpg",
+    "columns": 4,
+    "rows": 5,
+    "cell": 3
+  },
+  {
+    "id": "06-05",
+    "name": "Tomate cereja",
+    "category": "Vegetais",
+    "atlas": "06.jpg",
+    "columns": 4,
+    "rows": 5,
+    "cell": 4
+  },
+  {
+    "id": "06-06",
+    "name": "Cebola roxa",
+    "category": "Vegetais",
+    "atlas": "06.jpg",
+    "columns": 4,
+    "rows": 5,
+    "cell": 5
+  },
+  {
+    "id": "06-07",
+    "name": "Cebola branca",
+    "category": "Vegetais",
+    "atlas": "06.jpg",
+    "columns": 4,
+    "rows": 5,
+    "cell": 6
+  },
+  {
+    "id": "06-08",
+    "name": "Cebola caramelizada",
+    "category": "Vegetais",
+    "atlas": "06.jpg",
+    "columns": 4,
+    "rows": 5,
+    "cell": 7
+  },
+  {
+    "id": "06-09",
+    "name": "Pimentão verde",
+    "category": "Vegetais",
+    "atlas": "06.jpg",
+    "columns": 4,
+    "rows": 5,
+    "cell": 8
+  },
+  {
+    "id": "06-10",
+    "name": "Pimentão vermelho",
+    "category": "Vegetais",
+    "atlas": "06.jpg",
+    "columns": 4,
+    "rows": 5,
+    "cell": 9
+  },
+  {
+    "id": "06-11",
+    "name": "Pimentão amarelo",
+    "category": "Vegetais",
+    "atlas": "06.jpg",
+    "columns": 4,
+    "rows": 5,
+    "cell": 10
+  },
+  {
+    "id": "06-12",
+    "name": "Pepino",
+    "category": "Vegetais",
+    "atlas": "06.jpg",
+    "columns": 4,
+    "rows": 5,
+    "cell": 11
+  },
+  {
+    "id": "06-13",
+    "name": "Cenoura ralada",
+    "category": "Vegetais",
+    "atlas": "06.jpg",
+    "columns": 4,
+    "rows": 5,
+    "cell": 12
+  },
+  {
+    "id": "06-14",
+    "name": "Milho verde",
+    "category": "Vegetais",
+    "atlas": "06.jpg",
+    "columns": 4,
+    "rows": 5,
+    "cell": 13
+  },
+  {
+    "id": "06-15",
+    "name": "Ervilha",
+    "category": "Vegetais",
+    "atlas": "06.jpg",
+    "columns": 4,
+    "rows": 5,
+    "cell": 14
+  },
+  {
+    "id": "06-16",
+    "name": "Cogumelo paris / champignon",
+    "category": "Vegetais",
+    "atlas": "06.jpg",
+    "columns": 4,
+    "rows": 5,
+    "cell": 15
+  },
+  {
+    "id": "06-17",
+    "name": "Pimenta jalapeño",
+    "category": "Vegetais",
+    "atlas": "06.jpg",
+    "columns": 4,
+    "rows": 5,
+    "cell": 16
+  },
+  {
+    "id": "06-18",
+    "name": "Pimenta biquinho",
+    "category": "Vegetais",
+    "atlas": "06.jpg",
+    "columns": 4,
+    "rows": 5,
+    "cell": 17
+  },
+  {
+    "id": "06-19",
+    "name": "Azeitona verde",
+    "category": "Vegetais",
+    "atlas": "06.jpg",
+    "columns": 4,
+    "rows": 5,
+    "cell": 18
+  },
+  {
+    "id": "06-20",
+    "name": "Azeitona preta",
+    "category": "Vegetais",
+    "atlas": "06.jpg",
+    "columns": 4,
+    "rows": 5,
+    "cell": 19
+  },
+  {
+    "id": "07-01",
+    "name": "Palmito",
+    "category": "Conservas e complementos",
+    "atlas": "07.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 0
+  },
+  {
+    "id": "07-02",
+    "name": "Picles",
+    "category": "Conservas e complementos",
+    "atlas": "07.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 1
+  },
+  {
+    "id": "07-03",
+    "name": "Cebola em conserva",
+    "category": "Conservas e complementos",
+    "atlas": "07.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 2
+  },
+  {
+    "id": "07-04",
+    "name": "Azeitona recheada",
+    "category": "Conservas e complementos",
+    "atlas": "07.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 3
+  },
+  {
+    "id": "07-05",
+    "name": "Uva passa",
+    "category": "Conservas e complementos",
+    "atlas": "07.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 4
+  },
+  {
+    "id": "07-06",
+    "name": "Batata palha",
+    "category": "Conservas e complementos",
+    "atlas": "07.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 5
+  },
+  {
+    "id": "07-07",
+    "name": "Doritos triturado",
+    "category": "Conservas e complementos",
+    "atlas": "07.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 6
+  },
+  {
+    "id": "07-08",
+    "name": "Onion rings / anel de cebola",
+    "category": "Conservas e complementos",
+    "atlas": "07.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 7
+  },
+  {
+    "id": "07-09",
+    "name": "Farofa crocante",
+    "category": "Conservas e complementos",
+    "atlas": "07.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 8
+  },
+  {
+    "id": "08-01",
+    "name": "Maionese caseira",
+    "category": "Molhos",
+    "atlas": "08.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 0
+  },
+  {
+    "id": "08-02",
+    "name": "Maionese temperada",
+    "category": "Molhos",
+    "atlas": "08.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 1
+  },
+  {
+    "id": "08-03",
+    "name": "Maionese verde",
+    "category": "Molhos",
+    "atlas": "08.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 2
+  },
+  {
+    "id": "08-04",
+    "name": "Ketchup",
+    "category": "Molhos",
+    "atlas": "08.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 3
+  },
+  {
+    "id": "08-05",
+    "name": "Mostarda",
+    "category": "Molhos",
+    "atlas": "08.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 4
+  },
+  {
+    "id": "08-06",
+    "name": "Mostarda e mel",
+    "category": "Molhos",
+    "atlas": "08.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 5
+  },
+  {
+    "id": "08-07",
+    "name": "Barbecue",
+    "category": "Molhos",
+    "atlas": "08.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 6
+  },
+  {
+    "id": "08-08",
+    "name": "Barbecue de goiabada",
+    "category": "Molhos",
+    "atlas": "08.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 7
+  },
+  {
+    "id": "08-09",
+    "name": "Molho de alho",
+    "category": "Molhos",
+    "atlas": "08.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 8
+  },
+  {
+    "id": "08-10",
+    "name": "Molho rosé",
+    "category": "Molhos",
+    "atlas": "08.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 9
+  },
+  {
+    "id": "08-11",
+    "name": "Molho cheddar",
+    "category": "Molhos",
+    "atlas": "08.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 10
+  },
+  {
+    "id": "08-12",
+    "name": "Molho de pimenta",
+    "category": "Molhos",
+    "atlas": "08.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 11
+  },
+  {
+    "id": "08-13",
+    "name": "Molho tártaro",
+    "category": "Molhos",
+    "atlas": "08.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 12
+  },
+  {
+    "id": "08-14",
+    "name": "Molho de ervas",
+    "category": "Molhos",
+    "atlas": "08.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 13
+  },
+  {
+    "id": "08-15",
+    "name": "Molho de queijo",
+    "category": "Molhos",
+    "atlas": "08.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 14
+  },
+  {
+    "id": "08-16",
+    "name": "Azeite / vinagrete",
+    "category": "Molhos",
+    "atlas": "08.jpg",
+    "columns": 4,
+    "rows": 4,
+    "cell": 15
+  },
+  {
+    "id": "09-01",
+    "name": "Dobro de carne",
+    "category": "Extras e adicionais",
+    "atlas": "09.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 0
+  },
+  {
+    "id": "09-02",
+    "name": "Dobro de queijo",
+    "category": "Extras e adicionais",
+    "atlas": "09.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 1
+  },
+  {
+    "id": "09-03",
+    "name": "Dobro de bacon",
+    "category": "Extras e adicionais",
+    "atlas": "09.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 2
+  },
+  {
+    "id": "09-04",
+    "name": "Ovo extra",
+    "category": "Extras e adicionais",
+    "atlas": "09.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 3
+  },
+  {
+    "id": "09-05",
+    "name": "Catupiry extra",
+    "category": "Extras e adicionais",
+    "atlas": "09.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 4
+  },
+  {
+    "id": "09-06",
+    "name": "Cheddar extra",
+    "category": "Extras e adicionais",
+    "atlas": "09.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 5
+  },
+  {
+    "id": "09-07",
+    "name": "Molho extra",
+    "category": "Extras e adicionais",
+    "atlas": "09.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 6
+  },
+  {
+    "id": "09-08",
+    "name": "Pão extra",
+    "category": "Extras e adicionais",
+    "atlas": "09.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 7
+  },
+  {
+    "id": "09-09",
+    "name": "Pão com parmesão",
+    "category": "Extras e adicionais",
+    "atlas": "09.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 8
+  },
+  {
+    "id": "10-01",
+    "name": "Batata frita tradicional",
+    "category": "Acompanhamentos",
+    "atlas": "10.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 0
+  },
+  {
+    "id": "10-02",
+    "name": "Batata frita com cheddar e bacon",
+    "category": "Acompanhamentos",
+    "atlas": "10.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 1
+  },
+  {
+    "id": "10-03",
+    "name": "Batata rústica",
+    "category": "Acompanhamentos",
+    "atlas": "10.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 2
+  },
+  {
+    "id": "10-04",
+    "name": "Batata chips",
+    "category": "Acompanhamentos",
+    "atlas": "10.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 3
+  },
+  {
+    "id": "10-05",
+    "name": "Mandioca frita",
+    "category": "Acompanhamentos",
+    "atlas": "10.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 4
+  },
+  {
+    "id": "10-08",
+    "name": "Pastelzinho",
+    "category": "Acompanhamentos",
+    "atlas": "10.jpg",
+    "columns": 3,
+    "rows": 3,
+    "cell": 7
+  }
+]

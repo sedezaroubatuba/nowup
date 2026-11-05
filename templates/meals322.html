@@ -22,7 +22,7 @@
 {% endmacro %}
 <section class="panel menu-manager" id="lanches-refeicoes322">
 <nav class="nu322-tabs" aria-label="Tipo de cadastro"><a class="btn soft" href="#produtos-loja" data-nav198>Produtos</a><a class="btn primary" href="#lanches-refeicoes322" data-nav198>Lanches e refeições</a></nav>
-<h2>Lanches e refeições</h2>
+<h2>Lanches e refeições</h2><div class="nu357-instructions"><b>Monte seu lanche ou refeição em ordem</b><ol><li>Cadastre primeiro os itens em <a href="#adicionais" data-nav198>Ingredientes, acompanhamentos e adicionais</a>. Você pode importar nome e foto da galeria NowUp.</li><li>Preencha nome, descrição e preço do produto.</li><li>Busque os ingredientes da sua loja, defina o que é obrigatório e o que o cliente pode retirar.</li><li>Escolha acompanhamentos incluídos e adicionais pagos. O preço do adicional vem do cadastro do item.</li></ol><p>Importe somente o que você usa. Para a foto do lanche pronto, prefira uma imagem que represente o produto da sua loja.</p></div>
 {% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}
 {% if request.query_params.get('ok')=='refeicao' %}<p role="status">Lanche ou refeição salvo!</p>{% endif %}
 <details class="product-create" id="novo-lanche322" open><summary class="btn primary">＋ Cadastrar lanche ou refeição</summary>{{meal_form322()}}</details>

@@ -3110,3 +3110,7 @@ nowup_upgrade352.install(globals())
 # Dedicated catalogue origin can be connected after domain/DNS setup.
 import nowup_menu_origin355
 nowup_menu_origin355.install(globals())
+
+# Shared ingredient-photo library; every import remains scoped to the merchant.
+import nowup_gallery357
+nowup_gallery357.install(globals())

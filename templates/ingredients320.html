@@ -1,6 +1,6 @@
 <details id="ingredientes320" class="menu-category-manager" {% if request.query_params.get('ok') in ('ingrediente','item-excluido') or request.query_params.get('erro')=='ingrediente-duplicado' %}open{% endif %}>
 <summary class="btn soft">＋ Cadastrar ingredientes, acompanhamentos e adicionais</summary>
-<p>Cadastre uma vez e escolha como usar em cada produto. Informe o preço do item; a foto é opcional.</p>
+<div class="nu357-instructions"><b>Como cadastrar e montar seu cardápio</b><ol><li>Busque na galeria NowUp e importe somente os itens que sua loja usa, ou cadastre manualmente.</li><li>Informe o preço de cada item quando vendido como adicional. Use 0,00 se não houver cobrança extra.</li><li>Ao cadastrar o lanche ou refeição, busque os itens da sua loja e escolha como usar: ingrediente, acompanhamento incluído ou adicional pago.</li></ol><p>Ingredientes e acompanhamentos incluídos não aumentam o preço do produto. A foto é opcional.</p><button type="button" class="btn primary" data-import-ingredients357>Buscar e importar da galeria NowUp</button></div>
 {% if request.query_params.get('erro')=='ingrediente-duplicado' %}<p role="alert">Este item já está cadastrado. Escolha-o na lista abaixo.</p>{% endif %}
 {% if request.query_params.get('ok')=='ingrediente' %}<p role="status">Item salvo. Volte ao produto e escolha como usar.</p>{% endif %}
 {% if request.query_params.get('ok')=='item-excluido' %}<p role="status">Item excluído da lista. Os pedidos anteriores foram preservados.</p>{% endif %}
