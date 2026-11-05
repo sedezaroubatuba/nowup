@@ -1,0 +1,4 @@
+/* Highlight successful submission separately from the store acceptance status. */
+html body .nu347-tracking .order-hero .nu369-sent{color:#13763f;font-size:18px;font-weight:800}
+html body .nu347-tracking .order-hero .order-check{color:#16834a}
+html body .nu347-tracking .order-live-status.status-new{background:#16834a;color:#fff}
