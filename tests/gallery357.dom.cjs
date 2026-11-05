@@ -6,8 +6,8 @@ w.fetch=async(url,opts={})=>{if(opts.method==='POST'){posts.push(opts.body);retu
 w.eval(fs.readFileSync('static/ingredient-gallery357.js','utf8'));
 const tick=()=>new Promise(r=>setImmediate(r));
 (async()=>{
- assert.equal([...d.querySelectorAll('button')].filter(b=>b.textContent==='Enviar foto do aparelho').length,2);
- assert.equal([...d.querySelectorAll('button')].filter(b=>b.textContent==='Importar da galeria NowUp').length,2);
+ assert.equal([...d.querySelectorAll('button')].filter(b=>b.textContent==='Enviar foto do aparelho').length,1);
+ assert.equal([...d.querySelectorAll('button')].filter(b=>b.textContent==='Importar da galeria NowUp').length,1);
  d.querySelector('[data-import-ingredients357]').click();await tick();
  assert.equal(d.querySelectorAll('.nu357-card').length,1);
  const search=d.querySelector('.nu357-tools input');search.value='PAO';search.dispatchEvent(new w.Event('input'));assert.equal(d.querySelectorAll('.nu357-card').length,1);

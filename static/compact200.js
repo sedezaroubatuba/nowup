@@ -18,10 +18,10 @@
    return;
   }
   api.notes.checked=true;api.notes.closest('label').remove();api.ing.toggle.checked=true;api.ing.toggle.closest('label').remove();api.ing.sync();
-  const ingredientBox=section('Ingredientes (opcional)'),importBox=make('details'),importTitle=make('summary','Buscar na loja e na galeria NowUp');importBox.append(importTitle,api.ingredientSearch320,api.ingredientPicker320);if(api.galleryResults358)importBox.append(api.galleryResults358);importBox.append(api.ingredientLink320);
+  const ingredientBox=section('Ingredientes (opcional)'),importBox=make('details'),importTitle=make('summary','Importar itens cadastrados na loja');importBox.append(importTitle,api.ingredientSearch320,api.ingredientPicker320);importBox.append(api.ingredientLink320);
   const selectedIngredients325=make('details');selectedIngredients325.append(make('summary','Ingredientes selecionados'),api.list);
   // Selected ingredients stay visible; importing never replaces the manual list.
-  api.ing.body.querySelector(':scope > p')?.remove();ingredientBox.append(make('p','Digite ou importe ingredientes e marque os obrigatórios. Se preferir, escreva tudo só na descrição; o cliente informa na observação o que deseja retirar.'),...(api.galleryButton358?[api.galleryButton358]:[]),selectedIngredients325,api.addIngredient,importBox,...(api.galleryStatus358?[api.galleryStatus358]:[]));api.ing.body.remove();api.addIngredient.textContent='+ Digitar ingrediente';
+  api.ing.body.querySelector(':scope > p')?.remove();ingredientBox.append(make('p','Selecione os ingredientes já cadastrados na loja e marque os obrigatórios. Para adicionar novos itens com foto e preço, use Cadastrar item. O cadastro fica salvo para todos os seus lanches e refeições.'),selectedIngredients325,api.addIngredient,importBox);api.ing.body.remove();api.addIngredient.textContent='+ Digitar ingrediente';
   function optionalRows(){selectedIngredients325.open=api.list.children.length>0;api.list.querySelectorAll('[aria-label=Ingrediente]').forEach(input=>input.required=false);}
   api.list.addEventListener('nowup:ingredients-added',optionalRows);api.addIngredient.addEventListener('click',optionalRows);api.ingredientPicker320.addEventListener('click',optionalRows);optionalRows();
   const paid=section('Adicionais pagos'),modeLabel=api.mode?.closest('label'),picker=form.querySelector('[data-shared-picker155]');if(modeLabel)paid.append(modeLabel);if(picker){const fold=make('details');fold.append(make('summary','Selecionar adicionais cadastrados'),picker);paid.append(fold);}paid.append(api.extras);
