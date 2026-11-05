@@ -2,7 +2,7 @@ const {JSDOM}=require('jsdom'),fs=require('fs'),assert=require('node:assert/stri
 const dom=new JSDOM(`<details id="ingredientes320"><summary>Cadastro</summary><button data-import-ingredients357>Importar</button><form action="/painel/cardapio/ingredientes320"><input name="name"><input type="file" name="photo"></form><details><summary>Itens cadastrados</summary><details><summary>Bacon</summary></details><details><summary>Alface</summary></details></details></details><form data-meal-editor322><input type="file" name="photo"></form><div data-shared-picker155><label>Bacon</label><label>Queijo</label></div>`,{url:'https://nowup.test/painel',runScripts:'outside-only'});
 const w=dom.window,d=w.document;w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};
 const item={id:'01-01',name:'Pão brioche',category:'Pães',photo:'/galeria-nowup/ingredientes/01-01.jpg'};let posts=[];
-w.fetch=async(url,opts={})=>{if(opts.method==='POST'){posts.push(opts.body);return {ok:true,url:'https://nowup.test/painel?ok=ingrediente#ingredientes320'};}if(url===item.photo)return {ok:true,blob:async()=>new w.Blob(['photo'],{type:'image/jpeg'})};return {ok:true,json:async()=>[item]};};
+w.fetch=async(url,opts={})=>{if(opts.method==='POST'){posts.push(opts.body);return {ok:true,url:'https://nowup.test/painel?ok=ingrediente#ingredientes320'};}if(url.endsWith('/itens-da-loja'))return {ok:true,json:async()=>[]};if(url===item.photo)return {ok:true,blob:async()=>new w.Blob(['photo'],{type:'image/jpeg'})};return {ok:true,json:async()=>[item]};};
 w.eval(fs.readFileSync('static/ingredient-gallery357.js','utf8'));
 const tick=()=>new Promise(r=>setImmediate(r));
 (async()=>{

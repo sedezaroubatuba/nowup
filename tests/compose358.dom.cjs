@@ -1,0 +1,22 @@
+const {JSDOM}=require('jsdom'),fs=require('fs'),assert=require('node:assert/strict');
+const dom=new JSDOM(`<script id="ingredient-catalog320" type="application/json">[]</script><form action="/painel/cardapio/produtos" data-meal-editor322="1"><input name="name" value="X-bacon" required><input name="price" value="25,00" required><input name="photo" type="file"><select name="extras_mode"><option value="none">Sem adicionais</option></select><div data-editor192="" data-max192="3"></div><button type="submit">Salvar</button></form>`,{url:'https://nowup.test/painel',runScripts:'outside-only'});
+const w=dom.window,d=w.document;w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};
+const item={id:'02-12',name:'Bacon em fatias',category:'Suína',photo:'/galeria-nowup/ingredientes/02-12.jpg'};let registered=[],posts=0;
+w.fetch=async(url,opts={})=>{if(opts.method==='POST'){posts++;registered=[{id:71,name:item.name,image_filename:'bacon-photo.jpg',price_cents:350}];return {ok:true,url:'https://nowup.test/painel?ok=ingrediente'};}if(url.endsWith('/itens-da-loja'))return {ok:true,json:async()=>registered};if(url===item.photo)return {ok:true,blob:async()=>new w.Blob(['jpg'],{type:'image/jpeg'})};return {ok:true,json:async()=>[item]};};
+w.eval(fs.readFileSync('static/custom196.js','utf8'));w.eval(fs.readFileSync('static/ingredient-gallery357.js','utf8'));
+const tick=()=>new Promise(r=>setImmediate(r));
+(async()=>{
+ const search=d.querySelector('[aria-label="Buscar ingrediente para montar o produto"]');assert(search);search.value='bacon';search.dispatchEvent(new w.Event('input'));await tick();await tick();
+ const result=d.querySelector('[data-gallery-result358]');assert(result,'search must show gallery ingredients inside product composer');result.click();await tick();await tick();
+ assert.equal(d.querySelectorAll('.nu357-card input').length,1);const price=d.querySelector('.nu357-card input');price.value='3,50';price.dispatchEvent(new w.Event('input'));d.querySelector('.nu357-footer button').click();await tick();await tick();await tick();
+ assert.equal(posts,1);assert.equal(d.querySelector('dialog').open,false);
+ const row=[...d.querySelectorAll('.nu192-row')].find(r=>r.querySelector('[aria-label=Ingrediente]')?.value===item.name);assert(row);assert.equal(row.querySelector('img').getAttribute('src'),'/uploads/bacon-photo.jpg');
+ assert.equal(d.querySelector('input[name=photo]').files.length,0,'main product photo must remain untouched');
+ const mandatory=row.querySelector('[aria-label="Ingrediente obrigatório"]');mandatory.checked=true;
+ // Submit the real editor serialization and verify the per-ingredient removal flag.
+ const form=d.querySelector('form');form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
+ const config=JSON.parse(form.querySelector('[name=customization192]').value);assert.equal(config.ingredients[0].ingredient_id320,71);assert.equal(config.ingredients[0].removable,false);assert.equal(config.ingredients[0].image_filename,'bacon-photo.jpg');
+ // Open again: existing registry items attach without another POST or price overwrite.
+ d.querySelector('[data-compose-gallery358]').click();await tick();await tick();d.querySelector('.nu357-card button').click();d.querySelector('.nu357-footer button').click();await tick();await tick();await tick();assert.equal(posts,1);assert.equal([...d.querySelectorAll('[aria-label=Ingrediente]')].filter(i=>i.value===item.name).length,1);
+ console.log('Composer: gallery search -> import -> ingredient with photo -> mandatory serialization; no main-photo change, no duplicate or second save.');
+})().catch(e=>{console.error(e);process.exitCode=1;});

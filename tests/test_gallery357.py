@@ -21,6 +21,7 @@ def test_library_authentication_and_complete_photo_collection(env):
         image = Image.open(io.BytesIO(gallery.photo(item['id'])))
         assert image.format == 'JPEG' and image.size == (1000, 1000)
     assert client.get('/galeria-nowup/ingredientes/not-a-key.jpg').status_code == 404
+    assert TestClient(main.app).get('/painel/galeria-nowup/itens-da-loja').status_code == 401
 
 
 def test_gallery_photo_uses_existing_price_validation_and_store_isolation(env):
@@ -43,6 +44,14 @@ def test_gallery_photo_uses_existing_price_validation_and_store_isolation(env):
                                 (other, item['name'])).fetchone()
         assert conn.execute('SELECT price_cents FROM shared_extras155 WHERE id=?',
                             (row['extra_id325'],)).fetchone()[0] == 350
+    own = client.get('/painel/galeria-nowup/itens-da-loja').json()
+    assert any(i['name'] == item['name'] and i['image_filename'] == filename for i in own)
+    foreign_client = TestClient(main.app, headers={'Origin': 'http://testserver'})
+    foreign_client.cookies.set('nowup_session', 'other-test')
+    with main.db() as conn:
+        conn.execute("UPDATE professionals SET is_premium=1,offer_mode='menu',plan_active='ambos' WHERE id=?", (other,))
+        conn.commit()
+    assert all(i['name'] != item['name'] for i in foreign_client.get('/painel/galeria-nowup/itens-da-loja').json())
     # Repeat import preserves merchant price/photo, rather than overwriting it.
     duplicate = client.post(path, data={'name': item['name'], 'price': '0,00'}, follow_redirects=False)
     assert 'ingrediente-duplicado' in duplicate.headers['location']

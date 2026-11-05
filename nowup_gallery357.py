@@ -49,6 +49,16 @@ def install(g):
                               'photo': '/galeria-nowup/ingredientes/' + row['id'] + '.jpg'}
                              for row in catalog()])
 
+    @g['app'].get('/painel/galeria-nowup/itens-da-loja')
+    def store_ingredients(request: Request):
+        user = g['require_user'](request, 'professional')
+        conn = g['db']()
+        try:
+            store = g['require_premium_catalog'](conn, user['id'])
+            return JSONResponse(g['nowup_ingredients320'].catalog(conn, store['id']))
+        finally:
+            conn.close()
+
     @g['app'].get('/galeria-nowup/ingredientes/{key}.jpg')
     def ingredient_photo(key: str):
         return Response(photo(key), media_type='image/jpeg', headers={
