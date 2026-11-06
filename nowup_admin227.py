@@ -102,7 +102,13 @@ def localminute(value):
   return dt.astimezone(TZ).minute
  except (ValueError,TypeError,AttributeError):return 0
 def localday():return datetime.now(TZ).date().isoformat()
-def metadata(c,kind):return {v['id']:v for v in rows(c,kind)}
+def metadata(c,kind):
+ # The entity primary key is authoritative. Older store metadata omitted its JSON id.
+ result={}
+ for row in c.execute('SELECT id,data FROM adm227_entities WHERE kind=? ORDER BY id',(kind,)):
+  value=json.loads(row['data'])
+  if isinstance(value,dict):result[row['id']]={**value,'id':row['id']}
+ return result
 def public_staff(v):return {k:v.get(k) for k in ('id','name','email','role','photo','enabled','permissions')}
 def order_page255(c,a,before_id=0,limit=200,exact_id=None):
  if not set(a['permissions']).intersection({'dashboard','orders','customers','stores'}):

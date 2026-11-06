@@ -185,3 +185,13 @@ def test_stale_trial_reminder_is_skipped_and_pausing_blocks_pending_welcome(comm
         c.execute('UPDATE communication372_settings SET data=? WHERE id=1',(json.dumps(cfg),));c.commit()
     comm.tick()
     with m.db() as c:assert {r[0] for r in c.execute('SELECT state FROM communication372_deliveries')}=={'skipped'}
+
+
+def test_legacy_store_metadata_without_json_id_uses_entity_primary_key(communication):
+    m,client,p,_=communication
+    with m.db() as c:
+        c.execute("INSERT INTO adm227_entities(kind,id,data) VALUES('storemeta',?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data",(p['id'],json.dumps({'trialUntil':'2027-02-04'})))
+        assert adm.metadata(c,'storemeta')[p['id']]['id']==p['id']
+    r=client.get('/admin/super/api/communication');assert r.status_code==200,r.text
+    assert next(x for x in r.json()['contacts'] if x['id']==p['id'])['trialEnd']=='2027-02-04'
+    comm.tick()
