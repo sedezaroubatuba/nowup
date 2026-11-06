@@ -27,7 +27,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   chosen.forEach(id=>{
    const source=byId.get(id),row=document.createElement('article');row.className='nu256-pair';row.dataset.pair310=id;
    const photo=source.querySelector('img');if(!photo)row.classList.add('nu310-no-photo');if(photo){const img=document.createElement('img');if(photo.dataset.src258){img.src='/static/product-placeholder.svg';img.dataset.src258=photo.dataset.src258;}else img.src=photo.src;img.alt='';row.append(img);}
-   const info=document.createElement('div'),name=document.createElement('b'),price=document.createElement('span');name.textContent=source.dataset.name;name.title=source.dataset.name;price.textContent=money(source.dataset.price)+(source.dataset.weight370==='1'?'/kg':'');info.append(name,price);
+   const info=document.createElement('div'),name=document.createElement('b'),price=document.createElement('span');name.textContent=source.dataset.name;name.title=source.dataset.name;price.textContent=money(source.dataset.price)+(source.dataset.weight370==='1'?'/kg':'');price.className='nu371-price';info.append(name);
    const add=document.createElement('button');add.type='button';add.textContent='+ Adicionar';add.setAttribute('aria-label','Adicionar '+source.dataset.name);
    add.addEventListener('click',()=>{
     if(source.dataset.weight370==='1'){window.NOWUP_WEIGHT370?.open(source);return;}
@@ -39,7 +39,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
     }
     const qty=source.querySelector('[data-product-quantity]');if(qty)qty.value='1';source.querySelector('[data-add]')?.click();
    });
-   row.append(info,add);track.append(row);
+   row.append(info,price,add);track.append(row);
   });
   if(chosen.length>2){
    const controls=document.createElement('nav');controls.className='nu310-pair-controls';controls.setAttribute('aria-label','Navegar nas sugestões');
