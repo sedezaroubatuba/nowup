@@ -28,7 +28,8 @@ def resolve(conn, store_id, config):
             if ref['kind']=='item':
                 row=conn.execute('SELECT name FROM ingredients320 WHERE id=? AND professional_id=?',(ref['id'],store_id)).fetchone()
             else:
-                row=conn.execute('SELECT name FROM products WHERE id=? AND professional_id=? AND available=1 AND is_combo256=0',(ref['id'],store_id)).fetchone()
+                row=conn.execute('SELECT * FROM products WHERE id=? AND professional_id=? AND available=1 AND is_combo256=0',(ref['id'],store_id)).fetchone()
+                if row and dict(row).get('sold_by_weight370'):raise HTTPException(400,'Produtos por peso não participam de combos ou acompanhamentos.')
             if not row:fail('Um item do grupo está indisponível ou não pertence à sua loja.')
             options.append(row['name'])
         if len({name.casefold() for name in options})!=len(options):fail('Não repita itens no mesmo grupo.')

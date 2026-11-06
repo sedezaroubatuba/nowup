@@ -7,6 +7,10 @@
       const card = [...root.querySelectorAll('[data-product]')].find(c => Number(c.dataset.id) === Number(line.productId));
       if (!card) continue;
       const price = Number(card.dataset.price), regular = Number(card.dataset.regular256);
+      if(line.weightGrams370){
+        if(Number.isSafeInteger(line.weightGrams370)&&line.weightGrams370>=100&&line.weightGrams370<=99900&&line.weightGrams370%100===0&&Number.isSafeInteger(price)&&Number.isSafeInteger(regular)&&line.unitPrice===Math.floor((price*line.weightGrams370+500)/1000))total+=Math.max(0,Math.floor((regular*line.weightGrams370+500)/1000)-line.unitPrice);
+        continue;
+      }
       const extras = (line.options || []).reduce((sum, option) => sum + Number(option.price || 0), 0);
       const count = Number(line.quantity);
       if (![price, regular, extras, line.unitPrice, count].every(Number.isSafeInteger) || price < 0 || extras < 0 || count < 1 || count > 99 || line.unitPrice !== price + extras) continue;

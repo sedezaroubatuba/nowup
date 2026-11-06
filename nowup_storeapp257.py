@@ -57,6 +57,7 @@ def validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighbor
             product=dict(product)
             user_notes305=item_notes
             quantities255[pid]=quantities255.get(pid,0)+qty
+            if product.get('sold_by_weight370') and quantities255[pid]>1:raise HTTPException(400,'Escolha o peso total em um único item por produto.')
             if quantities255[pid]>min(99,max(1,product["max_quantity"] or 99)):
                 raise HTTPException(400,"Quantidade acima do limite do produto. Revise o carrinho.")
             chosen=[]; extras=0
@@ -77,6 +78,9 @@ def validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighbor
             except HTTPException: raise
             chosen.extend(combo_chosen364)
             unit=(current_price(product))+extras+combo_price364
+            from nowup_weight370 import apply_line
+            weighted370=apply_line(product,raw,qty,item_notes,chosen)
+            if weighted370:unit,item_notes=weighted370
             if unit<0:raise HTTPException(409,"Preço indisponível. Entre em contato com a loja.")
             clean_items.append((product,qty,item_notes,chosen,unit)); subtotal += unit*qty
     if not clean_items: raise HTTPException(400,"Nenhum produto disponível no carrinho")
@@ -175,6 +179,8 @@ def install(g):
                 conn.execute('INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)',(oid,'new',created))
                 for product,qty,item_notes,chosen,unit in clean:
                     item=conn.execute('INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes,combo_pack305) VALUES(?,?,?,?,?,?,?)',(oid,product['id'],product['name'],qty,unit,item_notes,product.get('combo_pack305','')))
+                    from nowup_weight370 import snapshot
+                    snapshot(conn,item.lastrowid,product)
                     for option in chosen:conn.execute('INSERT INTO order_item_options(order_item_id,option_id,option_name,price_cents) VALUES(?,?,?,?)',(item.lastrowid,option['id'],option['name'],option['price_cents']))
                 conn.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(p['user_id'],'Novo pedido no NowUp',code+' — '+name,'/painel#pedido-'+str(oid),created))
                 g['nowup_push75'].enqueue_on_connection(conn,p['user_id'],oid)

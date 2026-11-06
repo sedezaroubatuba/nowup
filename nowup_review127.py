@@ -18,11 +18,13 @@ def build_items(conn,order,keep,quantities,additions):
     for i in original:
         if str(i['id']) not in keep: continue
         qty=int(quantities.get(str(i['id']),i['quantity']))
+        if dict(i).get('weight_grams370') and qty!=1:raise HTTPException(400,'Produtos por peso mantêm a porção escolhida pelo cliente.')
         if not 1<=qty<=99: raise HTTPException(400,'Quantidade inválida')
         result.append(dict(i)|{'quantity':qty})
     for pid,qty in additions:
         if not pid: continue
         p=conn.execute('SELECT * FROM products WHERE id=? AND professional_id=? AND available=1',(int(pid),order['professional_id'])).fetchone()
+        if p and dict(p).get('sold_by_weight370'):raise HTTPException(400,'O cliente deve escolher o peso no cardápio; não adicione produtos por peso como substitutos.')
         if not p or not 1<=int(qty)<=99: raise HTTPException(400,'Substituto indisponível ou quantidade inválida')
         result.append({'id':None,'product_id':p['id'],'product_name':p['name'],'quantity':int(qty),'unit_price_cents':current_price(p),'notes':''})
     if not result: raise HTTPException(400,'Sem itens disponíveis: recuse o pedido com motivo')

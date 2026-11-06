@@ -46,7 +46,8 @@ def resolve(conn, professional_id, config):
         if not isinstance(product_ids,list) or len(product_ids)>30 or any(type(i) is not int or i<1 for i in product_ids) or len(set(product_ids))!=len(product_ids):
             raise HTTPException(400,'Seleção de bebidas ou acompanhamentos da loja inválida.')
         for product_id in product_ids:
-            row=conn.execute('SELECT name FROM products WHERE id=? AND professional_id=? AND available=1 AND is_combo256=0',(product_id,professional_id)).fetchone()
+            row=conn.execute('SELECT * FROM products WHERE id=? AND professional_id=? AND available=1 AND is_combo256=0',(product_id,professional_id)).fetchone()
+            if row and dict(row).get('sold_by_weight370'):raise HTTPException(400,'Produtos por peso não participam de combos ou acompanhamentos.')
             if not row:raise HTTPException(400,'Uma bebida ou acompanhamento está indisponível ou não pertence à sua loja.')
             if row['name'] not in options:options.append(row['name'])
         if len(options)>30:raise HTTPException(400,'Selecione até 30 opções por grupo.')

@@ -11,6 +11,7 @@ def children(conn, store_id, ids, photos=None):
     photos=catalog(conn,store_id) if photos is None else photos
     for source in conn.execute('SELECT * FROM products WHERE professional_id=? AND available=1 AND is_combo256=0',(store_id,)):
         row=dict(source)
+        if row.get('sold_by_weight370'):continue
         if str(row['id']) not in ids:continue
         config=attach_photos329(parse_config(row.get('customization192','')),photos)
         # The outer combo owns its drinks/sides; inherit the meal recipe and extras only.

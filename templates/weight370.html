@@ -1,0 +1,16 @@
+{% macro form(product_categories, current=none) %}
+<form action="/painel/cardapio/produtos{% if current %}/{{current.id}}{% endif %}" method="post" enctype="multipart/form-data" class="product-form nu370-merchant">
+<input type="hidden" name="sold_by_weight370" value="1"><input type="hidden" name="is_combo256" value="0"><input type="hidden" name="extras_mode" value="none"><input type="hidden" name="max_quantity" value="99">
+<label>Nome do produto<input class="input" name="name" maxlength="140" value="{{current.name if current else ''}}" required></label>
+<label>Categoria<select name="category" required>{% if current %}<option value="{{current.category}}">{{current.category}}</option>{% endif %}<option value="Geral">Geral</option>{% for category in product_categories if category.active and category.name|lower != 'combos' %}<option value="{{category.name}}">{{category.name}}</option>{% endfor %}</select></label>
+<label>Preço por kg (R$)<input class="input" name="price" inputmode="decimal" value="{{'%.2f'|format(current.price_cents/100)|replace('.',',') if current else ''}}" placeholder="Ex.: 75,00" required></label>
+<label>Preço promocional por kg (R$)<input class="input" name="promo_price" inputmode="decimal" value="{{'%.2f'|format(current.promo_price_cents/100)|replace('.',',') if current and current.promo_price_cents else ''}}" placeholder="Opcional"></label>
+<label>Foto (opcional)<input class="input" type="file" name="photo" accept="image/jpeg,image/png,image/webp" {% if current and current.image_filename %}data-preview250="/uploads/{{current.image_filename}}"{% endif %}></label>
+<label class="full">Descrição (opcional)<textarea name="description" maxlength="600">{{current.description if current else ''}}</textarea></label>
+<label class="check"><input type="checkbox" name="available" value="1" {% if not current or current.available %}checked{% endif %}> Produto disponível</label>
+<label class="check"><input type="checkbox" name="recommend256" value="1" {% if current and current.recommend256 %}checked{% endif %}> Mostrar no Leve junto</label>
+<label class="check"><input type="checkbox" name="featured" value="1" {% if current and current.featured %}checked{% endif %}> Colocar em destaque</label>
+<p class="full nu370-notice">O cliente escolhe quilos + gramas, de 100 em 100 g. Separe o peso solicitado ou o mais próximo acima. Não cobre pelo excedente. Produtos por peso não participam de combos.</p>
+<button class="btn primary">{{'Salvar alterações' if current else 'Salvar produto por peso'}}</button>
+</form>
+{% endmacro %}

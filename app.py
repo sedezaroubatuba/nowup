@@ -681,6 +681,9 @@ def init_db():
     ensure_column(conn, "products", "recommend256", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "products", "related256", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "products", "customization192", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "products", "sold_by_weight370", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "order_items", "weight_grams370", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "order_items", "price_per_kg370", "INTEGER NOT NULL DEFAULT 0")
     import nowup_storeapp257
     nowup_storeapp257.initialize(conn)
     import nowup_auth247
@@ -1290,6 +1293,8 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
         conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)",(order_id,"new",created))
         for product,qty,item_notes,chosen,unit in clean_items:
             item_cur=conn.execute("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes,combo_pack305) VALUES(?,?,?,?,?,?,?)",(order_id,product["id"],product["name"],qty,unit,item_notes,product.get("combo_pack305", "")))
+            from nowup_weight370 import snapshot
+            snapshot(conn,item_cur.lastrowid,product)
             for option in chosen: conn.execute("INSERT INTO order_item_options(order_item_id,option_id,option_name,price_cents) VALUES(?,?,?,?)",(item_cur.lastrowid,option["id"],option["name"],option["price_cents"]))
         if customer_id and fulfillment_type=="delivery" and save_address:
             conn.execute("UPDATE users SET address=?,neighborhood=?,address_reference=? WHERE id=? AND role='customer'",
@@ -1638,7 +1643,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
             if not row['is_combo256'] and (cfg322.get('is_meal317') or cfg322.get('ingredients')):meal_ids322.add(row['id'])
         except HTTPException:
             pass
-    combo_catalog298=[{"id":row["id"],"name":row["name"],"available":bool(row["available"]),"image_filename":row["image_filename"],"unit_price_cents":current_price(row),"is_meal365":row["id"] in meal_ids322,"ingredient_count365":ingredient_counts365.get(row["id"],0)} for row in products if not row["is_combo256"] and row["category"].casefold()!="combos"]
+    combo_catalog298=[{"id":row["id"],"name":row["name"],"available":bool(row["available"]),"image_filename":row["image_filename"],"unit_price_cents":current_price(row),"is_meal365":row["id"] in meal_ids322,"ingredient_count365":ingredient_counts365.get(row["id"],0)} for row in products if not row["is_combo256"] and not row["sold_by_weight370"] and row["category"].casefold()!="combos"]
     product_options={}
     for row in conn.execute("""SELECT po.* FROM product_options po JOIN products pr ON pr.id=po.product_id
       WHERE pr.professional_id=? ORDER BY po.sort_order,po.id""",(p["id"],)).fetchall():
@@ -1954,11 +1959,13 @@ def catalog_return328(request, fallback):
     return RedirectResponse(fallback,303)
 
 @app.post("/painel/cardapio/produtos")
-def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None)):
+def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None), sold_by_weight370: Optional[str]=Form(None)):
     from nowup_promotions285 import promotional_cents
     promo_cents285=promotional_cents(price_to_cents(price),promo_price,promo_mode,promo_percent,promo_enabled,price_to_cents)
     is_combo256,category=combo_kind(category,is_combo256)
     custom192=parse_config(customization192) if customization192 or is_combo256 else None
+    from nowup_weight370 import configure as configure_weight370
+    if sold_by_weight370 == '1':configure_weight370(price_to_cents(price),is_combo256,extras_mode,custom192)
     if custom192 and custom192["free_count"]>max_choices:raise HTTPException(400,"A quantidade grátis não pode superar o máximo de adicionais.")
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); fn=""
     if custom192 is not None:
@@ -1973,22 +1980,33 @@ def pro_product_add(request: Request, name: str=Form(...), description: str=Form
     try: pair_ids256=validate_pairs(conn,p["id"],related256)
     except HTTPException: conn.close(); raise
     created=now_iso(); cur=conn.execute("INSERT INTO products(professional_id,name,description,category,price_cents,image_filename,available,created_at,updated_at,promo_price_cents,featured,max_quantity) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",(p["id"],name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,created,created,promo_cents285,1 if featured else 0,max(1,min(99,max_quantity))))
+    conn.execute('UPDATE products SET sold_by_weight370=? WHERE id=?',(int(sold_by_weight370=='1'),cur.lastrowid))
     conn.execute("UPDATE products SET sold_cold=? WHERE id=?",(1 if sold_cold else 0,cur.lastrowid))
     conn.execute("UPDATE products SET is_combo256=?,recommend256=?,related256=? WHERE id=?",(bool(is_combo256),bool(recommend256),pair_ids256,cur.lastrowid))
     if extras_mode=="legacy":configure_personalization153(conn,cur.lastrowid,bool(personalizable),max_choices)
     else:configure_shared155(conn,p["id"],cur.lastrowid,extras_mode,extra_ids,max_choices)
     if custom192 is not None:save_config(conn,cur.lastrowid,custom192)
     if is_combo256:conn.execute('UPDATE products SET is_dish=1 WHERE id=?',(cur.lastrowid,))
+    if sold_by_weight370=='1':
+        conn.commit();conn.close();return RedirectResponse('/painel?ok=peso#produtos-peso370',303)
     conn.commit(); conn.close(); return catalog_return328(request,"/painel?ok=combo#combos-loja" if is_combo256 else "/painel?ok=refeicao#lanches-refeicoes322" if custom192 and custom192.get("is_meal317") else "/painel?ok=produto#novo-produto")
 
 @app.post("/painel/cardapio/produtos/{product_id}")
-def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None)):
+def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None), sold_by_weight370: Optional[str]=Form(None)):
     from nowup_promotions285 import promotional_cents
     promo_cents285=promotional_cents(price_to_cents(price),promo_price,promo_mode,promo_percent,promo_enabled,price_to_cents)
     is_combo256,category=combo_kind(category,is_combo256)
     custom192=parse_config(customization192) if customization192 or is_combo256 else None
+    from nowup_weight370 import configure as configure_weight370
+    if sold_by_weight370 == '1':configure_weight370(price_to_cents(price),is_combo256,extras_mode,custom192)
     if custom192 and custom192["free_count"]>max_choices:raise HTTPException(400,"A quantidade grátis não pode superar o máximo de adicionais.")
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=?",(product_id,p["id"])).fetchone()
+    if product and product['sold_by_weight370']:
+        try:configure_weight370(price_to_cents(price),is_combo256,extras_mode,custom192)
+        except HTTPException:conn.close();raise
+        sold_by_weight370='1'
+    elif sold_by_weight370=='1':
+        conn.close();raise HTTPException(400,'Cadastre produtos por peso pelo atalho exclusivo; não converta produtos existentes.')
     if custom192 is not None:
         try:
             custom192=nowup_ingredients320.bind(conn,p["id"],custom192)

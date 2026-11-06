@@ -135,8 +135,8 @@ def parse_config(raw):
 
 def bind_combo_products(conn, professional_id, config, product_id=None):
     """Resolve references using this store only; names/prices from requests are untrusted."""
-    rows = conn.execute("SELECT id,name,available,is_combo256,category FROM products WHERE professional_id=?", (professional_id,)).fetchall()
-    catalog = {row['id']: row for row in rows if row['id'] != product_id and not row['is_combo256'] and row['category'].casefold() != 'combos'}
+    rows = conn.execute("SELECT * FROM products WHERE professional_id=?", (professional_id,)).fetchall()
+    catalog = {row['id']: row for row in rows if not dict(row).get('sold_by_weight370') and row['id'] != product_id and not row['is_combo256'] and row['category'].casefold() != 'combos'}
     def resolve(ref, name):
         if ref is None:  # Migrate old text entries only when an exact store product exists.
             matches = [row for row in catalog.values() if row['name'].casefold() == name.casefold()]
