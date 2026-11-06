@@ -800,6 +800,7 @@ def init_db():
     if not conn.execute("SELECT 1 FROM banners").fetchone():
         conn.execute("INSERT INTO banners(title,subtitle,created_at) VALUES(?,?,?)",
                      ("Divulgue sua empresa na NowUp","Espaço para publicidade por cidade ou categoria.",now_iso()))
+    nowup_communication372.schema(conn)
     conn.commit(); conn.close()
 
 @app.on_event("startup")
@@ -1442,7 +1443,7 @@ def signup_pro_page(request: Request):
     return templates.TemplateResponse("signup_professional.html", context(request, active_cities=active_cities()))
 
 @app.post("/cadastro/profissional")
-def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Form(...), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), doc_type: str=Form("CNPJ"), document: str=Form(""), business_type: str=Form("professional"), offer_mode: str=Form("services"), plan: str=Form(...), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[]), address: str=Form(""), state: str=Form(""), legal_name: str=Form(""), owner_name: str=Form(""), owner_cpf: str=Form(""), owner_role: str=Form(""), facade: Optional[UploadFile]=File(None), company: Optional[UploadFile]=File(None), identity: Optional[UploadFile]=File(None), address_proof: Optional[UploadFile]=File(None), category_choice346: str=Form(""), business_segment346: str=Form("")):
+def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Form(...), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), doc_type: str=Form("CNPJ"), document: str=Form(""), business_type: str=Form("professional"), offer_mode: str=Form("services"), plan: str=Form(...), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[]), address: str=Form(""), state: str=Form(""), legal_name: str=Form(""), owner_name: str=Form(""), owner_cpf: str=Form(""), owner_role: str=Form(""), facade: Optional[UploadFile]=File(None), company: Optional[UploadFile]=File(None), identity: Optional[UploadFile]=File(None), address_proof: Optional[UploadFile]=File(None), category_choice346: str=Form(""), business_segment346: str=Form(""), marketing_email372: str=Form("")):
     if not all(v.strip() for v in (name,address,neighborhood,city)) or state not in nowup_admin205.UFS:
         return RedirectResponse("/cadastro/profissional?erro=endereco",303)
     if plan not in ('cardapio','ambos','completo'):
@@ -1517,6 +1518,7 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
         for cid in selected346:
             conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(pid,cid))
         conn.execute("UPDATE professionals SET blocked=1,admission_status='pending' WHERE id=?",(pid,))
+        nowup_communication372.signup(conn,pid,now_iso(),marketing_email372=="1")
         conn.commit()
     except sqlite3.IntegrityError:
         conn.rollback(); conn.close(); return RedirectResponse("/cadastro/profissional?erro=email",303)
@@ -3133,3 +3135,7 @@ nowup_menu_origin355.install(globals())
 # Shared ingredient-photo library; every import remains scoped to the merchant.
 import nowup_gallery357
 nowup_gallery357.install(globals())
+
+# Merchant communication and durable automatic notices.
+import nowup_communication372
+nowup_communication372.install(globals())
