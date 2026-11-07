@@ -1,0 +1,15 @@
+{% if user and user.role=='professional' %}
+<link rel="stylesheet" href="/static/communication-card373.css?v=373">
+<dialog id="nu373-dialog" class="nu373-dialog" data-user-id="{{user.id}}" aria-labelledby="nu373-title" aria-describedby="nu373-message">
+ <article class="nu373-card">
+  <button class="nu373-close" type="button" aria-label="Fechar mensagem" data-close373>×</button>
+  <span class="nu373-logo"><img src="/static/nowup-logo-stacked185.png" alt="NowUp Brasil" width="76" height="76"></span>
+  <h2 class="nu373-title" id="nu373-title"></h2>
+  <p class="nu373-message" id="nu373-message"></p>
+  <a class="nu373-link" data-link373 hidden target="_blank" rel="noopener noreferrer">Assistir tutorial</a>
+  <p class="nu373-error" data-error373 hidden role="status"></p>
+  <footer class="nu373-footer">Equipe NowUp</footer>
+ </article>
+</dialog>
+<script src="/static/communication-card373.js?v=373" defer></script>
+{% endif %}

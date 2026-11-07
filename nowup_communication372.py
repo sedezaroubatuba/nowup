@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS communication372_deliveries(
  state TEXT NOT NULL DEFAULT 'pending', error TEXT NOT NULL DEFAULT '',
  created_at TEXT NOT NULL, sent_at TEXT NOT NULL DEFAULT '', claimed_at TEXT NOT NULL DEFAULT '');
 CREATE INDEX IF NOT EXISTS communication372_queue ON communication372_deliveries(state,scheduled_at,id);
+CREATE INDEX IF NOT EXISTS communication373_panel_lookup ON communication372_deliveries(professional_id,channel,state,sent_at);
 ''')
         defaults={'tutorial':'','onboarding':True,'rules':{key:{'enabled':key!='overdue','subject':value[1],'body':value[2],'channels':['email','panel']} for key,value in RULES.items()}}
         c.execute('INSERT OR IGNORE INTO communication372_settings(id,data) VALUES(1,?)',(json.dumps(defaults,ensure_ascii=False),))
@@ -358,6 +359,30 @@ def preference_save(token:str=Form(...)):
         c.execute('UPDATE communication372_contacts SET marketing_allowed=0,marketing_updated_at=? WHERE optout_token=?',(stamp(),token));c.commit()
     return HTMLResponse('<h1>Preferência salva</h1><p>Você não receberá mais novidades e promoções por esta lista.</p>',headers={'Cache-Control':'no-store'})
 
+
+# Popup notices only include communication deliveries, never order/chat alerts.
+CARD_MATCH373 = """EXISTS (SELECT 1 FROM communication372_deliveries d
+ JOIN professionals p ON p.id=d.professional_id
+ WHERE p.user_id=n.user_id AND d.channel='panel' AND d.state='sent'
+ AND d.sent_at=n.created_at AND d.subject=n.title AND d.body=n.message)"""
+
+@router.get('/painel/comunicacao/cards')
+def merchant_cards373(request:Request):
+    u=G['require_user'](request,'professional')
+    with adm.connection() as c:
+        notices=c.execute("SELECT n.id,n.title,n.message,n.link,n.created_at FROM notifications n WHERE n.user_id=? AND COALESCE(n.read_at,'')='' AND "+CARD_MATCH373+" ORDER BY n.id LIMIT 50",(u['id'],)).fetchall()
+        return JSONResponse({'notices':[dict(n) for n in notices]},headers={'Cache-Control':'private, no-store','Vary':'Cookie'})
+
+@router.post('/painel/comunicacao/cards/{notice_id}/fechar')
+def dismiss_card373(request:Request,notice_id:int):
+    u=G['require_user'](request,'professional')
+    from nowup_runtime238 import mutation_origin_allowed
+    if request.headers.get('x-nowup-notice')!='373' or not mutation_origin_allowed(request):raise HTTPException(403,'Atualize o painel para fechar a mensagem.')
+    with adm.connection() as c:
+        row=c.execute('SELECT n.id FROM notifications n WHERE n.id=? AND n.user_id=? AND '+CARD_MATCH373,(notice_id,u['id'])).fetchone()
+        if not row:raise HTTPException(404,'Mensagem não encontrada.')
+        c.execute("UPDATE notifications SET read_at=? WHERE id=? AND user_id=? AND COALESCE(read_at,'')=''",(stamp(),notice_id,u['id']));c.commit()
+        return JSONResponse({'closed':True},headers={'Cache-Control':'no-store'})
 
 def install(g):
     G.update(g);app=g['app'];app.include_router(router);app.router.add_event_handler('startup',initialize)

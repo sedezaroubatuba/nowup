@@ -195,3 +195,49 @@ def test_legacy_store_metadata_without_json_id_uses_entity_primary_key(communica
     r=client.get('/admin/super/api/communication');assert r.status_code==200,r.text
     assert next(x for x in r.json()['contacts'] if x['id']==p['id'])['trialEnd']=='2027-02-04'
     comm.tick()
+
+
+def as_owner(monkeypatch,m,p):
+    with m.db() as c:owner=dict(c.execute('SELECT * FROM users WHERE id=?',(p['user_id'],)).fetchone())
+    monkeypatch.setattr(m,'current_user',lambda request:owner)
+    return owner
+
+
+def test_merchant_cards_only_communication_and_dismiss_is_owned(communication,monkeypatch):
+    m,client,p,_=communication
+    assert client.post('/admin/super/api/communication/send',headers=H,json=payload(p['id'])).status_code==200
+    comm.tick();owner=as_owner(monkeypatch,m,p)
+    with m.db() as c:
+        c.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,'Novo pedido no NowUp','Pedido novo','/painel',?)",(owner['id'],comm.stamp()))
+    response=client.get('/painel/comunicacao/cards');assert response.status_code==200,response.text
+    assert 'no-store' in response.headers['cache-control']
+    assert len(response.json()['notices'])==1
+    nid=response.json()['notices'][0]['id']
+    assert client.post(f'/painel/comunicacao/cards/{nid}/fechar').status_code==403
+    assert client.post(f'/painel/comunicacao/cards/{nid}/fechar',headers={'X-Nowup-Notice':'373'}).status_code==200
+    assert client.get('/painel/comunicacao/cards').json()['notices']==[]
+    assert client.post(f'/painel/comunicacao/cards/{nid}/fechar',headers={'X-Nowup-Notice':'373'}).status_code==200
+    with m.db() as c:assert c.execute("SELECT COUNT(*) FROM notifications WHERE user_id=? AND title='Novo pedido no NowUp' AND read_at=''",(owner['id'],)).fetchone()[0]==1
+
+
+def test_other_merchant_cannot_read_or_dismiss_cards(communication,monkeypatch):
+    m,client,p,_=communication
+    assert client.post('/admin/super/api/communication/send',headers=H,json=payload(p['id'])).status_code==200
+    comm.tick()
+    as_owner(monkeypatch,m,p)
+    nid=client.get('/painel/comunicacao/cards').json()['notices'][0]['id']
+    with m.db() as c:other=dict(c.execute("SELECT u.* FROM users u JOIN professionals p ON p.user_id=u.id WHERE p.id<>? LIMIT 1",(p['id'],)).fetchone())
+    monkeypatch.setattr(m,'current_user',lambda request:other)
+    assert client.get('/painel/comunicacao/cards').json()['notices']==[]
+    assert client.post(f'/painel/comunicacao/cards/{nid}/fechar',headers={'X-Nowup-Notice':'373'}).status_code==404
+
+
+def test_card_is_in_merchant_layout_and_text_stays_json_not_html(communication,monkeypatch):
+    m,client,p,_=communication
+    assert client.post('/admin/super/api/communication/send',headers=H,json=payload(p['id'],subject='<script>not executable</script>',body='<img src=x onerror=alert(1)>')).status_code==200
+    comm.tick();as_owner(monkeypatch,m,p)
+    page=client.get('/');assert 'id="nu373-dialog"' in page.text and 'communication-card373.js' in page.text
+    assert 'nowup-logo-stacked185.png' in page.text
+    notice=client.get('/painel/comunicacao/cards').json()['notices'][0]
+    assert notice['message']=='<img src=x onerror=alert(1)>'
+    assert '<img src=x onerror=alert(1)>' not in page.text
