@@ -11,10 +11,10 @@ self.addEventListener('fetch', event => {
   )));
 });
 self.addEventListener('push', event => {
-  let data = {}; try { data = event.data.json(); } catch (_) {}
+  let data = {}; try { const value=event.data.json();if(value&&typeof value==='object'&&!Array.isArray(value))data=value; } catch (_) {}
   event.waitUntil(self.registration.showNotification(data.title || STORE_NAME, {
     body: data.body || 'Confira seus pedidos nesta loja.',
-    icon: STORE_SCOPE + 'app-icon/192.png', data: {url: data.url}
+    icon: STORE_SCOPE + 'app-icon/192.png', badge:'/static/nowup-push-badge375.svg', tag:String(data.tag||('nowup-'+(data.eventId||'aviso'))), renotify:false, data: {url: data.url}
   }));
 });
 self.addEventListener('notificationclick', event => {
@@ -22,7 +22,7 @@ self.addEventListener('notificationclick', event => {
   let url;
   try { url = new URL(event.notification.data?.url || STORE_SCOPE + 'pedidos', self.location.origin); }
   catch (_) { url = new URL(STORE_SCOPE + 'pedidos', self.location.origin); }
-  if (url.origin !== self.location.origin || !url.pathname.startsWith(STORE_SCOPE))
+  if (url.origin !== self.location.origin || url.username || url.password || !url.pathname.startsWith(STORE_SCOPE))
     url = new URL(STORE_SCOPE + 'pedidos', self.location.origin);
   event.waitUntil(clients.openWindow(url.href));
 });

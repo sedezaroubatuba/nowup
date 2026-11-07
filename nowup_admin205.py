@@ -262,6 +262,11 @@ def support(request:Request,chamado:int=0):
         selected=ticket(c,chamado,u['id']) if chamado else None
     finally:c.close()
     return render(request,'support205.html',tickets=tickets,selected=selected)
+def support_location375(request,tid):
+    from nowup_storeaccounts345 import request_store,cookie_path
+    p=request_store(G,request)
+    return (cookie_path(p) if p else '/')+'suporte?chamado='+str(tid)
+
 @router.post('/suporte')
 def new_support(request:Request,subject:str=Form(...),body:str=Form(...)):
     u=G['require_user'](request)
@@ -272,7 +277,7 @@ def new_support(request:Request,subject:str=Form(...),body:str=Form(...)):
         cur=c.execute('INSERT INTO support205(user_id,subject,created_at,updated_at) VALUES(?,?,?,?)',(u['id'],subject.strip()[:160],s,s));tid=cur.lastrowid
         c.execute('INSERT INTO support_messages205(ticket_id,sender_id,body,created_at) VALUES(?,?,?,?)',(tid,u['id'],body.strip(),s));c.commit()
     finally:c.close()
-    return RedirectResponse('/suporte?chamado='+str(tid),303)
+    return RedirectResponse(support_location375(request,tid),303)
 @router.post('/suporte/{tid}')
 def reply_user(request:Request,tid:int,body:str=Form(...)):
     u=G['require_user'](request)
@@ -281,7 +286,7 @@ def reply_user(request:Request,tid:int,body:str=Form(...)):
     try:
         ticket(c,tid,u['id']);s=stamp();c.execute('INSERT INTO support_messages205(ticket_id,sender_id,body,created_at) VALUES(?,?,?,?)',(tid,u['id'],body.strip(),s));c.execute("UPDATE support205 SET status='open',updated_at=? WHERE id=?",(s,tid));c.commit()
     finally:c.close()
-    return RedirectResponse('/suporte?chamado='+str(tid),303)
+    return RedirectResponse(support_location375(request,tid),303)
 
 @router.post('/admin/central/categorias')
 def category(request:Request,cid:int=Form(0),name:str=Form(...),icon:str=Form('🏪'),sort_order:int=Form(100),active:int=Form(1)):

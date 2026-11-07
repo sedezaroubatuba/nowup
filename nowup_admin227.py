@@ -315,7 +315,7 @@ def update_order(c,a,oid,v,why):
   if o['customer_id']:
    message='Seu pedido foi atualizado pela equipe NowUp: '+G['ORDER_STATUS_LABELS'].get(target,target)+'.'
    n=c.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(o['customer_id'],'Atualização do pedido',message,'/pedido/'+o['tracking_token'],stamp()))
-   G['nowup_alerts112'].enqueue(c,o['customer_id'],n.lastrowid,{'title':'Atualização do pedido','body':message,'url':'/pedido/'+o['tracking_token'],'tag':'nowup-status-'+str(oid)})
+   G['nowup_alerts112'].enqueue(c,o['customer_id'],n.lastrowid,{'title':G['ORDER_STATUS_LABELS'].get(target,'Atualização do pedido'),'body':message,'url':'/pedido/'+o['tracking_token'],'tag':'nowup-status-'+str(oid)})
  if 'courier' in v:
   courier=0 if v['courier'] is None else number(v['courier'],0)
   if courier and not get(c,'couriers',courier):fail(400,'Entregador não cadastrado.')

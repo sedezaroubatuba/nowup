@@ -18,13 +18,16 @@ def connection():
     finally:c.close()
 
 def initialize():
-    with connection() as c:c.execute('CREATE TABLE IF NOT EXISTS customer_push112(id INTEGER PRIMARY KEY,event_id INTEGER NOT NULL UNIQUE,user_id INTEGER NOT NULL,payload TEXT NOT NULL,created REAL NOT NULL,next_try REAL NOT NULL,attempts INTEGER NOT NULL DEFAULT 0)')
+    with connection() as c:
+        c.execute('''CREATE TABLE IF NOT EXISTS push_deliveries375(event_id INTEGER NOT NULL,endpoint TEXT NOT NULL,PRIMARY KEY(event_id,endpoint))''')
+        c.execute('CREATE TABLE IF NOT EXISTS customer_push112(id INTEGER PRIMARY KEY,event_id INTEGER NOT NULL UNIQUE,user_id INTEGER NOT NULL,payload TEXT NOT NULL,created REAL NOT NULL,next_try REAL NOT NULL,attempts INTEGER NOT NULL DEFAULT 0)')
 
 def enqueue(c,uid,event_id,payload):
     owner345=c.execute('SELECT p.slug FROM users u JOIN professionals p ON p.id=u.customer_store345 WHERE u.id=?',(uid,)).fetchone()
-    if owner345 and str(payload.get('url','')).startswith('/pedido/'):
+    if owner345 and (str(payload.get('url','')).startswith('/pedido/') or str(payload.get('url','')).split('?')[0]=='/suporte'):
         from urllib.parse import quote
         payload={**payload,'url':'/p/'+quote(owner345['slug'],safe='')+payload['url']}
+    payload={**payload,'eventId':event_id,'tag':str(payload.get('tag') or 'nowup')+'-evento-'+str(event_id)}
     c.execute('INSERT OR IGNORE INTO customer_push112(event_id,user_id,payload,created,next_try) VALUES(?,?,?,?,?)',(event_id,uid,json.dumps(payload,ensure_ascii=False),time.time(),time.time()))
 
 @router.get('/cliente/avisos')
@@ -67,19 +70,27 @@ def test(request:Request):
 def process():
     now=time.time()
     with connection() as c:
-        c.execute('BEGIN IMMEDIATE');c.execute('DELETE FROM customer_push112 WHERE created<? OR attempts>=6',(now-3600,))
+        c.execute('BEGIN IMMEDIATE');c.execute('DELETE FROM customer_push112 WHERE created<? OR attempts>=6',(now-3600,));c.execute('DELETE FROM push_deliveries375 WHERE event_id NOT IN (SELECT event_id FROM customer_push112)')
         job=c.execute('SELECT * FROM customer_push112 WHERE next_try<=? ORDER BY id LIMIT 1',(now,)).fetchone()
         if not job:return
         c.execute('UPDATE customer_push112 SET next_try=?,attempts=attempts+1 WHERE id=?',(now+60,job['id']))
         rows=c.execute('SELECT * FROM push_subscriptions WHERE user_id=?',(job['user_id'],)).fetchall()
     success=True
-    for row in rows:success=push.send(row,json.loads(job['payload'])) and success
+    for row in rows:
+        with connection() as c:
+            if c.execute('SELECT 1 FROM push_deliveries375 WHERE event_id=? AND endpoint=?',(job['event_id'],row['endpoint'])).fetchone():continue
+        sent=push.send(row,json.loads(job['payload']));success=sent and success
+        if sent:
+            with connection() as c:c.execute('INSERT OR IGNORE INTO push_deliveries375(event_id,endpoint) VALUES(?,?)',(job['event_id'],row['endpoint']))
     if success:
         with connection() as c:c.execute('DELETE FROM customer_push112 WHERE id=?',(job['id'],))
 
 def run():
     while not _stop.is_set():
-        try:process()
+        try:
+            for _ in range(10):
+                if _stop.is_set():break
+                process()
         except Exception:logging.warning('NowUp: aviso de status aguardando nova tentativa.')
         _stop.wait(3)
 

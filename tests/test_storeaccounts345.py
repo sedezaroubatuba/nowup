@@ -155,3 +155,30 @@ def test_scoped_customer_can_checkout_without_marketplace_login(setup345,monkeyp
     assert confirmed.status_code==200 and confirmed.json()['confirmed']
     assert client.get('/api/cart-completion247?request_key='+data['request_key']).status_code==401
     assert client.get('/p/'+a['slug']+'/cliente/avisos').status_code==200
+
+
+def test_support_push_stays_in_the_private_store_account(setup345):
+    main,(a,b),_=setup345
+    import secrets,json
+    expiry=(datetime.now(timezone.utc)+timedelta(days=1)).isoformat()
+    users=[];clients=[]
+    for p in (a,b):
+        with main.db() as c:
+            uid=c.execute("INSERT INTO users(role,name,email,password_hash,email_verified,customer_store345,customer_email345,created_at) VALUES('customer','Push private',?,'unused',1,?,'push@example.com',?)",(secrets.token_hex(12)+'@nowup.local',p['id'],main.now_iso())).lastrowid
+            token=secrets.token_urlsafe(32)
+            c.execute('INSERT INTO sessions(token,user_id,expires_at,store_id345) VALUES(?,?,?,?)',(token,uid,expiry,p['id']))
+        client=TestClient(main.app,headers={'Origin':'http://testserver'},follow_redirects=False)
+        client.cookies.set('nowup_loja345_'+str(p['id']),token,path='/p/'+p['slug'])
+        users.append(uid);clients.append(client)
+    route='/p/'+a['slug']+'/suporte'
+    response=clients[0].post(route,data={'subject':'Ajuda privada','body':'Como acompanho meu pedido?'})
+    assert response.status_code==303,response.text
+    assert response.headers['location'].startswith(route+'?chamado=')
+    tid=int(response.headers['location'].split('chamado=')[1])
+    assert clients[0].get(route+'?chamado='+str(tid)).status_code==200
+    assert clients[1].get('/p/'+b['slug']+'/suporte?chamado='+str(tid)).status_code==404
+    with main.db() as c:
+        main.nowup_admin205.notify(c,users[0],'Pode acompanhar nesta loja.',tid)
+    with main.db() as c:
+        notice=json.loads(c.execute('SELECT payload FROM customer_push112 WHERE user_id=? ORDER BY id DESC LIMIT 1',(users[0],)).fetchone()[0])
+        assert notice['url']==route+'?chamado='+str(tid)

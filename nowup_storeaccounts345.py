@@ -191,7 +191,9 @@ def install(g):
         p=store(g,slug,active=False);token=request.cookies.get(cookie_name(p))
         if token:
             with g['db']() as c:
-                c.execute('DELETE FROM sessions WHERE token=? AND store_id345=?',(token,p['id']));c.commit()
+                removed=c.execute('DELETE FROM sessions WHERE token=? AND store_id345=?',(token,p['id'])).rowcount
+                if removed:c.execute('DELETE FROM push_subscriptions WHERE session_hash=?',(hashlib.sha256(token.encode()).hexdigest(),))
+                c.commit()
         response=RedirectResponse(presentation(p)['menu'],303)
         response.delete_cookie(cookie_name(p),path=cookie_path(p).rstrip('/'));return response
 
@@ -222,7 +224,7 @@ def install(g):
             else:yield route
     for route in list(flattened(app.router.routes)):
         if not isinstance(route,APIRoute):continue
-        if not (route.path.startswith(('/pedidos/','/pedido/')) or route.path in ('/cliente/pedidos/resumo202','/cliente/avisos','/cliente/notificacoes/ler') or route.path.startswith('/cliente/push/')):continue
+        if not (route.path.startswith(('/pedidos/','/pedido/')) or route.path in ('/cliente/pedidos/resumo202','/cliente/avisos','/cliente/notificacoes/ler') or route.path.startswith('/cliente/push/') or route.path=='/suporte' or route.path.startswith('/suporte/')):continue
         path='/p/{slug}'+route.path
         if path in existing:continue
         app.add_api_route(path,route.endpoint,methods=list(route.methods),response_model=route.response_model,

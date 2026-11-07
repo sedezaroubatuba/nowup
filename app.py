@@ -1302,6 +1302,9 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
                          (address.strip()[:300],neighborhood.strip()[:120],address_reference.strip()[:220],logged["id"]))
         conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(p["user_id"],"Novo pedido no NowUp",f"{order_code} — {customer_name.strip()[:120]}",f"/painel#pedido-{order_id}",created))
         nowup_push75.enqueue_on_connection(conn,p["user_id"],order_id)
+        # Confirm receipt without claiming the shop has accepted the order.
+        received=conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(customer_id,"Pedido enviado à loja",f"{order_code} enviado. Aguardando aceite da loja.",f"/pedido/{tracking_token}",created))
+        nowup_alerts112.enqueue(conn,customer_id,received.lastrowid,{'title':'Pedido enviado à loja','body':f'{order_code} enviado. Aguardando aceite da loja.','url':f'/pedido/{tracking_token}','tag':f'nowup-recebido-{order_id}'})
         from nowup_checkout229 import remember_checkout
         remember_checkout(conn,logged['id'],p['id'],checkout_key229,checkout_hash229,order_id,created)
         conn.commit(); conn.close()
@@ -2163,7 +2166,7 @@ def pro_order_status(request: Request, order_id: int, status: str=Form(...), rea
         label=ORDER_STATUS_LABELS.get(status,status); message=("A loja está conferindo a disponibilidade dos seus itens. Aguarde a confirmação." if status=="reviewing" else f"Seu pedido foi atualizado para: {label}.")
         if reason: message += f" Motivo: {reason}"
         notification=conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(order["customer_id"],"Atualização do pedido",message,f"/pedido/{order['tracking_token']}",now_iso()))
-        nowup_alerts112.enqueue(conn,order["customer_id"],notification.lastrowid,{"title":"Atualização do pedido","body":message,"url":f"/pedido/{order['tracking_token']}","tag":f"nowup-status-{order_id}"})
+        nowup_alerts112.enqueue(conn,order["customer_id"],notification.lastrowid,{"title":label,"body":message,"url":f"/pedido/{order['tracking_token']}","tag":f"nowup-status-{order_id}"})
     conn.commit(); conn.close()
     return RedirectResponse(f"/painel?ok=pedido&abrir_pedido={order_id}#pedido-{order_id}",303)
 
@@ -2910,7 +2913,8 @@ def order_chat_send(request: Request, order_id: int, message: str=Form(...)):
         recipient=order["owner_id"] if u["role"]=="customer" else order["customer_id"]
         link=f"/painel#pedido-{order_id}" if u["role"]=="customer" else f"/pedido/{order['tracking_token']}"
         if recipient:
-            conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(recipient,"Nova mensagem no pedido",body[:180],link,now_iso()))
+            notification=conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(recipient,"Nova mensagem no pedido",body[:180],link,now_iso()))
+            nowup_alerts112.enqueue(conn,recipient,notification.lastrowid,{'title':'Nova mensagem no pedido','body':body[:180],'url':link,'tag':f'nowup-chat-{order_id}'})
         conn.commit(); conn.close(); return JSONResponse({"ok":True})
     finally:conn.close()
 

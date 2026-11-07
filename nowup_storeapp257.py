@@ -184,6 +184,9 @@ def install(g):
                     for option in chosen:conn.execute('INSERT INTO order_item_options(order_item_id,option_id,option_name,price_cents) VALUES(?,?,?,?)',(item.lastrowid,option['id'],option['name'],option['price_cents']))
                 conn.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(p['user_id'],'Novo pedido no NowUp',code+' — '+name,'/painel#pedido-'+str(oid),created))
                 g['nowup_push75'].enqueue_on_connection(conn,p['user_id'],oid)
+                if identity:
+                    received=conn.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(identity,'Pedido enviado à loja',code+' enviado. Aguardando aceite da loja.','/pedido/'+token,created))
+                    g['nowup_alerts112'].enqueue(conn,identity,received.lastrowid,{'title':'Pedido enviado à loja','body':code+' enviado. Aguardando aceite da loja.','url':'/pedido/'+token,'tag':'nowup-recebido-'+str(oid)})
                 if fulfillment_type=='delivery' and save_address:
                     conn.execute("UPDATE users SET address=?,neighborhood=?,address_reference=? WHERE id=? AND role='customer'",(address.strip(),area,address_reference.strip(),identity))
                 remember_checkout(conn,identity,p['id'],key,digest,oid,created)

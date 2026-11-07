@@ -214,7 +214,9 @@ def deliver_one(c,d,now):
     claimed=c.execute("UPDATE communication372_deliveries SET state='sending',claimed_at=? WHERE id=? AND state='pending'",(now.isoformat(),d['id'])).rowcount
     if not claimed:c.rollback();return
     if d['channel']=='panel':
-        c.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(p['userId'],d['subject'],d['body'],d['tutorial'] or '/painel',now.isoformat()))
+        notice=c.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(p['userId'],d['subject'],d['body'],d['tutorial'] or '/painel',now.isoformat()))
+        if d['purpose']=='service' and G.get('nowup_alerts112'):
+            G['nowup_alerts112'].enqueue(c,p['userId'],notice.lastrowid,{'title':d['subject'],'body':d['body'][:180],'url':'/painel','tag':'nowup-comunicacao-'+str(d['id'])})
         c.execute("UPDATE communication372_deliveries SET state='sent',sent_at=? WHERE id=?",(now.isoformat(),d['id']));c.commit();return
     c.commit() # Persist the claim before the external effect. Never retry an uncertain result automatically.
     try:
