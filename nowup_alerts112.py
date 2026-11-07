@@ -72,7 +72,7 @@ def process():
     with connection() as c:
         c.execute('BEGIN IMMEDIATE');c.execute('DELETE FROM customer_push112 WHERE created<? OR attempts>=6',(now-3600,));c.execute('DELETE FROM push_deliveries375 WHERE event_id NOT IN (SELECT event_id FROM customer_push112)')
         job=c.execute('SELECT * FROM customer_push112 WHERE next_try<=? ORDER BY id LIMIT 1',(now,)).fetchone()
-        if not job:return
+        if not job:return False
         c.execute('UPDATE customer_push112 SET next_try=?,attempts=attempts+1 WHERE id=?',(now+60,job['id']))
         rows=c.execute('SELECT * FROM push_subscriptions WHERE user_id=?',(job['user_id'],)).fetchall()
     success=True
@@ -84,13 +84,14 @@ def process():
             with connection() as c:c.execute('INSERT OR IGNORE INTO push_deliveries375(event_id,endpoint) VALUES(?,?)',(job['event_id'],row['endpoint']))
     if success:
         with connection() as c:c.execute('DELETE FROM customer_push112 WHERE id=?',(job['id'],))
+    return True
 
 def run():
     while not _stop.is_set():
         try:
             for _ in range(10):
                 if _stop.is_set():break
-                process()
+                if not process():break
         except Exception:logging.warning('NowUp: aviso de status aguardando nova tentativa.')
         _stop.wait(3)
 
