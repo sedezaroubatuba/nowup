@@ -237,7 +237,7 @@ def test_card_is_in_merchant_layout_and_text_stays_json_not_html(communication,m
     assert client.post('/admin/super/api/communication/send',headers=H,json=payload(p['id'],subject='<script>not executable</script>',body='<img src=x onerror=alert(1)>')).status_code==200
     comm.tick();as_owner(monkeypatch,m,p)
     page=client.get('/');assert 'id="nu373-dialog"' in page.text and 'communication-card373.js' in page.text
-    assert 'nowup-logo-stacked185.png' in page.text
+    assert 'nowup-notice-logo374.png' in page.text
     notice=client.get('/painel/comunicacao/cards').json()['notices'][0]
     assert notice['message']=='<img src=x onerror=alert(1)>'
     assert '<img src=x onerror=alert(1)>' not in page.text
