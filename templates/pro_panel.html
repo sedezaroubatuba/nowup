@@ -5,6 +5,10 @@
 {% import 'pairs256.html' as pairs256 %}
 {% extends 'base.html' %}{% block title %}Painel do lojista | NowUp{% endblock %}{% block body_class %}professional-area{% endblock %}{% block content %}<link rel="stylesheet" href="/static/order-items166.css?v=166"><link rel="stylesheet" href="/static/pro-compact.css?v=67">{% set status_labels = status_labels|default({'new':'Pedido recebido','confirmed':'Pedido aceito','preparing':'Em preparo','ready':'Pronto','out_for_delivery':'Saiu para entrega','completed':'Concluído','cancelled':'Cancelado','rejected':'Recusado'}, true) %}<link rel="stylesheet" href="/static/pro-panel-navigation.css?v=60">
 <style>
+#perfil>.nu-store-config-groups>details{margin:16px 0;padding:16px;border:1px solid #e4d8f1;border-radius:14px;background:#fff}
+#perfil>.nu-store-config-groups>details>summary{font-weight:700;color:#7136bf;min-height:44px;cursor:pointer;display:flex;align-items:center}
+#perfil .nu-store-config>.panel{box-shadow:none;margin:14px 0 0;padding:0;border:0}
+
 body.professional-area .pro-dashboard .order-alert-control{display:flex!important}
 body.professional-area .pro-dashboard .new-order-alert:not([hidden]){display:flex!important}
 body.professional-area .pro-dashboard .new-order-alert[hidden]{display:none!important}
@@ -34,10 +38,10 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <a href="#bairros-entrega265" data-nav198>📍 Bairros atendidos</a>
 <a href="#relatorios" data-nav198>↗ Relatórios</a>
 <a href="#perfil" data-nav198>⌂ Minha loja</a>
-<a href="#configuracoes" data-nav198>⚙ Configurações</a>
+
 <details class="mk228-more"><summary>Mais ferramentas</summary>
-<a href="#novo-produto">＋ Cadastrar produto</a><a href="#produtos-peso370">⚖ Produtos por peso</a>
-<a href="#acompanhamentos-combos">＋ Acompanhamentos e combos</a>
+<a href="#novo-produto" data-nav198>＋ Cadastrar produto</a><a href="#produtos-peso370" data-nav198>⚖ Produtos por peso</a>
+<a href="#adicionais" data-nav198>Ingredientes, acompanhamentos e adicionais</a>
 <a href="#adicionais">＋ Ingredientes e adicionais</a>
 <a href="#pedidos">▤ Histórico de pedidos</a>
 <a href="#comandas">▤ Comandas abertas</a>
@@ -58,8 +62,8 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <a class="nu198-tile" href="#pedidos-ativos" data-nav198><span aria-hidden="true">▤</span>Pedidos</a>
 <a class="nu198-tile" href="#produtos-loja" data-nav198><span aria-hidden="true">▦</span>Produtos</a><a class="nu198-tile" href="#lanches-refeicoes322" data-nav198><span aria-hidden="true">🍔</span>Lanches e refeições</a><a class="nu198-tile" href="#combos-loja" data-nav198><span aria-hidden="true">🍻</span>Cadastrar combo</a>
 <a class="nu198-tile" href="#perfil" data-nav198><span aria-hidden="true">⌂</span>Minha loja</a>
-<a class="nu198-tile" href="#relatorios" data-nav198><span aria-hidden="true">▥</span>Relatórios</a></nav>
-<details class="nu221-extra"><summary>Mais acessos de produtos</summary><nav><a class="btn soft" href="#novo-produto" data-nav198>＋ Cadastrar produto</a><a class="btn soft" href="#categorias-loja" data-nav198>Categorias e posições</a><a class="btn soft" href="#acompanhamentos-combos" data-nav198>Acompanhamentos e combos</a></nav></details>
+<a class="nu198-tile" href="#relatorios" data-nav198><span aria-hidden="true">▥</span>Relatórios</a><a class="nu198-tile" href="#adicionais" data-nav198><span aria-hidden="true">＋</span>Ingredientes e acompanhamentos</a></nav>
+<details class="nu221-extra"><summary>Mais acessos de produtos</summary><nav><a class="btn soft" href="#novo-produto" data-nav198>＋ Cadastrar produto</a><a class="btn soft" href="#categorias-loja" data-nav198>Categorias e posições</a><a class="btn soft" href="#adicionais" data-nav198>Ingredientes, acompanhamentos e adicionais</a></nav></details>
 {% set daily=namespace(total=0) %}{% for order in today_orders if order.status not in ['cancelled','rejected'] %}{% set daily.total=daily.total+order.total_cents %}{% endfor %}
 <div class="nu198-metrics"><div><small>Total de pedidos hoje</small><strong>{{today_orders|length}}</strong></div><div><small>Valor dos pedidos hoje*</small><strong>R$ {{'%.2f'|format(daily.total/100)|replace('.',',')}}</strong></div></div><p class="muted"><small>*Sem cancelados e recusados. Inclui pedidos em andamento.</small></p>
 </section>
@@ -72,20 +76,12 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <section id="whatsapp" class="sales109">{% set sale_channel='delivery' %}{% include 'sales109.html' %}</section>
 <script src="/static/sales109.js?v=110" defer></script>
 
-<nav class="merchant-shortcuts" aria-label="Acesso rápido da loja"><a class="btn soft" href="/p/{{pro.slug}}" rel="noopener">↗ Ver minha loja</a><a class="btn soft" href="#relatorios">📈 Ver relatórios</a><a class="btn soft" href="#configuracoes">⚙️ Configurações</a></nav>
+<nav class="merchant-shortcuts" aria-label="Acesso rápido da loja"><a class="btn soft" href="/p/{{pro.slug}}" rel="noopener">↗ Ver minha loja</a><a class="btn soft" href="#relatorios">📈 Ver relatórios</a><a class="btn soft" href="#perfil">⚙️ Configurações</a></nav>
 {% if pro.admission_status=='pending' %}<div class="alert">Seu cadastro está em análise pelo ADM. Você pode preparar seu painel, mas a loja ainda não aparece aos clientes.</div>{% elif pro.admission_status=='rejected' %}<div class="alert danger">Seu cadastro não foi aprovado.{% if pro.admission_reason %} {{pro.admission_reason}}{% endif %} Entre em contato com o NowUp para esclarecer informações.</div>{% endif %}
 {% if request.query_params.get('ok') %}<div class="alert success">Alterações salvas com sucesso.</div>{% endif %}
 {% if request.query_params.get('erro')=='limite-promocoes' %}<div class="alert">Você já atingiu o limite de 3 produtos em promoção. Retire um destaque antes de adicionar outro.</div>{% endif %}
 {% if request.query_params.get('erro')=='motivo-obrigatorio' %}<div class="alert danger">Informe o motivo do cancelamento ou da recusa.</div>{% endif %}
-<section class="panel" id="avisos-aparelho" data-push75 aria-label="Avisos neste aparelho">
-<h2>Avisos de pedidos neste aparelho</h2>
-<p>Receba avisos mesmo com o painel fechado. A loja aberta ou pausada é controlada separadamente.</p>
-<button type="button" class="btn" data-push-enable>🔔 Ativar avisos neste aparelho</button>
-<button type="button" class="btn soft" data-push-test hidden>Testar aviso</button>
-<button type="button" class="btn ghost" data-push-disable hidden>Desativar neste aparelho</button>
-<p data-push-message role="status">Ative e permita as notificações. Ao sair da conta, os avisos deste aparelho serão desativados.</p>
-<small>No iPhone, use o NowUp adicionado à Tela de Início. O recebimento depende das permissões e da conexão do aparelho.</small>
-</section>
+
 <section class="panel active-orders-inbox mk228-room" id="pedidos-ativos">
 <div class="mk228-heading"><div><span class="kicker">Sua operação em um só lugar</span><h2>Sala de pedidos</h2><p>Acompanhe os pedidos por etapa.</p></div><a href="#pedidos" data-nav198 class="mk228-details">Histórico por dia ↗</a></div>
 <div class="mk228-tools"><label><span class="sr-only">Buscar pedido ou cliente</span><input type="search" data-search-input228 placeholder="Buscar pedido ou cliente…" autocomplete="off"></label><button type="button" data-refresh228>Atualizar</button><a href="#horarios" data-nav198 class="mk228-shop-status">● {{shop_status.label}} · Alterar</a></div>
@@ -130,17 +126,9 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <small>Histórico de cliques</small>
 </div>
 </section>
-{% if pro.plan_active in ['cardapio','completo'] %}<section class="panel" id="cardapio-independente"><h2>Meu cardápio independente</h2><form action="/painel/cardapio/whatsapp" method="post"><label>WhatsApp para pedidos do cardápio<input class="input" name="whatsapp" value="{{store_whatsapp_number257}}" placeholder="(12) 99999-9999 ou https://wa.me/5512999999999"></label><small>Informe o número com DDD ou seu link oficial. Se ainda não salvou um número aqui, usamos o WhatsApp cadastrado da loja.</small><label>Onde receber pedidos do link independente<select name="mode"><option value="both" {% if store_order_mode257=='both' %}selected{% endif %}>Painel + WhatsApp</option><option value="panel" {% if store_order_mode257=='panel' %}selected{% endif %}>Só no painel NowUp</option><option value="whatsapp" {% if store_order_mode257=='whatsapp' %}selected{% endif %}>Só no WhatsApp</option></select></label><button class="btn primary">Salvar destino dos pedidos</button></form><form action="/painel/cardapio/links352" method="post"><label>Instagram<input class="input" type="url" name="instagram_url" value="{{pro.instagram_url}}" placeholder="https://www.instagram.com/sualoja"></label><label>Site<input class="input" type="url" name="website_url" value="{{pro.website_url}}" placeholder="https://seusite.com.br"></label><button class="btn primary">Salvar Instagram e site</button></form><p>Divulgue sua loja diretamente no WhatsApp ou Instagram. Este link abre somente o seu cardápio. O cliente pode pedir pelo navegador ou instalar o aplicativo com o nome e a marca da sua loja. A instalação é opcional.</p><label>Link exclusivo da minha loja<input class="input" value="{{external_menu355(request,pro.slug)}}" readonly onclick="this.select()"></label><a class="btn primary" href="{{external_menu355(request,pro.slug)}}" target="_blank" rel="noopener">Abrir meu cardápio</a> <button class="btn soft" type="button" data-copy-profile data-profile-url="{{external_menu355(request,pro.slug)}}">Copiar link do cardápio</button><p>No link independente, o cliente usa sua conta de cliente. Escolha receber no painel, no WhatsApp ou nos dois. Pedidos registrados no painel seguem o Kanban e os relatórios; no modo só WhatsApp, a confirmação fica na conversa. O cliente precisa tocar em Enviar no WhatsApp. Pela vitrine, o mesmo cardápio continua com o fluxo interno.</p></section>{% endif %}{% if pro.plan_active == 'ambos' %}<section class="panel"><h2>Pedidos na vitrine NowUp</h2><p>Seu cardápio e seus pedidos funcionam dentro do NowUp. Para ter também link independente, pedidos no WhatsApp e links de Instagram e site, solicite o plano de R$ 149,90.</p></section>{% endif %}<section class="panel" id="plano"><h2>Meu plano</h2><p>Os três planos incluem produtos, combos, ingredientes, adicionais e configurações do painel. Só catálogo: link próprio, pedidos no WhatsApp, sem vitrine. Vitrine: cardápio e pedidos dentro do NowUp. Vitrine + catálogo com link: inclui também pedidos no WhatsApp e links de Instagram e site.</p><p>Atual: <b>{{{'cardapio':'Só cardápio/catálogo · R$ 49,90','vitrine':'Só vitrine: WhatsApp ou link próprio · R$ 49,90','ambos':'Vitrine com pedidos no NowUp · R$ 99,90','completo':'Vitrine + catálogo com link e WhatsApp · R$ 149,90','none':'Aguardando liberação'}.get(pro.plan_active,'Aguardando liberação')}}</b></p>{% if pro.plan_requested %}<p role="status">Mudança solicitada: {{pro.plan_requested}}. Aguardando aprovação do ADM.</p>{% endif %}<p>Na troca de plano, os produtos e pedidos permanecem salvos. A vitrine é publicada ou retirada após aprovação.</p><form action="/painel/plano" method="post"><label>Solicitar plano<select name="plan" required><option value="cardapio">Só cardápio/catálogo — R$ 49,90/mês</option><option value="ambos">Vitrine com pedidos no NowUp — R$ 99,90/mês</option><option value="completo">Vitrine + catálogo com link e WhatsApp — R$ 149,90/mês</option></select></label><label>Tipo de conteúdo<select name="offer_mode" required><option value="menu">Cardápio</option><option value="catalog">Catálogo</option></select></label><button class="btn primary">Solicitar mudança</button></form>{% if pro.plan_active == 'vitrine' %}<label>Link do perfil da loja<input class="input" value="{{request.base_url}}p/{{pro.slug}}" readonly onclick="this.select()"></label><p>O perfil permanece dentro do NowUp. Para receber pedidos, solicite um plano com cardápio.</p>{% elif pro.plan_active in ['cardapio','completo'] %}<label>Link próprio do {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}<input class="input" value="{{external_menu355(request,pro.slug)}}" readonly onclick="this.select()"></label><label>Link para divulgar no WhatsApp ou Instagram<input class="input" value="{{external_menu355(request,pro.slug)}}" readonly onclick="this.select()"></label><p>Pela vitrine NowUp, o cliente entra na conta e o pedido chega ao painel. No link externo, o mesmo cardápio usa o mesmo cadastro de cliente, seguindo o destino escolhido acima.</p><p><a class="btn soft" href="{{external_menu355(request,pro.slug)}}" rel="noopener">Abrir link do meu {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}</a></p>{% endif %}</section>
-<section class="panel" id="configuracoes"><div class="section-title"><div><span class="kicker">Ajustes da loja</span><h2>Configurações</h2></div></div><p>Escolha o que deseja alterar:</p><nav class="merchant-shortcuts" aria-label="Configurações da loja"><a class="btn soft" href="#avisos-aparelho">Avisos neste aparelho</a><a class="btn soft" href="#horarios">Horários e situação</a><a class="btn soft" href="#perfil">Dados e WhatsApp</a>{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}<a class="btn soft" href="#entrega-pagamento">Entrega, retirada e pagamento</a><a class="btn soft" href="#exibicao-produtos">Exibição dos produtos</a>{% endif %}<a class="btn soft" href="#identidade">Fotos e capa</a><a class="btn soft" href="/painel/banners">🖼 Slides da loja</a></nav></section>
-<section class="panel hours-panel" id="horarios">
-<div class="section-title"><div><span class="kicker">Relógio real de São Paulo</span><h2>Horários e situação da loja</h2></div><span class="status-pill {% if shop_status.open %}ok{% endif %}">{{shop_status.label}}</span></div>
-<p class="muted">O NowUp abre e fecha a loja automaticamente. Horários que passam da meia-noite, como 09:00–00:00, também são reconhecidos.</p>
-<form action="/painel/horarios" method="post">
-<label>Situação manual<select name="business_status"><option value="open" {% if pro.business_status=='open' %}selected{% endif %}>Automático pelos horários</option><option value="paused" {% if pro.business_status=='paused' %}selected{% endif %}>Loja pausada</option><option value="temporarily_closed" {% if pro.business_status=='temporarily_closed' %}selected{% endif %}>Fechada temporariamente</option><option value="vacation" {% if pro.business_status=='vacation' %}selected{% endif %}>Férias/feriado</option><option value="ad_paused" {% if pro.business_status=='ad_paused' %}selected{% endif %}>Anúncio pausado</option></select></label>
-<div class="hours-grid">{% for day in days %}{% set row=business_hours.get(day,{}) %}<div class="hours-row"><label class="check"><input type="checkbox" name="{{day}}_enabled" value="1" {% if row.get('enabled') %}checked{% endif %}> {{day_labels[day]}}</label><label>Abre<input class="input" type="time" name="{{day}}_start" value="{{row.get('start','09:00')}}"></label><label>Fecha<input class="input" type="time" name="{{day}}_end" value="{{row.get('end','18:00')}}"></label></div>{% endfor %}</div>
-<button class="btn primary">Salvar horários e situação</button>
-</form>
-</section>
+{% if pro.plan_active in ['cardapio','completo'] %}{% endif %}{% if pro.plan_active == 'ambos' %}<section class="panel"><h2>Pedidos na vitrine NowUp</h2><p>Seu cardápio e seus pedidos funcionam dentro do NowUp. Para ter também link independente, pedidos no WhatsApp e links de Instagram e site, solicite o plano de R$ 149,90.</p></section>{% endif %}
+
+
 <section class="panel menu-manager" id="cardapio">
 {% if not pro.is_premium %}
 <div class="empty-state full"><span>🔒</span><h2>Cardápio e catálogo exigem plano com cardápio</h2><p class="muted">Seu perfil gratuito continua público com descrição, serviços, fotos e localização. Solicite um plano com cardápio para cadastrar produtos, preços, categorias e receber pedidos.</p>{% if support_link!='#' %}<a class="btn primary" href="{{support_link}}" target="_blank" rel="noopener">Solicitar plano com cardápio</a>{% endif %}</div>
@@ -155,20 +143,9 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <a class="btn soft" href="{{external_menu355(request,pro.slug) if pro.plan_active in ['cardapio','completo'] else '/p/'+pro.slug+'/menu'}}">Ver {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}} público</a>
 </div>
 <p class="muted">Cadastre categorias e produtos. O cliente monta o carrinho e envia o pedido pelo NowUp.</p>
-<section id="exibicao-produtos" class="menu-settings"><h3>Exibição dos produtos</h3><form action="/painel/cardapio/exibicao" method="post"><fieldset><legend>Formato do carrossel da sua loja</legend><label class="check"><input type="radio" name="carousel_layout235" value="compact" {% if pro.carousel_layout235 not in ['large','pair'] %}checked{% endif %}> Compacto — 4 produtos por página</label><label class="check"><input type="radio" name="carousel_layout235" value="pair" {% if pro.carousel_layout235 == 'pair' %}checked{% endif %}> Lado a lado — 2 produtos por página</label><label class="check"><input type="radio" name="carousel_layout235" value="large" {% if pro.carousel_layout235 == 'large' %}checked{% endif %}> Foto grande — 1 produto por vez</label><p class="muted">Foto grande destaca lanches e pratos. O cliente desliza para os lados ou usa as setas para ver o próximo produto.</p></fieldset><button class="btn primary">Salvar exibição dos produtos</button></form></section>
-<details class="menu-settings" id="bairros-entrega265" {% if request.query_params.get('ok')=='entrega' %}open{% endif %}>
-<summary><b>📍 Bairros atendidos e taxas de entrega ({{delivery_zones|selectattr('active')|list|length}} ativos)</b></summary>
-<p>Selecione um bairro de {{pro.city}} ou cadastre manualmente caso ele não esteja na lista. O cliente verá os bairros ativos no checkout, com a taxa definida pela loja.</p>
-<details class="nu271-zone-list"><summary class="btn soft">📍 Ver bairros atendidos ({{delivery_zones|length}})</summary><div style="max-height:420px;overflow:auto;padding:8px 0">{% if not delivery_zones %}<p>Nenhum bairro cadastrado ainda.</p>{% endif %}
-{% for zone in delivery_zones %}<details><summary>Editar {{zone.name}} — R$ {{'%.2f'|format(zone.fee_cents/100)|replace('.',',')}} · {{'Atendido' if zone.active else 'Inativo'}}</summary><form action="/painel/cardapio/entregas89" method="post" class="product-form"><input type="hidden" name="zone_id" value="{{zone.id}}"><label>Bairro<select class="input" name="name" required>{% set current267=canonical_neighborhood267(pro.city,zone.name) %}{% if not current267 %}<option value="{{zone.name}}" selected>{{zone.name}} (manual)</option>{% endif %}{% for bairro in delivery_neighborhoods267(pro.city) %}<option value="{{bairro}}" {% if bairro==current267 %}selected{% endif %}>{{bairro}}</option>{% endfor %}</select></label><label>Taxa (R$)<input class="input" name="fee" value="{{'%.2f'|format(zone.fee_cents/100)}}" inputmode="decimal" required></label><label>Prazo (minutos)<input class="input" name="eta_minutes" type="number" min="5" max="240" value="{{zone.eta_minutes}}" required></label><label><input type="checkbox" name="active" value="1" {% if zone.active %}checked{% endif %}> Atender este bairro</label><button class="btn primary">Salvar bairro</button></form></details>{% endfor %}
-</div></details>
-<h3>Adicionar bairro da lista</h3><form action="/painel/cardapio/entregas89" method="post" class="product-form"><label>Novo bairro<select class="input" name="name" required><option value="">Selecione o bairro</option>{% for bairro in delivery_neighborhoods267(pro.city) %}<option value="{{bairro}}">{{bairro}}</option>{% endfor %}</select></label><label>Taxa (R$)<input class="input" name="fee" required inputmode="decimal" placeholder="0,00"></label><label>Prazo (minutos)<input class="input" name="eta_minutes" type="number" min="5" max="240" value="40" required></label><input type="hidden" name="active" value="1"><button class="btn primary">Adicionar bairro</button></form>
-<details><summary class="btn soft">＋ Adicionar bairro manualmente</summary><p>Confira o nome e a cidade antes de salvar. Este bairro ficará disponível somente nas entregas da sua loja.</p><form action="/painel/cardapio/entregas89" method="post" class="product-form"><input type="hidden" name="manual" value="1"><input type="hidden" name="active" value="1"><label>Nome do bairro<input class="input" name="name" minlength="2" maxlength="120" required placeholder="Digite o bairro que não está na lista"></label><label>Taxa (R$)<input class="input" name="fee" inputmode="decimal" required placeholder="0,00"></label><label>Prazo (minutos)<input class="input" name="eta_minutes" type="number" min="5" max="240" value="40" required></label><button class="btn primary">Salvar bairro manual</button></form></details>
-</details><details class="menu-settings" id="entrega-pagamento"><summary><b>⚙️ Entrega, retirada e pagamento</b></summary><form action="/painel/cardapio/configuracoes" method="post" class="product-form"><label>Taxa de entrega<input class="input" name="delivery_fee" value="{{'%.2f'|format(pro.delivery_fee_cents/100)|replace('.',',')}}" inputmode="decimal"></label><label>Pedido mínimo<input class="input" name="minimum_order" value="{{'%.2f'|format(pro.minimum_order_cents/100)|replace('.',',')}}" inputmode="decimal"></label><label>Tempo médio de preparo (minutos)<input class="input" type="number" min="5" max="240" name="prep_minutes" value="{{pro.prep_minutes}}"></label><fieldset><legend>Pix da minha loja</legend><p>Cadastre sua chave para receber diretamente na conta da loja. Para gerar o QR Code e o Copia e Cola com o valor do pedido, preencha os campos abaixo.</p><label>Tipo de chave Pix<select name="pix_key_type"><option value="">Somente chave, sem QR Code automático</option>{% for value,label in [('cpf','CPF'),('cnpj','CNPJ'),('email','E-mail'),('phone','Telefone com DDD'),('random','Chave aleatória')] %}<option value="{{value}}" {% if pro.pix_key_type==value %}selected{% endif %}>{{label}}</option>{% endfor %}</select></label><label>Chave Pix<input class="input" name="pix_key" value="{{pro.pix_key}}" placeholder="Telefone, e-mail, CPF/CNPJ ou aleatória"></label><label>Nome do recebedor no banco<input class="input" name="pix_receiver_name" value="{{pro.pix_receiver_name}}" maxlength="120" placeholder="Nome do titular da chave Pix"></label><label>Cidade do recebedor<input class="input" name="pix_receiver_city" value="{{pro.pix_receiver_city or pro.city}}" maxlength="120" placeholder="Ex.: Ubatuba"></label><small>O cliente confere o favorecido no banco. A loja confirma o pagamento. Não é necessário cadastrar senha bancária ou abrir conta Asaas para esse Pix.</small></fieldset><label class="check"><input type="checkbox" name="allows_delivery" value="1" {% if pro.allows_delivery %}checked{% endif %}> Aceitar entrega</label><label class="check"><input type="checkbox" name="allows_pickup" value="1" {% if pro.allows_pickup %}checked{% endif %}> Aceitar retirada</label><button class="btn primary">Salvar configurações</button></form></details>
-<details class="menu-settings" id="aviso-carrinho"><summary><b>Mensagem no carrinho do cliente</b></summary>
-<form action="/painel/cardapio/aviso-carrinho" method="post" class="product-form">
-<label class="full">Aviso breve<textarea class="input" name="cart_notice" maxlength="150" rows="3" placeholder="Ex.: Hoje os pedidos podem demorar um pouco mais. Obrigado pela compreensão!">{{pro.cart_notice or ''}}</textarea><small>Até 150 caracteres. Deixe vazio para ocultar o aviso.</small></label>
-<button class="btn primary">Salvar mensagem</button></form></details>
+
+
+
 <details class="menu-category-manager nu-categories138" id="categorias-loja"><summary class="btn primary">＋ Adicionar / editar categorias <small>{{product_categories|length}} cadastradas</small></summary>
 <h3>Categorias do {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}</h3>
 <form action="/painel/cardapio/categorias" method="post" class="category-add-form">
@@ -188,9 +165,9 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </div>{% endfor %}</div>
 <p class="muted">Numere de 1 a {{product_categories|length}} sem repetir posições e salve todas de uma vez.</p><button type="button" class="btn primary" data-save-order142>Salvar ordem</button><p data-order-status142 role="status" aria-live="polite"></p>
 </details>
-{% include "included195.html" %}
 
-<details class="product-create" id="produtos-peso370" {% if request.query_params.get('ok')=='peso' %}open{% endif %}><summary class="btn primary" role="button">⚖ Cadastrar produto por peso</summary>{% if request.query_params.get('ok')=='peso' %}<p role="status">Produto por peso cadastrado!</p>{% endif %}{{weight370.form(product_categories)}}</details>
+
+
 <details class="product-create" id="novo-produto" {% if request.query_params.get("ok")=="produto" %}open{% endif %}>
 {% if request.query_params.get("ok")=="produto" %}<p role="status">Produto cadastrado! Cadastre o próximo produto abaixo.</p>{% endif %}
 <summary class="btn primary" role="button">＋ Adicionar produto</summary>
@@ -222,48 +199,17 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </details>
 
 <section id="produtos-loja" class="panel full" aria-label="Pesquisar e editar produtos"><h3>Produtos</h3><label for="pesquisar-produtos299">Pesquisar produtos</label><input id="pesquisar-produtos299" class="input" type="search" data-pro-search placeholder="Digite o nome ou código do produto" autocomplete="off" style="width:100%;min-height:48px;margin:8px 0 12px"><nav class="menu-category-nav pro-product-filters" aria-label="Filtrar produtos do painel"><button type="button" class="active" data-pro-category="all">Todos</button><a class="btn soft" href="#combos-loja" data-nav198>🍻 Combos</a><button type="button" data-pro-category="promocoes">Promoções</button>{% for category in product_categories if category.name|lower != 'combos' %}<button type="button" data-pro-category="{{category.name}}">{{category.name}}</button>{% endfor %}</nav><p class="muted">Para montar ou editar um combo, abra a área Combos.</p></section>
-<div class="product-admin-grid" data-pro-products>{% for product in products if product.id not in meal_ids322 %}<details id="produto-editor328-{{product.id}}" class="product-admin-card" data-pro-product data-category="{{product.category}}" data-featured="{{1 if product.featured else 0}}" data-name="{{product.name}}" data-product-id="{{product.id}}" data-combo="{{1 if product.is_combo256 or product.category|lower == 'combos' else 0}}">
-<summary>{% if product.image_filename %}<img loading="lazy" decoding="async" src="/uploads/{{product.image_filename}}" onerror="this.onerror=null;this.src='/static/product-placeholder.svg'" alt="">{% else %}<span class="product-placeholder">🍽</span>{% endif %}<div>
-<b>{{product.name}}</b><small>Código: {{product.id}}</small>
-<small>{{product.category}} · R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}{% if product.sold_by_weight370 %}/kg · ⚖ Por peso{% endif %}</small>
-</div>
-<span class="status-pill {% if product.available %}ok{% endif %}">{% if product.available %}Disponível{% else %}Indisponível{% endif %}</span>
-</summary>
-<form action="/painel/cardapio/produtos/{{product.id}}/disponibilidade" method="post" class="v67-availability"><input type="hidden" name="available" value="{{0 if product.available else 1}}"><button class="btn soft" type="submit">{{'Marcar indisponível' if product.available else 'Marcar disponível'}}</button></form>
-{% if product.sold_by_weight370 %}{{weight370.form(product_categories, product)}}{% else %}<form action="/painel/cardapio/produtos/{{product.id}}" method="post" enctype="multipart/form-data" class="product-form"><label class="full">Este produto é um combo?<select name="is_combo256" data-combo-type303><option value="0" {% if not product.is_combo256 %}selected{% endif %}>Não</option><option value="1" {% if product.is_combo256 %}selected{% endif %}>Sim</option></select><small>A categoria continua sendo a que você escolher abaixo.</small></label>
-<input type="hidden" name="personalizable" value="{{1 if product.is_dish else ''}}"><label>Adicionais deste produto<select name="extras_mode" data-extras-mode155><option value="none" {% if product.extras_mode=='none' %}selected{% endif %}>Sem adicionais</option><option value="all" {% if product.extras_mode=='all' %}selected{% endif %}>Permitir todos os adicionais da loja</option><option value="selected" {% if product.extras_mode=='selected' %}selected{% endif %}>Selecionar adicionais</option>{% if product.extras_mode=='legacy' %}<option value="legacy" selected>Manter adicionais atuais deste produto</option>{% endif %}</select></label><div class="full" data-shared-picker155>{% for extra in shared_extras if extra.available %}<label class="check"><input type="checkbox" name="extra_ids" value="{{extra.id}}" {% if extra.id in shared_selected.get(product.id,[]) %}checked{% endif %}> {{extra.name}} · + R$ {{'%.2f'|format(extra.price_cents/100)|replace('.',',')}}{% if not extra.available %} (indisponível){% endif %}</label>{% else %}<p>Cadastre primeiro seus complementos na aba Adicionais.</p>{% endfor %}</div><label>Nome<input class="input" name="name" value="{{product.name}}" required>
-</label>
-<label>Categoria<select name="category" required><option value="{{product.category}}" selected>{{product.category}}</option>{% if product.category|lower != 'combos' %}<option value="Combos">Combos — aba geral do app</option>{% endif %}{% for category in product_categories if category.active and category.name != product.category and category.name|lower != 'combos' %}<option value="{{category.name}}">{{category.name}}</option>{% endfor %}</select></label>
-<label>Preço normal (R$)<input class="input" name="price" value="{{'%.2f'|format((product.promo_price_cents if product.is_combo256 and product.promo_price_cents > 0 else product.price_cents)/100)|replace('.',',')}}" required>
-</label>
-{{pairs256.fields(products,product)}}
-{{promotions285.fields(product)}}
-<label>Máximo por pedido<input class="input" type="number" name="max_quantity" min="1" max="99" value="{{product.max_quantity}}"></label>
-<label>Trocar foto<input class="input" type="file" name="photo" accept="image/*" data-preview250="{% if product.image_filename %}/uploads/{{product.image_filename}}{% endif %}">
-</label>
-<label class="full">Descrição completa do produto<textarea name="description">{{product.description}}</textarea>
-</label>
-<label class="check"><input type="checkbox" name="sold_cold" value="1" {% if product.sold_cold %}checked{% endif %}> ❄ Este produto é vendido gelado?</label>
-<label class="check">
-<input type="checkbox" name="available" value="1" {% if product.available %}checked{% endif %}> Disponível para pedidos (desmarque quando esgotar)</label>
-<label class="check"><input type="checkbox" name="featured" value="1" {% if product.featured %}checked{% endif %}> Produto em promoção/destaque (máximo 3)</label>
-<div class="nu192-editor full" data-editor192="{{product.customization192}}" data-max192="{% for g in product_groups.get(product.id,[]) if g.name=='Adicionais' %}{{g.max_choices}}{% endfor %}"><h3>Personalização deste produto</h3></div>
-<button class="btn primary">Salvar alterações</button>
-</form>{% endif %}
-<p class="muted">Os adicionais são escolhidos no formulário acima. Cadastre e edite os complementos na aba <a href="#adicionais">Adicionais da loja</a>.</p>
-<form action="/painel/cardapio/produtos/{{product.id}}/excluir" method="post" data-confirm-delete>
-<button class="btn danger tiny">Excluir produto</button>
-</form>
-</details>{% else %}<div class="empty-state full">
+<div class="product-admin-grid" data-pro-products>{% for product in products if product.id not in meal_ids322 and not product.sold_by_weight370 %}{% include 'merchant_product_card.html' %}{% else %}<div class="empty-state full">
 <span>🍽</span>
-<h3>Seu {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}} está vazio</h3>
-<p class="muted">Use o botão “Adicionar produto” para começar.</p>
+<h3>Nenhum produto comum cadastrado</h3>
+<p class="muted">Use “Adicionar produto”. Produtos por peso ficam na área própria.</p>
 </div>{% endfor %}</div>
 {% endif %}
 </section>
+<section class="panel" id="peso-loja"><h2>Produtos por peso</h2><p>Cadastre e edite aqui os produtos vendidos por quilo.</p>{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}<details class="product-create" id="produtos-peso370" {% if request.query_params.get('ok')=='peso' %}open{% endif %}><summary class="btn primary" role="button">⚖ Cadastrar produto por peso</summary>{% if request.query_params.get('ok')=='peso' %}<p role="status">Produto por peso cadastrado!</p>{% endif %}{{weight370.form(product_categories)}}</details><div class="product-admin-grid" data-weight-products>{% for product in products if product.sold_by_weight370 %}{% include 'merchant_product_card.html' %}{% else %}<p>Nenhum produto por peso cadastrado.</p>{% endfor %}</div>{% else %}<p>Disponível para planos com cardápio ou catálogo.</p>{% endif %}</section>
 {% include 'meals322.html' %}
 {% include 'combos301.html' %}
-<section class="panel" id="adicionais"><h2>Ingredientes, acompanhamentos e adicionais</h2>{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}{% include 'ingredients320.html' %}{% else %}<p>Disponível para planos com cardápio ou catálogo.</p>{% endif %}</section>
+<section class="panel" id="adicionais"><h2>Ingredientes, acompanhamentos e adicionais</h2>{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}{% include 'included195.html' %}{% include 'ingredients320.html' %}{% else %}<p>Disponível para planos com cardápio ou catálogo.</p>{% endif %}</section>
 <section class="panel analytics-panel" id="relatorios">{% if pro.plan_active in ['cardapio','completo'] %}<p class="alert" role="note"><b>Pedidos pelo WhatsApp:</b> no modo “Só no WhatsApp”, o cliente precisa enviar a mensagem na conversa. Esses pedidos não são registrados automaticamente como vendas, não acionam a campainha do painel e não entram no faturamento ou nos produtos mais vendidos destes relatórios. Para incluí-los, registre a venda manualmente após conferir o atendimento e o pagamento.</p>{% endif %}<p><a class="btn soft" href="/painel/vendas-manuais/relatorios">Relatório consolidado: NowUp, presenciais e delivery manual</a></p><small>As estatísticas originais abaixo consideram pedidos online. Para incluir vendas manuais, abra o relatório consolidado.</small>
 <div class="section-title">
 <div>
@@ -435,61 +381,19 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <p class="muted">O ranking será preenchido automaticamente conforme os pedidos chegarem.</p>
 </div>{% endfor %}</div>
 </section>
-<section class="panel" id="identidade">
-<div class="section-title">
-<div>
-<span class="kicker">Identidade visual</span>
-<h2>Foto do perfil e capa</h2>
-</div>
-<span class="edit-chip">✏️ Editável</span>
-</div>
-<p class="muted">A foto fica redonda e a capa aparece no alto do seu perfil. Imagens são otimizadas automaticamente.</p>
-<div class="identity-preview" data-identity-preview>
-<div class="mini-cover" data-cover-preview {% if pro.cover_filename %}style="background-image:url('/uploads/{{pro.cover_filename}}')"{% endif %}>
-</div>
-<div class="mini-avatar" data-avatar-preview>{% if pro.avatar_filename %}<img src="/uploads/{{pro.avatar_filename}}">{% else %}<span>🏪</span>{% endif %}</div>
-</div>
-<form action="/painel/identidade" method="post" enctype="multipart/form-data" class="grid2" data-identity-form>
-<label>Foto de perfil<input class="input" type="file" name="avatar" accept="image/*" data-preview250="{% if pro.avatar_filename %}/uploads/{{pro.avatar_filename}}{% endif %}">
-</label>
-<label>Imagem da capa<input class="input" type="file" name="cover" accept="image/*" data-preview250="{% if pro.cover_filename %}/uploads/{{pro.cover_filename}}{% endif %}">
-</label>
-<button class="btn primary">Salvar foto e capa</button>
-<a class="btn soft" href="/p/{{pro.slug}}">Ver minha loja</a>
-</form>
-<div class="row image-remove-actions">{% if pro.avatar_filename %}<form action="/painel/identidade/perfil/excluir" method="post" data-confirm-delete>
-<button class="btn danger tiny">Excluir foto de perfil</button>
-</form>{% endif %}{% if pro.cover_filename %}<form action="/painel/identidade/capa/excluir" method="post" data-confirm-delete>
-<button class="btn danger tiny">Excluir capa</button>
-</form>{% endif %}</div>
-</section>
-{% if pro.featured or pro.in_slider %}<section class="panel" id="publicidade">
-<div class="section-title">
-<div>
-<span class="kicker">Publicidade ativa</span>
-<h2>Imagens de divulgação</h2>
-</div>
-<span class="status-pill ok">Liberado pelo NowUp</span>
-</div>
-<p class="muted">Estas opções aparecem somente enquanto sua empresa estiver liberada para destaque ou slide.</p>
-<form action="/painel/publicidade" method="post" enctype="multipart/form-data" class="grid2">{% if pro.featured %}<label>Capa do destaque<input class="input" type="file" name="featured_image" accept="image/*" data-preview250="{% if pro.featured_image_filename %}/uploads/{{pro.featured_image_filename}}{% endif %}">
-<small>Usada no cartão de destaque da página inicial.</small>
-</label>{% endif %}{% if pro.in_slider %}<label>Foto do slide<input class="input" type="file" name="slide_image" accept="image/*" data-preview250="{% if pro.slide_image_filename %}/uploads/{{pro.slide_image_filename}}{% endif %}">
-<small>Recomendado: imagem horizontal 1200 × 500.</small>
-</label>{% endif %}<button class="btn primary">Salvar imagens de divulgação</button>
-</form>
-</section>{% endif %}
+
+{% if pro.featured or pro.in_slider %}{% endif %}
 <section class="panel" id="perfil">
 <div class="section-title">
 <div>
-<span class="kicker">Dados públicos</span>
+<span class="kicker">Todas as configurações da loja</span>
 <h2>Minha loja</h2><a class="btn soft" href="/p/{{pro.slug}}" rel="noopener">↗ Ver minha loja</a><a class="btn soft" href="/painel/banners">🖼 Slides da loja</a>
 </div>
 <span class="edit-chip">✏️ Editar tudo</span>
 </div>
-<form action="/painel/perfil" method="post">
+<p>Dados gerais, pagamentos e personalização ficam nesta mesma aba.</p><nav class="merchant-shortcuts" aria-label="Configurações da minha loja"><a class="btn soft" href="#dados-gerais-loja" data-nav198>Dados gerais</a>{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}<a class="btn soft" href="#entrega-pagamento" data-nav198>Pix e pedido mínimo</a><a class="btn soft" href="#bairros-entrega265" data-nav198>Entrega</a><a class="btn soft" href="#exibicao-produtos" data-nav198>Personalização</a>{% endif %}<a class="btn soft" href="#horarios" data-nav198>Horários</a><a class="btn soft" href="#identidade" data-nav198>Fotos e capa</a><a class="btn soft" href="/painel/banners">Slides e banners</a></nav><h3 id="dados-gerais-loja">Dados gerais</h3><form action="/painel/perfil" method="post">
 <div class="grid2">
-<label>Nome da empresa<input class="input" name="display_name" value="{{pro.display_name}}" required>
+<label>Nome da loja<input class="input" name="display_name" value="{{pro.display_name}}" required>
 </label>
 <label>WhatsApp cadastrado<input class="input" value="{{pro.whatsapp}}" readonly><small>Para alterar o número, solicite a conferência ao ADM.</small>
 </label>
@@ -543,6 +447,85 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <a class="btn soft" href="/p/{{pro.slug}}">Ver minha loja</a>
 </div>
 </form>
+<div class="nu-store-config-groups">
+{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}<details class="menu-settings" id="entrega-pagamento"><summary><b>⚙️ Entrega, retirada e pagamento</b></summary><form action="/painel/cardapio/configuracoes" method="post" class="product-form"><label>Taxa de entrega<input class="input" name="delivery_fee" value="{{'%.2f'|format(pro.delivery_fee_cents/100)|replace('.',',')}}" inputmode="decimal"></label><label>Pedido mínimo<input class="input" name="minimum_order" value="{{'%.2f'|format(pro.minimum_order_cents/100)|replace('.',',')}}" inputmode="decimal"></label><label>Tempo médio de preparo (minutos)<input class="input" type="number" min="5" max="240" name="prep_minutes" value="{{pro.prep_minutes}}"></label><fieldset><legend>Pix da minha loja</legend><p>Cadastre sua chave para receber diretamente na conta da loja. Para gerar o QR Code e o Copia e Cola com o valor do pedido, preencha os campos abaixo.</p><label>Tipo de chave Pix<select name="pix_key_type"><option value="">Somente chave, sem QR Code automático</option>{% for value,label in [('cpf','CPF'),('cnpj','CNPJ'),('email','E-mail'),('phone','Telefone com DDD'),('random','Chave aleatória')] %}<option value="{{value}}" {% if pro.pix_key_type==value %}selected{% endif %}>{{label}}</option>{% endfor %}</select></label><label>Chave Pix<input class="input" name="pix_key" value="{{pro.pix_key}}" placeholder="Telefone, e-mail, CPF/CNPJ ou aleatória"></label><label>Nome do recebedor no banco<input class="input" name="pix_receiver_name" value="{{pro.pix_receiver_name}}" maxlength="120" placeholder="Nome do titular da chave Pix"></label><label>Cidade do recebedor<input class="input" name="pix_receiver_city" value="{{pro.pix_receiver_city or pro.city}}" maxlength="120" placeholder="Ex.: Ubatuba"></label><small>O cliente confere o favorecido no banco. A loja confirma o pagamento. Não é necessário cadastrar senha bancária ou abrir conta Asaas para esse Pix.</small></fieldset><label class="check"><input type="checkbox" name="allows_delivery" value="1" {% if pro.allows_delivery %}checked{% endif %}> Aceitar entrega</label><label class="check"><input type="checkbox" name="allows_pickup" value="1" {% if pro.allows_pickup %}checked{% endif %}> Aceitar retirada</label><button class="btn primary">Salvar configurações</button></form></details><details class="menu-settings" id="bairros-entrega265" {% if request.query_params.get('ok')=='entrega' %}open{% endif %}>
+<summary><b>📍 Bairros atendidos e taxas de entrega ({{delivery_zones|selectattr('active')|list|length}} ativos)</b></summary>
+<p>Selecione um bairro de {{pro.city}} ou cadastre manualmente caso ele não esteja na lista. O cliente verá os bairros ativos no checkout, com a taxa definida pela loja.</p>
+<details class="nu271-zone-list"><summary class="btn soft">📍 Ver bairros atendidos ({{delivery_zones|length}})</summary><div style="max-height:420px;overflow:auto;padding:8px 0">{% if not delivery_zones %}<p>Nenhum bairro cadastrado ainda.</p>{% endif %}
+{% for zone in delivery_zones %}<details><summary>Editar {{zone.name}} — R$ {{'%.2f'|format(zone.fee_cents/100)|replace('.',',')}} · {{'Atendido' if zone.active else 'Inativo'}}</summary><form action="/painel/cardapio/entregas89" method="post" class="product-form"><input type="hidden" name="zone_id" value="{{zone.id}}"><label>Bairro<select class="input" name="name" required>{% set current267=canonical_neighborhood267(pro.city,zone.name) %}{% if not current267 %}<option value="{{zone.name}}" selected>{{zone.name}} (manual)</option>{% endif %}{% for bairro in delivery_neighborhoods267(pro.city) %}<option value="{{bairro}}" {% if bairro==current267 %}selected{% endif %}>{{bairro}}</option>{% endfor %}</select></label><label>Taxa (R$)<input class="input" name="fee" value="{{'%.2f'|format(zone.fee_cents/100)}}" inputmode="decimal" required></label><label>Prazo (minutos)<input class="input" name="eta_minutes" type="number" min="5" max="240" value="{{zone.eta_minutes}}" required></label><label><input type="checkbox" name="active" value="1" {% if zone.active %}checked{% endif %}> Atender este bairro</label><button class="btn primary">Salvar bairro</button></form></details>{% endfor %}
+</div></details>
+<h3>Adicionar bairro da lista</h3><form action="/painel/cardapio/entregas89" method="post" class="product-form"><label>Novo bairro<select class="input" name="name" required><option value="">Selecione o bairro</option>{% for bairro in delivery_neighborhoods267(pro.city) %}<option value="{{bairro}}">{{bairro}}</option>{% endfor %}</select></label><label>Taxa (R$)<input class="input" name="fee" required inputmode="decimal" placeholder="0,00"></label><label>Prazo (minutos)<input class="input" name="eta_minutes" type="number" min="5" max="240" value="40" required></label><input type="hidden" name="active" value="1"><button class="btn primary">Adicionar bairro</button></form>
+<details><summary class="btn soft">＋ Adicionar bairro manualmente</summary><p>Confira o nome e a cidade antes de salvar. Este bairro ficará disponível somente nas entregas da sua loja.</p><form action="/painel/cardapio/entregas89" method="post" class="product-form"><input type="hidden" name="manual" value="1"><input type="hidden" name="active" value="1"><label>Nome do bairro<input class="input" name="name" minlength="2" maxlength="120" required placeholder="Digite o bairro que não está na lista"></label><label>Taxa (R$)<input class="input" name="fee" inputmode="decimal" required placeholder="0,00"></label><label>Prazo (minutos)<input class="input" name="eta_minutes" type="number" min="5" max="240" value="40" required></label><button class="btn primary">Salvar bairro manual</button></form></details>
+</details>{% endif %}<details class="nu-store-config"><summary>Horários e funcionamento</summary><section class="panel hours-panel" id="horarios">
+<div class="section-title"><div><span class="kicker">Relógio real de São Paulo</span><h2>Horários e situação da loja</h2></div><span class="status-pill {% if shop_status.open %}ok{% endif %}">{{shop_status.label}}</span></div>
+<p class="muted">O NowUp abre e fecha a loja automaticamente. Horários que passam da meia-noite, como 09:00–00:00, também são reconhecidos.</p>
+<form action="/painel/horarios" method="post">
+<label>Situação manual<select name="business_status"><option value="open" {% if pro.business_status=='open' %}selected{% endif %}>Automático pelos horários</option><option value="paused" {% if pro.business_status=='paused' %}selected{% endif %}>Loja pausada</option><option value="temporarily_closed" {% if pro.business_status=='temporarily_closed' %}selected{% endif %}>Fechada temporariamente</option><option value="vacation" {% if pro.business_status=='vacation' %}selected{% endif %}>Férias/feriado</option><option value="ad_paused" {% if pro.business_status=='ad_paused' %}selected{% endif %}>Anúncio pausado</option></select></label>
+<div class="hours-grid">{% for day in days %}{% set row=business_hours.get(day,{}) %}<div class="hours-row"><label class="check"><input type="checkbox" name="{{day}}_enabled" value="1" {% if row.get('enabled') %}checked{% endif %}> {{day_labels[day]}}</label><label>Abre<input class="input" type="time" name="{{day}}_start" value="{{row.get('start','09:00')}}"></label><label>Fecha<input class="input" type="time" name="{{day}}_end" value="{{row.get('end','18:00')}}"></label></div>{% endfor %}</div>
+<button class="btn primary">Salvar horários e situação</button>
+</form>
+</section></details>
+<details class="nu-store-config"><summary>Fotos, capa e identidade visual</summary><section class="panel" id="identidade">
+<div class="section-title">
+<div>
+<span class="kicker">Identidade visual</span>
+<h2>Foto do perfil e capa</h2>
+</div>
+<span class="edit-chip">✏️ Editável</span>
+</div>
+<p class="muted">A foto fica redonda e a capa aparece no alto do seu perfil. Imagens são otimizadas automaticamente.</p>
+<div class="identity-preview" data-identity-preview>
+<div class="mini-cover" data-cover-preview {% if pro.cover_filename %}style="background-image:url('/uploads/{{pro.cover_filename}}')"{% endif %}>
+</div>
+<div class="mini-avatar" data-avatar-preview>{% if pro.avatar_filename %}<img src="/uploads/{{pro.avatar_filename}}">{% else %}<span>🏪</span>{% endif %}</div>
+</div>
+<form action="/painel/identidade" method="post" enctype="multipart/form-data" class="grid2" data-identity-form>
+<label>Foto de perfil<input class="input" type="file" name="avatar" accept="image/*" data-preview250="{% if pro.avatar_filename %}/uploads/{{pro.avatar_filename}}{% endif %}">
+</label>
+<label>Imagem da capa<input class="input" type="file" name="cover" accept="image/*" data-preview250="{% if pro.cover_filename %}/uploads/{{pro.cover_filename}}{% endif %}">
+</label>
+<button class="btn primary">Salvar foto e capa</button>
+<a class="btn soft" href="/p/{{pro.slug}}">Ver minha loja</a>
+</form>
+<div class="row image-remove-actions">{% if pro.avatar_filename %}<form action="/painel/identidade/perfil/excluir" method="post" data-confirm-delete>
+<button class="btn danger tiny">Excluir foto de perfil</button>
+</form>{% endif %}{% if pro.cover_filename %}<form action="/painel/identidade/capa/excluir" method="post" data-confirm-delete>
+<button class="btn danger tiny">Excluir capa</button>
+</form>{% endif %}</div>
+</section></details>
+{% if pro.plan_active in ['cardapio','completo'] %}<details class="nu-store-config"><summary>Link da loja, WhatsApp e redes sociais</summary><section class="panel" id="cardapio-independente"><h2>Meu cardápio independente</h2><form action="/painel/cardapio/whatsapp" method="post"><label>WhatsApp para pedidos do cardápio<input class="input" name="whatsapp" value="{{store_whatsapp_number257}}" placeholder="(12) 99999-9999 ou https://wa.me/5512999999999"></label><small>Informe o número com DDD ou seu link oficial. Se ainda não salvou um número aqui, usamos o WhatsApp cadastrado da loja.</small><label>Onde receber pedidos do link independente<select name="mode"><option value="both" {% if store_order_mode257=='both' %}selected{% endif %}>Painel + WhatsApp</option><option value="panel" {% if store_order_mode257=='panel' %}selected{% endif %}>Só no painel NowUp</option><option value="whatsapp" {% if store_order_mode257=='whatsapp' %}selected{% endif %}>Só no WhatsApp</option></select></label><button class="btn primary">Salvar destino dos pedidos</button></form><form action="/painel/cardapio/links352" method="post"><label>Instagram<input class="input" type="url" name="instagram_url" value="{{pro.instagram_url}}" placeholder="https://www.instagram.com/sualoja"></label><label>Site<input class="input" type="url" name="website_url" value="{{pro.website_url}}" placeholder="https://seusite.com.br"></label><button class="btn primary">Salvar Instagram e site</button></form><p>Divulgue sua loja diretamente no WhatsApp ou Instagram. Este link abre somente o seu cardápio. O cliente pode pedir pelo navegador ou instalar o aplicativo com o nome e a marca da sua loja. A instalação é opcional.</p><label>Link exclusivo da minha loja<input class="input" value="{{external_menu355(request,pro.slug)}}" readonly onclick="this.select()"></label><a class="btn primary" href="{{external_menu355(request,pro.slug)}}" target="_blank" rel="noopener">Abrir meu cardápio</a> <button class="btn soft" type="button" data-copy-profile data-profile-url="{{external_menu355(request,pro.slug)}}">Copiar link do cardápio</button><p>No link independente, o cliente usa sua conta de cliente. Escolha receber no painel, no WhatsApp ou nos dois. Pedidos registrados no painel seguem o Kanban e os relatórios; no modo só WhatsApp, a confirmação fica na conversa. O cliente precisa tocar em Enviar no WhatsApp. Pela vitrine, o mesmo cardápio continua com o fluxo interno.</p></section></details>{% endif %}
+{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}<details class="nu-store-config"><summary>Personalização e exibição dos produtos</summary><section id="exibicao-produtos" class="menu-settings"><h3>Exibição dos produtos</h3><form action="/painel/cardapio/exibicao" method="post"><fieldset><legend>Formato do carrossel da sua loja</legend><label class="check"><input type="radio" name="carousel_layout235" value="compact" {% if pro.carousel_layout235 not in ['large','pair'] %}checked{% endif %}> Compacto — 4 produtos por página</label><label class="check"><input type="radio" name="carousel_layout235" value="pair" {% if pro.carousel_layout235 == 'pair' %}checked{% endif %}> Lado a lado — 2 produtos por página</label><label class="check"><input type="radio" name="carousel_layout235" value="large" {% if pro.carousel_layout235 == 'large' %}checked{% endif %}> Foto grande — 1 produto por vez</label><p class="muted">Foto grande destaca lanches e pratos. O cliente desliza para os lados ou usa as setas para ver o próximo produto.</p></fieldset><button class="btn primary">Salvar exibição dos produtos</button></form></section></details>{% endif %}
+{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] %}<details class="nu-store-config"><summary>Mensagem para o cliente no carrinho</summary><details class="menu-settings" id="aviso-carrinho"><summary><b>Mensagem no carrinho do cliente</b></summary>
+<form action="/painel/cardapio/aviso-carrinho" method="post" class="product-form">
+<label class="full">Aviso breve<textarea class="input" name="cart_notice" maxlength="150" rows="3" placeholder="Ex.: Hoje os pedidos podem demorar um pouco mais. Obrigado pela compreensão!">{{pro.cart_notice or ''}}</textarea><small>Até 150 caracteres. Deixe vazio para ocultar o aviso.</small></label>
+<button class="btn primary">Salvar mensagem</button></form></details></details>{% endif %}
+<details class="nu-store-config"><summary>Avisos de pedidos neste aparelho</summary><section class="panel" id="avisos-aparelho" data-push75 aria-label="Avisos neste aparelho">
+<h2>Avisos de pedidos neste aparelho</h2>
+<p>Receba avisos mesmo com o painel fechado. A loja aberta ou pausada é controlada separadamente.</p>
+<button type="button" class="btn" data-push-enable>🔔 Ativar avisos neste aparelho</button>
+<button type="button" class="btn soft" data-push-test hidden>Testar aviso</button>
+<button type="button" class="btn ghost" data-push-disable hidden>Desativar neste aparelho</button>
+<p data-push-message role="status">Ative e permita as notificações. Ao sair da conta, os avisos deste aparelho serão desativados.</p>
+<small>No iPhone, use o NowUp adicionado à Tela de Início. O recebimento depende das permissões e da conexão do aparelho.</small>
+</section></details>
+<details class="nu-store-config"><summary>Plano e assinatura</summary><section class="panel" id="plano"><h2>Meu plano</h2><p>Os três planos incluem produtos, combos, ingredientes, adicionais e configurações do painel. Só catálogo: link próprio, pedidos no WhatsApp, sem vitrine. Vitrine: cardápio e pedidos dentro do NowUp. Vitrine + catálogo com link: inclui também pedidos no WhatsApp e links de Instagram e site.</p><p>Atual: <b>{{{'cardapio':'Só cardápio/catálogo · R$ 49,90','vitrine':'Só vitrine: WhatsApp ou link próprio · R$ 49,90','ambos':'Vitrine com pedidos no NowUp · R$ 99,90','completo':'Vitrine + catálogo com link e WhatsApp · R$ 149,90','none':'Aguardando liberação'}.get(pro.plan_active,'Aguardando liberação')}}</b></p>{% if pro.plan_requested %}<p role="status">Mudança solicitada: {{pro.plan_requested}}. Aguardando aprovação do ADM.</p>{% endif %}<p>Na troca de plano, os produtos e pedidos permanecem salvos. A vitrine é publicada ou retirada após aprovação.</p><form action="/painel/plano" method="post"><label>Solicitar plano<select name="plan" required><option value="cardapio">Só cardápio/catálogo — R$ 49,90/mês</option><option value="ambos">Vitrine com pedidos no NowUp — R$ 99,90/mês</option><option value="completo">Vitrine + catálogo com link e WhatsApp — R$ 149,90/mês</option></select></label><label>Tipo de conteúdo<select name="offer_mode" required><option value="menu">Cardápio</option><option value="catalog">Catálogo</option></select></label><button class="btn primary">Solicitar mudança</button></form>{% if pro.plan_active == 'vitrine' %}<label>Link do perfil da loja<input class="input" value="{{request.base_url}}p/{{pro.slug}}" readonly onclick="this.select()"></label><p>O perfil permanece dentro do NowUp. Para receber pedidos, solicite um plano com cardápio.</p>{% elif pro.plan_active in ['cardapio','completo'] %}<label>Link próprio do {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}<input class="input" value="{{external_menu355(request,pro.slug)}}" readonly onclick="this.select()"></label><label>Link para divulgar no WhatsApp ou Instagram<input class="input" value="{{external_menu355(request,pro.slug)}}" readonly onclick="this.select()"></label><p>Pela vitrine NowUp, o cliente entra na conta e o pedido chega ao painel. No link externo, o mesmo cardápio usa o mesmo cadastro de cliente, seguindo o destino escolhido acima.</p><p><a class="btn soft" href="{{external_menu355(request,pro.slug)}}" rel="noopener">Abrir link do meu {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}</a></p>{% endif %}</section></details>
+{% if pro.featured or pro.in_slider %}<details class="nu-store-config"><summary>Imagens de divulgação</summary><section class="panel" id="publicidade">
+<div class="section-title">
+<div>
+<span class="kicker">Publicidade ativa</span>
+<h2>Imagens de divulgação</h2>
+</div>
+<span class="status-pill ok">Liberado pelo NowUp</span>
+</div>
+<p class="muted">Estas opções aparecem somente enquanto sua empresa estiver liberada para destaque ou slide.</p>
+<form action="/painel/publicidade" method="post" enctype="multipart/form-data" class="grid2">{% if pro.featured %}<label>Capa do destaque<input class="input" type="file" name="featured_image" accept="image/*" data-preview250="{% if pro.featured_image_filename %}/uploads/{{pro.featured_image_filename}}{% endif %}">
+<small>Usada no cartão de destaque da página inicial.</small>
+</label>{% endif %}{% if pro.in_slider %}<label>Foto do slide<input class="input" type="file" name="slide_image" accept="image/*" data-preview250="{% if pro.slide_image_filename %}/uploads/{{pro.slide_image_filename}}{% endif %}">
+<small>Recomendado: imagem horizontal 1200 × 500.</small>
+</label>{% endif %}<button class="btn primary">Salvar imagens de divulgação</button>
+</form>
+</section></details>{% endif %}
+</div>
 </section>
 
 <section class="panel" id="publicar">
@@ -576,8 +559,8 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <script src="/static/panel-back-top.js?v=70" defer></script>
 
 <link rel="manifest" href="/static/nowup-lojista.webmanifest"><script src="/static/pro-push75.js?v=112" defer></script>
-<link rel="stylesheet" href="/static/order-review127.css?v=127"><script src="/static/order-review127.js?v=127" defer></script><link rel="stylesheet" href="/static/custom196.css?v=332"><script type="application/json" id="ingredient-catalog320">{{ingredient_catalog320|default([])|tojson}}</script><script type="application/json" id="included-catalog195">{{included_catalog195|tojson}}</script><script type="application/json" id="pair-catalog328">{{pair_catalog328|tojson}}</script><script type="application/json" id="combo-catalog298">{{combo_catalog298|tojson}}</script><script defer src="/static/combo-prices303.js?v=304"></script><script defer src="/static/combo-editor301.js?v=316"></script><script defer src="/static/custom196.js?v=362"></script><link rel="stylesheet" href="/static/pro198.css?v=198"><script defer src="/static/pro198.js?v=313"></script>
-<nav class="nu198-bottom" aria-label="Navegação do lojista"><a href="#inicio" data-nav198><span aria-hidden="true">⌂</span>Início</a><a href="#produtos-loja" data-nav198><span aria-hidden="true">▦</span>Produtos</a><a href="#combos-loja" data-nav198><span aria-hidden="true">🍻</span>Combos</a><a href="#pedidos-ativos" data-nav198><span aria-hidden="true">▤</span>Pedidos</a><a href="#configuracoes" data-nav198><span aria-hidden="true">☷</span>Mais</a></nav>
+<link rel="stylesheet" href="/static/order-review127.css?v=127"><script src="/static/order-review127.js?v=127" defer></script><link rel="stylesheet" href="/static/custom196.css?v=332"><script type="application/json" id="ingredient-catalog320">{{ingredient_catalog320|default([])|tojson}}</script><script type="application/json" id="included-catalog195">{{included_catalog195|tojson}}</script><script type="application/json" id="pair-catalog328">{{pair_catalog328|tojson}}</script><script type="application/json" id="combo-catalog298">{{combo_catalog298|tojson}}</script><script defer src="/static/combo-prices303.js?v=304"></script><script defer src="/static/combo-editor301.js?v=316"></script><script defer src="/static/custom196.js?v=362"></script><link rel="stylesheet" href="/static/pro198.css?v=198"><script defer src="/static/pro198.js?v=376"></script>
+<nav class="nu198-bottom" aria-label="Navegação do lojista"><a href="#inicio" data-nav198><span aria-hidden="true">⌂</span>Início</a><a href="#produtos-loja" data-nav198><span aria-hidden="true">▦</span>Produtos</a><a href="#combos-loja" data-nav198><span aria-hidden="true">🍻</span>Combos</a><a href="#pedidos-ativos" data-nav198><span aria-hidden="true">▤</span>Pedidos</a><a href="#perfil" data-nav198><span aria-hidden="true">⌂</span>Minha loja</a></nav>
 <link rel="stylesheet" href="/static/compact200.css?v=324"><script defer src="/static/meal-groups324.js?v=365"></script><script defer src="/static/compact200.js?v=362"></script><script defer src="/static/notification-status200.js?v=200"></script><link rel="stylesheet" href="/static/pro221.css?v=221"><link rel="stylesheet" href="/static/merchant228.css?v=228"><script defer src="/static/merchant228.js?v=228"></script><link rel="stylesheet" href="/static/merchant-feedback270.css?v=270"><script defer src="/static/merchant-feedback270.js?v=270"></script>
 <link rel="stylesheet" href="/static/promotions285.css?v=285"><script defer src="/static/promotions285.js?v=285"></script>
 <link rel="stylesheet" href="/static/ingredient-gallery357.css?v=357"><script defer src="/static/ingredient-gallery357.js?v=363"></script>

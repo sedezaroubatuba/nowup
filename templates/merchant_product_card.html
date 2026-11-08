@@ -1,0 +1,33 @@
+<details id="produto-editor328-{{product.id}}" class="product-admin-card" data-pro-product data-category="{{product.category}}" data-featured="{{1 if product.featured else 0}}" data-name="{{product.name}}" data-product-id="{{product.id}}" data-combo="{{1 if product.is_combo256 or product.category|lower == 'combos' else 0}}">
+<summary>{% if product.image_filename %}<img loading="lazy" decoding="async" src="/uploads/{{product.image_filename}}" onerror="this.onerror=null;this.src='/static/product-placeholder.svg'" alt="">{% else %}<span class="product-placeholder">🍽</span>{% endif %}<div>
+<b>{{product.name}}</b><small>Código: {{product.id}}</small>
+<small>{{product.category}} · R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}{% if product.sold_by_weight370 %}/kg · ⚖ Por peso{% endif %}</small>
+</div>
+<span class="status-pill {% if product.available %}ok{% endif %}">{% if product.available %}Disponível{% else %}Indisponível{% endif %}</span>
+</summary>
+<form action="/painel/cardapio/produtos/{{product.id}}/disponibilidade" method="post" class="v67-availability"><input type="hidden" name="available" value="{{0 if product.available else 1}}"><button class="btn soft" type="submit">{{'Marcar indisponível' if product.available else 'Marcar disponível'}}</button></form>
+{% if product.sold_by_weight370 %}{{weight370.form(product_categories, product)}}{% else %}<form action="/painel/cardapio/produtos/{{product.id}}" method="post" enctype="multipart/form-data" class="product-form"><label class="full">Este produto é um combo?<select name="is_combo256" data-combo-type303><option value="0" {% if not product.is_combo256 %}selected{% endif %}>Não</option><option value="1" {% if product.is_combo256 %}selected{% endif %}>Sim</option></select><small>A categoria continua sendo a que você escolher abaixo.</small></label>
+<input type="hidden" name="personalizable" value="{{1 if product.is_dish else ''}}"><label>Adicionais deste produto<select name="extras_mode" data-extras-mode155><option value="none" {% if product.extras_mode=='none' %}selected{% endif %}>Sem adicionais</option><option value="all" {% if product.extras_mode=='all' %}selected{% endif %}>Permitir todos os adicionais da loja</option><option value="selected" {% if product.extras_mode=='selected' %}selected{% endif %}>Selecionar adicionais</option>{% if product.extras_mode=='legacy' %}<option value="legacy" selected>Manter adicionais atuais deste produto</option>{% endif %}</select></label><div class="full" data-shared-picker155>{% for extra in shared_extras if extra.available %}<label class="check"><input type="checkbox" name="extra_ids" value="{{extra.id}}" {% if extra.id in shared_selected.get(product.id,[]) %}checked{% endif %}> {{extra.name}} · + R$ {{'%.2f'|format(extra.price_cents/100)|replace('.',',')}}{% if not extra.available %} (indisponível){% endif %}</label>{% else %}<p>Cadastre primeiro seus complementos na aba Adicionais.</p>{% endfor %}</div><label>Nome<input class="input" name="name" value="{{product.name}}" required>
+</label>
+<label>Categoria<select name="category" required><option value="{{product.category}}" selected>{{product.category}}</option>{% if product.category|lower != 'combos' %}<option value="Combos">Combos — aba geral do app</option>{% endif %}{% for category in product_categories if category.active and category.name != product.category and category.name|lower != 'combos' %}<option value="{{category.name}}">{{category.name}}</option>{% endfor %}</select></label>
+<label>Preço normal (R$)<input class="input" name="price" value="{{'%.2f'|format((product.promo_price_cents if product.is_combo256 and product.promo_price_cents > 0 else product.price_cents)/100)|replace('.',',')}}" required>
+</label>
+{{pairs256.fields(products,product)}}
+{{promotions285.fields(product)}}
+<label>Máximo por pedido<input class="input" type="number" name="max_quantity" min="1" max="99" value="{{product.max_quantity}}"></label>
+<label>Trocar foto<input class="input" type="file" name="photo" accept="image/*" data-preview250="{% if product.image_filename %}/uploads/{{product.image_filename}}{% endif %}">
+</label>
+<label class="full">Descrição completa do produto<textarea name="description">{{product.description}}</textarea>
+</label>
+<label class="check"><input type="checkbox" name="sold_cold" value="1" {% if product.sold_cold %}checked{% endif %}> ❄ Este produto é vendido gelado?</label>
+<label class="check">
+<input type="checkbox" name="available" value="1" {% if product.available %}checked{% endif %}> Disponível para pedidos (desmarque quando esgotar)</label>
+<label class="check"><input type="checkbox" name="featured" value="1" {% if product.featured %}checked{% endif %}> Produto em promoção/destaque (máximo 3)</label>
+<div class="nu192-editor full" data-editor192="{{product.customization192}}" data-max192="{% for g in product_groups.get(product.id,[]) if g.name=='Adicionais' %}{{g.max_choices}}{% endfor %}"><h3>Personalização deste produto</h3></div>
+<button class="btn primary">Salvar alterações</button>
+</form>{% endif %}
+<p class="muted">Os adicionais são escolhidos no formulário acima. Cadastre e edite os complementos na aba <a href="#adicionais">Adicionais da loja</a>.</p>
+<form action="/painel/cardapio/produtos/{{product.id}}/excluir" method="post" data-confirm-delete>
+<button class="btn danger tiny">Excluir produto</button>
+</form>
+</details>

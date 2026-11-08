@@ -12,16 +12,16 @@
   }
   function navigate(hash,scroll=true){
    let key;try{key=decodeURIComponent((hash||(root.hasAttribute('data-merchant228')?'#pedidos-ativos':'#inicio')).slice(1));}catch(_){return false;}
-   key=key||'inicio';if(key==='hoje')key='pedidos-ativos';if(key==='pratos')key='cardapio';
+   key=key||'inicio';if(key==='hoje')key='pedidos-ativos';if(key==='pratos')key='cardapio';if(key==='configuracoes')key='perfil';
    let target=document.getElementById(key);
    if(!target&&['produtos-loja','novo-produto','categorias-loja','acompanhamentos-combos','bairros-entrega265','entrega-pagamento','exibicao-produtos'].includes(key))target=document.getElementById('cardapio');
    if(!target||!main.contains(target))return false;
    const parent=sections.find(s=>s===target||s.contains(target));if(!parent)return false;
-   const groups={inicio:['inicio','pedidos-ativos'],resumo:['resumo','estatisticas'],relatorios:['relatorios','mais-pedidos'],perfil:['perfil','identidade','fotos','publicidade']};
+   const groups={inicio:['inicio','pedidos-ativos'],resumo:['resumo','estatisticas'],relatorios:['relatorios','mais-pedidos'],perfil:['perfil']};
    const visibleIds=groups[key]||[parent.id];
    sections.forEach(s=>{const visible=visibleIds.includes(s.id);s.dataset.visible198=String(visible);s.hidden=!visible;s.style.setProperty('display',visible?(s.id==='estatisticas'?'grid':'block'):'none','important');});
    for(let e=target;e&&e!==main;e=e.parentElement)if(e.tagName==='DETAILS')e.open=true;
-   document.querySelectorAll('a[data-nav198],.pro-sidebar a[href^="#"]').forEach(a=>{const active=a.hash==='#'+key||(a.hash==='#produtos-loja'&&parent.id==='cardapio');if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
+   document.querySelectorAll('a[data-nav198],.pro-sidebar a[href^="#"]').forEach(a=>{const active=a.hash==='#'+key||(a.hash==='#produtos-loja'&&parent.id==='cardapio')||(a.hash==='#perfil'&&parent.id==='perfil')||(a.hash==='#produtos-peso370'&&parent.id==='peso-loja')||(a.hash==='#adicionais'&&parent.id==='adicionais');if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
    root.classList.add('show-full-dashboard');
    close();if(scroll)requestAnimationFrame(()=>target.scrollIntoView({block:'start',behavior:'auto'}));
    return true;

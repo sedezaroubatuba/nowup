@@ -2084,7 +2084,7 @@ def pro_carousel_layout235(request: Request, carousel_layout235: str=Form(...)):
         conn.commit()
     finally:
         conn.close()
-    return RedirectResponse("/painel?ok=exibicao#cardapio",303)
+    return RedirectResponse("/painel?ok=exibicao#exibicao-produtos",303)
 
 @app.post("/painel/cardapio/configuracoes")
 def pro_menu_settings(request: Request, delivery_fee: str=Form("0"), minimum_order: str=Form("0"), prep_minutes: int=Form(40), pix_key: str=Form(""), allows_delivery: Optional[str]=Form(None), allows_pickup: Optional[str]=Form(None), pix_key_type: str=Form(""), pix_receiver_name: str=Form(""), pix_receiver_city: str=Form("")):
@@ -2102,7 +2102,7 @@ def pro_menu_settings(request: Request, delivery_fee: str=Form("0"), minimum_ord
         conn.commit()
     finally:
         conn.close()
-    return RedirectResponse("/painel?ok=config-cardapio#cardapio",303)
+    return RedirectResponse("/painel?ok=config-cardapio#entrega-pagamento",303)
 
 @app.post("/painel/cardapio/produtos/{product_id}/disponibilidade")
 def pro_product_availability(request: Request, product_id: int, available: int=Form(...)):
