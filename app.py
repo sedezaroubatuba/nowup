@@ -2102,7 +2102,7 @@ def pro_menu_settings(request: Request, delivery_fee: str=Form("0"), minimum_ord
         conn.commit()
     finally:
         conn.close()
-    return RedirectResponse("/painel?ok=config-cardapio#entrega-pagamento",303)
+    return RedirectResponse("/painel?ok=config-cardapio#cardapio",303)
 
 @app.post("/painel/cardapio/produtos/{product_id}/disponibilidade")
 def pro_product_availability(request: Request, product_id: int, available: int=Form(...)):
