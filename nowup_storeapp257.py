@@ -188,6 +188,8 @@ def install(g):
             from nowup_menu_origin355 import email_origin
             base=email_origin() or str(request.base_url).rstrip('/')
             result['order_url']=base+result['redirect']
+            management_base=g['os'].getenv('NOWUP_PUBLIC_ORIGIN','').strip().rstrip('/') or g['os'].getenv('NOWUP_BASE_URL','').strip().rstrip('/') or str(request.base_url).rstrip('/')
+            result['merchant_url']=management_base+'/pedido/'+token
             from zoneinfo import ZoneInfo
             hour=datetime.now(ZoneInfo('America/Sao_Paulo')).hour
             greeting='bom dia' if 5<=hour<12 else 'boa tarde' if hour<18 else 'boa noite'
@@ -195,7 +197,7 @@ def install(g):
             template=(saved_message['message'] if saved_message else '') or 'Olá, {saudacao}! Fiz o pedido {pedido} pelo NowUp. Pode revisar e confirmar, por favor?'
             for field,value in {'saudacao':greeting,'pedido':code,'loja':p['display_name'],'total':money(total)}.items():
                 template=template.replace('{'+field+'}',value)
-            result['message']=template+'\nPedido '+code+' — para revisão.\n'+result['order_url']
+            result['message']=template+'\nPedido '+code+' — revisão pelo lojista:\n'+result['merchant_url']
             result['receipt']['order_url']=result['order_url']
             if mode!='panel':result['whatsapp_url']='https://wa.me/'+number+'?text='+quote(result['message'],safe='')
             conn.execute('INSERT INTO store_dispatch257(order_id,response) VALUES(?,?)',(oid,json.dumps(result,ensure_ascii=False)))

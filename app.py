@@ -1372,7 +1372,7 @@ def order_tracking(request: Request, token: str):
     conn.close()
     viewer=current_user(request)
     clear_cart200=bool(viewer and viewer['id']==order['customer_id'] and request.cookies.get('nowup_cart_completed_token')==token)
-    response=templates.TemplateResponse("order_tracking.html",context(request,order=order,items=items,options=options,history=history,status_labels=ORDER_STATUS_LABELS,clear_cart200=clear_cart200,products=products377,order_items_by_order={order["id"]:items},order_link377=True))
+    response=templates.TemplateResponse("order_tracking.html",context(request,order=order,items=items,options=options,history=history,status_labels=ORDER_STATUS_LABELS,clear_cart200=clear_cart200,products=products377,order_items_by_order={order["id"]:items},order_link377=True,management_order_url378=(os.getenv("NOWUP_PUBLIC_ORIGIN") or os.getenv("NOWUP_BASE_URL") or str(request.base_url)).rstrip("/")+"/pedido/"+token))
     if clear_cart200:
         response.delete_cookie('nowup_cart_completed_token')
         response.delete_cookie('nowup_cart_completed')

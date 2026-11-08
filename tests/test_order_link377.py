@@ -77,5 +77,5 @@ def test_custom_message_does_not_replace_store_contact_message(channel,monkeypat
     monkeypatch.setattr(m,'current_user',lambda request:buyer)
     result=client.post('/p/'+slug+'/menu/whatsapp',data=data).json()
     assert 'Meu pedido '+result['order_code'] in result['message'] and '{saudacao}' not in result['message']
-    assert result['order_url'] in result['message']
+    assert result['merchant_url'] in result['message']
     with m.db() as c:assert c.execute('SELECT whatsapp_message FROM professionals WHERE id=?',(pid,)).fetchone()[0]==old
