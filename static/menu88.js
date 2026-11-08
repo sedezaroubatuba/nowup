@@ -38,32 +38,14 @@
           const validTrack=typeof json?.redirect==='string'&&json.redirect.startsWith(path+'/pedido/')&&/^[A-Za-z0-9_-]+$/.test(json.redirect.slice((path+'/pedido/').length));
           if(!response.ok||!json?.prepared||(!json.recorded&&!validWA)||(json.recorded&&!validTrack)||(json.mode!=='panel'&&!validWA))throw new Error(typeof json?.detail==='string'?json.detail:'Não foi possível preparar o pedido. Revise os dados.');
           if(json.recorded&&localStorage.getItem(key)===snapshot){cart.clear();localStorage.removeItem(key);localStorage.removeItem(infoKey);sessionStorage.removeItem('nowup-checkout247:'+key);render();}
-          feedback.textContent=json.whatsapp_only?'Pedido '+json.order_code+' salvo no histórico. Continue no WhatsApp para enviar à loja.':json.recorded?'Pedido '+json.order_code+' registrado no painel da loja. Aguarde a confirmação.' : 'Pedido preparado para WhatsApp. A confirmação será feita pela loja.';
+          feedback.textContent='Pedido '+json.order_code+' registrado para revisão. O pagamento será liberado após a confirmação.';
           const old=checkoutForm229.querySelector('[data-whatsapp-ready257]');if(old){old.receiptCleanup?.();old.remove();}
           const ready=document.createElement('div');ready.dataset.whatsappReady257='';
-          const receiptHost=document.createElement('div');receiptHost.dataset.receiptPrimary='';ready.append(receiptHost);ready.receiptCleanup=()=>receiptHost.receiptCleanup?.();
-          const textDetails=document.createElement('details');const textSummary=document.createElement('summary');textSummary.textContent='Ver pedido em texto';textDetails.append(textSummary);
-          const preview=document.createElement('pre');preview.textContent=json.message;preview.style.cssText='white-space:pre-wrap;font:inherit';textDetails.append(preview);ready.append(textDetails);
-          if(validWA){const link=document.createElement('a');link.className='btn soft full-btn';link.href=json.whatsapp_url;link.textContent='Enviar somente texto (sem imagem)';link.rel='noopener';link.target='_blank';ready.append(link);const note=document.createElement('p');note.textContent='Para enviar a imagem, use Enviar notinha pelo WhatsApp acima. Este botão envia apenas texto. '+(json.whatsapp_only?'O pedido está salvo no histórico. Confirme o envio no WhatsApp.':json.recorded?'O pedido já está no painel; é a mesma venda.':'');ready.append(note);}
-          if(validTrack){const tracking=document.createElement('a');tracking.className='btn soft full-btn';tracking.href=json.redirect;tracking.textContent=json.whatsapp_only?'Ver pedido salvo':'Acompanhar pedido';ready.append(tracking);}
+          if(validWA){const link=document.createElement('a');link.className='btn primary full-btn';link.href=json.whatsapp_url;link.textContent='Enviar pedido ao lojista para revisão';link.rel='noopener';link.target='_blank';ready.append(link);}
+          if(validTrack){const tracking=document.createElement('a');tracking.className='btn soft full-btn';tracking.href=json.redirect;tracking.textContent='Abrir pedido, conversa e pagamento';ready.append(tracking);}
+          const note=document.createElement('p');note.textContent=validWA?'No WhatsApp, toque em Enviar para avisar a loja. Seu pedido completo já está registrado no NowUp.':'Seu pedido completo já está registrado no painel da loja.';ready.append(note);
           checkoutForm229.append(ready);
           ready.scrollIntoView({block:'start',behavior:'smooth'});
-          if(validWA&&json.receipt){
-            const attach=()=>window.NOWUP_RECEIPT?.attach(receiptHost,json.receipt);
-            if(window.NOWUP_RECEIPT)attach();
-            else{let script=document.querySelector('[data-receipt-script]');
-              if(!script){script=document.createElement('script');script.dataset.receiptScript='';script.src='/static/whatsapp-receipt.js?v=3';script.onload=attach;script.onerror=()=>script.remove();document.head.append(script);}
-              else script.addEventListener('load',attach,{once:true});
-            }
-          }
-          if(json.pix){
-            const attachPix=()=>window.NOWUP_PIX?.attach(ready,json.pix);
-            if(window.NOWUP_PIX)attachPix();
-            else{let script=document.querySelector('[data-pix-script]');
-              if(!script){script=document.createElement('script');script.dataset.pixScript='';script.src='/static/pix-payments.js?v=2';script.onload=attachPix;script.onerror=()=>script.remove();document.head.append(script);}
-              else script.addEventListener('load',attachPix,{once:true});
-            }
-          }
           return;
         }
         if(!response.ok||!json?.confirmed||json.path!==path||!((String(json.redirect||'').startsWith(path+'/pedido/')&&/^[A-Za-z0-9_-]+$/.test(String(json.redirect||'').slice((path+'/pedido/').length)))||/^\/pedido\/[A-Za-z0-9_-]+$/.test(json.redirect||'')))throw new Error(typeof json?.detail==='string'?json.detail:'Envio não confirmado. Confira Meus pedidos antes de tentar novamente.');

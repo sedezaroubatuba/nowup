@@ -22,8 +22,9 @@ def test_channels_identity_totals_and_idempotency(channel,mode):
     endpoint='/p/'+slug+'/menu/whatsapp'
     response=client.post(endpoint,data=data);assert response.status_code==200,response.text
     result=response.json();assert result['prepared'] and result['total_cents']==600 and result['mode']==mode
-    assert 'Maria da conta' in result['message'] and '12988887777' in result['message']
-    assert 'Nome adulterado' not in result['message'] and '2x Auditoria' in result['message']
+    assert 'Maria da conta' in str(result['receipt']) and '12988887777' in str(result['receipt'])
+    assert result['order_url'] in result['message'] and 'revisão' in result['message']
+    assert 'Nome adulterado' not in str(result['receipt']) and '2x Auditoria' in str(result['receipt'])
     assert result['recorded'] is True
     if mode!='panel':assert result['whatsapp_url'].startswith('https://wa.me/5512987776666?text=')
     else:assert 'whatsapp_url' not in result
@@ -34,8 +35,8 @@ def test_channels_identity_totals_and_idempotency(channel,mode):
             assert order['customer_id']==customer['id'] and order['customer_name']=='Maria da conta'
             assert order['customer_phone']=='12988887777' and order['order_origin']=='external'
             assert c.execute('SELECT COUNT(*) FROM orders').fetchone()[0]==1
-            assert c.execute("SELECT COUNT(*) FROM notifications WHERE title='Novo pedido no NowUp'").fetchone()[0]==(0 if mode=='whatsapp' else 1)
-            assert order['status']==('whatsapp_finalized' if mode=='whatsapp' else 'new')
+            assert c.execute("SELECT COUNT(*) FROM notifications WHERE title='Novo pedido no NowUp'").fetchone()[0]==1
+            assert order['status']=='new'
         assert client.get(result['redirect']).status_code==200
         data['notes']='alterado';assert client.post(endpoint,data=data).status_code==409
 
@@ -89,7 +90,7 @@ def test_delivery_quote_and_cross_store_item(channel):
     assert client.post('/p/'+slug+'/menu/whatsapp',data=data).status_code==400
     data.update(address='Rua A, 12',notes='Sem sacola',address_reference='Portão azul',save_address='1')
     response=client.post('/p/'+slug+'/menu/whatsapp',data=data);assert response.status_code==200,response.text
-    assert response.json()['total_cents']==800 and 'Portão azul' in response.json()['message']
+    assert response.json()['total_cents']==800 and 'Portão azul' in str(response.json()['receipt'])
     with m.db() as c:assert c.execute('SELECT address FROM users WHERE id=?',(customer['id'],)).fetchone()[0]=='Rua A, 12'
     data['request_key']='cross-store-request-257';data['cart_json']=json.dumps([{'id':999999,'quantity':1}])
     assert client.post('/p/'+slug+'/menu/whatsapp',data=data).status_code==400

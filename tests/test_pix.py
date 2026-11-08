@@ -96,9 +96,8 @@ def test_checkout_uses_only_merchant_key_and_server_prices(channel):
     response = client.post('/p/' + slug + '/menu/whatsapp', data=data)
     assert response.status_code == 200, response.text
     result = response.json()
-    fields = parse(result['pix']['payload'])
-    assert fields['54'] == '6.00' and parse(fields['26'])['01'] == KEY
-    assert result['receipt']['pix'] == result['pix']
+    assert 'pix' not in result and 'pix' not in result['receipt']
+    assert result['review_required'] is True
     assert result['receipt']['order_code'] == result['order_code']
     assert client.post('/p/' + slug + '/menu/whatsapp', data=data).json() == result
     with m.db() as c:
@@ -112,6 +111,10 @@ def test_checkout_uses_only_merchant_key_and_server_prices(channel):
     after = client.get(result['redirect'])
     assert after.status_code == 200
     assert 'data-pix-payment' in after.text and 'data:image/png;base64,' in after.text
+    from bs4 import BeautifulSoup
+    script=BeautifulSoup(after.text,'html.parser').select_one('[data-pix-payment] script')
+    fields=parse(json.loads(script.string)['payload'])
+    assert fields['54']=='6.00' and parse(fields['26'])['01']==KEY
 
 
 

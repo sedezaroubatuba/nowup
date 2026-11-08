@@ -54,7 +54,13 @@ def page_context(g,request,values):
             saved=c.execute('SELECT response FROM store_dispatch257 WHERE order_id=?',(order['id'],)).fetchone()
             if saved:followup=json.loads(saved[0]).get('whatsapp_url')
         finally:c.close()
-    return {'store_order_whatsapp257':followup,'store_order_mode257':mode,'store_whatsapp_number257':number,'store_app256':presentation(p) if p else None,'store_whatsapp257':bool(p and request.url.path.rstrip('/').endswith('/menu'))}
+    order_message377=''
+    settings_pro377=p or (candidate if request.url.path=='/painel' else None)
+    if settings_pro377:
+        with g['db']() as c:
+            row=c.execute('SELECT message FROM store_order_settings377 WHERE professional_id=?',(settings_pro377['id'],)).fetchone()
+            order_message377=row['message'] if row else ''
+    return {'order_message377':order_message377,'store_order_whatsapp257':followup,'store_order_mode257':mode,'store_whatsapp_number257':number,'store_app256':presentation(p) if p else None,'store_whatsapp257':bool(p and request.url.path.rstrip('/').endswith('/menu'))}
 
 def install(g):
     app=g['app']

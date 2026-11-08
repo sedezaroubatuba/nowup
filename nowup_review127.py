@@ -10,7 +10,7 @@ def initialize(conn):
     conn.execute('''CREATE TABLE IF NOT EXISTS order_revisions(id INTEGER PRIMARY KEY AUTOINCREMENT,order_id INTEGER NOT NULL,items_json TEXT NOT NULL,total_cents INTEGER NOT NULL,state TEXT NOT NULL DEFAULT 'pending',message TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL)''')
     conn.execute('CREATE INDEX IF NOT EXISTS idx_revision_order ON order_revisions(order_id,id)')
 
-def build_items(conn,order,keep,quantities,additions):
+def build_items(conn,order,keep,quantities,additions,prices=None):
     original=conn.execute('SELECT * FROM order_items WHERE order_id=? ORDER BY id',(order['id'],)).fetchall()
     valid={str(i['id']) for i in original}
     if not set(keep)<=valid: raise HTTPException(400,'Item inválido')
@@ -20,7 +20,16 @@ def build_items(conn,order,keep,quantities,additions):
         qty=int(quantities.get(str(i['id']),i['quantity']))
         if dict(i).get('weight_grams370') and qty!=1:raise HTTPException(400,'Produtos por peso mantêm a porção escolhida pelo cliente.')
         if not 1<=qty<=99: raise HTTPException(400,'Quantidade inválida')
-        result.append(dict(i)|{'quantity':qty})
+        price=i['unit_price_cents']
+        if prices and str(i['id']) in prices:
+            raw=str(prices[str(i['id'])]).strip().replace(',','.')
+            from decimal import Decimal, InvalidOperation
+            try:
+                amount=Decimal(raw)
+                if not amount.is_finite() or amount<0 or amount>1000000 or amount*100!=(amount*100).to_integral_value():raise ValueError()
+                price=int(amount*100)
+            except (ValueError,InvalidOperation):raise HTTPException(400,'Preço inválido: use até duas casas decimais')
+        result.append(dict(i)|{'quantity':qty,'unit_price_cents':price})
     for pid,qty in additions:
         if not pid: continue
         p=conn.execute('SELECT * FROM products WHERE id=? AND professional_id=? AND available=1',(int(pid),order['professional_id'])).fetchone()
@@ -65,12 +74,14 @@ def install(g):
             if not o['customer_id']:raise HTTPException(400,'Este fluxo exige um cliente cadastrado')
             qty={str(i['id']):form.get('qty_'+str(i['id']),i['quantity']) for i in c.execute('SELECT * FROM order_items WHERE order_id=?',(order_id,))}
             adds=list(zip(form.getlist('product_id'),form.getlist('add_quantity')))
-            try:items,total=build_items(c,o,form.getlist('keep'),qty,adds)
+            prices={str(i['id']):form['price_'+str(i['id'])] for i in c.execute('SELECT id FROM order_items WHERE order_id=?',(order_id,)) if 'price_'+str(i['id']) in form}
+            try:items,total=build_items(c,o,form.getlist('keep'),qty,adds,prices)
             except (ValueError,TypeError):raise HTTPException(400,'Quantidade inválida')
             message=str(form.get('message','')).strip()[:500]
             c.execute("INSERT INTO order_revisions(order_id,items_json,total_cents,message,created_at) VALUES(?,?,?,?,?)",(order_id,json.dumps(items),total,message,now()))
             status(c,o,'awaiting_approval');notify(c,o,'Seu pedido precisa de aprovação',f'A loja propôs uma alteração. Novo total: R$ {total/100:.2f}. Confira e aceite ou recuse.')
             c.commit()
+            if form.get('return_to')=='link':return RedirectResponse('/pedido/'+o['tracking_token'],303)
             return RedirectResponse(f'/painel?abrir_pedido={order_id}#pedido-{order_id}',303)
         finally:c.close()
     @app.post('/pedido/{token}/revisao/{revision_id}')
@@ -89,10 +100,10 @@ def install(g):
                     if old['id'] not in keep:
                         c.execute('DELETE FROM order_item_options WHERE order_item_id=?',(old['id'],));c.execute('DELETE FROM order_items WHERE id=?',(old['id'],))
                 for i in items:
-                    if i['id'] is not None:c.execute('UPDATE order_items SET quantity=? WHERE id=? AND order_id=?',(i['quantity'],i['id'],o['id']))
+                    if i['id'] is not None:c.execute('UPDATE order_items SET quantity=?,unit_price_cents=? WHERE id=? AND order_id=?',(i['quantity'],i['unit_price_cents'],i['id'],o['id']))
                     else:c.execute('INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes) VALUES(?,?,?,?,?,?)',(o['id'],i['product_id'],i['product_name'],i['quantity'],i['unit_price_cents'],i['notes']))
                 c.execute('UPDATE orders SET subtotal_cents=?,total_cents=? WHERE id=?',(r['total_cents']-o['delivery_fee_cents'],r['total_cents'],o['id']))
-                status(c,o,'revision_approved');state='approved';msg='Cliente aprovou a alteração. Confira e confirme o pedido.'
+                status(c,o,'confirmed' if o['order_origin']=='external' else 'revision_approved');state='approved';msg='Cliente aprovou a alteração. Pedido confirmado; o pagamento pode ser feito pelo link.' if o['order_origin']=='external' else 'Cliente aprovou a alteração. Confira e confirme o pedido.'
             elif decision=='decline':status(c,o,'reviewing');state='declined';msg='Cliente recusou a proposta. O pedido original foi preservado; envie outra opção.'
             else:
                 status(c,o,'cancelled');state='cancelled';msg='Cliente cancelou o pedido durante a revisão.'

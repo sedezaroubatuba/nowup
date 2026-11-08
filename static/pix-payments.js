@@ -11,6 +11,7 @@
     const button=document.createElement('button');button.type='button';button.className='btn primary full-btn';button.textContent='Copiar código Pix';
     button.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(pix.payload);status.textContent='Código Pix copiado.';}catch(_){value.focus();value.select();status.textContent='Selecione e copie o código acima para colar no seu banco.';}});section.append(button,status);
     const note=document.createElement('p');note.textContent='Confira o favorecido no aplicativo do banco. '+pix.confirmation;section.append(note);
+    if(host.hasAttribute('data-order-chat-proof377')){host.append(section);return;}
     const proofBox=document.createElement('div');proofBox.style.cssText='margin-top:18px;padding-top:16px;border-top:1px solid #dfd0ed';
     const proofLabel=document.createElement('label');proofLabel.textContent='Anexar comprovante do Pix';
     const input=document.createElement('input');input.type='file';input.accept='image/jpeg,image/png,image/webp,application/pdf';input.style.cssText='display:block;max-width:100%;margin:10px 0';proofLabel.append(input);proofBox.append(proofLabel);

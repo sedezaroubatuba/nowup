@@ -73,19 +73,19 @@ def test_contact_routes_limit_and_xlsx_authorization(checkout,monkeypatch):
 def test_whatsapp_history_is_idempotent_private_and_not_a_paid_order(channel,monkeypatch):
     m,client,slug,pid,data,product,customer=channel
     result=client.post('/p/'+slug+'/menu/whatsapp',data=data).json()
-    assert result['recorded'] and result['whatsapp_only'] and result['order_code'].startswith('NU-')
+    assert result['recorded'] and result['review_required'] and not result['whatsapp_only'] and result['order_code'].startswith('NU-')
     assert client.post('/p/'+slug+'/menu/whatsapp',data=data).json()==result
     with m.db() as c:
         order=dict(c.execute('SELECT * FROM orders').fetchone())
         assert c.execute('SELECT COUNT(*) FROM orders').fetchone()[0]==1
         assert c.execute('SELECT COUNT(*) FROM checkout_requests229').fetchone()[0]==1
-        assert c.execute('SELECT COUNT(*) FROM push_jobs').fetchone()[0]==0
-        assert c.execute('SELECT COUNT(*) FROM notifications').fetchone()[0]==0
-        assert order['status']=='whatsapp_finalized' and order['whatsapp_opened']==0
+        assert c.execute('SELECT COUNT(*) FROM push_jobs').fetchone()[0]>=1
+        assert c.execute('SELECT COUNT(*) FROM notifications').fetchone()[0]>=1
+        assert order['status']=='new' and order['whatsapp_opened']==0
         assert c.execute('SELECT COUNT(*) FROM orders WHERE status=\'completed\'').fetchone()[0]==0
         owner=dict(c.execute('SELECT * FROM users WHERE id=(SELECT user_id FROM professionals WHERE id=?)',(pid,)).fetchone())
     page=client.get('/p/'+slug+'/pedidos');assert result['order_code'] in page.text
-    page=client.get(result['redirect']);assert 'Continuar no WhatsApp' in page.text
+    page=client.get(result['redirect']);assert 'Aguardando revisão do lojista' in page.text
     assert 'Seu pedido chegou à sala de pedidos' not in page.text
     data['notes']='changed';assert client.post('/p/'+slug+'/menu/whatsapp',data=data).status_code==409
     other=dict(customer,id=customer['id']+10000);monkeypatch.setattr(m,'current_user',lambda request:other)
@@ -93,8 +93,8 @@ def test_whatsapp_history_is_idempotent_private_and_not_a_paid_order(channel,mon
     assert 'Continuar no WhatsApp' not in client.get(result['redirect']).text
     monkeypatch.setattr(m,'current_user',lambda request:owner)
     response=client.post('/painel/pedidos/'+str(order['id'])+'/status',data={'status':'confirmed'},follow_redirects=False)
-    assert 'pedido-encerrado' in response.headers['location']
-    with m.db() as c:assert c.execute('SELECT status FROM orders').fetchone()[0]=='whatsapp_finalized'
+    assert 'ok=pedido' in response.headers['location']
+    with m.db() as c:assert c.execute('SELECT status FROM orders').fetchone()[0]=='confirmed'
 
 
 def test_whatsapp_order_limit_rejects_excess_and_allows_retry(channel):
@@ -111,12 +111,11 @@ def test_whatsapp_order_limit_rejects_excess_and_allows_retry(channel):
     assert client.post('/p/'+slug+'/menu/whatsapp',data=data).json()==first
 
 
-def test_whatsapp_appears_in_merchant_history_not_new_orders(channel):
+def test_whatsapp_link_order_enters_merchant_review_queue(channel):
     m,client,slug,pid,data,*_=channel
     result=client.post('/p/'+slug+'/menu/whatsapp',data=data).json()
     with m.db() as c:
         day=datetime.now(m.SAO_PAULO_TZ).date()
         board=m.nowup_merchant228.board(c,pid,*m.order_day_bounds(day),m.SAO_PAULO_TZ)
-    assert board['active']==0
-    closed=next(s for s in board['stages'] if s['key']=='closed')
-    assert closed['orders'][0]['order_code']==result['order_code']
+    assert board['active']==1
+    assert any(o['order_code']==result['order_code'] for stage in board['stages'] if stage['key']!='closed' for o in stage['orders'])
