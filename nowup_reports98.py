@@ -35,6 +35,8 @@ def build(conn,pid,a,b,source='all',ranking='most'):
     where='professional_id=? AND created_at>=? AND created_at<?';params=[pid,*bounds(a,b)]
     if source!='all':where+=' AND sales_channel=?';params.append(source)
     orders=[dict(r) for r in conn.execute('SELECT * FROM orders WHERE '+where,params)]
+    received=defaultdict(int)
+    for o in orders:received['WhatsApp' if o.get('order_origin')=='external' else 'NowUp']+=1
     done=[o for o in orders if o['status']=='completed'];cancelled=[o for o in orders if o['status'] in ('cancelled','rejected')]
     total=sum(o['total_cents'] for o in done)
     previous_a=a-timedelta(days=(b-a).days+1);previous_b=a-timedelta(days=1)
@@ -43,7 +45,7 @@ def build(conn,pid,a,b,source='all',ranking='most'):
     daily=defaultdict(lambda:[0,0]);hours=defaultdict(lambda:[0,0]);weekly={i:[0,0] for i in range(7)};payments=defaultdict(lambda:[0,0]);channels=defaultdict(lambda:[0,0]);reasons=defaultdict(int)
     for o in done:
         dt=datetime.fromisoformat(o['created_at']);dt=(dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt).astimezone(TZ)
-        for bucket,key in [(daily,dt.date().isoformat()),(hours,dt.hour),(weekly,dt.weekday()),(payments,o['payment_method']),(channels,o['sales_channel'])]:bucket[key][0]+=1;bucket[key][1]+=o['total_cents']
+        for bucket,key in [(daily,dt.date().isoformat()),(hours,dt.hour),(weekly,dt.weekday()),(payments,o['payment_method']),(channels,'whatsapp' if o.get('order_origin')=='external' else o['sales_channel'])]:bucket[key][0]+=1;bucket[key][1]+=o['total_cents']
     for o in cancelled:reasons[o['cancellation_reason'] or 'Sem motivo registrado']+=1
     products={r['id']:{'name':r['name'],'category':r['category'] or 'Geral','available':r['available'],'qty':0,'cents':0,'deleted':False} for r in conn.execute('SELECT id,name,category,available FROM products WHERE professional_id=?',(pid,))}
     categories=defaultdict(lambda:[0,0]);legacy=False
@@ -59,10 +61,10 @@ def build(conn,pid,a,b,source='all',ranking='most'):
     rows=list(products.values())
     if ranking=='zero':rows=[p for p in rows if p['qty']==0 and not p['deleted']]
     rows.sort(key=lambda p:((-p['qty'] if ranking=='most' else p['qty']),p['name'].lower()))
-    return dict(total=total,count=len(done),ticket=round(total/len(done)) if done else 0,previous=old,change=round((total-old)*100/old,1) if old else None,
+    return dict(received_channels=sorted(received.items()),total=total,count=len(done),ticket=round(total/len(done)) if done else 0,previous=old,change=round((total-old)*100/old,1) if old else None,
         cancelled=len(cancelled),cancelled_value=sum(o['total_cents'] for o in cancelled),pending=len(orders)-len(done)-len(cancelled),products=rows,
         daily=sorted(daily.items()),hours=sorted(hours.items(),key=lambda r:(-r[1][0],r[0])),weekly=[(DAYS[k],v) for k,v in weekly.items()],
-        payments=[(PAYMENTS.get(k,k or 'Não informado'),v) for k,v in payments.items()],channels=[({'online':'Online','table':'Mesas'}.get(k,k),v) for k,v in channels.items()],
+        payments=[(PAYMENTS.get(k,k or 'Não informado'),v) for k,v in payments.items()],channels=[({'online':'NowUp','whatsapp':'WhatsApp','table':'Mesas'}.get(k,k),v) for k,v in channels.items()],
         categories=sorted(categories.items(),key=lambda r:-r[1][1]),reasons=sorted(reasons.items(),key=lambda r:-r[1]),legacy=legacy)
 
 def install(app,db,require_user,templates,context):

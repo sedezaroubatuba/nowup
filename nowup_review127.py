@@ -57,6 +57,7 @@ def install(g):
     def notify(c,o,title,message,merchant=False):
         uid=c.execute('SELECT user_id FROM professionals WHERE id=?',(o['professional_id'],)).fetchone()[0] if merchant else o['customer_id']
         if not uid:return
+        if merchant and o['order_origin']=='external':return
         link=f"/painel?abrir_pedido={o['id']}#pedido-{o['id']}" if merchant else f"/pedido/{o['tracking_token']}"
         n=c.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(uid,title,message,link,now()))
         g['nowup_alerts112'].enqueue(c,uid,n.lastrowid,{'title':title,'body':message,'url':link,'tag':f"nowup-revision-{o['id']}"})

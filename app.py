@@ -1034,7 +1034,7 @@ def delivery_quote89(conn, pro, neighborhood):
 def merchant_overview89(conn, pro):
     lower,upper=order_day_bounds(datetime.now(SAO_PAULO_TZ).date())
     today=conn.execute("SELECT status,total_cents FROM orders WHERE professional_id=? AND created_at>=? AND created_at<?",(pro["id"],lower,upper)).fetchall()
-    active=[dict(row) for row in conn.execute("SELECT id,order_code,customer_name,status,created_at,fulfillment_type FROM orders WHERE professional_id=? AND status IN ('new','reviewing','awaiting_approval','revision_approved','confirmed','preparing','ready','out_for_delivery') ORDER BY id",(pro["id"],))]
+    active=[dict(row) for row in conn.execute("SELECT id,order_code,customer_name,status,created_at,fulfillment_type FROM orders WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND status IN ('new','reviewing','awaiting_approval','revision_approved','confirmed','preparing','ready','out_for_delivery') ORDER BY id",(pro["id"],))]
     now=datetime.now(timezone.utc)
     for order in active:
         try: age=max(0,int((now-datetime.fromisoformat(order["created_at"])).total_seconds()/60))
@@ -1635,7 +1635,7 @@ def order_day_bounds(day):
 def orders_for_day(conn, professional_id, day, status="todos"):
     lower, upper=order_day_bounds(day)
     params=[professional_id,lower,upper]
-    where="o.professional_id=? AND o.created_at>=? AND o.created_at<?"
+    where="o.professional_id=? AND COALESCE(o.order_origin,'legacy')<>'external' AND o.created_at>=? AND o.created_at<?"
     if status in ORDER_STATUS_LABELS:
         where+=" AND o.status=?"; params.append(status)
     rows=conn.execute(f"""SELECT o.*,
@@ -1801,10 +1801,10 @@ def pro_new_orders(request: Request, after: int=0):
     p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
     lower,upper=order_day_bounds(datetime.now(SAO_PAULO_TZ).date())
     rows=conn.execute("""SELECT id,customer_name,total_cents,created_at FROM orders
-      WHERE professional_id=? AND id>? AND created_at>=? AND created_at<? ORDER BY id ASC LIMIT 10""",(p["id"],max(0,after),lower,upper)).fetchall()
+      WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND id>? AND created_at>=? AND created_at<? ORDER BY id ASC LIMIT 10""",(p["id"],max(0,after),lower,upper)).fetchall()
     latest=conn.execute("SELECT COALESCE(MAX(id),0) FROM orders WHERE professional_id=?",(p["id"],)).fetchone()[0]
-    pending=conn.execute("SELECT COUNT(*) FROM orders WHERE professional_id=? AND status='new'",(p["id"],)).fetchone()[0]
-    pending_order=conn.execute("SELECT id,order_code,customer_name,total_cents,created_at,status FROM orders WHERE professional_id=? AND status='new' ORDER BY id DESC LIMIT 1",(p["id"],)).fetchone()
+    pending=conn.execute("SELECT COUNT(*) FROM orders WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND status='new'",(p["id"],)).fetchone()[0]
+    pending_order=conn.execute("SELECT id,order_code,customer_name,total_cents,created_at,status FROM orders WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND status='new' ORDER BY id DESC LIMIT 1",(p["id"],)).fetchone()
     conn.close()
     return JSONResponse({"latest_id":latest,"pending_count":pending,"pending_order":dict(pending_order) if pending_order else None,"orders":[{"id":r["id"],"customer_name":r["customer_name"] or "Cliente","total_cents":r["total_cents"],"created_at":r["created_at"]} for r in rows]})
 
