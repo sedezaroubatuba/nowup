@@ -112,6 +112,19 @@ async def renew_saved_login(request: Request, call_next):
     return response
 
 
+@app.middleware("http")
+async def redirect_legacy_domain(request: Request, call_next):
+    # Keep existing store links working under the public domain.
+    # Mutations stay on their original origin to preserve CSRF and session checks.
+    if (request.url.hostname == "nowup-i9n4.onrender.com"
+            and request.method in ("GET", "HEAD")
+            and request.url.path not in ("/health", "/healthz", "/ready", "/readyz")):
+        target = request.url.replace(scheme="https", netloc="nowupbrasil.com")
+        return RedirectResponse(str(target), status_code=307,
+                                headers={"Cache-Control": "no-store"})
+    return await call_next(request)
+
+
 @app.exception_handler(sqlite3.OperationalError)
 async def database_unavailable(request: Request, exc):
     import logging
