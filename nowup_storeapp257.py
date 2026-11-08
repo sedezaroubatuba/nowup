@@ -151,31 +151,12 @@ def install(g):
             clean,subtotal,fee,area,total,change=validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighborhood,change_for)
         except Exception:
             conn.close();raise
-        from nowup_order_layout347 import note_lines
-        lines=['*NOVO PEDIDO — NOWUP*',p['display_name'],'','*CLIENTE*','Nome: '+name,'WhatsApp: '+customer_phone,'','*ITENS DO PEDIDO*']
-        for product,qty,item_notes,chosen,unit in clean:
-            lines.append(f"*{qty}x {product['name']}*")
-            lines.append("Valor: "+money(unit*qty))
-            for option in chosen:lines.append('  + '+option['name']+' ('+money(option['price_cents'])+')')
-            pack316=read_pack(product.get('combo_pack305',''))
-            if pack316 and pack316.get('notice316'):lines.append('  Aviso do combo: '+pack316['notice316'])
-            if item_notes:
-                lines.append('Detalhes:')
-                lines.extend('• '+detail for detail in note_lines(item_notes))
-            lines.append('')
-        lines+=['*VALORES*','Subtotal: '+money(subtotal),'Entrega: '+money(fee),'*Total: '+money(total)+'*','','*RECEBIMENTO*',('Entrega' if fulfillment_type=='delivery' else 'Retirada no local')]
-        if fulfillment_type=='delivery':lines+=['Endereço: '+address.strip(),'Bairro: '+area]
-        if address_reference.strip():lines.append('Referência: '+address_reference.strip())
-        labels={'pix':'Pix','cash':'Dinheiro','credit':'Cartão de crédito','debit':'Cartão de débito','on_delivery':'Combinar no atendimento'}
-        lines+=['','*PAGAMENTO*',labels[payment_method]]
-        if change:lines.append('Troco para: '+money(change))
-        if notes.strip():
-            lines+=['','*OBSERVAÇÕES*',notes.strip()]
-        lines+=['','Aguardando confirmação da loja.']
-        message='\n'.join(lines)
+        from nowup_whatsapp_receipt import build as build_receipt
+        receipt,message=build_receipt(p,name,customer_phone,clean,subtotal,fee,total,
+            fulfillment_type,address,area,address_reference,payment_method,change,notes)
         try:
             if len(message)>12000:raise HTTPException(400,'Pedido muito extenso para o WhatsApp. Divida os itens.')
-            result={'prepared':True,'recorded':False,'mode':mode,'message':message,'total_cents':total}
+            result={'prepared':True,'recorded':False,'mode':mode,'message':message,'total_cents':total,'receipt':receipt}
             if mode!='whatsapp':
                 created=datetime.now(timezone.utc).isoformat();token=secrets.token_urlsafe(24)
                 cur=conn.execute("""INSERT INTO orders(professional_id,customer_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at,subtotal_cents,delivery_fee_cents,neighborhood,address_reference,change_for_cents,tracking_token)
@@ -197,6 +178,7 @@ def install(g):
                     conn.execute("UPDATE users SET address=?,neighborhood=?,address_reference=? WHERE id=? AND role='customer'",(address.strip(),area,address_reference.strip(),identity))
                 remember_checkout(conn,identity,p['id'],key,digest,oid,created)
                 result.update(recorded=True,redirect='/p/'+slug+'/pedido/'+token,order_code=code)
+                result['receipt']['order_code']=code
                 result['message']='Pedido '+code+' — registrado no painel (não duplicar).\n'+message
             if mode!='panel':result['whatsapp_url']='https://wa.me/'+number+'?text='+quote(result['message'],safe='')
             if result['recorded']:

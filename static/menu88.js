@@ -39,12 +39,21 @@
           if(!response.ok||!json?.prepared||(!json.recorded&&!validWA)||(json.recorded&&!validTrack)||(json.mode!=='panel'&&!validWA))throw new Error(typeof json?.detail==='string'?json.detail:'Não foi possível preparar o pedido. Revise os dados.');
           if(json.recorded&&localStorage.getItem(key)===snapshot){cart.clear();localStorage.removeItem(key);localStorage.removeItem(infoKey);sessionStorage.removeItem('nowup-checkout247:'+key);render();}
           feedback.textContent=json.recorded?'Pedido '+json.order_code+' registrado no painel da loja. Aguarde a confirmação.' : 'Pedido preparado para WhatsApp. A confirmação será feita pela loja.';
-          const old=checkoutForm229.querySelector('[data-whatsapp-ready257]');if(old)old.remove();
+          const old=checkoutForm229.querySelector('[data-whatsapp-ready257]');if(old){old.receiptCleanup?.();old.remove();}
           const ready=document.createElement('div');ready.dataset.whatsappReady257='';
           const preview=document.createElement('pre');preview.textContent=json.message;preview.style.cssText='white-space:pre-wrap;font:inherit';ready.append(preview);
           if(validWA){const link=document.createElement('a');link.className='btn primary full-btn';link.href=json.whatsapp_url;link.textContent='Abrir WhatsApp e enviar';link.rel='noopener';link.target='_blank';ready.append(link);const note=document.createElement('p');note.textContent='Toque em Enviar no WhatsApp. '+(json.recorded?'O pedido já está no painel; é a mesma venda.':'');ready.append(note);}
           if(validTrack){const tracking=document.createElement('a');tracking.className='btn soft full-btn';tracking.href=json.redirect;tracking.textContent='Acompanhar pedido';ready.append(tracking);}
-          checkoutForm229.append(ready);return;
+          checkoutForm229.append(ready);
+          if(validWA&&json.receipt){
+            const attach=()=>window.NOWUP_RECEIPT?.attach(ready,json.receipt);
+            if(window.NOWUP_RECEIPT)attach();
+            else{let script=document.querySelector('[data-receipt-script]');
+              if(!script){script=document.createElement('script');script.dataset.receiptScript='';script.src='/static/whatsapp-receipt.js?v=1';script.onload=attach;script.onerror=()=>script.remove();document.head.append(script);}
+              else script.addEventListener('load',attach,{once:true});
+            }
+          }
+          return;
         }
         if(!response.ok||!json?.confirmed||json.path!==path||!((String(json.redirect||'').startsWith(path+'/pedido/')&&/^[A-Za-z0-9_-]+$/.test(String(json.redirect||'').slice((path+'/pedido/').length)))||/^\/pedido\/[A-Za-z0-9_-]+$/.test(json.redirect||'')))throw new Error(typeof json?.detail==='string'?json.detail:'Envio não confirmado. Confira Meus pedidos antes de tentar novamente.');
         // Clear this exact cart in the current page before navigating; no dependency
@@ -55,7 +64,7 @@
       }catch(error){feedback.textContent=error.name==='AbortError'?'O envio demorou. Confira Meus pedidos antes de tentar novamente.':error.message;
       }finally{clearTimeout(timeout);checkoutForm229.dataset.submitting229='';if(button){button.disabled=false;button.textContent=original;}}
     });
-    checkoutForm229.addEventListener('input',()=>checkoutForm229.querySelector('[data-whatsapp-ready257]')?.remove());
+    checkoutForm229.addEventListener('input',()=>{const old=checkoutForm229.querySelector('[data-whatsapp-ready257]');if(old){old.receiptCleanup?.();old.remove();}});
     window.addEventListener('pageshow',()=>{checkoutForm229.dataset.submitting229='';checkoutForm229.querySelectorAll('[type=submit]').forEach(b=>b.disabled=false);});
   }
   const cartField=dialog.querySelector('[data-cart-json]'),dialogTotal=dialog.querySelector('[data-dialog-total]'),fulfillment=dialog.querySelector('[data-fulfillment]'),payment=dialog.querySelector('[data-payment]'),dockTotal=root.querySelector('[data-dock-total]'),cartCount=root.querySelector('[data-cart-count]'),dockCheckout=root.querySelector('[data-dock-checkout]');
