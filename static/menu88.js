@@ -60,7 +60,7 @@
             const attachPix=()=>window.NOWUP_PIX?.attach(ready,json.pix);
             if(window.NOWUP_PIX)attachPix();
             else{let script=document.querySelector('[data-pix-script]');
-              if(!script){script=document.createElement('script');script.dataset.pixScript='';script.src='/static/pix-payments.js?v=1';script.onload=attachPix;script.onerror=()=>script.remove();document.head.append(script);}
+              if(!script){script=document.createElement('script');script.dataset.pixScript='';script.src='/static/pix-payments.js?v=2';script.onload=attachPix;script.onerror=()=>script.remove();document.head.append(script);}
               else script.addEventListener('load',attachPix,{once:true});
             }
           }
