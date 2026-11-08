@@ -86,12 +86,12 @@
     const urls=[];let disposed=false;host.receiptCleanup=()=>{disposed=true;urls.forEach(URL.revokeObjectURL);};
     try{
       const files=await render(data);if(disposed||!host.isConnected)return;
-      hint.textContent='Toque em Compartilhar notinha, escolha o WhatsApp e o contato da loja. A imagem e o texto representam o mesmo pedido.';
+      title.textContent='Sua notinha está pronta';hint.textContent='Toque em Enviar notinha pelo WhatsApp, escolha WhatsApp, selecione o contato da loja e confirme o envio. A notinha será enviada como imagem.';
       const preview=document.createElement('details');const summary=document.createElement('summary');summary.textContent='Ver notinha ('+files.length+(files.length===1?' imagem)':' imagens)');preview.append(summary);
       files.forEach((file,index)=>{const url=URL.createObjectURL(file);urls.push(url);const img=document.createElement('img');img.src=url;img.alt='Notinha do pedido, página '+(index+1);img.style.cssText='display:block;width:100%;max-width:600px;height:auto;margin:12px auto;border:1px solid #e5daee;border-radius:12px';preview.append(img);const download=document.createElement('a');download.href=url;download.download=file.name;download.className='btn soft full-btn';download.textContent=files.length===1?'Baixar notinha':'Baixar página '+(index+1);preview.append(download);});
-      group.append(preview);
+      preview.open=true;group.append(preview);
       let supported=false;try{supported=!!navigator.share&&!!navigator.canShare&&navigator.canShare({files});}catch(_){}
-      if(supported){const button=document.createElement('button');button.type='button';button.className='btn primary full-btn';button.textContent='Compartilhar notinha';button.addEventListener('click',()=>{button.disabled=true;navigator.share({files}).then(()=>{hint.textContent='Compartilhamento concluído. Aguarde a confirmação da loja.';}).catch(error=>{if(error.name!=='AbortError')hint.textContent='Não foi possível compartilhar. Abra a prévia, baixe a notinha e anexe no WhatsApp.';}).finally(()=>{button.disabled=false;});});group.insertBefore(button,preview);}
+      if(supported){const button=document.createElement('button');button.type='button';button.className='btn primary full-btn';button.textContent='Enviar notinha pelo WhatsApp';button.addEventListener('click',()=>{button.disabled=true;navigator.share({files}).then(()=>{hint.textContent='Compartilhamento concluído. Aguarde a confirmação da loja.';}).catch(error=>{if(error.name!=='AbortError')hint.textContent='Não foi possível compartilhar. Abra a prévia, baixe a notinha e anexe no WhatsApp.';}).finally(()=>{button.disabled=false;});});group.insertBefore(button,preview);}
       else hint.textContent='Abra a prévia, baixe a notinha e anexe no WhatsApp da loja. É o mesmo pedido da mensagem de texto.';
     }catch(_){hint.textContent='A notinha não pôde ser gerada neste aparelho. Você pode enviar o pedido em texto pelo botão do WhatsApp.';}
   }

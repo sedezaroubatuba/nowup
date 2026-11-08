@@ -41,15 +41,18 @@
           feedback.textContent=json.recorded?'Pedido '+json.order_code+' registrado no painel da loja. Aguarde a confirmação.' : 'Pedido preparado para WhatsApp. A confirmação será feita pela loja.';
           const old=checkoutForm229.querySelector('[data-whatsapp-ready257]');if(old){old.receiptCleanup?.();old.remove();}
           const ready=document.createElement('div');ready.dataset.whatsappReady257='';
-          const preview=document.createElement('pre');preview.textContent=json.message;preview.style.cssText='white-space:pre-wrap;font:inherit';ready.append(preview);
-          if(validWA){const link=document.createElement('a');link.className='btn primary full-btn';link.href=json.whatsapp_url;link.textContent='Abrir WhatsApp e enviar';link.rel='noopener';link.target='_blank';ready.append(link);const note=document.createElement('p');note.textContent='Toque em Enviar no WhatsApp. '+(json.recorded?'O pedido já está no painel; é a mesma venda.':'');ready.append(note);}
+          const receiptHost=document.createElement('div');receiptHost.dataset.receiptPrimary='';ready.append(receiptHost);ready.receiptCleanup=()=>receiptHost.receiptCleanup?.();
+          const textDetails=document.createElement('details');const textSummary=document.createElement('summary');textSummary.textContent='Ver pedido em texto';textDetails.append(textSummary);
+          const preview=document.createElement('pre');preview.textContent=json.message;preview.style.cssText='white-space:pre-wrap;font:inherit';textDetails.append(preview);ready.append(textDetails);
+          if(validWA){const link=document.createElement('a');link.className='btn soft full-btn';link.href=json.whatsapp_url;link.textContent='Enviar somente texto (sem imagem)';link.rel='noopener';link.target='_blank';ready.append(link);const note=document.createElement('p');note.textContent='Para enviar a imagem, use Enviar notinha pelo WhatsApp acima. Este botão envia apenas texto. '+(json.recorded?'O pedido já está no painel; é a mesma venda.':'');ready.append(note);}
           if(validTrack){const tracking=document.createElement('a');tracking.className='btn soft full-btn';tracking.href=json.redirect;tracking.textContent='Acompanhar pedido';ready.append(tracking);}
           checkoutForm229.append(ready);
+          ready.scrollIntoView({block:'start',behavior:'smooth'});
           if(validWA&&json.receipt){
-            const attach=()=>window.NOWUP_RECEIPT?.attach(ready,json.receipt);
+            const attach=()=>window.NOWUP_RECEIPT?.attach(receiptHost,json.receipt);
             if(window.NOWUP_RECEIPT)attach();
             else{let script=document.querySelector('[data-receipt-script]');
-              if(!script){script=document.createElement('script');script.dataset.receiptScript='';script.src='/static/whatsapp-receipt.js?v=2';script.onload=attach;script.onerror=()=>script.remove();document.head.append(script);}
+              if(!script){script=document.createElement('script');script.dataset.receiptScript='';script.src='/static/whatsapp-receipt.js?v=3';script.onload=attach;script.onerror=()=>script.remove();document.head.append(script);}
               else script.addEventListener('load',attach,{once:true});
             }
           }
