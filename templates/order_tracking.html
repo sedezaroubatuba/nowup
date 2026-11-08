@@ -9,6 +9,7 @@
 {% set payable377=order.payment_method=='pix' and order.status in ['confirmed','preparing','ready','out_for_delivery','completed'] %}
 <main class="container order-track nu347-tracking" data-status-url="/pedido/{{order.tracking_token}}/status" data-current-status="{{order.status}}" data-order-link377 data-share-url377="/p/{{order.slug}}/pedido/{{order.tracking_token}}">
 <section class="order-hero"><div class="order-check">✓</div><p class="eyebrow nu369-sent">{{'Pedido enviado para revisão' if order.status in ['new','reviewing','awaiting_approval','revision_approved'] else 'Seu pedido'}}</p><h1>{{order.order_code}}</h1><p>{{order.display_name}}</p><div class="order-live-status status-{{order.status}}" id="orderLiveStatus">{{'Aguardando revisão do lojista' if order.status=='new' else status_labels.get(order.status,order.status)}}</div>{% if order.status in ['new','reviewing','awaiting_approval','revision_approved'] %}<p>Confira o pedido e converse com a loja. O Pix será liberado após a confirmação do total.</p>{% endif %}{% if order.status=='whatsapp_finalized' and store_order_whatsapp257 %}<a class="btn primary" href="{{store_order_whatsapp257}}" target="_blank" rel="noopener">Continuar no WhatsApp</a>{% endif %}</section>
+{% if review_customer and store_app256 %}<p><a class="btn soft" href="{{management_order_url378}}">Sou o lojista — abrir revisão do pedido</a></p>{% endif %}
 <nav class="nu377-tabs" aria-label="Seções do pedido" role="tablist"><button id="tab-pedido377" type="button" role="tab" aria-controls="pedido377" aria-selected="true">Pedido</button><button id="tab-conversa377" type="button" role="tab" aria-controls="conversa377" aria-selected="false">Conversa</button><button id="tab-pagamento377" type="button" role="tab" aria-controls="pagamento377" aria-selected="false">Pagamento</button></nav>
 <section id="pedido377" role="tabpanel" aria-labelledby="tab-pedido377" class="panel order-card">
 {% include 'order_revision.html' %}
@@ -27,5 +28,5 @@
 {% else %}<p>Pagamento combinado na entrega ou retirada. Confira os dados na aba Pedido.</p>{% endif %}</section>
 </main>
 <script src="/static/order-link377.js?v=377" defer></script>
-<link rel="stylesheet" href="/static/order-review127.css?v=377"><script src="/static/order-review127.js?v=377" defer></script>
+<link rel="stylesheet" href="/static/order-review127.css?v=378"><script src="/static/order-review127.js?v=377" defer></script>
 {% endblock %}

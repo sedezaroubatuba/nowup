@@ -23,7 +23,7 @@ def test_channels_identity_totals_and_idempotency(channel,mode):
     response=client.post(endpoint,data=data);assert response.status_code==200,response.text
     result=response.json();assert result['prepared'] and result['total_cents']==600 and result['mode']==mode
     assert 'Maria da conta' in str(result['receipt']) and '12988887777' in str(result['receipt'])
-    assert result['order_url'] in result['message'] and 'revisão' in result['message']
+    assert result['merchant_url'] in result['message'] and 'revisão' in result['message']
     assert 'Nome adulterado' not in str(result['receipt']) and '2x Auditoria' in str(result['receipt'])
     assert result['recorded'] is True
     if mode!='panel':assert result['whatsapp_url'].startswith('https://wa.me/5512987776666?text=')
