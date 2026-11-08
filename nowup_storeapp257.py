@@ -151,20 +151,26 @@ def install(g):
             clean,subtotal,fee,area,total,change=validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighborhood,change_for)
         except Exception:
             conn.close();raise
-        lines=['Olá, '+p['display_name']+'! Quero fazer um pedido pelo cardápio.','Cliente: '+name,'WhatsApp do cliente: '+customer_phone,'']
+        from nowup_order_layout347 import note_lines
+        lines=['*NOVO PEDIDO — NOWUP*',p['display_name'],'','*CLIENTE*','Nome: '+name,'WhatsApp: '+customer_phone,'','*ITENS DO PEDIDO*']
         for product,qty,item_notes,chosen,unit in clean:
-            lines.append(f"{qty}x {product['name']} — {money(unit*qty)}")
+            lines.append(f"*{qty}x {product['name']}*")
+            lines.append("Valor: "+money(unit*qty))
             for option in chosen:lines.append('  + '+option['name']+' ('+money(option['price_cents'])+')')
             pack316=read_pack(product.get('combo_pack305',''))
             if pack316 and pack316.get('notice316'):lines.append('  Aviso do combo: '+pack316['notice316'])
-            if item_notes:lines.append('  Obs.: '+item_notes)
-        lines+=['','Subtotal: '+money(subtotal),'Entrega: '+money(fee),'Total: '+money(total),'Recebimento: '+('Entrega' if fulfillment_type=='delivery' else 'Retirada no local')]
+            if item_notes:
+                lines.append('Detalhes:')
+                lines.extend('• '+detail for detail in note_lines(item_notes))
+            lines.append('')
+        lines+=['*VALORES*','Subtotal: '+money(subtotal),'Entrega: '+money(fee),'*Total: '+money(total)+'*','','*RECEBIMENTO*',('Entrega' if fulfillment_type=='delivery' else 'Retirada no local')]
         if fulfillment_type=='delivery':lines+=['Endereço: '+address.strip(),'Bairro: '+area]
         if address_reference.strip():lines.append('Referência: '+address_reference.strip())
         labels={'pix':'Pix','cash':'Dinheiro','credit':'Cartão de crédito','debit':'Cartão de débito','on_delivery':'Combinar no atendimento'}
-        lines.append('Pagamento: '+labels[payment_method])
+        lines+=['','*PAGAMENTO*',labels[payment_method]]
         if change:lines.append('Troco para: '+money(change))
-        if notes.strip():lines.append('Observação: '+notes.strip())
+        if notes.strip():
+            lines+=['','*OBSERVAÇÕES*',notes.strip()]
         lines+=['','Aguardando confirmação da loja.']
         message='\n'.join(lines)
         try:
