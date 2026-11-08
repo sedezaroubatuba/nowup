@@ -1,7 +1,7 @@
 from nowup_combos303 import current_price
 """Independent WhatsApp checkout, with shared server-side cart validation."""
 import json
-from nowup_combo_pack305 import build_pack, read_pack
+from nowup_combo_pack305 import build_pack
 from nowup_combo_units364 import validate_units
 import re
 import secrets
@@ -14,6 +14,7 @@ from nowup_storeapp256 import store, HEADERS
 
 def initialize(conn):
     conn.execute("CREATE TABLE IF NOT EXISTS store_menu257 (professional_id INTEGER PRIMARY KEY REFERENCES professionals(id) ON DELETE CASCADE, whatsapp TEXT NOT NULL, mode TEXT NOT NULL DEFAULT 'both')")
+    conn.execute("CREATE TABLE IF NOT EXISTS store_order_settings377 (professional_id INTEGER PRIMARY KEY REFERENCES professionals(id) ON DELETE CASCADE, message TEXT NOT NULL DEFAULT '')")
     conn.execute("CREATE TABLE IF NOT EXISTS store_dispatch257 (order_id INTEGER PRIMARY KEY REFERENCES orders(id) ON DELETE CASCADE, response TEXT NOT NULL)")
 
 
@@ -109,7 +110,7 @@ def money(cents):
 def install(g):
     app=g['app']
     @app.post('/painel/cardapio/whatsapp')
-    def save_whatsapp257(request:Request,whatsapp:str=Form(''),mode:str=Form('both')):
+    def save_whatsapp257(request:Request,whatsapp:str=Form(''),mode:str=Form('both'),order_message:str=Form('')):
         user=g['require_user'](request,'professional')
         if mode not in ('panel','whatsapp','both'):raise HTTPException(400,'Escolha um destino válido')
         number=phone(whatsapp) if whatsapp.strip() else '';conn=g['db']()
@@ -117,6 +118,8 @@ def install(g):
             p=g['require_premium_catalog'](conn,user['id'])
             if p['plan_active'] not in ('cardapio','completo'):raise HTTPException(403,'Seu plano recebe pedidos somente dentro do NowUp')
             conn.execute('INSERT INTO store_menu257(professional_id,whatsapp,mode) VALUES(?,?,?) ON CONFLICT(professional_id) DO UPDATE SET whatsapp=excluded.whatsapp,mode=excluded.mode',(p['id'],number,mode))
+            if len(order_message)>300:raise HTTPException(400,'Mensagem deve ter até 300 caracteres')
+            conn.execute('INSERT INTO store_order_settings377(professional_id,message) VALUES(?,?) ON CONFLICT(professional_id) DO UPDATE SET message=excluded.message',(p['id'],order_message.strip()))
             conn.commit()
         finally:conn.close()
         return RedirectResponse('/painel?ok=whatsapp#cardapio-independente',303)
@@ -157,7 +160,7 @@ def install(g):
         try:
             if len(message)>12000:raise HTTPException(400,'Pedido muito extenso para o WhatsApp. Divida os itens.')
             result={'prepared':True,'recorded':False,'mode':mode,'message':message,'total_cents':total,'receipt':receipt}
-            status376='whatsapp_finalized' if mode=='whatsapp' else 'new'
+            status376='new'
             created=datetime.now(timezone.utc).isoformat();token=secrets.token_urlsafe(24)
             cur=conn.execute("""INSERT INTO orders(professional_id,customer_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at,subtotal_cents,delivery_fee_cents,neighborhood,address_reference,change_for_cents,tracking_token)
                 VALUES(?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?)""",(p['id'],identity or None,name,customer_phone,fulfillment_type,address.strip(),notes.strip(),status376,total,created,created,subtotal,fee,area,address_reference.strip(),change,token))
@@ -169,30 +172,31 @@ def install(g):
                 from nowup_weight370 import snapshot
                 snapshot(conn,item.lastrowid,product)
                 for option in chosen:conn.execute('INSERT INTO order_item_options(order_item_id,option_id,option_name,price_cents) VALUES(?,?,?,?)',(item.lastrowid,option['id'],option['name'],option['price_cents']))
-            if mode!='whatsapp':
-                conn.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(p['user_id'],'Novo pedido no NowUp',code+' — '+name,'/painel#pedido-'+str(oid),created))
-                g['nowup_push75'].enqueue_on_connection(conn,p['user_id'],oid)
-                if identity:
-                    received=conn.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(identity,'Pedido enviado à loja',code+' enviado. Aguardando aceite da loja.','/pedido/'+token,created))
-                    g['nowup_alerts112'].enqueue(conn,identity,received.lastrowid,{'title':'Pedido enviado à loja','body':code+' enviado. Aguardando aceite da loja.','url':'/pedido/'+token,'tag':'nowup-recebido-'+str(oid)})
+            conn.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(p['user_id'],'Novo pedido no NowUp',code+' — '+name,'/painel#pedido-'+str(oid),created))
+            g['nowup_push75'].enqueue_on_connection(conn,p['user_id'],oid)
+            if identity:
+                received=conn.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(identity,'Pedido enviado à loja',code+' enviado. Aguardando aceite da loja.','/pedido/'+token,created))
+                g['nowup_alerts112'].enqueue(conn,identity,received.lastrowid,{'title':'Pedido enviado à loja','body':code+' enviado. Aguardando aceite da loja.','url':'/pedido/'+token,'tag':'nowup-recebido-'+str(oid)})
             if fulfillment_type=='delivery' and save_address:
                 conn.execute("UPDATE users SET address=?,neighborhood=?,address_reference=? WHERE id=? AND role='customer'",(address.strip(),area,address_reference.strip(),identity))
             remember_checkout(conn,identity,p['id'],key,digest,oid,created)
             result.update(recorded=True,whatsapp_only=(mode=='whatsapp'),redirect='/p/'+slug+'/pedido/'+token,order_code=code)
             result['receipt']['order_code']=code
-            if mode=='whatsapp':
-                result['receipt']['status']='Finalizado no cardápio - continue no WhatsApp'
-                result['message']='Pedido '+code+' - finalizado no cardápio; confirmar no WhatsApp.\n'+message
-            else:
-                result['message']='Pedido '+code+' — registrado no painel (não duplicar).\n'+message
-            if len(result['message'])>12000:raise HTTPException(400,'Pedido muito extenso para o WhatsApp. Divida os itens.')
-            if payment_method=='pix':
-                from nowup_pix import payment as pix_payment
-                import hashlib
-                pix_id='NU'+hashlib.sha256((str(p['id'])+':'+request_key).encode()).hexdigest()[:22]
-                result['pix']=pix_payment(p,total,pix_id)
-                if result['pix']:
-                    result['receipt']['pix']=result['pix']
+            result['review_required']=True
+            result['whatsapp_only']=False
+            result['receipt']['status']='Aguardando revisão do lojista — pagamento após confirmação'
+            from nowup_menu_origin355 import email_origin
+            base=email_origin() or str(request.base_url).rstrip('/')
+            result['order_url']=base+result['redirect']
+            from zoneinfo import ZoneInfo
+            hour=datetime.now(ZoneInfo('America/Sao_Paulo')).hour
+            greeting='bom dia' if 5<=hour<12 else 'boa tarde' if hour<18 else 'boa noite'
+            saved_message=conn.execute('SELECT message FROM store_order_settings377 WHERE professional_id=?',(p['id'],)).fetchone()
+            template=(saved_message['message'] if saved_message else '') or 'Olá, {saudacao}! Fiz o pedido {pedido} pelo NowUp. Pode revisar e confirmar, por favor?'
+            for field,value in {'saudacao':greeting,'pedido':code,'loja':p['display_name'],'total':money(total)}.items():
+                template=template.replace('{'+field+'}',value)
+            result['message']=template+'\nPedido '+code+' — para revisão.\n'+result['order_url']
+            result['receipt']['order_url']=result['order_url']
             if mode!='panel':result['whatsapp_url']='https://wa.me/'+number+'?text='+quote(result['message'],safe='')
             conn.execute('INSERT INTO store_dispatch257(order_id,response) VALUES(?,?)',(oid,json.dumps(result,ensure_ascii=False)))
             conn.commit()

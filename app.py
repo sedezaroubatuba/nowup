@@ -1367,10 +1367,12 @@ def order_tracking(request: Request, token: str):
     items=conn.execute("SELECT * FROM order_items WHERE order_id=? ORDER BY id",(order["id"],)).fetchall(); options={}
     for option in conn.execute("""SELECT oio.* FROM order_item_options oio JOIN order_items oi ON oi.id=oio.order_item_id
       WHERE oi.order_id=? ORDER BY oio.id""",(order["id"],)).fetchall(): options.setdefault(option["order_item_id"],[]).append(option)
-    history=conn.execute("SELECT * FROM order_status_history WHERE order_id=? ORDER BY id",(order["id"],)).fetchall(); conn.close()
+    history=conn.execute("SELECT * FROM order_status_history WHERE order_id=? ORDER BY id",(order["id"],)).fetchall()
+    products377=conn.execute("SELECT * FROM products WHERE professional_id=? ORDER BY name",(order["professional_id"],)).fetchall() if viewer["role"]=="professional" else []
+    conn.close()
     viewer=current_user(request)
     clear_cart200=bool(viewer and viewer['id']==order['customer_id'] and request.cookies.get('nowup_cart_completed_token')==token)
-    response=templates.TemplateResponse("order_tracking.html",context(request,order=order,items=items,options=options,history=history,status_labels=ORDER_STATUS_LABELS,clear_cart200=clear_cart200))
+    response=templates.TemplateResponse("order_tracking.html",context(request,order=order,items=items,options=options,history=history,status_labels=ORDER_STATUS_LABELS,clear_cart200=clear_cart200,products=products377,order_items_by_order={order["id"]:items},order_link377=True))
     if clear_cart200:
         response.delete_cookie('nowup_cart_completed_token')
         response.delete_cookie('nowup_cart_completed')
@@ -2168,7 +2170,7 @@ def pro_product_delete(request: Request, product_id: int):
     return RedirectResponse("/painel?ok=produto-excluido#cardapio",303)
 
 @app.post("/painel/pedidos/{order_id}/status")
-def pro_order_status(request: Request, order_id: int, status: str=Form(...), reason: str=Form("")):
+def pro_order_status(request: Request, order_id: int, status: str=Form(...), reason: str=Form(""), return_to: str=Form("")):
     u=require_user(request,"professional")
     allowed={"reviewing","new","confirmed","preparing","ready","out_for_delivery","completed","cancelled","rejected"}
     if status not in allowed: raise HTTPException(400,"Status inválido")
@@ -2197,6 +2199,7 @@ def pro_order_status(request: Request, order_id: int, status: str=Form(...), rea
         notification=conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(order["customer_id"],"Atualização do pedido",message,f"/pedido/{order['tracking_token']}",now_iso()))
         nowup_alerts112.enqueue(conn,order["customer_id"],notification.lastrowid,{"title":label,"body":message,"url":f"/pedido/{order['tracking_token']}","tag":f"nowup-status-{order_id}"})
     conn.commit(); conn.close()
+    if return_to=="link":return RedirectResponse("/pedido/"+order["tracking_token"],303)
     return RedirectResponse(f"/painel?ok=pedido&abrir_pedido={order_id}#pedido-{order_id}",303)
 
 @app.post("/painel/pedidos/{order_id}/editar")
