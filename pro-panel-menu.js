@@ -68,14 +68,21 @@
     dashboard.querySelectorAll('[data-copy-profile]').forEach(button => button.addEventListener('click', async () => {
       const url = new URL(button.dataset.profileUrl, window.location.origin).href;
       try { await navigator.clipboard.writeText(url); button.textContent = '✓ Link copiado'; }
-      catch (_) { window.prompt('Copie o link do perfil:', url); }
+      catch (_) { await window.NowUpDialog.prompt('Copie o link do perfil:', url); }
       setTimeout(() => { button.textContent = '🔗 Copiar link'; }, 1800);
     }));
 
-    dashboard.querySelectorAll('[data-cancel-form]').forEach(form => form.addEventListener('submit', event => {
-      const reason = window.prompt('Informe o motivo da recusa:');
-      if (!reason || !reason.trim()) { event.preventDefault(); return; }
+    dashboard.querySelectorAll('[data-cancel-form]').forEach(form => form.addEventListener('submit', async event => {
+      if (form.dataset.reasonConfirmed === '1') { delete form.dataset.reasonConfirmed; return; }
+      event.preventDefault();
+      if (form.dataset.reasonPending === '1') return;
+      form.dataset.reasonPending = '1';
+      const reason = await window.NowUpDialog.prompt('Informe o motivo da recusa:', '', {required:true, title:'Recusar pedido', confirm:'Recusar pedido'});
+      delete form.dataset.reasonPending;
+      if (!reason || !reason.trim()) return;
       form.querySelector('[name="reason"]').value = reason.trim();
+      form.dataset.reasonConfirmed = '1';
+      form.requestSubmit(event.submitter || undefined);
     }));
 
     dashboard.querySelectorAll('.order-status-form').forEach(form => form.addEventListener('submit', event => {

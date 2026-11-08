@@ -69,7 +69,7 @@
 <form action="/admin/categorias/{{c.id}}/mover/up" method="post"><button class="btn soft" type="submit" aria-label="Mover {{c.name}} para cima">↑ Subir</button></form>
 <form action="/admin/categorias/{{c.id}}/mover/down" method="post"><button class="btn soft" type="submit" aria-label="Mover {{c.name}} para baixo">↓ Descer</button></form>
 <form action="/admin/categorias/{{c.id}}/alternar" method="post"><button class="btn soft" type="submit">{{'Desativar' if c.active else 'Ativar'}}</button></form>
-<form action="/admin/categorias/{{c.id}}/excluir" method="post" onsubmit="return confirm('Excluir esta categoria? As lojas cadastradas não serão excluídas, mas poderão precisar de outra categoria.')"><button class="btn danger" type="submit">Excluir</button></form>
+<form action="/admin/categorias/{{c.id}}/excluir" method="post" data-nu-confirm="Excluir esta categoria? As lojas cadastradas não serão excluídas, mas poderão precisar de outra categoria."><button class="btn danger" type="submit">Excluir</button></form>
 </div></article>{% else %}<p>Nenhuma categoria cadastrada. Use o formulário acima para adicionar.</p>{% endfor %}
 </div>
 </section>
@@ -213,7 +213,7 @@
 <p data-result="profiles" role="status"></p>
 {% if request.query_params.get('ok')=='perfil-editado' %}<div class="alert success">Alterações salvas.</div>{% elif request.query_params.get('ok')=='perfil-excluido' %}<div class="alert success">Perfil fictício excluído.</div>{% endif %}
 {% if request.query_params.get('erro')=='editar-perfil' %}<div class="alert danger">Não foi possível salvar. Confira os dados e a foto e tente novamente.</div>{% endif %}
-{% if pros|selectattr('is_demo')|list|length %}<form action="/admin/perfis/demonstracao/excluir-todos" method="post" onsubmit="return confirm('Excluir TODOS os perfis fictícios? Os perfis reais não serão apagados.')"><button class="btn danger" type="submit">Excluir todos os perfis fictícios</button></form>{% endif %}
+{% if pros|selectattr('is_demo')|list|length %}<form action="/admin/perfis/demonstracao/excluir-todos" method="post" data-nu-confirm="Excluir TODOS os perfis fictícios? Os perfis reais não serão apagados."><button class="btn danger" type="submit">Excluir todos os perfis fictícios</button></form>{% endif %}
 <div class="tablewrap">
 <table class="table">
 <tr>
@@ -264,7 +264,7 @@
 {% if p.admission_status=='approved' %}<form action="/admin/profissionais/{{p.id}}/acao/bloquear" method="post">
 <button class="btn {% if p.blocked %}soft{% else %}danger{% endif %} tiny">{{'Reativar' if p.blocked else 'Pausar/bloquear'}}</button>
 </form>{% endif %}
-{% if p.is_demo %}<form action="/admin/profissionais/{{p.id}}/excluir" method="post" onsubmit="return confirm('Excluir definitivamente este perfil fictício?')"><button class="btn danger tiny" type="submit">Excluir perfil</button></form>{% endif %}
+{% if p.is_demo %}<form action="/admin/profissionais/{{p.id}}/excluir" method="post" data-nu-confirm="Excluir definitivamente este perfil fictício?"><button class="btn danger tiny" type="submit">Excluir perfil</button></form>{% endif %}
 </div></details>
 </div>
 </td>
