@@ -395,7 +395,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <div class="grid2">
 <label>Nome da loja<input class="input" name="display_name" value="{{pro.display_name}}" required>
 </label>
-<label>WhatsApp cadastrado<input class="input" value="{{pro.whatsapp}}" readonly><small>Para alterar o número, solicite a conferência ao ADM.</small>
+<label>WhatsApp da loja<input class="input" type="tel" name="whatsapp" value="{{pro.whatsapp}}" autocomplete="tel" maxlength="30" required><small>Você pode alterar sem autorização do ADM. Ao trocar o número, o destino dos pedidos pelo WhatsApp também será atualizado.</small>
 </label>
 <label>Endereço completo<input class="input" name="address" value="{{pro.address}}" placeholder="Rua, número e complemento">
 </label>

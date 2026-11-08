@@ -2228,8 +2228,12 @@ async def pro_business_hours(request: Request):
     return RedirectResponse("/painel?ok=horarios#horarios",303)
 
 @app.post("/painel/perfil")
-def pro_update(request: Request, display_name: str=Form(...), business_type: str=Form(""), offer_mode: str=Form("services"), city: str=Form(...), neighborhood: str=Form(""), address: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), service_area: str=Form(""), opening_hours: str=Form(""), business_status: str=Form("open"), hide_address: Optional[str]=Form(None), whatsapp_message: str=Form(""), category_ids: list[int]=Form(default=[])):
-    u=require_user(request,"professional"); conn=db(); p=conn.execute("SELECT id,plan_active,offer_mode FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+def pro_update(request: Request, display_name: str=Form(...), business_type: str=Form(""), offer_mode: str=Form("services"), city: str=Form(...), neighborhood: str=Form(""), address: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), service_area: str=Form(""), opening_hours: str=Form(""), business_status: str=Form("open"), hide_address: Optional[str]=Form(None), whatsapp_message: str=Form(""), category_ids: list[int]=Form(default=[]), whatsapp: Optional[str]=Form(None)):
+    u=require_user(request,"professional")
+    new_phone=nowup_storeapp257.phone(whatsapp) if whatsapp is not None else None
+    conn=db(); p=conn.execute("SELECT id,plan_active,offer_mode,whatsapp FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+    if not p:
+        conn.close();raise HTTPException(403,"Loja não encontrada")
     if business_type not in ("professional","restaurant","store","convenience","other"):
         business_type=conn.execute("SELECT business_type FROM professionals WHERE id=?",(p["id"],)).fetchone()[0]
     cities=active_cities(get_settings(conn))
@@ -2241,9 +2245,12 @@ def pro_update(request: Request, display_name: str=Form(...), business_type: str
         offer_mode=offer_mode if offer_mode in ('menu','catalog') else p['offer_mode']
     else: offer_mode=p['offer_mode']
     conn.execute("UPDATE professionals SET display_name=?,business_type=?,offer_mode=?,city=?,neighborhood=?,address=?,cep=?,description=?,services=?,service_area=?,opening_hours=?,business_status=?,hide_address=?,whatsapp_message=? WHERE id=?",(display_name.strip()[:120],business_type,offer_mode,city,neighborhood.strip()[:120],address.strip()[:220],cep.strip()[:20],description.strip()[:1200],services.strip()[:1200],service_area.strip()[:500],opening_hours.strip()[:500],business_status,1 if hide_address else 0,(whatsapp_message.strip() or default_message)[:300],p["id"]))
+    if new_phone and normalize_phone(p['whatsapp'])!=new_phone[2:]:
+        conn.execute("UPDATE professionals SET whatsapp=? WHERE id=?",(new_phone[2:],p['id']))
+        conn.execute("UPDATE store_menu257 SET whatsapp=? WHERE professional_id=?",(new_phone,p['id']))
     conn.execute("DELETE FROM professional_categories WHERE professional_id=?",(p["id"],))
     for cid in category_ids[:1]: conn.execute("INSERT OR IGNORE INTO professional_categories(professional_id,category_id) VALUES(?,?)",(p["id"],cid))
-    conn.commit(); conn.close(); return RedirectResponse("/painel?ok=perfil",303)
+    conn.commit(); conn.close(); return RedirectResponse("/painel?ok=perfil#perfil",303)
 
 def customer_order_summary202(conn, customer_id):
     active=("new","reviewing","awaiting_approval","revision_approved","confirmed","preparing","ready","out_for_delivery")
