@@ -21,7 +21,7 @@ def test_channels_identity_totals_and_idempotency(channel,mode):
     data['cart_json']=json.dumps([{'id':product,'quantity':2,'price':1}]);data['customer_name']='Nome adulterado'
     endpoint='/p/'+slug+'/menu/whatsapp'
     response=client.post(endpoint,data=data);assert response.status_code==200,response.text
-    result=response.json();assert result['prepared'] and result['total_cents']==600 and result['mode']==mode
+    result=response.json();assert result['prepared'] and result['total_cents']==600 and result['mode']==('whatsapp' if mode=='both' else mode)
     assert 'Maria da conta' in str(result['receipt']) and '12988887777' in str(result['receipt'])
     assert result['merchant_url'] in result['message'] and 'revisão' in result['message']
     assert 'Nome adulterado' not in str(result['receipt']) and '2x Auditoria' in str(result['receipt'])
@@ -33,9 +33,9 @@ def test_channels_identity_totals_and_idempotency(channel,mode):
         with m.db() as c:
             order=c.execute('SELECT * FROM orders').fetchone()
             assert order['customer_id']==customer['id'] and order['customer_name']=='Maria da conta'
-            assert order['customer_phone']=='12988887777' and order['order_origin']=='external'
+            assert order['customer_phone']=='12988887777' and order['order_origin']==('nowup' if mode=='panel' else 'external')
             assert c.execute('SELECT COUNT(*) FROM orders').fetchone()[0]==1
-            assert c.execute("SELECT COUNT(*) FROM notifications WHERE title='Novo pedido no NowUp'").fetchone()[0]==1
+            assert c.execute("SELECT COUNT(*) FROM notifications WHERE title='Novo pedido no NowUp'").fetchone()[0]==(1 if mode=='panel' else 0)
             assert order['status']=='new'
         assert client.get(result['redirect']).status_code==200
         data['notes']='alterado';assert client.post(endpoint,data=data).status_code==409

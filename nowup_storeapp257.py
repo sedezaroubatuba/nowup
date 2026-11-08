@@ -137,6 +137,7 @@ def install(g):
         try:
             setting=conn.execute('SELECT whatsapp,mode FROM store_menu257 WHERE professional_id=?',(p['id'],)).fetchone()
             mode=setting['mode'] if setting else 'whatsapp'
+            if mode=='both':mode='whatsapp'
             number=phone((setting['whatsapp'] if setting and setting['whatsapp'] else p['whatsapp'])) if mode!='panel' else ''
             from nowup_checkout229 import begin_checkout,remember_checkout
             identity=user['id'] if user and user['role']=='customer' else 0
@@ -165,15 +166,16 @@ def install(g):
             cur=conn.execute("""INSERT INTO orders(professional_id,customer_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at,subtotal_cents,delivery_fee_cents,neighborhood,address_reference,change_for_cents,tracking_token)
                 VALUES(?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?)""",(p['id'],identity or None,name,customer_phone,fulfillment_type,address.strip(),notes.strip(),status376,total,created,created,subtotal,fee,area,address_reference.strip(),change,token))
             oid=cur.lastrowid;code=f'NU-{oid:06d}'
-            conn.execute("UPDATE orders SET payment_method=?,order_code=?,order_origin='external' WHERE id=?",(payment_method,code,oid))
+            conn.execute("UPDATE orders SET payment_method=?,order_code=?,order_origin=? WHERE id=?",(payment_method,code,'external' if mode=='whatsapp' else 'nowup',oid))
             conn.execute('INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)',(oid,status376,created))
             for product,qty,item_notes,chosen,unit in clean:
                 item=conn.execute('INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes,combo_pack305) VALUES(?,?,?,?,?,?,?)',(oid,product['id'],product['name'],qty,unit,item_notes,product.get('combo_pack305','')))
                 from nowup_weight370 import snapshot
                 snapshot(conn,item.lastrowid,product)
                 for option in chosen:conn.execute('INSERT INTO order_item_options(order_item_id,option_id,option_name,price_cents) VALUES(?,?,?,?)',(item.lastrowid,option['id'],option['name'],option['price_cents']))
-            conn.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(p['user_id'],'Novo pedido no NowUp',code+' — '+name,'/painel#pedido-'+str(oid),created))
-            g['nowup_push75'].enqueue_on_connection(conn,p['user_id'],oid)
+            if mode=='panel':
+                conn.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(p['user_id'],'Novo pedido no NowUp',code+' — '+name,'/painel#pedido-'+str(oid),created))
+                g['nowup_push75'].enqueue_on_connection(conn,p['user_id'],oid)
             if identity:
                 received=conn.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(identity,'Pedido enviado à loja',code+' enviado. Aguardando aceite da loja.','/pedido/'+token,created))
                 g['nowup_alerts112'].enqueue(conn,identity,received.lastrowid,{'title':'Pedido enviado à loja','body':code+' enviado. Aguardando aceite da loja.','url':'/pedido/'+token,'tag':'nowup-recebido-'+str(oid)})

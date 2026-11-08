@@ -79,7 +79,7 @@ def test_whatsapp_history_is_idempotent_private_and_not_a_paid_order(channel,mon
         order=dict(c.execute('SELECT * FROM orders').fetchone())
         assert c.execute('SELECT COUNT(*) FROM orders').fetchone()[0]==1
         assert c.execute('SELECT COUNT(*) FROM checkout_requests229').fetchone()[0]==1
-        assert c.execute('SELECT COUNT(*) FROM push_jobs').fetchone()[0]>=1
+        assert c.execute('SELECT COUNT(*) FROM push_jobs').fetchone()[0]==0
         assert c.execute('SELECT COUNT(*) FROM notifications').fetchone()[0]>=1
         assert order['status']=='new' and order['whatsapp_opened']==0
         assert c.execute('SELECT COUNT(*) FROM orders WHERE status=\'completed\'').fetchone()[0]==0
@@ -111,11 +111,31 @@ def test_whatsapp_order_limit_rejects_excess_and_allows_retry(channel):
     assert client.post('/p/'+slug+'/menu/whatsapp',data=data).json()==first
 
 
-def test_whatsapp_link_order_enters_merchant_review_queue(channel):
+def test_whatsapp_link_order_stays_out_of_queue_and_preserves_report(channel,monkeypatch):
     m,client,slug,pid,data,*_=channel
     result=client.post('/p/'+slug+'/menu/whatsapp',data=data).json()
     with m.db() as c:
         day=datetime.now(m.SAO_PAULO_TZ).date()
         board=m.nowup_merchant228.board(c,pid,*m.order_day_bounds(day),m.SAO_PAULO_TZ)
-    assert board['active']==1
-    assert any(o['order_code']==result['order_code'] for stage in board['stages'] if stage['key']!='closed' for o in stage['orders'])
+    assert board['active']==0
+    assert not any(o['order_code']==result['order_code'] for stage in board['stages'] for o in stage['orders'])
+    with m.db() as c:
+        assert m.orders_for_day(c,pid,day)==[]
+        owner=dict(c.execute('SELECT * FROM users WHERE id=(SELECT user_id FROM professionals WHERE id=?)',(pid,)).fetchone())
+    monkeypatch.setattr(m,'current_user',lambda request:owner)
+    alerts=client.get('/painel/pedidos/novos').json()
+    assert alerts['orders']==[] and alerts['pending_count']==0 and alerts['pending_order'] is None
+    import nowup_sales107
+    monkeypatch.setattr(nowup_sales107,'_db',m.db)
+    nowup_sales107.initialize()
+    with m.db() as c:
+        import nowup_reports98
+        nowup_reports98.init(c)
+        report=nowup_reports98.build(c,pid,day,day)
+        assert report['received_channels']==[('WhatsApp',1)]
+        assert report['total']==0
+        c.execute("UPDATE orders SET status='completed'")
+        report=nowup_reports98.build(c,pid,day,day)
+        assert report['channels']==[('WhatsApp',[1,result['total_cents']])]
+        from nowup_sales107 import sales_summary
+        assert sales_summary(c,pid,day,day)['origins']['WhatsApp']['count']==1

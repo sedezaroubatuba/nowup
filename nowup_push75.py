@@ -134,8 +134,8 @@ def process():
         c.execute('DELETE FROM push_jobs WHERE created<? OR attempts>=4',(now-3600,))
         job=c.execute('SELECT * FROM push_jobs WHERE next_try<=? ORDER BY id LIMIT 1',(now,)).fetchone()
         if not job:return
-        order=c.execute('SELECT status FROM orders WHERE id=?',(job['order_id'],)).fetchone()
-        if not order or order['status']!='new':
+        order=c.execute('SELECT status,order_origin FROM orders WHERE id=?',(job['order_id'],)).fetchone()
+        if not order or order['status']!='new' or order['order_origin']=='external':
             c.execute('DELETE FROM push_jobs WHERE id=?',(job['id'],));return
         c.execute('UPDATE push_jobs SET next_try=?,attempts=attempts+1 WHERE id=?',(now+120,job['id']))
         rows=c.execute('SELECT * FROM push_subscriptions WHERE user_id=?',(job['user_id'],)).fetchall()

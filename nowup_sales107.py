@@ -292,7 +292,7 @@ def sales_summary(c,pid,start,end,channel='all'):
     if channel!='presential':
         for o in c.execute("SELECT o.*,COALESCE((SELECT MAX(created_at) FROM order_status_history WHERE order_id=o.id AND status='completed'),o.updated_at,o.created_at) sold_at FROM orders o WHERE professional_id=? AND status='completed'",(pid,)):
             if not start<=local_day(o['sold_at'])<=end: continue
-            sales.append(dict(kind='NowUp',total=o['total_cents'],day=local_day(o['sold_at']).isoformat()))
+            sales.append(dict(kind='WhatsApp' if o['order_origin']=='external' else 'NowUp',total=o['total_cents'],day=local_day(o['sold_at']).isoformat()))
             payments[o['payment_method']]+=o['total_cents']
             for i in c.execute('SELECT * FROM order_items WHERE order_id=?',(o['id'],)):
                 key=i['product_name'];products[key]['quantity']+=i['quantity'];products[key]['cents']+=i['quantity']*i['unit_price_cents']
