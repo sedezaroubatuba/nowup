@@ -34,7 +34,7 @@ def test_plan_entitlements_cannot_be_bypassed_with_direct_urls(channel,monkeypat
     result=client.post('/p/'+slug+'/menu/whatsapp',data=data)
     assert result.status_code==(200 if allowed else 404)
     if allowed:
-        assert result.json()['mode']=='whatsapp' and not result.json()['recorded']
+        assert result.json()['mode']=='whatsapp' and result.json()['recorded']
         assert result.json()['whatsapp_url'].startswith('https://wa.me/')
     else:
         with m.db() as c:assert c.execute('SELECT COUNT(*) FROM orders').fetchone()[0]==0

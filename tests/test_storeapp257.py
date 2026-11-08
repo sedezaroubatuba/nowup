@@ -24,31 +24,31 @@ def test_channels_identity_totals_and_idempotency(channel,mode):
     result=response.json();assert result['prepared'] and result['total_cents']==600 and result['mode']==mode
     assert 'Maria da conta' in result['message'] and '12988887777' in result['message']
     assert 'Nome adulterado' not in result['message'] and '2x Auditoria' in result['message']
-    assert result['recorded']==(mode!='whatsapp')
+    assert result['recorded'] is True
     if mode!='panel':assert result['whatsapp_url'].startswith('https://wa.me/5512987776666?text=')
     else:assert 'whatsapp_url' not in result
-    if mode!='whatsapp':
+    if result['recorded']:
         assert client.post(endpoint,data=data).json()==result
         with m.db() as c:
             order=c.execute('SELECT * FROM orders').fetchone()
             assert order['customer_id']==customer['id'] and order['customer_name']=='Maria da conta'
             assert order['customer_phone']=='12988887777' and order['order_origin']=='external'
             assert c.execute('SELECT COUNT(*) FROM orders').fetchone()[0]==1
-            assert c.execute("SELECT COUNT(*) FROM notifications WHERE title='Novo pedido no NowUp'").fetchone()[0]==1
+            assert c.execute("SELECT COUNT(*) FROM notifications WHERE title='Novo pedido no NowUp'").fetchone()[0]==(0 if mode=='whatsapp' else 1)
+            assert order['status']==('whatsapp_finalized' if mode=='whatsapp' else 'new')
         assert client.get(result['redirect']).status_code==200
         data['notes']='alterado';assert client.post(endpoint,data=data).status_code==409
-    else:
-        with m.db() as c:assert c.execute('SELECT COUNT(*) FROM orders').fetchone()[0]==0
 
 
 def test_default_is_whatsapp_and_marketplace_remains_internal(channel):
     m,client,slug,pid,data,product,customer=channel
     result=client.post('/p/'+slug+'/menu/whatsapp',data=data);assert result.status_code==200,result.text
-    assert result.json()['mode']=='whatsapp' and not result.json()['recorded']
+    assert result.json()['mode']=='whatsapp' and result.json()['recorded']
     data['request_key']='separate-marketplace-request257'
     native=client.post('/p/'+slug+'/menu/pedido',data=data,headers={'Accept':'application/json'})
     assert native.status_code==200 and native.json()['confirmed']
     with m.db() as c:assert c.execute('SELECT order_origin FROM orders ORDER BY id DESC LIMIT 1').fetchone()[0]=='nowup'
+    with m.db() as c:assert c.execute('SELECT COUNT(*) FROM orders').fetchone()[0]==2
 
 
 def test_anonymous_cannot_prepare_any_channel(channel,monkeypatch):

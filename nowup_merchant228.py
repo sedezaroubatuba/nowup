@@ -5,7 +5,7 @@ STAGES = (
     ('new', 'Novos', ('new', 'reviewing', 'awaiting_approval', 'revision_approved')),
     ('preparing', 'Em preparo', ('confirmed', 'preparing', 'ready')),
     ('delivery', 'Em entrega', ('out_for_delivery',)),
-    ('closed', 'Encerrados', ('completed', 'cancelled', 'rejected')),
+    ('closed', 'Encerrados', ('completed', 'cancelled', 'rejected', 'whatsapp_finalized')),
 )
 
 

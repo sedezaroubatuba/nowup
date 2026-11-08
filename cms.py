@@ -1,10 +1,10 @@
 from __future__ import annotations
-import csv, hashlib, io, os, secrets, sqlite3, unicodedata, re
+import hashlib, io, os, secrets, sqlite3, unicodedata, re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from nowup_templates308 import Jinja2Templates
 from PIL import Image
 
@@ -75,6 +75,8 @@ def init_cms_db():
     CREATE TABLE IF NOT EXISTS cms_leads(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,email TEXT DEFAULT '',phone TEXT DEFAULT '',subject TEXT DEFAULT '',message TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'new',created_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS cms_permissions(user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,cms_role TEXT NOT NULL DEFAULT 'editor' CHECK(cms_role IN ('admin','editor','author')));
     """)
+    from nowup_public376 import initialize
+    initialize(c)
     for r in c.execute("SELECT id FROM users WHERE role='admin'").fetchall():c.execute("INSERT OR IGNORE INTO cms_permissions(user_id,cms_role) VALUES(?,'admin')",(r["id"],))
     defaults={"site_slogan":"Encontre quem resolve.","contact_email":"","contact_phone":"","contact_whatsapp":"","contact_address":"","instagram_url":"","facebook_url":"","linkedin_url":"","youtube_url":"","tiktok_url":"","seo_title":"Guia comercial de Ubatuba","seo_description":"Empresas, lojas, restaurantes e prestadores de serviços em Ubatuba.","seo_keywords":"guia comercial de Ubatuba, serviços em Ubatuba, empresas em Ubatuba","lead_recipient":"","analytics_id":"","tag_manager_id":"","facebook_pixel_id":""}
     for k,v in defaults.items():c.execute("INSERT OR IGNORE INTO site_settings(key,value) VALUES(?,?)",(k,v))
@@ -144,7 +146,18 @@ def lead_action(request:Request,lid:int,action:str):
     c.commit();c.close();return RedirectResponse("/admin/cms#leads",303)
 @router.get("/admin/cms/leads.csv")
 def leads_csv(request:Request):
-    allow(request,"admin","editor");c=db();rows=c.execute("SELECT name,email,phone,subject,message,status,created_at FROM cms_leads ORDER BY id DESC").fetchall();c.close();out=io.StringIO();w=csv.writer(out);w.writerow(["Nome","E-mail","Telefone","Assunto","Mensagem","Status","Data"]);w.writerows([tuple(r) for r in rows]);data='\ufeff'+out.getvalue();return StreamingResponse(iter([data.encode("utf-8")]),media_type="text/csv",headers={"Content-Disposition":"attachment; filename=contatos-nowup.csv"})
+    allow(request,"admin","editor")
+    return RedirectResponse('/admin/cms/leads.xlsx',303,headers={'Cache-Control':'private, no-store'})
+
+@router.get("/admin/cms/leads.xlsx")
+def leads_xlsx(request:Request):
+    allow(request,"admin","editor")
+    c=db()
+    try:
+        rows=[tuple(r) for r in c.execute("SELECT name,email,phone,subject,message,status,created_at FROM cms_leads ORDER BY id DESC")]
+    finally:c.close()
+    from nowup_public376 import contact_workbook
+    return Response(contact_workbook(rows),media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',headers={'Content-Disposition':'attachment; filename="contatos-nowup.xlsx"','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})
 
 @router.post("/admin/cms/usuarios/salvar")
 def user_save(request:Request,name:str=Form(...),email:str=Form(...),password:str=Form(...),cms_role_value:str=Form("editor")):
@@ -174,13 +187,17 @@ def public_post(request:Request,slug:str):
     if not p:c.close();raise HTTPException(404,"Notícia não encontrada")
     comments=c.execute("SELECT * FROM cms_comments WHERE post_id=? AND status='approved' ORDER BY id DESC",(p["id"],)).fetchall();c.close();return templates.TemplateResponse("cms_post.html",public_context(request,post=p,comments=comments))
 @router.post("/noticias/{pid}/comentar")
-def public_comment(pid:int,name:str=Form(...),email:str=Form(""),comment:str=Form(...)):
+def public_comment(request:Request,pid:int,name:str=Form(...),email:str=Form(""),comment:str=Form(...)):
+    from nowup_public376 import check_public
+    check_public(db,request)
     c=db();p=c.execute("SELECT slug FROM cms_posts WHERE id=?",(pid,)).fetchone()
     if p and name.strip() and comment.strip():c.execute("INSERT INTO cms_comments(post_id,name,email,comment,created_at) VALUES(?,?,?,?,?)",(pid,name[:100],email[:160],comment[:1500],now_iso()));c.commit()
     c.close();return RedirectResponse(f"/noticias/{p['slug']}?comentario=enviado" if p else "/noticias",303)
 @router.get("/contato",response_class=HTMLResponse)
 def contact_page(request:Request):return templates.TemplateResponse("cms_contact.html",public_context(request))
 @router.post("/contato")
-def contact_submit(name:str=Form(...),email:str=Form(""),phone:str=Form(""),subject:str=Form(""),message:str=Form(...)):
+def contact_submit(request:Request,name:str=Form(...),email:str=Form(""),phone:str=Form(""),subject:str=Form(""),message:str=Form(...)):
+    from nowup_public376 import check_public
+    check_public(db,request)
     c=db();c.execute("INSERT INTO cms_leads(name,email,phone,subject,message,created_at) VALUES(?,?,?,?,?,?)",(name[:120],email[:160],phone[:40],subject[:160],message[:3000],now_iso()));c.commit();c.close();return RedirectResponse("/contato?enviado=1",303)
 

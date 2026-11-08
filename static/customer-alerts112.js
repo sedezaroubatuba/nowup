@@ -3,7 +3,7 @@
   const root=document.querySelector('[data-customer-alerts112]');if(!root)return;
   const button=root.querySelector('[data-customer-enable]'),test=root.querySelector('[data-customer-test]'),disable=root.querySelector('[data-customer-disable]'),status=root.querySelector('[data-customer-alert-status]'),banner=root.querySelector('[data-customer-update]');
   let cursor=-1,busy=false,activating=false,audio,enabled=false,pendingSound=false,pushEnabled=false;
-  const labels={new:'Pedido recebido',confirmed:'Pedido aceito',preparing:'Em preparo',ready:'Pronto',out_for_delivery:'Saiu para entrega',completed:'Concluído',cancelled:'Cancelado',rejected:'Recusado'};
+  const labels={whatsapp_finalized:'Finalizado no cardápio - WhatsApp',new:'Pedido recebido',confirmed:'Pedido aceito',preparing:'Em preparo',ready:'Pronto',out_for_delivery:'Saiu para entrega',completed:'Concluído',cancelled:'Cancelado',rejected:'Recusado'};
   function preference(){try{return localStorage.getItem('nowup-customer-sound')==='1';}catch(_){return false;}}
   const soundTest=root.querySelector('[data-customer-sound-test]');
   function renderSound(){const on=enabled&&audio?.state==='running';root.dataset.soundState=on?'active':'inactive';button.textContent=on?'✓ Som ativado · Configurar avisos':'🔊 ATIVAR SOM E AVISOS';soundTest.hidden=!on;disable.hidden=!(enabled||pushEnabled);test.hidden=!pushEnabled;}

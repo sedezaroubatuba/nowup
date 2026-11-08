@@ -9,6 +9,8 @@ from nowup_menu_origin355 import menu_origin, external_menu
 @pytest.fixture
 def dedicated(channel, monkeypatch):
     m, old, slug, pid, data, product, customer = channel
+    import cms
+    monkeypatch.setattr(cms,'db',m.db)
     monkeypatch.setenv('NOWUP_MENU_ORIGIN', 'https://menu.example.com')
     monkeypatch.setenv('NOWUP_PUBLIC_ORIGIN', 'http://testserver')
     client = TestClient(m.app, base_url='https://menu.example.com',
@@ -66,9 +68,10 @@ def test_whatsapp_checkout_accepts_only_its_own_origin(dedicated):
     r = client.post(path, data=data)
     assert r.status_code == 200, r.text
     assert r.json()['whatsapp_url'].startswith('https://wa.me/5512999999999?text=')
-    assert r.json()['prepared'] and not r.json()['recorded']
+    assert r.json()['prepared'] and r.json()['recorded']
     with m.db() as c:
-        assert c.execute('SELECT COUNT(*) FROM orders').fetchone()[0] == 0
+        assert c.execute('SELECT COUNT(*) FROM orders').fetchone()[0] == 1
+        assert c.execute('SELECT status FROM orders').fetchone()[0] == 'whatsapp_finalized'
     # Configuration must not redirect or replay a POST on an old link.
     assert old.post(path, data=data, follow_redirects=False).status_code == 200
 

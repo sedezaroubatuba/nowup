@@ -17,7 +17,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Redirect
 router=APIRouter(); G={}; TZ=ZoneInfo('America/Sao_Paulo')
 MODULES={'dashboard','stores','finance','orders','customers','products','marketing','logistics','support','themes','settings','staff','system'}
 KINDS={'plans':'finance','payments':'finance','billingCoupons':'finance','couriers':'logistics','deliveryRules':'logistics','coupons':'marketing','campaigns':'marketing','referrals':'marketing','themes':'themes','tickets':'support','staff':'staff','leads':'stores','storemeta':'stores','productCategories':'products','productmeta':'products','customermeta':'customers'}
-FINALS={'completed','cancelled','rejected'}
+FINALS={'completed','cancelled','rejected','whatsapp_finalized'}
 
 def configure(g):G.update(g)
 def stamp():return datetime.now(timezone.utc).isoformat()

@@ -1331,6 +1331,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
         conn.close()
 
 ORDER_STATUS_LABELS={
+  "whatsapp_finalized":"Finalizado no cardápio - WhatsApp",
   "new":"Aguardando aceite", "confirmed":"Pedido aceito", "preparing":"Em preparo",
   "reviewing":"Em conferência", "awaiting_approval":"Aguardando aprovação do cliente", "revision_approved":"Alteração aprovada",
   "ready":"Pronto", "out_for_delivery":"Saiu para entrega", "completed":"Concluído",
@@ -2183,7 +2184,7 @@ def pro_order_status(request: Request, order_id: int, status: str=Form(...), rea
     if status==order["status"]:
         conn.rollback(); conn.close(); return RedirectResponse(f"/painel?abrir_pedido={order_id}#pedido-{order_id}",303)
     rank={"reviewing":0,"revision_approved":0,"new":0,"confirmed":1,"preparing":2,"ready":3,"out_for_delivery":4,"completed":5}
-    if order["status"] in {"completed","cancelled","rejected"} or (status in rank and rank[status]<rank.get(order["status"],0)):
+    if order["status"] in {"completed","cancelled","rejected","whatsapp_finalized"} or (status in rank and rank[status]<rank.get(order["status"],0)):
         conn.rollback(); conn.close(); return RedirectResponse(f"/painel?erro=pedido-encerrado&abrir_pedido={order_id}#pedido-{order_id}",303)
     reason=reason.strip()[:300]
     if status in {"cancelled","rejected"} and not reason:
@@ -2203,7 +2204,7 @@ def pro_order_edit(request: Request, order_id: int, customer_name: str=Form(...)
     u=require_user(request,"professional"); conn=db(); conn.execute("BEGIN IMMEDIATE"); p=conn.execute("SELECT id,plan_active,offer_mode FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
     order=conn.execute("SELECT id,status FROM orders WHERE id=? AND professional_id=?",(order_id,p["id"])).fetchone()
     if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
-    if order["status"] in {"awaiting_approval","reviewing","revision_approved","completed","cancelled","rejected"}:
+    if order["status"] in {"awaiting_approval","reviewing","revision_approved","completed","cancelled","rejected","whatsapp_finalized"}:
         conn.rollback();conn.close();return RedirectResponse(f"/painel?erro=pedido-encerrado&abrir_pedido={order_id}#pedido-{order_id}",303)
     fulfillment_type="delivery" if fulfillment_type=="delivery" else "pickup"
     if payment_method not in {"pix","cash","credit","debit","on_delivery"}: payment_method="pix"
@@ -2259,8 +2260,8 @@ def customer_order_summary202(conn, customer_id):
       o.updated_at,p.display_name FROM orders o JOIN professionals p ON p.id=o.professional_id
       WHERE o.customer_id=? AND o.tracking_token!='' AND
       (o.status IN ('new','reviewing','awaiting_approval','revision_approved','confirmed','preparing','ready','out_for_delivery')
-       OR (o.status IN ('completed','cancelled','rejected') AND o.updated_at>=?))
-      ORDER BY CASE WHEN o.status IN ('completed','cancelled','rejected') THEN 1 ELSE 0 END,o.id DESC""",(customer_id,cutoff)).fetchall()
+       OR (o.status IN ('completed','cancelled','rejected','whatsapp_finalized') AND o.updated_at>=?))
+      ORDER BY CASE WHEN o.status IN ('completed','cancelled','rejected','whatsapp_finalized') THEN 1 ELSE 0 END,o.id DESC""",(customer_id,cutoff)).fetchall()
     result=[]
     for row in rows:
         label=ORDER_STATUS_LABELS.get(row["status"],"Acompanhar pedido")
