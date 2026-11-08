@@ -60,7 +60,7 @@ def test_weighted_independent_channels_use_same_promotion_and_message(channel,mo
  r=client.post('/p/'+slug+'/menu/whatsapp',data=data);assert r.status_code==200,r.text
  result=r.json();assert result['total_cents']==7800
  assert '1,2 kg (1.200 g)' in str(result['receipt']) and '78,00' in str(result['receipt'])
- assert 'Não cobre pelo excedente' in result['message']
+ assert 'Não cobre pelo excedente' in str(result['receipt'])
  if mode!='whatsapp':
   with m.db() as c:assert c.execute('SELECT weight_grams370 FROM order_items').fetchone()[0]==1200
 
