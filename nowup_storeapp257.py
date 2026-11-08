@@ -180,6 +180,13 @@ def install(g):
                 result.update(recorded=True,redirect='/p/'+slug+'/pedido/'+token,order_code=code)
                 result['receipt']['order_code']=code
                 result['message']='Pedido '+code+' — registrado no painel (não duplicar).\n'+message
+            if payment_method=='pix':
+                from nowup_pix import payment as pix_payment
+                import hashlib
+                pix_id='NU'+hashlib.sha256((str(p['id'])+':'+request_key).encode()).hexdigest()[:22]
+                result['pix']=pix_payment(p,total,pix_id)
+                if result['pix']:
+                    result['receipt']['pix']=result['pix']
             if mode!='panel':result['whatsapp_url']='https://wa.me/'+number+'?text='+quote(result['message'],safe='')
             if result['recorded']:
                 conn.execute('INSERT INTO store_dispatch257(order_id,response) VALUES(?,?)',(oid,json.dumps(result,ensure_ascii=False)))

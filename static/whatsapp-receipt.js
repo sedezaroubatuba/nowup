@@ -20,7 +20,7 @@
   }
   async function render(data){
     const logoURL=new URL(data.logo||'/',location.origin);
-    const [logo,brand]=await Promise.all([logoURL.origin===location.origin?loadImage(logoURL.href):null,loadImage('/static/nowup-logo185.png?v=196')]);
+    const [logo,brand,pixQR]=await Promise.all([logoURL.origin===location.origin?loadImage(logoURL.href):null,loadImage('/static/nowup-logo185.png?v=196'),/^data:image\/png;base64,/.test(data.pix?.qr_image||'')?loadImage(data.pix.qr_image):null]);
     const pages=[];let canvas,ctx,y;
     function font(size,bold=false){ctx.font=(bold?'700 ':'400 ')+size+'px Arial, sans-serif';}
     function text(value,x,width,size=30,bold=false,color=INK){font(size,bold);ctx.fillStyle=color;for(const row of lines(ctx,value,width)){ctx.fillText(row,x,y);y+=Math.ceil(size*1.32);}}
@@ -61,6 +61,14 @@
     }
     start();
     for(const entry of data.blocks||[])block(entry.title,entry.lines||[]);
+    if(pixQR){
+      reserve(680);text('Pagar com Pix',M,W-2*M,32,true,PURPLE);
+      text('Valor: '+data.pix.amount,M,W-2*M,27);
+      text('Recebedor: '+data.pix.receiver,M,W-2*M,27);
+      ctx.drawImage(pixQR,(W-360)/2,y,360,360);y+=374;
+      text('Confira o favorecido no banco.',M,W-2*M,25);
+      text('Confirmação do pagamento feita pela loja.',M,W-2*M,25);y+=16;
+    }
     reserve(110);rect(M,y,W-2*M,90,PURPLE);font(40,true);ctx.fillStyle='#fff';ctx.fillText('TOTAL',M+22,y+24);ctx.textAlign='right';ctx.fillText(data.total,W-M-22,y+24);ctx.textAlign='left';y+=100;finish(true);
     const files=[];
     for(let index=0;index<pages.length;index++){

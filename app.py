@@ -57,6 +57,8 @@ app.mount("/uploads", PublicFiles(directory=UPLOAD_DIR, images_only=True), name=
 from nowup_combo_pack305 import read_pack
 templates = Jinja2Templates(directory=str(BASE / "templates"))
 templates.env.filters["combo_pack305"]=read_pack
+from nowup_pix import payment as pix_payment
+templates.env.globals["pix_payment"]=pix_payment
 templates.env.globals["current_price348"]=current_price
 from nowup_order_layout347 import local_time, note_lines
 templates.env.filters["order_datetime347"]=local_time
@@ -719,6 +721,9 @@ def init_db():
     ensure_column(conn, "professionals", "allows_delivery", "INTEGER NOT NULL DEFAULT 1")
     ensure_column(conn, "professionals", "allows_pickup", "INTEGER NOT NULL DEFAULT 1")
     ensure_column(conn, "professionals", "pix_key", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "professionals", "pix_key_type", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "professionals", "pix_receiver_name", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "professionals", "pix_receiver_city", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "products", "promo_price_cents", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "products", "featured", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "products", "max_quantity", "INTEGER NOT NULL DEFAULT 99")
@@ -1333,7 +1338,7 @@ ORDER_STATUS_LABELS={
 }
 
 def tracked_order(conn, token: str):
-    return conn.execute("""SELECT o.*,p.display_name,p.slug,p.whatsapp,p.prep_minutes,p.pix_key
+    return conn.execute("""SELECT o.*,p.display_name,p.slug,p.whatsapp,p.prep_minutes,p.pix_key,p.pix_key_type,p.pix_receiver_name,p.pix_receiver_city
       FROM orders o JOIN professionals p ON p.id=o.professional_id
       WHERE o.tracking_token=?""",(token,)).fetchone()
 
@@ -2082,12 +2087,22 @@ def pro_carousel_layout235(request: Request, carousel_layout235: str=Form(...)):
     return RedirectResponse("/painel?ok=exibicao#cardapio",303)
 
 @app.post("/painel/cardapio/configuracoes")
-def pro_menu_settings(request: Request, delivery_fee: str=Form("0"), minimum_order: str=Form("0"), prep_minutes: int=Form(40), pix_key: str=Form(""), allows_delivery: Optional[str]=Form(None), allows_pickup: Optional[str]=Form(None)):
-    u=require_user(request,"professional"); conn=db()
-    require_premium_catalog(conn,u["id"])
-    conn.execute("""UPDATE professionals SET delivery_fee_cents=?,minimum_order_cents=?,prep_minutes=?,pix_key=?,allows_delivery=?,allows_pickup=? WHERE user_id=?""",
-      (price_to_cents(delivery_fee),price_to_cents(minimum_order),max(5,min(240,prep_minutes)),pix_key.strip()[:180],1 if allows_delivery else 0,1 if allows_pickup else 0,u["id"]))
-    conn.commit(); conn.close(); return RedirectResponse("/painel?ok=config-cardapio#cardapio",303)
+def pro_menu_settings(request: Request, delivery_fee: str=Form("0"), minimum_order: str=Form("0"), prep_minutes: int=Form(40), pix_key: str=Form(""), allows_delivery: Optional[str]=Form(None), allows_pickup: Optional[str]=Form(None), pix_key_type: str=Form(""), pix_receiver_name: str=Form(""), pix_receiver_city: str=Form("")):
+    u=require_user(request,"professional")
+    from nowup_pix import settings as pix_settings
+    try:
+        key,kind,receiver,city=pix_settings(pix_key,pix_key_type,pix_receiver_name,pix_receiver_city)
+    except ValueError as exc:
+        raise HTTPException(400,str(exc)) from exc
+    conn=db()
+    try:
+        require_premium_catalog(conn,u["id"])
+        conn.execute("""UPDATE professionals SET delivery_fee_cents=?,minimum_order_cents=?,prep_minutes=?,pix_key=?,allows_delivery=?,allows_pickup=?,pix_key_type=?,pix_receiver_name=?,pix_receiver_city=? WHERE user_id=?""",
+          (price_to_cents(delivery_fee),price_to_cents(minimum_order),max(5,min(240,prep_minutes)),key,1 if allows_delivery else 0,1 if allows_pickup else 0,kind,receiver,city,u["id"]))
+        conn.commit()
+    finally:
+        conn.close()
+    return RedirectResponse("/painel?ok=config-cardapio#entrega-pagamento",303)
 
 @app.post("/painel/cardapio/produtos/{product_id}/disponibilidade")
 def pro_product_availability(request: Request, product_id: int, available: int=Form(...)):

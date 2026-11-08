@@ -49,8 +49,16 @@
             const attach=()=>window.NOWUP_RECEIPT?.attach(ready,json.receipt);
             if(window.NOWUP_RECEIPT)attach();
             else{let script=document.querySelector('[data-receipt-script]');
-              if(!script){script=document.createElement('script');script.dataset.receiptScript='';script.src='/static/whatsapp-receipt.js?v=1';script.onload=attach;script.onerror=()=>script.remove();document.head.append(script);}
+              if(!script){script=document.createElement('script');script.dataset.receiptScript='';script.src='/static/whatsapp-receipt.js?v=2';script.onload=attach;script.onerror=()=>script.remove();document.head.append(script);}
               else script.addEventListener('load',attach,{once:true});
+            }
+          }
+          if(json.pix){
+            const attachPix=()=>window.NOWUP_PIX?.attach(ready,json.pix);
+            if(window.NOWUP_PIX)attachPix();
+            else{let script=document.querySelector('[data-pix-script]');
+              if(!script){script=document.createElement('script');script.dataset.pixScript='';script.src='/static/pix-payments.js?v=1';script.onload=attachPix;script.onerror=()=>script.remove();document.head.append(script);}
+              else script.addEventListener('load',attachPix,{once:true});
             }
           }
           return;
