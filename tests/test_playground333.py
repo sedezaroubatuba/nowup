@@ -19,7 +19,12 @@ def test_environment_has_no_production_credentials(tmp_path,monkeypatch):
     assert values['NOWUP_UPLOAD_DIR']==str(tmp_path/'uploads')
 
 
-def test_real_sandbox_and_production_separation(env):
+def test_real_sandbox_and_production_separation(env,monkeypatch,tmp_path):
+    # The real child blocks all external sockets. Mock only DNS deliverability
+    # in this test subprocess; keep the real email syntax validator and network guard.
+    mockdir=tmp_path/'child-test-pythonpath';mockdir.mkdir()
+    (mockdir/'sitecustomize.py').write_text("import os\nif os.getenv('NOWUP_TEST_CHILD333') == '1':\n import email_validator\n original=email_validator.validate_email\n def validate_email(*args,**kwargs):\n  kwargs['check_deliverability']=False\n  return original(*args,**kwargs)\n email_validator.validate_email=validate_email\n")
+    monkeypatch.syspath_prepend(str(mockdir))
     main,_,_,store_id,_=env
     with main.db() as c:
         admin=c.execute("SELECT id FROM users WHERE role='admin'").fetchone()[0]

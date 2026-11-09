@@ -28,7 +28,4 @@ jobs:
           NOWUP_ADMIN_EMAIL: audit308@example.invalid
           NOWUP_ADMIN_PASSWORD: isolated-security-test-password
         run: |
-          set -e
-          for suite in tests/test_*.py test_admin205.py; do
-            python -m pytest "$suite" -q --disable-warnings
-          done
+          python -m pytest tests test_admin205.py -q --disable-warnings

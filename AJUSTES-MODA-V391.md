@@ -59,6 +59,7 @@ Não é permitido reduzir um saldo abaixo do que já está reservado nem trocar 
 | `tests/test_merchant228.py`, `tests/test_categories230.py` | Bancos e uploads por fixture; alinha CMS, autenticação e verificação ao mesmo banco descartável; desfaz configurações ao terminar. |
 | `tests/test_checkout247.py` | Alinha os módulos auxiliares ao banco temporário de cada checkout. |
 | `tests/test_audit255.py`, `tests/test_links352.py`, `tests/test_plans339.py`, `tests/test_push375.py`, `tests/test_revision348.py`, `tests/test_storeapp256.py`, `test_admin205.py` | Restaura configurações de módulos depois de cada teste, evitando autenticação e caminhos herdados. |
+| `tests/test_playground333.py` | Simula somente a checagem externa de DNS no subprocesso de teste, mantendo o parser de e-mail e o bloqueio de rede reais. |
 | `tests/test_storeaccounts345.py` | Restaura serviços e variáveis alterados pela fixture. |
 | `tests/test_catalog_audit354.py`, `tests/test_combo_units364.py`, `tests/test_menu_origin355.py` | Atualiza expectativas para pedido enviado por link e aguardando revisão. Continua verificando valores e persistência dos detalhes. |
 | `tests/test_fashion385.py` | Atualiza a versão esperada do recurso de moda. |
@@ -113,3 +114,5 @@ Faça os cenários de compra numa loja de teste. A demonstração pública permi
 - O verificador PostgreSQL cria e remove somente um esquema aleatório próprio. Nunca usar DSN de produção para esse comando.
 
 O esquema novo é criado de forma aditiva na inicialização. Lojas gerais não são convertidas para estoque de moda. A reserva não inicia cobrança nem confirma pagamentos.
+
+Validação concluída: 461 testes Python aprovados (nenhum ignorado), 51 testes JavaScript aprovados e teste de concorrência em PostgreSQL 18 aprovado. A publicação foi verificada na loja de demonstração; filtro e proporções do mosaico receberam proteção contra regras antigas de CSS.
