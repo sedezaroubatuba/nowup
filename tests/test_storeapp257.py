@@ -21,21 +21,20 @@ def test_channels_identity_totals_and_idempotency(channel,mode):
     data['cart_json']=json.dumps([{'id':product,'quantity':2,'price':1}]);data['customer_name']='Nome adulterado'
     endpoint='/p/'+slug+'/menu/whatsapp'
     response=client.post(endpoint,data=data);assert response.status_code==200,response.text
-    result=response.json();assert result['prepared'] and result['total_cents']==600 and result['mode']==('whatsapp' if mode=='both' else mode)
+    result=response.json();assert result['prepared'] and result['total_cents']==600 and result['mode']=='whatsapp'
     assert 'Maria da conta' in str(result['receipt']) and '12988887777' in str(result['receipt'])
     assert result['merchant_url'] in result['message'] and 'revisão' in result['message']
     assert 'Nome adulterado' not in str(result['receipt']) and '2x Auditoria' in str(result['receipt'])
     assert result['recorded'] is True
-    if mode!='panel':assert result['whatsapp_url'].startswith('https://wa.me/5512987776666?text=')
-    else:assert 'whatsapp_url' not in result
+    assert result['whatsapp_url'].startswith('https://wa.me/5512987776666?text=')
     if result['recorded']:
         assert client.post(endpoint,data=data).json()==result
         with m.db() as c:
             order=c.execute('SELECT * FROM orders').fetchone()
             assert order['customer_id']==customer['id'] and order['customer_name']=='Maria da conta'
-            assert order['customer_phone']=='12988887777' and order['order_origin']==('nowup' if mode=='panel' else 'external')
+            assert order['customer_phone']=='12988887777' and order['order_origin']=='external'
             assert c.execute('SELECT COUNT(*) FROM orders').fetchone()[0]==1
-            assert c.execute("SELECT COUNT(*) FROM notifications WHERE title='Novo pedido no NowUp'").fetchone()[0]==(1 if mode=='panel' else 0)
+            assert c.execute("SELECT COUNT(*) FROM notifications WHERE title='Novo pedido no NowUp'").fetchone()[0]==0
             assert order['status']=='new'
         assert client.get(result['redirect']).status_code==200
         data['notes']='alterado';assert client.post(endpoint,data=data).status_code==409
@@ -104,7 +103,7 @@ def test_merchant_saves_only_own_config(channel,monkeypatch):
     assert result.status_code==303,result.text
     with m.db() as c:
         setting=c.execute('SELECT * FROM store_menu257 WHERE professional_id=?',(pid,)).fetchone()
-        assert setting['whatsapp']=='5512988887777' and setting['mode']=='panel'
+        assert setting['whatsapp']=='5512988887777' and setting['mode']=='whatsapp'
         assert c.execute('SELECT whatsapp FROM professionals WHERE id=?',(pid,)).fetchone()[0]=='12999999999'
     assert client.post('/p/'+slug+'/menu/whatsapp',data=data).status_code==403
     monkeypatch.setattr(m,'current_user',lambda request:customer)

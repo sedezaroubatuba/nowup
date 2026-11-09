@@ -60,6 +60,10 @@ def test_no_change_confirmation_releases_pix(channel,monkeypatch):
     assert client.post('/painel/pedidos/'+str(order['id'])+'/status',data={'status':'confirmed'},follow_redirects=False).status_code==303
     monkeypatch.setattr(m,'current_user',lambda request:buyer)
     assert 'data-pix-payment' in client.get(result['redirect']).text
+    page=client.get(result['redirect']);assert 'data-customer390="1"' in page.text and 'data-payment390="pix"' in page.text
+    monkeypatch.setattr(m,'current_user',lambda request:owner)
+    replay=client.post('/painel/pedidos/'+str(order['id'])+'/status',data={'status':'confirmed','return_to':'link'},follow_redirects=False)
+    assert replay.status_code==303 and replay.headers['location']=='/pedido/'+order['tracking_token']
 
 
 def test_custom_message_does_not_replace_store_contact_message(channel,monkeypatch):

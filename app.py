@@ -2233,7 +2233,7 @@ def pro_order_status(request: Request, order_id: int, status: str=Form(...), rea
     if order["status"] in {'new','reviewing','revision_approved'} and status not in {'reviewing','confirmed','cancelled','rejected'}:
         conn.close(); raise HTTPException(409,"Confirme o pedido antes de iniciar o preparo")
     if status==order["status"]:
-        conn.rollback(); conn.close(); return RedirectResponse(f"/painel?abrir_pedido={order_id}#pedido-{order_id}",303)
+        conn.rollback(); conn.close(); return RedirectResponse("/pedido/"+order["tracking_token"] if return_to=="link" else f"/painel?abrir_pedido={order_id}#pedido-{order_id}",303)
     rank={"reviewing":0,"revision_approved":0,"new":0,"confirmed":1,"preparing":2,"ready":3,"out_for_delivery":4,"completed":5}
     if order["status"] in {"completed","cancelled","rejected","whatsapp_finalized"} or (status in rank and rank[status]<rank.get(order["status"],0)):
         conn.rollback(); conn.close(); return RedirectResponse(f"/painel?erro=pedido-encerrado&abrir_pedido={order_id}#pedido-{order_id}",303)

@@ -163,12 +163,12 @@ body.public-profile-area :focus-visible {outline:3px solid #08a5d0;outline-offse
 <span>Total <small data-fee-note></small></span>
 <b data-dialog-total>R$ 0,00</b>
 </div>
-<button class="btn primary full-btn">{{'Enviar pedido ao lojista para revisão' if store_whatsapp257 else 'Enviar pedido pelo NowUp'}}</button>
+<button class="btn primary full-btn">{{'Enviar pedido pelo WhatsApp' if store_whatsapp257 else 'Enviar pedido pelo NowUp'}}</button>
 </form>
 </dialog>
 <footer class="nu83-cart-dock" hidden><button type="button" data-cart-summary><span>🛒 <span data-cart-count>0 itens</span></span><strong>Ver carrinho · <span data-dock-total>R$ 0,00</span></strong></button></footer></section>
 <script>window.NOWUP_MENU={{ {'deliveryFee':pro.delivery_fee_cents,'hasDeliveryZones':delivery_zones|length>0,'minimumOrder':pro.minimum_order_cents,'open':(shop_status.open or schedule_slots380|length>0),'ownerView':(user and user.id==pro.user_id) or false,'storeName':pro.display_name,'customerId':user.id if user and user.role=='customer' else none}|tojson }};</script>
-<link rel="stylesheet" href="/static/cart144.css?v=353"><script src="/static/order-savings315.js?v=370"></script><link rel="stylesheet" href="/static/cart-bag366.css?v=367"><script src="/static/cart-bag366.js?v=366"></script><script src="/static/menu88.js?v=389">
+<link rel="stylesheet" href="/static/cart144.css?v=353"><script src="/static/order-savings315.js?v=370"></script><link rel="stylesheet" href="/static/cart-bag366.css?v=367"><script src="/static/cart-bag366.js?v=366"></script><script src="/static/menu88.js?v=390">
 </script>
 <script src="/static/cart144.js?v=353" defer></script><script src="/static/customer-address.js?v=69" defer></script>{% endif %}
 <section class="section">

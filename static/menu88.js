@@ -30,6 +30,8 @@
       const button=event.submitter,original=button?.textContent;
       if(button){button.disabled=true;button.textContent='Enviando pedido…';}
       feedback.textContent='Enviando pedido…';
+      let whatsappWindow390=null;
+      if(cfg.whatsappCheckout){try{whatsappWindow390=window.open('about:blank','_blank');if(whatsappWindow390){whatsappWindow390.opener=null;whatsappWindow390.document.title='Preparando pedido';whatsappWindow390.document.body.textContent='Preparando seu pedido para abrir o WhatsApp…';}}catch(_){}}
       const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),30000);
       try{
         const response=await fetch(checkoutForm229.action,{method:'POST',body:new FormData(checkoutForm229),headers:{Accept:'application/json',...(document.getElementById('store-app256')?{'X-Nowup-Store-App':'256'}:{})},credentials:'same-origin',signal:controller.signal});
@@ -37,16 +39,17 @@
         if(cfg.whatsappCheckout){
           const validWA=/^https:\/\/wa\.me\/55[0-9]{10,11}\?text=/.test(json?.whatsapp_url||'');
           const validTrack=typeof json?.redirect==='string'&&json.redirect.startsWith(path+'/pedido/')&&/^[A-Za-z0-9_-]+$/.test(json.redirect.slice((path+'/pedido/').length));
-          if(!response.ok||!json?.prepared||(!json.recorded&&!validWA)||(json.recorded&&!validTrack)||(json.mode!=='panel'&&!validWA))throw new Error(typeof json?.detail==='string'?json.detail:'Não foi possível preparar o pedido. Revise os dados.');
+          if(!response.ok||!json?.prepared||(!json.recorded&&!validWA)||(json.recorded&&!validTrack)||!validWA)throw new Error(typeof json?.detail==='string'?json.detail:'Não foi possível preparar o pedido. Revise os dados.');
           if(json.recorded&&localStorage.getItem(key)===snapshot){cart.clear();localStorage.removeItem(key);localStorage.removeItem(infoKey);sessionStorage.removeItem('nowup-checkout247:'+key);render();}
           feedback.textContent='Pedido '+json.order_code+' registrado para revisão. O pagamento será liberado após a confirmação.';
           const old=checkoutForm229.querySelector('[data-whatsapp-ready257]');if(old){old.receiptCleanup?.();old.remove();}
           const ready=document.createElement('div');ready.dataset.whatsappReady257='';
-          if(validWA){const link=document.createElement('a');link.className='btn primary full-btn';link.href=json.whatsapp_url;link.textContent='Enviar pedido ao lojista para revisão';link.rel='noopener';link.target='_blank';ready.append(link);}
-          if(validTrack){const tracking=document.createElement('a');tracking.className='btn soft full-btn';tracking.href=json.redirect;tracking.textContent='Abrir pedido, conversa e pagamento';ready.append(tracking);}
-          const note=document.createElement('p');note.textContent=validWA?'No WhatsApp, toque em Enviar para avisar a loja. Seu pedido completo já está registrado no NowUp.':'Seu pedido completo já está registrado no painel da loja.';ready.append(note);
+          if(validWA){const link=document.createElement('a');link.className='btn primary full-btn';link.href=json.whatsapp_url;link.textContent='Abrir WhatsApp e enviar pedido';link.rel='noopener';link.target='_blank';ready.append(link);}
+          if(validTrack){const tracking=document.createElement('a');tracking.className='btn soft full-btn';tracking.href=json.redirect;tracking.textContent='Acompanhar pedido e pagar';ready.append(tracking);}
+          const note=document.createElement('p');note.textContent='No WhatsApp, toque em Enviar. A loja receberá o link para confirmar ou editar. Depois, acompanhe o pedido e o Pix em Acompanhar pedido e pagar.';ready.append(note);
           checkoutForm229.append(ready);
           ready.scrollIntoView({block:'start',behavior:'smooth'});
+          if(whatsappWindow390&&!whatsappWindow390.closed){whatsappWindow390.location.replace(json.whatsapp_url);whatsappWindow390=null;if(validTrack)location.assign(json.redirect);}
           return;
         }
         if(!response.ok||!json?.confirmed||json.path!==path||!((String(json.redirect||'').startsWith(path+'/pedido/')&&/^[A-Za-z0-9_-]+$/.test(String(json.redirect||'').slice((path+'/pedido/').length)))||/^\/pedido\/[A-Za-z0-9_-]+$/.test(json.redirect||'')))throw new Error(typeof json?.detail==='string'?json.detail:'Envio não confirmado. Confira Meus pedidos antes de tentar novamente.');
@@ -55,7 +58,7 @@
         if(localStorage.getItem(key)===snapshot){cart.clear();localStorage.removeItem(key);localStorage.removeItem(infoKey);sessionStorage.removeItem('nowup-checkout247:'+key);render();}
         feedback.textContent='Pedido enviado com sucesso.';
         location.assign(json.redirect);
-      }catch(error){feedback.textContent=error.name==='AbortError'?'O envio demorou. Confira Meus pedidos antes de tentar novamente.':error.message;
+      }catch(error){if(whatsappWindow390&&!whatsappWindow390.closed)whatsappWindow390.close();feedback.textContent=error.name==='AbortError'?'O envio demorou. Confira Meus pedidos antes de tentar novamente.':error.message;
       }finally{clearTimeout(timeout);checkoutForm229.dataset.submitting229='';if(button){button.disabled=false;button.textContent=original;}}
     });
     checkoutForm229.addEventListener('input',event=>{if(event.target.closest('[data-whatsapp-ready257]'))return;const old=checkoutForm229.querySelector('[data-whatsapp-ready257]');if(old){old.receiptCleanup?.();old.remove();}});

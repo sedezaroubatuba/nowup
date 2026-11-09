@@ -117,6 +117,7 @@ def install(g):
     def save_whatsapp257(request:Request,whatsapp:str=Form(''),mode:str=Form('both'),order_message:str=Form('')):
         user=g['require_user'](request,'professional')
         if mode not in ('panel','whatsapp','both'):raise HTTPException(400,'Escolha um destino válido')
+        mode='whatsapp'
         number=phone(whatsapp) if whatsapp.strip() else '';conn=g['db']()
         try:
             p=g['require_premium_catalog'](conn,user['id'])
@@ -144,7 +145,7 @@ def install(g):
         conn=g['db']()
         try:
             setting=conn.execute('SELECT whatsapp,mode FROM store_menu257 WHERE professional_id=?',(p['id'],)).fetchone()
-            mode='whatsapp' if fashion385 else (setting['mode'] if setting else 'whatsapp')
+            mode='whatsapp' # Independent menu always hands the order to WhatsApp.
             if mode=='both':mode='whatsapp'
             number=phone((setting['whatsapp'] if setting and setting['whatsapp'] else p['whatsapp'])) if mode!='panel' else ''
             from nowup_checkout229 import begin_checkout,remember_checkout

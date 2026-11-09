@@ -44,7 +44,7 @@ def page_context(g,request,values):
         try:
             row=c.execute('SELECT whatsapp,mode FROM store_menu257 WHERE professional_id=?',(candidate['id'],)).fetchone()
             number=row[0] if row and row[0] else candidate['whatsapp']
-            mode=row[1] if row else 'whatsapp'
+            mode='whatsapp'
         finally:c.close()
     followup=None
     order=values.get('order');viewer=g['current_user'](request) if order is not None else None

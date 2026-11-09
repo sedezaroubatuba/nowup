@@ -7,9 +7,10 @@
 <p>Entrega: R$ {{'%.2f'|format(order.delivery_fee_cents/100)|replace('.',',')}}</p><strong>Novo total: R$ {{'%.2f'|format(revision.total_cents/100)|replace('.',',')}}</strong>
 {% if review_customer %}<form action="/pedido/{{order.tracking_token}}/revisao/{{revision.id}}" method="post" class="nu-review-actions"><button name="decision" value="accept" class="nu-confirm">Aceitar alteração</button><button name="decision" value="decline" class="nu-review">Não aceitar / pedir outra opção</button><button name="decision" value="cancel" class="nu-refuse">Cancelar pedido</button></form>{% endif %}
 {% elif not review_customer and order.status in ['new','reviewing','revision_approved'] %}
+<div class="nu390-confirm-total"><span>Total para confirmar</span><strong>R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</strong></div>
 <div class="nu-review-actions">
 
-<form action="/painel/pedidos/{{order.id}}/status" method="post">{% if order_link377 %}<input type="hidden" name="return_to" value="link">{% endif %}<button name="status" value="confirmed" class="nu-confirm">Confirmar pedido{{' e liberar Pix' if order.payment_method=='pix' else ' sem alterações'}}</button></form>
+<form action="/painel/pedidos/{{order.id}}/status" method="post">{% if order_link377 %}<input type="hidden" name="return_to" value="link">{% endif %}<button data-confirm390 name="status" value="confirmed" class="nu-confirm">Confirmar pedido{{' e liberar Pix' if order.payment_method=='pix' else ' sem alterações'}}</button></form>
 <form action="/painel/pedidos/{{order.id}}/status" method="post" data-cancel-form><input type="hidden" name="status" value="rejected"><input type="hidden" name="reason"><button class="nu-refuse">Recusar pedido</button></form></div>
 <details class="nu378-edit" {% if order.status=='reviewing' %}open{% endif %}><summary class="nu-review">Editar pedido antes de confirmar</summary>
 <form action="/painel/pedidos/{{order.id}}/revisao" method="post" data-review-form data-fee="{{order.delivery_fee_cents}}">
