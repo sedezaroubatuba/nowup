@@ -92,8 +92,6 @@ def install(g):
         u=auth(request,'customer');form=await request.form();decision=form.get('decision');c=db()
         try:
             c.execute('BEGIN IMMEDIATE');initialize(c)
-            from nowup_scheduling380 import expire
-            expire(c,order_id=order_id);c.commit();c.execute('BEGIN IMMEDIATE')
             o=c.execute('SELECT * FROM orders WHERE tracking_token=? AND customer_id=?',(token,u['id'])).fetchone()
             if not o:raise HTTPException(404,'Pedido não encontrado')
             r=c.execute('SELECT * FROM order_revisions WHERE order_id=? ORDER BY id DESC LIMIT 1',(o['id'],)).fetchone()

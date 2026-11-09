@@ -182,3 +182,20 @@ def test_support_push_stays_in_the_private_store_account(setup345):
     with main.db() as c:
         notice=json.loads(c.execute('SELECT payload FROM customer_push112 WHERE user_id=? ORDER BY id DESC LIMIT 1',(users[0],)).fetchone()[0])
         assert notice['url']==route+'?chamado='+str(tid)
+
+
+def test_foreground_alerts_use_store_scoped_session(setup345):
+    import secrets
+    main,(store,other),_=setup345
+    token='alerts381-'+secrets.token_hex(12)
+    with main.db() as c:
+        uid=c.execute("INSERT INTO users(role,name,email,password_hash,email_verified,created_at,customer_store345,customer_email345) VALUES('customer','Avisos381',?,'unused',1,?,?,?)",('alerts381-'+token+'@example.invalid',main.now_iso(),store['id'],'alerts381@example.invalid')).lastrowid
+        c.execute('INSERT INTO sessions(token,user_id,expires_at,store_id345) VALUES(?,?,?,?)',(token,uid,(datetime.now(timezone.utc)+timedelta(days=1)).isoformat(),store['id']))
+        c.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(uid,'Atualização do pedido','Aviso privado da loja','/p/'+store['slug']+'/pedidos',main.now_iso()))
+    client=TestClient(main.app,headers={'Origin':'http://testserver'})
+    client.cookies.set('nowup_loja345_'+str(store['id']),token,path='/p/'+store['slug'])
+    assert client.get('/avisos203?after=0').status_code==401
+    response=client.get('/p/'+store['slug']+'/avisos203?after=0')
+    assert response.status_code==200
+    assert any(n['message']=='Aviso privado da loja' for n in response.json()['notifications'])
+    assert client.get('/p/'+other['slug']+'/avisos203?after=0').status_code==401

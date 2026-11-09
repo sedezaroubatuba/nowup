@@ -224,7 +224,7 @@ def install(g):
             else:yield route
     for route in list(flattened(app.router.routes)):
         if not isinstance(route,APIRoute):continue
-        if not (route.path.startswith(('/pedidos/','/pedido/')) or route.path in ('/cliente/pedidos/resumo202','/cliente/avisos','/cliente/notificacoes/ler') or route.path.startswith('/cliente/push/') or route.path=='/suporte' or route.path.startswith('/suporte/')):continue
+        if not (route.path.startswith(('/pedidos/','/pedido/')) or route.path in ('/avisos203','/cliente/pedidos/resumo202','/cliente/avisos','/cliente/notificacoes/ler') or route.path.startswith('/cliente/push/') or route.path=='/suporte' or route.path.startswith('/suporte/')):continue
         path='/p/{slug}'+route.path
         if path in existing:continue
         app.add_api_route(path,route.endpoint,methods=list(route.methods),response_model=route.response_model,

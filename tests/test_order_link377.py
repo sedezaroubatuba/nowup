@@ -79,3 +79,14 @@ def test_custom_message_does_not_replace_store_contact_message(channel,monkeypat
     assert 'Meu pedido '+result['order_code'] in result['message'] and '{saudacao}' not in result['message']
     assert result['merchant_url'] in result['message']
     with m.db() as c:assert c.execute('SELECT whatsapp_message FROM professionals WHERE id=?',(pid,)).fetchone()[0]==old
+
+
+def test_private_order_details_skip_intro_and_do_not_overlay_actions(channel,monkeypatch):
+    m,client,result,order,item,owner,buyer=setup_order(channel)
+    with m.db() as c:c.execute("UPDATE orders SET order_origin='nowup' WHERE id=?",(order['id'],))
+    monkeypatch.setattr(m,'current_user',lambda request:owner)
+    page=client.get('/pedido/'+order['tracking_token'])
+    assert page.status_code==200
+    assert 'id="nowup-opening260"' not in page.text
+    assert 'id="order-detail-alerts381"' in page.text
+    assert 'Confirmar pedido e liberar Pix' in page.text
