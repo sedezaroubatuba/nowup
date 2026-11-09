@@ -9,7 +9,7 @@
  if(!document.body.classList.contains('public-profile-area'))return;
  document.body.classList.add('fashion-catalog385');
  const sources=new Map([...document.querySelectorAll('[data-product]')].map(c=>[c.dataset.id,c]));
- const imageURL=c=>{const i=c.querySelector(':scope > img');return i?.dataset.src258||i?.src||i?.currentSrc;};
+ const imageURL=c=>{const i=c.querySelector(':scope > img');return c.dataset.fashionPrimary387||i?.dataset.src258||i?.src||i?.currentSrc;};
  function modal(title){const d=el('dialog',null,'nu387-info-dialog'),header=el('header'),h=el('h2',title),close=el('button','×');close.type='button';close.setAttribute('aria-label','Fechar');close.onclick=()=>d.close();header.append(h,close);d.append(header);d.addEventListener('close',()=>d.remove());document.body.append(d);return d;}
  function open(card){const current=document.querySelector('.nu151-dish-dialog[open]');if(current){current.querySelector('[data-close160]')?.click();setTimeout(()=>open(card),0);return;}card.querySelector('.nu151-choose')?.click();decorate(card);}
  function decorate(card){
