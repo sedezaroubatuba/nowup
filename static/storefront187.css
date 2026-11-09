@@ -71,3 +71,13 @@ html body [data-native-menu] .nu-cart-in262 .nu151-choose{
  border-color:#15803d!important;
  color:#fff!important;
 }
+
+/* Keep both quantity buttons green even under promotion and catalog themes. */
+html body.public-profile-area [data-native-menu]:is(#nu312-catalog,[data-native-menu]) .nu-cart-in262 .nu-step263,
+html body.public-profile-area [data-native-menu]:is(#nu312-catalog,[data-native-menu]) .nu-cart-in262 .nu-step263>button,
+html body.public-profile-area [data-native-menu]:is(#nu312-catalog,[data-native-menu]) .nu-cart-in262 .nu-step263>span{
+ background:#15803d!important;
+ background-image:none!important;
+ border-color:#15803d!important;
+ color:#fff!important;
+}
