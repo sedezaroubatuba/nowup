@@ -1,6 +1,6 @@
 {% import 'pairs256.html' as fashion_pairs385 %}
 {% macro form(categories, products, product=none, action_prefix='/painel/cardapio/produtos') %}
-{% set choices=fashion_editor385(product.customization192 if product else '') %}
+{% set choices=fashion_editor385(product.customization192 if product else '') %}{% set detail=fashion_details387(product.fashion_details387 if product else '') %}
 <form action="{{action_prefix}}{% if product %}/{{product.id}}{% endif %}" method="post" enctype="multipart/form-data" class="product-form" data-fashion-form385>
 <input type="hidden" name="extras_mode" value="none"><input type="hidden" name="is_combo256" value="0">
 <label>Nome da peça ou acessório<input class="input" name="name" maxlength="140" value="{{product.name if product else ''}}" required></label>
@@ -8,6 +8,12 @@
 <label>Preço de venda (R$)<input class="input" name="price" inputmode="decimal" value="{{'%.2f'|format(product.price_cents/100)|replace('.',',') if product else ''}}" placeholder="Ex.: 79,90" required></label>
 <label>{{'Trocar foto' if product else 'Foto do produto'}}<input type="file" name="photo" accept="image/*"></label>
 <label>Fotos adicionais (até 4)<input type="file" name="extra_photos385" accept="image/*" multiple><small>Até 5 fotos no total, contando a principal. Ao enviar novas fotos adicionais, elas substituem as anteriores.</small></label><label class="full">Descrição<textarea name="description" maxlength="600" placeholder="Tecido, medidas, acabamento e outras informações">{{product.description if product else ''}}</textarea></label>
+<label>Marca<input name="brand387" maxlength="120" value="{{detail.brand|default('')}}"></label>
+<label>Material<input name="material387" maxlength="120" value="{{detail.material|default('')}}" placeholder="Ex.: algodão, couro ou sintético"></label>
+<label>Composição<input name="composition387" maxlength="240" value="{{detail.composition|default('')}}" placeholder="Ex.: 100% algodão"></label>
+<label>Guia de medidas<select name="guide387"><option value="none">Sem guia</option>{% for key,preset in fashion_presets387.items() %}<option value="{{key}}" {% if detail.guide==key %}selected{% endif %}>{{preset.title}}</option>{% endfor %}</select></label>
+<label class="full">Medidas da peça (editáveis)<textarea name="measurements387" rows="7" maxlength="6000" placeholder="Escolha um modelo para preencher e depois ajuste as medidas.">{{detail.measurements|default('')}}</textarea><small>Modelos de referência, não universais. Confira as medidas da marca. Uma linha por tamanho; separe colunas com ponto e vírgula.</small></label>
+<script type="application/json" data-fashion-presets387>{{fashion_presets387|tojson}}</script>
 <label>Tipo de tamanho<select name="size_kind385"><option value="none" {% if choices.kind=='none' %}selected{% endif %}>Tamanho único / não se aplica</option><option value="letters" {% if choices.kind=='letters' %}selected{% endif %}>Letras — P, M, G, GG, XXG</option><option value="numbers" {% if choices.kind=='numbers' %}selected{% endif %}>Numeração — 35, 36, 37...</option></select></label>
 <label>Tamanhos disponíveis<input name="sizes385" value="{{choices.sizes}}" maxlength="1200" placeholder="Ex.: P, M, G ou 36, 38, 40"><small>Separe por vírgulas. O cliente escolhe um tamanho antes de adicionar.</small></label>
 <label>Cores disponíveis (opcional)<input name="colors385" value="{{choices.colors}}" maxlength="1200" placeholder="Ex.: Preto, Branco, Azul"></label>

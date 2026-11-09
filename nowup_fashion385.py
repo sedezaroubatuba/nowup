@@ -48,14 +48,19 @@ def save_photos(g,conn,pid,uploads):
 
 def install(g):
     g['templates'].env.globals['fashion_editor385']=editor
+    from nowup_fashion387 import install as install387
+    install387(g)
     from nowup_fashion_demo385 import install as demo_install
     demo_install(g)
     @g['app'].on_event('startup')
     def setup():
         with g['db']() as c:
             g['ensure_column'](c,'products','fashion_photos385',"TEXT NOT NULL DEFAULT '[]'")
+            g['ensure_column'](c,'products','fashion_details387',"TEXT NOT NULL DEFAULT '{}'")
             c.execute("INSERT OR IGNORE INTO categories(name,slug,icon,sort_order,active) VALUES('Moda e acessórios','moda-e-acessorios','👗',80,1)")
         c.close()
         from nowup_fashion_demo385 import initialize
         initialize(g)
+        from nowup_fashion387 import seed_demo
+        seed_demo(g)
 

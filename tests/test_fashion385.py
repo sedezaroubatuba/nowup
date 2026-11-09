@@ -60,11 +60,14 @@ def test_create_edit_fashion_product_and_merchant_render(shop,monkeypatch):
  from pathlib import Path
  Path('/tmp/fashion-panel385.html').write_text(page.text)
  public=client.get('/p/'+slug+'/menu');assert public.status_code==200,public.text[:500]
- assert '/static/fashion385.js?v=385' in public.text and 'data-fashion-photos385=' in public.text
+ assert '/static/fashion385.js?v=387' in public.text and 'data-fashion-photos385=' in public.text
  assert 'name="size_kind385"' in page.text and 'Moda e acessórios' in page.text and 'Novidades' in page.text
- data.update(size_kind385='numbers',sizes385='36, 38, 40')
+ data.update(size_kind385='numbers',sizes385='36, 38, 40',brand387='Minha marca',material387='Algodão',composition387='100% algodão',guide387='numbers')
  r=client.post('/painel/cardapio/produtos/'+str(product['id']),data=data,follow_redirects=False);assert r.status_code==303,r.text
  with m.db() as c:assert json.loads(c.execute('SELECT customization192 FROM products WHERE id=?',(product['id'],)).fetchone()[0])['groups'][0]['name']=='Numeração'
+ with m.db() as c:
+  detail=json.loads(c.execute('SELECT fashion_details387 FROM products WHERE id=?',(product['id'],)).fetchone()[0]);assert detail['brand']=='Minha marca' and '36;' in detail['measurements']
+ assert 'name="guide387"' in page.text and 'data-fashion-details387=' in public.text
  for key in ['is_combo256','sold_by_weight370']:
   assert client.post('/painel/cardapio/produtos',data={**data,key:'1'},follow_redirects=False).status_code==400
 
@@ -116,6 +119,8 @@ def test_demo_stores_editable_isolated_and_seed_is_idempotent(checkout,monkeypat
  monkeypatch.setattr(m,'current_user',lambda request:None)
  public=client.get('/p/nowup-moda-demonstracao/menu');assert public.status_code==200,public.text[:500]
  assert 'data-demo-browse386="1" data-login-required="0"' in public.text
+ from pathlib import Path
+ Path('/tmp/fashion387.html').write_text(public.text)
  assert 'Demonstração • acesso livre' in public.text and '"demoBrowse386": true' in public.text
  normal=client.get('/p/'+demo['slug'].replace('nowup-moda-demonstracao','not-a-store')+'/menu')
  assert normal.status_code==404
@@ -135,3 +140,15 @@ def test_fashion_whatsapp_selection_has_sizes_and_combined_payment(channel):
  result=r.json();assert 'confirmar a disponibilidade' in result['message'] and 'M' in result['message'] and 'Preto' in result['message']
  assert 'Pagamento a combinar pelo WhatsApp.' in result['message'] and 'whatsapp_url' in result
  with m.db() as c:assert c.execute('SELECT payment_method FROM orders').fetchone()[0]=='on_delivery'
+
+
+def test_measurement_templates_are_editable_and_validated():
+ from nowup_fashion387 import PRESETS,details
+ for key in ('letters','numbers','shoes'):
+  value=details('Marca','Couro','100% couro',key,'')
+  assert value['measurements']==PRESETS[key]['text']
+ custom='Tamanho;Comprimento (cm)\n36;24,3\n37;25'
+ assert details('','','','shoes',custom)['measurements']==custom
+ for guide,text in [('invalid',''),('custom','Tamanho;Busto\nP'),('custom','A;B\nP;'+('x'*81))]:
+  with pytest.raises(HTTPException):details('','','',guide,text)
+ assert details('','','','none','')['measurements']==''
