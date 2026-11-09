@@ -57,6 +57,7 @@
  document.addEventListener('click',e=>{const choose=e.target.closest('.nu151-choose');if(choose)decorate(choose.closest('[data-product]'));});
  // The common compact card owns quantity; do not intercept its +/- controls.
  function removeButtons391(){document.querySelectorAll('.nu201-card.nu-cart-in262').forEach(card=>{if(card.querySelector('[data-fashion-remove391]'))return;const b=el('button','Remover','nu391-remove');b.type='button';b.dataset.fashionRemove391='';b.setAttribute('aria-label','Remover todas as unidades de '+(sources.get(card.dataset.source256)?.dataset.name||'peça'));b.onclick=()=>window.NOWUP_CART160?.removeProduct(card.dataset.source256);card.querySelector('.nu-cart-actions262')?.append(b);});document.querySelectorAll('.nu201-card:not(.nu-cart-in262) [data-fashion-remove391]').forEach(b=>b.remove());}
+ window.NOWUP_FASHION_REMOVE391=removeButtons391;
  window.addEventListener('nowup-cart-changed',()=>queueMicrotask(removeButtons391));
  // Prepare original detail cards, including items with a single size.
  sources.forEach(decorate);

@@ -15,5 +15,5 @@ window.NOWUP_FASHION_LAYOUT391=({root,originals,compact,sticky,nav,intro,showcas
  root.addEventListener('search',e=>{if(e.target!==search)return;e.stopImmediatePropagation();filter();},true);
  window.addEventListener('nowup-cart-changed',()=>{cartRefreshers.forEach(fn=>fn());schedule();});
  if(typeof ResizeObserver!=='undefined'){const observer=new ResizeObserver(schedule);cards.forEach(({node})=>observer.observe(node));}
- grid.addEventListener('load',schedule,true);window.addEventListener('resize',schedule);filter();body.dataset.store187Ready='1';
+ grid.addEventListener('load',schedule,true);window.addEventListener('resize',schedule);filter();window.NOWUP_FASHION_REMOVE391?.();body.dataset.store187Ready='1';
 };

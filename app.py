@@ -735,6 +735,7 @@ def init_db():
     conn.execute("CREATE TABLE IF NOT EXISTS checkout_requests229(customer_id INTEGER NOT NULL,professional_id INTEGER NOT NULL,request_key TEXT NOT NULL,payload_hash TEXT NOT NULL,order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,created_at TEXT NOT NULL,PRIMARY KEY(customer_id,professional_id,request_key))")
     ensure_column(conn,'products','fashion_photos385',"TEXT NOT NULL DEFAULT '[]'")
     ensure_column(conn,'products','fashion_details387',"TEXT NOT NULL DEFAULT '{}'")
+    ensure_column(conn,'products','inventory_version391',"INTEGER NOT NULL DEFAULT 0")
     from nowup_inventory391 import initialize as initialize_inventory391
     initialize_inventory391(conn)
     defaults = {
@@ -2009,7 +2010,7 @@ def catalog_return328(request, fallback):
     return RedirectResponse(fallback,303)
 
 @app.post("/painel/cardapio/produtos")
-def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None), sold_by_weight370: Optional[str]=Form(None), size_kind385: str=Form("none"), sizes385: str=Form(""), colors385: str=Form(""), extra_photos385: list[UploadFile]=File(default=[]), brand387: str=Form(""), material387: str=Form(""), composition387: str=Form(""), guide387: str=Form("none"), measurements387: str=Form(""), stock_mode389: str=Form("none"), stock_total389: str=Form(""), stock_sizes389: str=Form(""), stock_variants391: str=Form("")):
+def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None), sold_by_weight370: Optional[str]=Form(None), size_kind385: str=Form("none"), sizes385: str=Form(""), colors385: str=Form(""), extra_photos385: list[UploadFile]=File(default=[]), brand387: str=Form(""), material387: str=Form(""), composition387: str=Form(""), guide387: str=Form("none"), measurements387: str=Form(""), stock_mode389: str=Form("none"), stock_total389: str=Form(""), stock_sizes389: str=Form(""), stock_variants391: str=Form(""), stock_version391: str=Form("")):
     from nowup_promotions285 import promotional_cents
     promo_cents285=promotional_cents(price_to_cents(price),promo_price,promo_mode,promo_percent,promo_enabled,price_to_cents)
     is_combo256,category=combo_kind(category,is_combo256)
@@ -2062,7 +2063,7 @@ def pro_product_add(request: Request, name: str=Form(...), description: str=Form
     conn.commit(); conn.close(); return catalog_return328(request,"/painel?ok=combo#combos-loja" if is_combo256 else "/painel?ok=refeicao#lanches-refeicoes322" if custom192 and custom192.get("is_meal317") else "/painel?ok=produto#novo-produto")
 
 @app.post("/painel/cardapio/produtos/{product_id}")
-def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None), sold_by_weight370: Optional[str]=Form(None), size_kind385: str=Form("none"), sizes385: str=Form(""), colors385: str=Form(""), extra_photos385: list[UploadFile]=File(default=[]), brand387: str=Form(""), material387: str=Form(""), composition387: str=Form(""), guide387: str=Form("none"), measurements387: str=Form(""), stock_mode389: str=Form("none"), stock_total389: str=Form(""), stock_sizes389: str=Form(""), stock_variants391: str=Form("")):
+def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None), sold_by_weight370: Optional[str]=Form(None), size_kind385: str=Form("none"), sizes385: str=Form(""), colors385: str=Form(""), extra_photos385: list[UploadFile]=File(default=[]), brand387: str=Form(""), material387: str=Form(""), composition387: str=Form(""), guide387: str=Form("none"), measurements387: str=Form(""), stock_mode389: str=Form("none"), stock_total389: str=Form(""), stock_sizes389: str=Form(""), stock_variants391: str=Form(""), stock_version391: str=Form("")):
     from nowup_promotions285 import promotional_cents
     promo_cents285=promotional_cents(price_to_cents(price),promo_price,promo_mode,promo_percent,promo_enabled,price_to_cents)
     is_combo256,category=combo_kind(category,is_combo256)
@@ -2080,6 +2081,8 @@ def pro_product_edit(request: Request, product_id: int, name: str=Form(...), des
     if nowup_fashion385.is_fashion(p):
         from nowup_inventory391 import lock_store
         lock_store(conn,p['id'])
+        current_version391=conn.execute('SELECT inventory_version391 FROM products WHERE id=? AND professional_id=?',(product_id,p['id'])).fetchone()
+        if stock_version391 and (not current_version391 or str(current_version391[0])!=stock_version391):conn.rollback();conn.close();raise HTTPException(409,'O estoque mudou desde que você abriu o formulário. Atualize o painel antes de salvar.')
         if is_combo256 or sold_by_weight370=='1':conn.close();raise HTTPException(400,'Moda usa peças e acessórios, sem combos ou produtos por peso.')
         try:
             custom192=nowup_fashion385.config(size_kind385,sizes385,colors385)
@@ -2116,6 +2119,7 @@ def pro_product_edit(request: Request, product_id: int, name: str=Form(...), des
             conn.execute('UPDATE products SET fashion_details387=? WHERE id=?',(json.dumps(details387,ensure_ascii=False),product_id))
             from nowup_inventory391 import configure
             configure(conn,product_id,details387['stock'])
+            conn.execute('UPDATE products SET inventory_version391=inventory_version391+1 WHERE id=?',(product_id,))
         except HTTPException:conn.rollback();conn.close();raise
     if custom192 is not None:save_config(conn,product_id,custom192)
     if is_combo256:conn.execute('UPDATE products SET is_dish=1 WHERE id=?',(product_id,))

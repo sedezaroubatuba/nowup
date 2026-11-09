@@ -136,7 +136,7 @@ def write_balances(c,product_ids):
             elif stock.get('mode')=='variants':
                 for v in stock['variants']:
                     if (v['size'],v['color'])==(r['size'],r['color']):v['quantity']=r['on_hand']
-        c.execute('UPDATE products SET fashion_details387=? WHERE id=?',(json.dumps(detail,ensure_ascii=False),pid))
+        c.execute('UPDATE products SET fashion_details387=?,inventory_version391=inventory_version391+1 WHERE id=?',(json.dumps(detail,ensure_ascii=False),pid))
         c.execute('UPDATE fashion_inventory391 SET source_qty=on_hand WHERE product_id=?',(pid,))
 
 

@@ -79,3 +79,15 @@ def test_checkout_cannot_steal_another_customers_hold(inventory):
  r=c.post('/p/'+slug+'/menu/whatsapp',headers={'x-user391':str(ids[0])},data={**data,'cart_json':cart(10),'basket_key391':'reservation391-owner'})
  assert r.status_code==409
  with m.db() as db:assert db.execute('SELECT COUNT(*) FROM orders').fetchone()[0]==0
+
+
+def test_stale_merchant_form_cannot_replenish_a_sold_balance(inventory):
+ m,c,slug,pid,data,product,buyer,ids,cart=inventory
+ with m.db() as db:
+  db.execute('UPDATE products SET inventory_version391=1 WHERE id=?',(product,))
+  before=dict(db.execute('SELECT * FROM products WHERE id=?',(product,)).fetchone())
+ response=c.post('/painel/cardapio/produtos/'+str(product),headers={'x-owner391':'1'},data={'name':'Descrição editada','price':'3,00','category':'Vestidos','stock_version391':'0','stock_mode389':'total','stock_total389':'10'})
+ assert response.status_code==409
+ with m.db() as db:
+  after=dict(db.execute('SELECT * FROM products WHERE id=?',(product,)).fetchone())
+  assert after['fashion_details387']==before['fashion_details387'] and after['name']==before['name']

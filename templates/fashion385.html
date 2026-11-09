@@ -2,6 +2,7 @@
 {% macro form(categories, products, product=none, action_prefix='/painel/cardapio/produtos') %}
 {% set choices=fashion_editor385(product.customization192 if product else '') %}{% set detail=fashion_details387(product.fashion_details387 if product else '') %}
 <form action="{{action_prefix}}{% if product %}/{{product.id}}{% endif %}" method="post" enctype="multipart/form-data" class="product-form" data-fashion-form385>
+<input type="hidden" name="stock_version391" value="{{product.inventory_version391|default(0) if product else 0}}">
 <input type="hidden" name="extras_mode" value="none"><input type="hidden" name="is_combo256" value="0">
 <label>Nome da peça ou acessório<input class="input" name="name" maxlength="140" value="{{product.name if product else ''}}" required></label>
 <label>Categoria<select name="category" required>{% if product %}<option selected>{{product.category}}</option>{% endif %}{% for category in categories if category.active and category.name|lower != 'combos' %}<option value="{{category.name}}">{{category.name}}</option>{% endfor %}</select><small>Use Novidades para apresentar peças recém-chegadas.</small></label>

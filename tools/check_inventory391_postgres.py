@@ -18,13 +18,13 @@ def db():
 try:
  with db() as c:
   c.execute('CREATE TABLE professionals(id INTEGER PRIMARY KEY,business_type TEXT)')
-  c.execute('CREATE TABLE products(id INTEGER PRIMARY KEY,professional_id INTEGER,fashion_details387 TEXT)')
+  c.execute('CREATE TABLE products(id INTEGER PRIMARY KEY,professional_id INTEGER,fashion_details387 TEXT,inventory_version391 INTEGER NOT NULL DEFAULT 0)')
   c.execute('CREATE TABLE orders(id INTEGER PRIMARY KEY,professional_id INTEGER,customer_id INTEGER)')
   c.execute('CREATE TABLE order_items(id INTEGER PRIMARY KEY,order_id INTEGER,product_id INTEGER,quantity INTEGER)')
   initialize(c)
   c.execute("INSERT INTO professionals VALUES(1,'fashion')")
   stock={'mode':'variants','variants':[{'size':'M','color':'Preto','quantity':10},{'size':'M','color':'Branco','quantity':2}]}
-  c.execute('INSERT INTO products VALUES(1,1,?)',(json.dumps({'stock':stock}),));configure(c,1,stock)
+  c.execute('INSERT INTO products(id,professional_id,fashion_details387) VALUES(1,1,?)',(json.dumps({'stock':stock}),));configure(c,1,stock)
  def reserve(n):
   c=db()
   try:
