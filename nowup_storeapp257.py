@@ -46,7 +46,7 @@ def validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighbor
     if not isinstance(raw_items,list) or not raw_items: raise HTTPException(400,"Carrinho vazio")
     if len(raw_items)>50:
         raise HTTPException(400,"O carrinho permite até 50 itens diferentes. Divida o pedido.")
-    clean_items=[]; subtotal=0; quantities255={}
+    clean_items=[]; subtotal=0; quantities255={}; fashion_stock389={}
     for raw in raw_items:
         try:
             if not isinstance(raw,dict) or type(raw.get("id")) is not int or type(raw.get("quantity",1)) is not int or raw["id"]<1 or not 1<=raw.get("quantity",1)<=99: raise ValueError()
@@ -69,6 +69,8 @@ def validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighbor
             utensils=raw.get("utensils",False)
             try:item_notes=g['validate_customization'](g['parse_config'](product["customization192"]),raw.get("customization",{}),item_notes,utensils)
             except HTTPException:raise
+            from nowup_fashion_stock389 import validate as validate_stock389
+            if dict(p).get('business_type')=='fashion':validate_stock389(product,raw.get('customization',{}),qty,fashion_stock389)
             combo_base_details365=item_notes
             combo_units364=[];combo_chosen364=[];combo_price364=0
             unit_combo365=bool(product.get('is_combo256') or g['parse_config'](product['customization192']).get('meal_combo324'))

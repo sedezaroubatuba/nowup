@@ -63,4 +63,6 @@ def install(g):
         initialize(g)
         from nowup_fashion387 import seed_demo
         seed_demo(g)
+        from nowup_fashion_stock389 import seed_colors
+        seed_colors(g)
 

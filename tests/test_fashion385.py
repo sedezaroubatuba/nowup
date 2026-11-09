@@ -60,7 +60,7 @@ def test_create_edit_fashion_product_and_merchant_render(shop,monkeypatch):
  from pathlib import Path
  Path('/tmp/fashion-panel385.html').write_text(page.text)
  public=client.get('/p/'+slug+'/menu');assert public.status_code==200,public.text[:500]
- assert '/static/fashion385.js?v=388' in public.text and 'data-fashion-photos385=' in public.text
+ assert '/static/fashion385.js?v=389' in public.text and 'data-fashion-photos385=' in public.text
  assert 'name="size_kind385"' in page.text and 'Moda e acessórios' in page.text and 'Novidades' in page.text
  data.update(size_kind385='numbers',sizes385='36, 38, 40',brand387='Minha marca',material387='Algodão',composition387='100% algodão',guide387='numbers')
  r=client.post('/painel/cardapio/produtos/'+str(product['id']),data=data,follow_redirects=False);assert r.status_code==303,r.text
@@ -152,3 +152,46 @@ def test_measurement_templates_are_editable_and_validated():
  for guide,text in [('invalid',''),('custom','Tamanho;Busto\nP'),('custom','A;B\nP;'+('x'*81))]:
   with pytest.raises(HTTPException):details('','','',guide,text)
  assert details('','','','none','')['measurements']==''
+
+
+def test_stock_is_optional_and_counts_are_aggregated_per_size():
+ from nowup_fashion_stock389 import stock,validate
+ assert stock('none','invalid','invalid','')['mode']=='none'
+ assert stock('sizes','','P;2\nM;0','P, M, G')['sizes']=={'P':2,'M':0,'G':0}
+ for args in [('total','-1','',''),('sizes','','M;2\nM;3','M'),('sizes','','G;2','M'),('sizes','','M;1.5','M')]:
+  with pytest.raises(HTTPException):stock(*args)
+ product={'id':10,'name':'Vestido','fashion_details387':json.dumps({'stock':stock('sizes','','P;2\nM;0','P, M')})}
+ selected={'groups':{'fashionSize385':['P']}}
+ counts={};validate(product,selected,1,counts);validate(product,selected,1,counts)
+ with pytest.raises(HTTPException):validate(product,selected,1,counts)
+ with pytest.raises(HTTPException):validate(product,{'groups':{'fashionSize385':['M']}},1,{})
+ product['fashion_details387']=json.dumps({'stock':stock('total','3','','')})
+ counts={};validate(product,selected,2,counts)
+ with pytest.raises(HTTPException):validate(product,{'groups':{'fashionSize385':['M']}},2,counts)
+ product['fashion_details387']='{}';validate(product,selected,99,{})
+
+
+def test_stock_saved_on_product_and_checked_before_whatsapp(channel,monkeypatch):
+ m,client,slug,pid,data,product,customer=channel
+ for callback in m.app.router.on_startup:
+  if callback.__name__!='start':callback()
+ with m.db() as c:
+  c.execute("UPDATE professionals SET business_type='fashion',offer_mode='catalog',plan_active='cardapio' WHERE id=?",(pid,))
+  uid=c.execute('SELECT user_id FROM professionals WHERE id=?',(pid,)).fetchone()[0]
+ monkeypatch.setattr(m,'current_user',lambda request:{'id':uid,'role':'professional'})
+ fields=dict(name='Vestido estoque',price='99,90',category='Vestidos',size_kind385='letters',sizes385='P, M',stock_mode389='sizes',stock_sizes389='P;2\nM;0',available='1',extras_mode='none')
+ assert client.post('/painel/cardapio/produtos/'+str(product),data=fields,follow_redirects=False).status_code==303
+ with m.db() as c:
+  row=dict(c.execute('SELECT * FROM products WHERE id=?',(product,)).fetchone())
+  assert json.loads(row['fashion_details387'])['stock']['sizes']=={'P':2,'M':0}
+ from nowup_storeapp257 import validate
+ cart=lambda q,size:json.dumps([{'id':product,'quantity':q,'customization':{'groups':{'fashionSize385':[size]}}}])
+ with m.db() as c:
+  pro=dict(c.execute('SELECT * FROM professionals WHERE id=?',(pid,)).fetchone())
+  args=(vars(m),c,pro)
+  assert validate(*args,cart(2,'P'),'pickup','on_delivery','','','')[0][0][1]==2
+  for q,size in [(3,'P'),(1,'M')]:
+   with pytest.raises(HTTPException):validate(*args,cart(q,size),'pickup','on_delivery','','','')
+ fields['stock_mode389']='none'
+ assert client.post('/painel/cardapio/produtos/'+str(product),data=fields,follow_redirects=False).status_code==303
+ with m.db() as c:assert json.loads(c.execute('SELECT fashion_details387 FROM products WHERE id=?',(product,)).fetchone()[0])['stock']['mode']=='none'

@@ -16,7 +16,12 @@
 <script type="application/json" data-fashion-presets387>{{fashion_presets387|tojson}}</script>
 <label>Tipo de tamanho<select name="size_kind385"><option value="none" {% if choices.kind=='none' %}selected{% endif %}>Tamanho único / não se aplica</option><option value="letters" {% if choices.kind=='letters' %}selected{% endif %}>Letras — P, M, G, GG, XXG</option><option value="numbers" {% if choices.kind=='numbers' %}selected{% endif %}>Numeração — 35, 36, 37...</option></select></label>
 <label>Tamanhos disponíveis<input name="sizes385" value="{{choices.sizes}}" maxlength="1200" placeholder="Ex.: P, M, G ou 36, 38, 40"><small>Separe por vírgulas. O cliente escolhe um tamanho antes de adicionar.</small></label>
-<label>Cores disponíveis (opcional)<input name="colors385" value="{{choices.colors}}" maxlength="1200" placeholder="Ex.: Preto, Branco, Azul"></label>
+<label>Cores disponíveis (opcional)<input name="colors385" value="{{choices.colors}}" maxlength="1200" placeholder="Ex.: Preto, Branco, Azul"><small>O cliente escolhe a cor junto com o tamanho. Deixe vazio para não usar cores.</small></label>
+{% set stock=detail.stock|default({}) %}
+<label>Controle de estoque (opcional)<select name="stock_mode389"><option value="none" {% if stock.get('mode','none')=='none' %}selected{% endif %}>Não controlar estoque</option><option value="total" {% if stock.get('mode')=='total' %}selected{% endif %}>Quantidade total da peça</option><option value="sizes" {% if stock.get('mode')=='sizes' %}selected{% endif %}>Quantidade por tamanho / numeração</option></select></label>
+<label data-stock-total389>Quantidade em estoque<input name="stock_total389" type="number" min="0" max="99999" value="{{stock.get('total',0)}}"></label>
+<label class="full" data-stock-sizes389>Estoque por tamanho<textarea name="stock_sizes389" rows="5" maxlength="3000" placeholder="P;3&#10;M;5&#10;G;2">{% for size,amount in stock.get('sizes',{}).items() %}{{size}};{{amount}}{{'\n'}}{% endfor %}</textarea><small>Informe o saldo de cada tamanho. Zero significa esgotado. O lojista atualiza o saldo após a venda pelo WhatsApp.</small></label>
+<p class="full muted">Sem controle de estoque, o cadastro continua normal. Ao ativar, a quantidade disponível aparece para o cliente. O catálogo não baixa nem reserva estoque automaticamente.</p>
 <label>Máximo por pedido<input name="max_quantity" type="number" min="1" max="99" value="{{product.max_quantity if product else 99}}"></label>
 <label class="check"><input type="checkbox" name="available" value="1" {% if not product or product.available %}checked{% endif %}> Disponível para separar ou entregar</label>
 {{fashion_pairs385.fields(products,product)}}
