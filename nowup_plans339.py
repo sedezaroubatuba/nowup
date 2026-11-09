@@ -29,3 +29,10 @@ def synchronize_admin(conn):
     conn.execute("DELETE FROM adm227_entities WHERE kind='plans'")
     for index, value in enumerate(expected, 1):
         conn.execute("INSERT INTO adm227_entities(kind,id,data) VALUES('plans',?,?)", (index, json.dumps(value, ensure_ascii=False)))
+
+
+def for_store(pro):
+    plans=dict(PLANS)
+    if dict(pro).get('business_type')=='fashion':
+        plans['cardapio']=('Moda e acessórios • catálogo com WhatsApp',3990)
+    return plans

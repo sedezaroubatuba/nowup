@@ -924,7 +924,7 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
     if category:
         where.append("EXISTS(SELECT 1 FROM professional_categories pc JOIN categories c ON c.id=pc.category_id WHERE pc.professional_id=p.id AND c.slug=?)")
         params.append(category)
-    if business_type in ("professional","restaurant","store","convenience","other"):
+    if business_type in ("professional","restaurant","store","convenience","fashion","other"):
         where.append("p.business_type=?"); params.append(business_type)
     visitor_key=request.cookies.get("nowup_visitor") or secrets.token_urlsafe(18)
     visit_date=datetime.now(SAO_PAULO_TZ).date().isoformat()
@@ -995,7 +995,7 @@ def professionals(request: Request, category: str="", city: str="", neighborhood
         where.append("(p.display_name LIKE ? OR p.services LIKE ? OR p.description LIKE ? OR EXISTS(SELECT 1 FROM professional_categories pcq JOIN categories cq ON cq.id=pcq.category_id WHERE pcq.professional_id=p.id AND cq.name LIKE ?) OR EXISTS(SELECT 1 FROM products pr WHERE pr.professional_id=p.id AND pr.available=1 AND (pr.name LIKE ? OR pr.description LIKE ? OR pr.category LIKE ?)))"); like=f"%{q.strip()}%"; params += [like,like,like,like,like,like,like]
     if category:
         where.append("EXISTS(SELECT 1 FROM professional_categories pc JOIN categories c ON c.id=pc.category_id WHERE pc.professional_id=p.id AND c.slug=?)"); params.append(category)
-    if business_type in ("professional","restaurant","store","convenience","other"):
+    if business_type in ("professional","restaurant","store","convenience","fashion","other"):
         where.append("p.business_type=?"); params.append(business_type)
     rows=conn.execute(f"""
       SELECT p.*,
@@ -1280,6 +1280,8 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
     try:
         p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved' AND plan_active IN ('cardapio','ambos','completo') AND EXISTS(SELECT 1 FROM users owner255 WHERE owner255.id=professionals.user_id AND owner255.is_active=1)",(slug,)).fetchone()
         if not p: conn.close(); raise HTTPException(404)
+        if p['is_demo'] and slug in ('nowup-moda-demonstracao','nowup-moda-modelo'):
+            conn.close();raise HTTPException(409,'Loja de demonstração: produtos e preços ilustrativos, sem pedidos reais.')
         if logged and logged['id']==p['user_id']:
             conn.close(); raise HTTPException(403,"Você pode visualizar sua loja, mas não fazer pedidos nela.")
         if not logged or logged['role'] != 'customer':
@@ -1480,6 +1482,9 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
         return RedirectResponse('/cadastro/profissional?erro=plano',303)
     if offer_mode not in ('menu','catalog'):
         return RedirectResponse('/cadastro/profissional?erro=plano',303)
+    if business_type=='fashion':
+        if plan!='cardapio':return RedirectResponse('/cadastro/profissional?erro=plano',303)
+        offer_mode='catalog'
     import nowup_verification257 as verification
     simple346=plan=='cardapio'
     fields257 = dict(legal_name=legal_name,owner_name=owner_name,owner_cpf=owner_cpf,owner_role=owner_role)
@@ -1491,7 +1496,7 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
         docs257=verification.evidence(fields257,dict(facade=facade,company=company,identity=identity,address_proof=address_proof),document)
     elif doc_type not in ('CPF','CNPJ') or (raw_document346 and not verification.valid_doc(document,11 if doc_type=='CPF' else 14)):
         return RedirectResponse('/cadastro/profissional?erro=documento',303)
-    custom346=business_segment346.strip()
+    custom346='Moda e acessórios' if business_type=='fashion' else business_segment346.strip()
     if len(custom346)>100 or ((category_choice346=='other' or business_type=='other') and not custom346):
         return RedirectResponse('/cadastro/profissional?erro=segmento',303)
     normalized_email=normalize_email(email)
@@ -1510,7 +1515,7 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
         return RedirectResponse("/cadastro/profissional?erro=termos",303)
     if not email_service_configured():
         return RedirectResponse("/cadastro/profissional?erro=email_indisponivel",303)
-    if business_type not in ("professional","restaurant","store","convenience","other"):
+    if business_type not in ("professional","restaurant","store","convenience","fashion","other"):
         business_type="other"
     cities=active_cities()
     city=city.strip()[:120]
@@ -1536,6 +1541,10 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
                          (uid,slug,name.strip(),doc_type,document.strip(),phone.strip(),city.strip(),neighborhood.strip(),cep.strip(),description.strip(),services.strip(),business_type,offer_mode,'none',plan,now_iso())); pid=cur.lastrowid
         if docs257: verification.save(conn,pid,fields257,docs257)
         conn.execute('UPDATE professionals SET simple_menu346=?,business_segment346=? WHERE id=?',(int(simple346),custom346,pid))
+        if business_type=='fashion':
+            category385=conn.execute("SELECT id FROM categories WHERE slug='moda-e-acessorios'").fetchone()
+            selected346=[category385[0]]
+            nowup_fashion385.seed(conn,pid,now_iso())
         if selected346:
             valid346=conn.execute('SELECT id FROM categories WHERE id=? AND active=1',(selected346[0],)).fetchone()
             if not valid346:
@@ -1992,7 +2001,7 @@ def catalog_return328(request, fallback):
     return RedirectResponse(fallback,303)
 
 @app.post("/painel/cardapio/produtos")
-def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None), sold_by_weight370: Optional[str]=Form(None)):
+def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None), sold_by_weight370: Optional[str]=Form(None), size_kind385: str=Form("none"), sizes385: str=Form(""), colors385: str=Form(""), extra_photos385: list[UploadFile]=File(default=[])):
     from nowup_promotions285 import promotional_cents
     promo_cents285=promotional_cents(price_to_cents(price),promo_price,promo_mode,promo_percent,promo_enabled,price_to_cents)
     is_combo256,category=combo_kind(category,is_combo256)
@@ -2001,6 +2010,12 @@ def pro_product_add(request: Request, name: str=Form(...), description: str=Form
     if sold_by_weight370 == '1':configure_weight370(price_to_cents(price),is_combo256,extras_mode,custom192)
     if custom192 and custom192["free_count"]>max_choices:raise HTTPException(400,"A quantidade grátis não pode superar o máximo de adicionais.")
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); fn=""
+    if nowup_fashion385.is_fashion(p):
+        if is_combo256 or sold_by_weight370=='1':conn.close();raise HTTPException(400,'Moda usa peças e acessórios, sem combos ou produtos por peso.')
+        try:custom192=nowup_fashion385.config(size_kind385,sizes385,colors385)
+        except HTTPException:conn.close();raise
+        if len([u for u in extra_photos385 if u.filename])>4:conn.close();raise HTTPException(400,'Envie até 4 fotos adicionais, além da principal.')
+        extras_mode='none';sold_cold=None
     if custom192 is not None:
         try:
             custom192=nowup_ingredients320.bind(conn,p["id"],custom192)
@@ -2018,6 +2033,9 @@ def pro_product_add(request: Request, name: str=Form(...), description: str=Form
     conn.execute("UPDATE products SET is_combo256=?,recommend256=?,related256=? WHERE id=?",(bool(is_combo256),bool(recommend256),pair_ids256,cur.lastrowid))
     if extras_mode=="legacy":configure_personalization153(conn,cur.lastrowid,bool(personalizable),max_choices)
     else:configure_shared155(conn,p["id"],cur.lastrowid,extras_mode,extra_ids,max_choices)
+    if nowup_fashion385.is_fashion(p):
+        try:nowup_fashion385.save_photos(globals(),conn,cur.lastrowid,extra_photos385)
+        except HTTPException:conn.rollback();conn.close();raise
     if custom192 is not None:save_config(conn,cur.lastrowid,custom192)
     if is_combo256:conn.execute('UPDATE products SET is_dish=1 WHERE id=?',(cur.lastrowid,))
     if sold_by_weight370=='1':
@@ -2025,7 +2043,7 @@ def pro_product_add(request: Request, name: str=Form(...), description: str=Form
     conn.commit(); conn.close(); return catalog_return328(request,"/painel?ok=combo#combos-loja" if is_combo256 else "/painel?ok=refeicao#lanches-refeicoes322" if custom192 and custom192.get("is_meal317") else "/painel?ok=produto#novo-produto")
 
 @app.post("/painel/cardapio/produtos/{product_id}")
-def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None), sold_by_weight370: Optional[str]=Form(None)):
+def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None), sold_by_weight370: Optional[str]=Form(None), size_kind385: str=Form("none"), sizes385: str=Form(""), colors385: str=Form(""), extra_photos385: list[UploadFile]=File(default=[])):
     from nowup_promotions285 import promotional_cents
     promo_cents285=promotional_cents(price_to_cents(price),promo_price,promo_mode,promo_percent,promo_enabled,price_to_cents)
     is_combo256,category=combo_kind(category,is_combo256)
@@ -2040,6 +2058,12 @@ def pro_product_edit(request: Request, product_id: int, name: str=Form(...), des
         sold_by_weight370='1'
     elif sold_by_weight370=='1':
         conn.close();raise HTTPException(400,'Cadastre produtos por peso pelo atalho exclusivo; não converta produtos existentes.')
+    if nowup_fashion385.is_fashion(p):
+        if is_combo256 or sold_by_weight370=='1':conn.close();raise HTTPException(400,'Moda usa peças e acessórios, sem combos ou produtos por peso.')
+        try:custom192=nowup_fashion385.config(size_kind385,sizes385,colors385)
+        except HTTPException:conn.close();raise
+        if len([u for u in extra_photos385 if u.filename])>4:conn.close();raise HTTPException(400,'Envie até 4 fotos adicionais, além da principal.')
+        extras_mode='none';sold_cold=None
     if custom192 is not None:
         try:
             custom192=nowup_ingredients320.bind(conn,p["id"],custom192)
@@ -2060,6 +2084,9 @@ def pro_product_edit(request: Request, product_id: int, name: str=Form(...), des
         fn=new_fn
     conn.execute("UPDATE products SET name=?,description=?,category=?,price_cents=?,image_filename=?,available=?,updated_at=?,promo_price_cents=?,featured=?,max_quantity=? WHERE id=?",(name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,now_iso(),promo_cents285,1 if featured else 0,max(1,min(99,max_quantity)),product_id)); configure_personalization153(conn,product_id,bool(personalizable),max_choices) if extras_mode=="legacy" else configure_shared155(conn,p["id"],product_id,extras_mode,extra_ids,max_choices)
     conn.execute("UPDATE products SET sold_cold=? WHERE id=? AND professional_id=?",(1 if sold_cold else 0,product_id,p["id"]))
+    if nowup_fashion385.is_fashion(p):
+        try:nowup_fashion385.save_photos(globals(),conn,product_id,extra_photos385)
+        except HTTPException:conn.rollback();conn.close();raise
     if custom192 is not None:save_config(conn,product_id,custom192)
     if is_combo256:conn.execute('UPDATE products SET is_dish=1 WHERE id=?',(product_id,))
     conn.execute("UPDATE products SET is_combo256=?,recommend256=?,related256=? WHERE id=? AND professional_id=?",(bool(is_combo256),bool(recommend256),pair_ids256,product_id,p["id"]))
@@ -2246,7 +2273,7 @@ def pro_update(request: Request, display_name: str=Form(...), business_type: str
     conn=db(); p=conn.execute("SELECT id,plan_active,offer_mode,whatsapp FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
     if not p:
         conn.close();raise HTTPException(403,"Loja não encontrada")
-    if business_type not in ("professional","restaurant","store","convenience","other"):
+    if business_type not in ("professional","restaurant","store","convenience","fashion","other"):
         business_type=conn.execute("SELECT business_type FROM professionals WHERE id=?",(p["id"],)).fetchone()[0]
     cities=active_cities(get_settings(conn))
     if city not in cities: city=cities[0]
@@ -2256,6 +2283,9 @@ def pro_update(request: Request, display_name: str=Form(...), business_type: str
     elif p['plan_active'] in ('cardapio','ambos','completo'):
         offer_mode=offer_mode if offer_mode in ('menu','catalog') else p['offer_mode']
     else: offer_mode=p['offer_mode']
+    if business_type=='fashion':
+        offer_mode='catalog'
+        nowup_fashion385.seed(conn,p['id'],now_iso())
     conn.execute("UPDATE professionals SET display_name=?,business_type=?,offer_mode=?,city=?,neighborhood=?,address=?,cep=?,description=?,services=?,service_area=?,opening_hours=?,business_status=?,hide_address=?,whatsapp_message=? WHERE id=?",(display_name.strip()[:120],business_type,offer_mode,city,neighborhood.strip()[:120],address.strip()[:220],cep.strip()[:20],description.strip()[:1200],services.strip()[:1200],service_area.strip()[:500],opening_hours.strip()[:500],business_status,1 if hide_address else 0,(whatsapp_message.strip() or default_message)[:300],p["id"]))
     if new_phone and normalize_phone(p['whatsapp'])!=new_phone[2:]:
         conn.execute("UPDATE professionals SET whatsapp=? WHERE id=?",(new_phone[2:],p['id']))
@@ -3193,3 +3223,6 @@ nowup_communication372.install(globals())
 
 import nowup_scheduling380
 nowup_scheduling380.install(globals())
+
+import nowup_fashion385
+nowup_fashion385.install(globals())

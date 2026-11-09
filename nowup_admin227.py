@@ -146,7 +146,9 @@ def snapshot(c,a):
  sm=metadata(c,'storemeta');stores=[];settings=json.loads(c.execute('SELECT settings FROM adm227_state WHERE id=1').fetchone()[0]);plans=admin_plans()
  # Existing prices remain unknown unless explicitly registered. Never assign R$79 to an old contract.
  for p in raw_stores:
-  m=sm.get(p['id'],{});st={'id':p['id'],'name':p['display_name'],'city':p['city'],'neighborhood':p['neighborhood'],'category':'','approval':p['admission_status'],'online':bool(p['is_active'] and not p['blocked'] and p['admission_status']=='approved' and G['shop_status'](p)['open']),'paused':p['business_status']!='open','blocked':bool(p['blocked'] or not p['is_active']),'demo':bool(p['is_demo']),'featured':bool(p['featured']),'plan':m.get('plan','legacy'),'price':m.get('price',0),'due':p['billing_due_date'],'trialUntil':m.get('trialUntil',''),'cancelledAt':m.get('cancelledAt',''),'subscribedAt':m.get('subscribedAt',p['created_at'][:10]),'method':m.get('method','Pix'),'menu':[],'stage':m.get('stage',{'approved':'Aprovados','pending':'Em Análise','rejected':'Reprovados'}.get(p['admission_status'],'Em Análise')),'prep':p['prep_minutes'],'rating':0,'hoursByDay':m.get('hoursByDay',['']*7),'resources':m.get('resources',[]),'kyc':m.get('kyc',{}),'documents':{},'radius':m.get('radius',0)}
+  m=sm.get(p['id'],{})
+  if p.get('business_type')=='fashion' and p.get('plan_requested')=='cardapio':m={'plan':'cardapio','price':3990,**m}
+  st={'id':p['id'],'name':p['display_name'],'city':p['city'],'neighborhood':p['neighborhood'],'category':'','approval':p['admission_status'],'online':bool(p['is_active'] and not p['blocked'] and p['admission_status']=='approved' and G['shop_status'](p)['open']),'paused':p['business_status']!='open','blocked':bool(p['blocked'] or not p['is_active']),'demo':bool(p['is_demo']),'featured':bool(p['featured']),'plan':m.get('plan','legacy'),'price':m.get('price',0),'due':p['billing_due_date'],'trialUntil':m.get('trialUntil',''),'cancelledAt':m.get('cancelledAt',''),'subscribedAt':m.get('subscribedAt',p['created_at'][:10]),'method':m.get('method','Pix'),'menu':[],'stage':m.get('stage',{'approved':'Aprovados','pending':'Em Análise','rejected':'Reprovados'}.get(p['admission_status'],'Em Análise')),'prep':p['prep_minutes'],'rating':0,'hoursByDay':m.get('hoursByDay',['']*7),'resources':m.get('resources',[]),'kyc':m.get('kyc',{}),'documents':{},'radius':m.get('radius',0)}
   if need('stores'):
    st.update(owner=p['owner'],email=p['email'],phone=p['whatsapp'],document=p['document'],address=p['address'],hours=p['opening_hours'],photo='/uploads/'+p['avatar_filename'] if p['avatar_filename'] else '',slug=p['slug'],publicUrl='/p/'+p['slug'])
   else:st.update(owner='',email='',phone='',document='',address='',hours='',photo='')
@@ -278,7 +280,7 @@ def update_store(c,a,oid,v,why):
   require_review(c,oid,v['plan'])
   plan=next((x for x in rows(c,'plans') if x['id']==v['plan']),None)
   if not plan:fail(400,'Plano SaaS não encontrado.')
-  m.update(plan=plan['id'],price=plan['price'],subscribedAt=m.get('subscribedAt',localday()))
+  m.update(plan=plan['id'],price=(3990 if p['business_type']=='fashion' and plan['id']=='cardapio' else plan['price']),subscribedAt=m.get('subscribedAt',localday()))
   columns.update(plan_active=plan['id'],is_premium=1)
   if p['offer_mode'] not in ('menu','catalog'):columns['offer_mode']='menu'
  if 'price' in v and 'plan' not in v:m['price']=number(v['price'])

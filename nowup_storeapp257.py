@@ -129,6 +129,10 @@ def install(g):
     @app.post('/p/{slug}/menu/whatsapp')
     def whatsapp_checkout257(request:Request,slug:str,customer_name:str=Form(...),customer_phone:str=Form(''),cart_json:str=Form(...),fulfillment_type:str=Form('pickup'),payment_method:str=Form('pix'),address:str=Form(''),neighborhood:str=Form(''),address_reference:str=Form(''),change_for:str=Form(''),notes:str=Form(''),request_key:str=Form(...),save_address:str=Form(''),scheduled_for380:str=Form('')):
         p=store(g,slug);user=g['require_user'](request,'customer')
+        fashion385=dict(p).get('business_type')=='fashion'
+        if fashion385 and dict(p).get('is_demo') and p['slug'] in ('nowup-moda-demonstracao','nowup-moda-modelo'):
+            raise HTTPException(409,'Loja de demonstração: produtos e preços ilustrativos, sem pedidos reais.')
+        if fashion385:payment_method='on_delivery'
         if user and user['id']==p['user_id']:raise HTTPException(403,'Você não pode fazer pedidos na sua própria loja.')
         name=str(user.get('name','')).strip()
         customer_phone=g['normalize_phone'](user.get('phone','') or customer_phone)
@@ -138,7 +142,7 @@ def install(g):
         conn=g['db']()
         try:
             setting=conn.execute('SELECT whatsapp,mode FROM store_menu257 WHERE professional_id=?',(p['id'],)).fetchone()
-            mode=setting['mode'] if setting else 'whatsapp'
+            mode='whatsapp' if fashion385 else (setting['mode'] if setting else 'whatsapp')
             if mode=='both':mode='whatsapp'
             number=phone((setting['whatsapp'] if setting and setting['whatsapp'] else p['whatsapp'])) if mode!='panel' else ''
             from nowup_checkout229 import begin_checkout,remember_checkout
@@ -205,6 +209,8 @@ def install(g):
                 template=template.replace('{'+field+'}',value)
             if scheduled380:template+='\nHorário solicitado para hoje: '+datetime.fromisoformat(scheduled380).astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%H:%M')+' (aguardando confirmação)'
             result['message']=template+'\nPedido '+code+' — revisão pelo lojista:\n'+result['merchant_url']
+            if fashion385:
+                result['message']='Olá! Quero confirmar a disponibilidade e separar estas peças para retirada ou entrega.\n\n'+message+'\nPagamento a combinar pelo WhatsApp.'
             result['receipt']['order_url']=result['order_url']
             if mode!='panel':result['whatsapp_url']='https://wa.me/'+number+'?text='+quote(result['message'],safe='')
             conn.execute('INSERT INTO store_dispatch257(order_id,response) VALUES(?,?)',(oid,json.dumps(result,ensure_ascii=False)))

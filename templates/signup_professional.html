@@ -8,14 +8,14 @@
 <label>O que você quer oferecer?<select name="offer_mode" required><option value="" selected disabled>Escolha uma opção</option><option value="menu">Cardápio — comidas e bebidas</option><option value="catalog">Catálogo — produtos da loja</option></select></label>
 </div>
 <p class="alert" id="signup-plan-note346" aria-live="polite">Escolha um plano para ver os dados necessários.</p>
-<small>O ADM confirma o pagamento ou libera uma exceção antes da ativação. Só cardápio ou catálogo usa link próprio e não aparece na vitrine.</small>
+<div id="fashion-signup385" class="alert" hidden><strong>Moda e acessórios • R$ 39,90/mês</strong><p>Catálogo com link próprio e WhatsApp. Tamanhos por letras ou numeração, peças disponíveis para separar, retirada ou entrega e uma seção Novidades.</p></div><small>O ADM confirma o pagamento ou libera uma exceção antes da ativação. Só cardápio ou catálogo usa link próprio e não aparece na vitrine.</small>
 <h2>Dados básicos</h2><div class="grid2">
 <label>Nome da loja<input class="input" name="name" autocomplete="organization" required maxlength="120"></label>
 <label>E-mail<input class="input" type="email" name="email" autocomplete="email" required maxlength="160"></label>
 <label>Celular com DDD<input class="input" name="phone" type="tel" autocomplete="tel" required maxlength="30"></label>
 <label>Senha<input class="input" type="password" name="password" autocomplete="new-password" minlength="8" maxlength="128" required></label>
 <label>Confirme sua senha<input class="input" type="password" name="password_confirm" autocomplete="new-password" minlength="8" maxlength="128" required></label>
-<label>Tipo de comércio<select name="business_type"><option value="restaurant">Restaurante ou lanchonete</option><option value="store">Loja ou comércio</option><option value="convenience">Conveniência ou adega</option><option value="other">Outro — informar manualmente</option></select></label>
+<label>Tipo de comércio<select name="business_type"><option value="restaurant">Restaurante ou lanchonete</option><option value="store">Loja ou comércio</option><option value="convenience">Conveniência ou adega</option><option value="fashion">Moda e acessórios — roupas, calçados e acessórios</option><option value="other">Outro — informar manualmente</option></select></label>
 <label>Documento <span id="signup-document-note346">(opcional no cardápio)</span><select name="doc_type"><option value="CNPJ">CNPJ</option><option value="CPF">CPF</option></select><input class="input" name="document" inputmode="numeric" aria-label="Número do CPF ou CNPJ" maxlength="24"></label>
 <label>Endereço com número<input class="input" name="address" autocomplete="street-address" required maxlength="180"></label>
 <label>Bairro<input class="input" name="neighborhood" required maxlength="120"></label>
@@ -40,4 +40,4 @@
 <label class="check" style="display:block;margin:16px 0"><input type="checkbox" name="marketing_email372" value="1"> Quero receber novidades e promoções do NowUp por e-mail. Posso cancelar esses envios depois.</label>
 <label class="check" style="display:block;margin:16px 0"><input type="checkbox" name="accept_terms" value="1" required> Li e aceito os <a href="/termos">Termos de Uso</a> e a <a href="/privacidade">Política de Privacidade</a>.</label>
 <button class="btn primary" style="width:100%">Confirmar cadastro da loja</button>
-</form><script id="signup-cities-config346" type="application/json">{{active_cities|tojson}}</script><script src="/static/merchant-signup346.js?v=352" defer></script></div></div>{% endblock %}
+</form><script id="signup-cities-config346" type="application/json">{{active_cities|tojson}}</script><script src="/static/merchant-signup346.js?v=385" defer></script></div></div>{% endblock %}

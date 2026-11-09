@@ -7,7 +7,7 @@ from datetime import date, datetime, timezone
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
-from nowup_plans339 import PLANS
+from nowup_plans339 import PLANS,for_store
 LABELS = {'pending':'Aguardando pagamento', 'paid':'Pago', 'overdue':'Em atraso', 'failed':'Pagamento recusado', 'cancelled':'Cancelado'}
 
 def next_month(day):
@@ -47,7 +47,7 @@ def apply_test(conn, pid, action):
         conn.execute('UPDATE billing97_test SET status=? WHERE professional_id=?', (action,pid))
     status = 'cancelled' if action == 'cancelled' else action
     conn.execute('INSERT INTO billing97_history(professional_id,plan,cents,status,due,created) VALUES(?,?,?,?,?,?)',
-        (pid,row['plan'],PLANS[row['plan']][1],status,row['due'],datetime.now(timezone.utc).isoformat()))
+        (pid,row['plan'],for_store(conn.execute('SELECT * FROM professionals WHERE id=?',(pid,)).fetchone())[row['plan']][1],status,row['due'],datetime.now(timezone.utc).isoformat()))
 
 def install(app, db, require_user, templates, context):
     router = APIRouter()
@@ -69,7 +69,7 @@ def install(app, db, require_user, templates, context):
             sub=conn.execute('SELECT * FROM billing97_test WHERE professional_id=?',(pro['id'],)).fetchone()
             history=conn.execute('SELECT * FROM billing97_history WHERE professional_id=? ORDER BY id DESC LIMIT 100',(pro['id'],)).fetchall()
         conn.close()
-        return templates.TemplateResponse('billing97.html',context(request,pro=pro,sub=sub,history=history,plans=PLANS,labels=LABELS))
+        return templates.TemplateResponse('billing97.html',context(request,pro=pro,sub=sub,history=history,plans=for_store(pro),labels=LABELS))
 
     @router.get('/admin/assinaturas')
     def admin(request: Request):

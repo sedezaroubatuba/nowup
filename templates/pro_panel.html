@@ -1,9 +1,10 @@
+{% import 'fashion385.html' as fashion385 %}
 {% import 'weight370.html' as weight370 %}
 {% import 'combo_pack305.html' as combo_picking305 %}
 {% import 'order_line347.html' as lines347 %}
 {% import "promotions285.html" as promotions285 %}
 {% import 'pairs256.html' as pairs256 %}
-{% extends 'base.html' %}{% block title %}Painel do lojista | NowUp{% endblock %}{% block body_class %}professional-area{% endblock %}{% block content %}<link rel="stylesheet" href="/static/order-items166.css?v=166"><link rel="stylesheet" href="/static/pro-compact.css?v=67">{% set status_labels = status_labels|default({'new':'Pedido recebido','confirmed':'Pedido aceito','preparing':'Em preparo','ready':'Pronto','out_for_delivery':'Saiu para entrega','completed':'Concluído','cancelled':'Cancelado','rejected':'Recusado'}, true) %}<link rel="stylesheet" href="/static/pro-panel-navigation.css?v=60">
+{% extends 'base.html' %}{% block title %}Painel do lojista | NowUp{% endblock %}{% block body_class %}professional-area{% if pro.business_type=='fashion' %} fashion-store385{% endif %}{% endblock %}{% block content %}<link rel="stylesheet" href="/static/order-items166.css?v=166"><link rel="stylesheet" href="/static/pro-compact.css?v=67">{% set status_labels = status_labels|default({'new':'Pedido recebido','confirmed':'Pedido aceito','preparing':'Em preparo','ready':'Pronto','out_for_delivery':'Saiu para entrega','completed':'Concluído','cancelled':'Cancelado','rejected':'Recusado'}, true) %}<link rel="stylesheet" href="/static/pro-panel-navigation.css?v=60">
 <style>
 #perfil>.nu-store-config-groups>details{margin:16px 0;padding:16px;border:1px solid #e4d8f1;border-radius:14px;background:#fff}
 #perfil>.nu-store-config-groups>details>summary{font-weight:700;color:#7136bf;min-height:44px;cursor:pointer;display:flex;align-items:center}
@@ -21,7 +22,7 @@ body.professional-area .pro-dashboard .merchant-shortcuts{display:flex;flex-wrap
 body.professional-area .pro-dashboard .merchant-shortcuts .btn{min-height:42px;display:inline-flex;align-items:center;justify-content:center}
 body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-space:nowrap;font-size:13px;padding:9px 11px}
 @media(max-width:600px){body.professional-area .pro-dashboard .v60-top .merchant-profile-link{font-size:12px;padding:8px}body.professional-area .pro-dashboard .merchant-shortcuts .btn{flex:1 1 145px}}
-</style>
+body.fashion-store385 :is(a[href="#lanches-refeicoes322"],a[href="#combos-loja"],a[href="#adicionais"],a[href="#produtos-peso370"],#lanches-refeicoes322,#combos-loja,#peso-loja,#adicionais){display:none!important}body.fashion-store385 [data-fashion-form385] label{min-width:0}body.fashion-store385 [data-fashion-form385] input:not([type=checkbox]),body.fashion-store385 [data-fashion-form385] select{width:100%;box-sizing:border-box}body.fashion-store385 [data-fashion-form385] textarea{width:100%;min-height:80px}body.fashion-store385 [data-fashion-form385] .full{grid-column:1/-1}</style>
 
 <div class="container dashboard pro-dashboard" data-panel-day="{{today_day}}" data-merchant228>
 <header class="v60-top"><button class="btn" type="button" data-pro-menu-toggle aria-expanded="false" aria-controls="pro-edit-menu" aria-label="Abrir menu">☰</button><div><b>{{pro.display_name}}</b><small>{{shop_status.label}}</small></div><a class="btn soft merchant-profile-link" href="/p/{{pro.slug}}" rel="noopener" aria-label="Ver meu perfil público na NowUp">↗ Ver minha loja</a><a class="btn v61-bell" href="#notificacoes" aria-label="Notificações">🔔<span class="v61-badge" data-notification-badge hidden>0</span></a></header>
@@ -171,7 +172,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <details class="product-create" id="novo-produto" {% if request.query_params.get("ok")=="produto" %}open{% endif %}>
 {% if request.query_params.get("ok")=="produto" %}<p role="status">Produto cadastrado! Cadastre o próximo produto abaixo.</p>{% endif %}
 <summary class="btn primary" role="button">＋ Adicionar produto</summary>
-<nav class="nu322-tabs" aria-label="Tipo de cadastro"><a class="btn primary" href="#novo-produto" data-nav198>Produtos</a><a class="btn soft" href="#lanches-refeicoes322" data-nav198>Lanches e refeições</a></nav>
+{% if pro.business_type=='fashion' %}<p>Moda e acessórios • R$ 39,90/mês no catálogo com WhatsApp</p>{{fashion385.form(product_categories,products)}}{% else %}<nav class="nu322-tabs" aria-label="Tipo de cadastro"><a class="btn primary" href="#novo-produto" data-nav198>Produtos</a><a class="btn soft" href="#lanches-refeicoes322" data-nav198>Lanches e refeições</a></nav>
 <form action="/painel/cardapio/produtos" method="post" enctype="multipart/form-data" class="product-form">
 <label class="full">Este produto é um combo?<select name="is_combo256" data-combo-type303><option value="0" selected>Não</option><option value="1">Sim</option></select><small>Ao marcar Sim, configure os produtos e as quantidades. A categoria é independente.</small></label>
 <label>Nome do produto<input class="input" name="name" maxlength="140" required>
@@ -195,7 +196,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <label>Adicionais deste produto<select name="extras_mode" data-extras-mode155><option value="none">Sem adicionais</option><option value="all">Permitir todos os adicionais da loja</option><option value="selected">Selecionar adicionais</option></select></label><div class="full" data-shared-picker155>{% for extra in shared_extras if extra.available %}<label class="check"><input type="checkbox" name="extra_ids" value="{{extra.id}}"> {{extra.name}} · + R$ {{'%.2f'|format(extra.price_cents/100)|replace('.',',')}}{% if not extra.available %} (indisponível){% endif %}</label>{% else %}<p>Cadastre primeiro seus complementos na aba Adicionais.</p>{% endfor %}</div>
 <div class="nu192-editor full" data-editor192="" data-max192="3"><h3>Personalização deste produto</h3></div>
 <button class="btn primary">Salvar e cadastrar próximo</button>
-</form>
+</form>{% endif %}
 </details>
 
 <section id="produtos-loja" class="panel full" aria-label="Pesquisar e editar produtos"><h3>Produtos</h3><label for="pesquisar-produtos299">Pesquisar produtos</label><input id="pesquisar-produtos299" class="input" type="search" data-pro-search placeholder="Digite o nome ou código do produto" autocomplete="off" style="width:100%;min-height:48px;margin:8px 0 12px"><nav class="menu-category-nav pro-product-filters" aria-label="Filtrar produtos do painel"><button type="button" class="active" data-pro-category="all">Todos</button><a class="btn soft" href="#combos-loja" data-nav198>🍻 Combos</a><button type="button" data-pro-category="promocoes">Promoções</button>{% for category in product_categories if category.name|lower != 'combos' %}<button type="button" data-pro-category="{{category.name}}">{{category.name}}</button>{% endfor %}</nav><p class="muted">Para montar ou editar um combo, abra a área Combos.</p></section>
@@ -420,7 +421,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <option value="restaurant" {% if pro.business_type=='restaurant' %}selected{% endif %}>Restaurante/lanchonete</option>
 <option value="store" {% if pro.business_type=='store' %}selected{% endif %}>Loja/comércio</option>
 <option value="convenience" {% if pro.business_type=='convenience' %}selected{% endif %}>Conveniência/adega</option>
-<option value="other" {% if pro.business_type=='other' %}selected{% endif %}>Outro</option>
+<option value="fashion" {% if pro.business_type=='fashion' %}selected{% endif %}>Moda e acessórios</option><option value="other" {% if pro.business_type=='other' %}selected{% endif %}>Outro</option>
 </select>
 </label>
 <label>Como deseja apresentar seus produtos?<select name="offer_mode">
