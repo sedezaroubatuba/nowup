@@ -19,7 +19,7 @@
 .nu379-keep b{font-size:16px;color:#33243e}
 .nu379-keep small{font-size:12px;color:#85768c;margin-top:4px}
 .nu-revision .nu379-keep input{flex:none;margin:2px 0 0;accent-color:#7535b9;width:22px;height:22px}
-.nu379-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.nu379-fields{display:grid;align-items:end;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
 .nu-revision .nu379-fields label{font-size:13px;font-weight:600;color:#675b70;margin:0;min-width:0}
 .nu-revision .nu379-fields input{width:100%;min-width:0;margin-top:7px;min-height:48px;background:#fcfbfe;border:1px solid #d9d0e4;border-radius:10px;font:16px system-ui;color:#30203e;padding:10px 12px;box-shadow:none}
 .nu-revision .nu379-fields input:focus,.nu-revision .nu379-message textarea:focus{outline:2px solid #9d73cb;outline-offset:2px}
@@ -35,3 +35,5 @@
 .nu379-approval-note{margin:12px 0;max-width:52ch}
 .nu-revision .nu379-submit{width:100%;background:#7535b9;line-height:1.4;min-height:50px}
 @media(max-width:420px){.nu378-edit [data-review-form]{padding:12px}.nu-revision .nu379-item{padding:13px}.nu379-fields{gap:10px}.nu-revision .nu379-fields input{padding:10px;font-size:16px}}
+
+.nu-review-actions form{display:flex}.nu-review-actions button{flex:1}
