@@ -161,6 +161,8 @@ def shop_status(pro):
     labels={"paused":"Loja pausada", "temporarily_closed":"Fechada temporariamente", "vacation":"Fechada para férias", "ad_paused":"Anúncio pausado"}
     if manual in labels:
         return {"open":False,"code":manual,"label":labels[manual],"detail":"Fechada manualmente pelo estabelecimento"}
+    if dict(pro).get('slug')=='samuel-dos-santos-silva' and str(pro['display_name']).strip().upper()=='ADEGA SEDE ZERO':
+        return {"open":True,"code":"open","label":"Loja aberta para testes","detail":"Horário automático temporariamente desativado"}
     now=datetime.now(SAO_PAULO_TZ); schedule=parse_business_hours(pro["business_hours"])
     if not schedule:
         return {"open":True,"code":"open","label":"Loja aberta","detail":"Horário ainda não configurado"}
@@ -710,6 +712,9 @@ def init_db():
     conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_customer238 ON orders(customer_id,id DESC)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_order_rate348 ON orders(customer_id,created_at)")
     ensure_column(conn, "orders", "tracking_token", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "professionals", "allow_schedule380", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "orders", "scheduled_for380", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "orders", "accept_after380", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "orders", "order_origin", "TEXT NOT NULL DEFAULT 'legacy'")
     conn.execute("CREATE TABLE IF NOT EXISTS guest_order_limits (professional_id INTEGER NOT NULL,phone TEXT NOT NULL,created_at TEXT NOT NULL)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_guest_order_limits ON guest_order_limits(professional_id,phone,created_at)")
@@ -1269,7 +1274,7 @@ def cart_completion247(request: Request, request_key: str):
     finally:conn.close()
 
 @app.post("/p/{slug}/menu/pedido")
-def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...), save_address: Optional[str]=Form(None), order_channel: str=Form("internal"), request_key: str=Form("")):
+def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...), save_address: Optional[str]=Form(None), order_channel: str=Form("internal"), request_key: str=Form(""), scheduled_for380: str=Form("")):
     logged=current_user(request)
     conn=db()
     try:
@@ -1291,7 +1296,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
         existing,checkout_key229,checkout_hash229=begin_checkout(conn,logged['id'],p['id'],request_key,{
             'cart':cart_json,'name':customer_name,'phone':customer_phone,'fulfillment':fulfillment_type,
             'payment':payment_method,'address':address,'neighborhood':neighborhood,
-            'reference':address_reference,'change':change_for,'notes':notes,'channel':order_channel})
+            'reference':address_reference,'change':change_for,'notes':notes,'channel':order_channel,'scheduled_for380':scheduled_for380})
         if existing:
             conn.close()
             return completed_response(slug,existing,request)
@@ -1299,7 +1304,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
         lock255=" FOR UPDATE" if getattr(conn,'dialect','sqlite')=='postgres' else ""
         p=conn.execute("SELECT * FROM professionals WHERE id=? AND blocked=0 AND admission_status='approved' AND plan_active IN ('cardapio','ambos','completo') AND EXISTS(SELECT 1 FROM users owner255 WHERE owner255.id=professionals.user_id AND owner255.is_active=1)"+lock255,(p['id'],)).fetchone()
         if not p:raise HTTPException(409,"Esta loja não está recebendo pedidos. Revise seu carrinho.")
-        clean_items,subtotal,delivery_fee,neighborhood,total,change_for_cents=nowup_storeapp257.validate(globals(),conn,p,cart_json,fulfillment_type,payment_method,address,neighborhood,change_for)
+        clean_items,subtotal,delivery_fee,neighborhood,total,change_for_cents=nowup_storeapp257.validate(globals(),conn,p,cart_json,fulfillment_type,payment_method,address,neighborhood,change_for,scheduled_for380)
         customer_id=logged['id'] if logged else None
         created=now_iso(); tracking_token=secrets.token_urlsafe(24)
         cur=conn.execute("""INSERT INTO orders(professional_id,customer_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at,subtotal_cents,delivery_fee_cents,neighborhood,address_reference,change_for_cents,tracking_token)
@@ -1308,6 +1313,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
             conn.execute('INSERT INTO guest_order_limits(professional_id,phone,created_at) VALUES(?,?,?)',(p['id'],normalize_phone(customer_phone),created))
             conn.execute('DELETE FROM guest_order_limits WHERE created_at<?',((datetime.now(timezone.utc)-timedelta(days=2)).isoformat(),))
         order_id=cur.lastrowid
+        nowup_scheduling380.save(conn,order_id,p,scheduled_for380)
         order_code=f"NU-{order_id:06d}"; conn.execute("UPDATE orders SET payment_method=?,order_code=?,order_origin=? WHERE id=?",(payment_method,order_code,"external" if order_channel=="external" or p["plan_active"]=="cardapio" else "nowup",order_id))
         conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)",(order_id,"new",created))
         for product,qty,item_notes,chosen,unit in clean_items:
@@ -1799,12 +1805,13 @@ def request_store_plan(request: Request, plan: str=Form(...), offer_mode: str=Fo
 def pro_new_orders(request: Request, after: int=0):
     u=require_user(request,"professional"); conn=db()
     p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+    nowup_scheduling380.expire(conn);conn.commit()
     lower,upper=order_day_bounds(datetime.now(SAO_PAULO_TZ).date())
     rows=conn.execute("""SELECT id,customer_name,total_cents,created_at FROM orders
       WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND id>? AND created_at>=? AND created_at<? ORDER BY id ASC LIMIT 10""",(p["id"],max(0,after),lower,upper)).fetchall()
     latest=conn.execute("SELECT COALESCE(MAX(id),0) FROM orders WHERE professional_id=?",(p["id"],)).fetchone()[0]
-    pending=conn.execute("SELECT COUNT(*) FROM orders WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND status='new'",(p["id"],)).fetchone()[0]
-    pending_order=conn.execute("SELECT id,order_code,customer_name,total_cents,created_at,status FROM orders WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND status='new' ORDER BY id DESC LIMIT 1",(p["id"],)).fetchone()
+    pending=conn.execute("SELECT COUNT(*) FROM orders WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND status='new' AND (accept_after380='' OR accept_after380<=?)",(p["id"],now_iso())).fetchone()[0]
+    pending_order=conn.execute("SELECT id,order_code,customer_name,total_cents,created_at,status FROM orders WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND status='new' AND (accept_after380='' OR accept_after380<=?) ORDER BY id DESC LIMIT 1",(p["id"],now_iso())).fetchone()
     conn.close()
     return JSONResponse({"latest_id":latest,"pending_count":pending,"pending_order":dict(pending_order) if pending_order else None,"orders":[{"id":r["id"],"customer_name":r["customer_name"] or "Cliente","total_cents":r["total_cents"],"created_at":r["created_at"]} for r in rows]})
 
@@ -2175,7 +2182,8 @@ def pro_order_status(request: Request, order_id: int, status: str=Form(...), rea
     allowed={"reviewing","new","confirmed","preparing","ready","out_for_delivery","completed","cancelled","rejected"}
     if status not in allowed: raise HTTPException(400,"Status inválido")
     conn=db(); conn.execute("BEGIN IMMEDIATE"); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
-    order=conn.execute("SELECT id,status,customer_id,tracking_token FROM orders WHERE id=? AND professional_id=?",(order_id,p["id"])).fetchone()
+    nowup_scheduling380.expire(conn,order_id=order_id);conn.commit();conn.execute("BEGIN IMMEDIATE")
+    order=conn.execute("SELECT id,status,customer_id,tracking_token FROM orders WHERE id=? AND professional_id=?"+(" FOR UPDATE" if getattr(conn,"dialect","sqlite")=="postgres" else ""),(order_id,p["id"])).fetchone()
     if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
     if order["status"]=='awaiting_approval' and status not in {'cancelled','rejected'}:
         conn.close(); raise HTTPException(409,"Aguarde a aprovação do cliente")
@@ -3182,3 +3190,6 @@ nowup_gallery357.install(globals())
 # Merchant communication and durable automatic notices.
 import nowup_communication372
 nowup_communication372.install(globals())
+
+import nowup_scheduling380
+nowup_scheduling380.install(globals())

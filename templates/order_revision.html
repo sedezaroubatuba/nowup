@@ -1,5 +1,5 @@
 {% set revision=order_revision(order.id) %}
-<section class="nu-revision" data-review-box>
+<section class="nu-revision" data-review-box>{% if order.scheduled_for380 %}<p class="alert"><b>Agendamento solicitado: {{schedule_label380(order.scheduled_for380)}}</b><br>{{'Aguardando confirmação da loja para esse horário.' if order.status in ['new','reviewing','awaiting_approval','revision_approved'] else 'Consulte o status do pedido abaixo.'}}</p>{% endif %}
 {% if revision and revision.state=='pending' and order.status=='awaiting_approval' %}
 <h3>Aguardando aprovação do cliente</h3><p>O pedido original permanece válido até a aprovação.</p>
 {% if revision.message %}<p>{{revision.message}}</p>{% endif %}

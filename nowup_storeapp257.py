@@ -34,11 +34,13 @@ def phone(raw):
     return digits
 
 
-def validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighborhood,change_for):
+def validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighborhood,change_for,scheduled_for380=""):
     if not isinstance(cart_json,str) or len(cart_json.encode())>262144:raise HTTPException(400,'Carrinho inválido')
     if fulfillment_type not in ('delivery','pickup'):raise HTTPException(400,"Escolha entrega ou retirada.")
     if payment_method not in ('pix','cash','credit','debit','on_delivery'):raise HTTPException(400,"Escolha uma forma de pagamento válida.")
-    if not g['shop_status'](p)["open"]: raise HTTPException(409,"Esta loja está fechada para pedidos.")
+    from nowup_scheduling380 import validate as validate_schedule
+    validate_schedule(p,scheduled_for380)
+    if not scheduled_for380 and not g['shop_status'](p)["open"]: raise HTTPException(409,"Esta loja está fechada para pedidos.")
     try: raw_items=json.loads(cart_json)
     except Exception: raise HTTPException(400,"Carrinho inválido")
     if not isinstance(raw_items,list) or not raw_items: raise HTTPException(400,"Carrinho vazio")
@@ -125,7 +127,7 @@ def install(g):
         return RedirectResponse('/painel?ok=whatsapp#cardapio-independente',303)
 
     @app.post('/p/{slug}/menu/whatsapp')
-    def whatsapp_checkout257(request:Request,slug:str,customer_name:str=Form(...),customer_phone:str=Form(''),cart_json:str=Form(...),fulfillment_type:str=Form('pickup'),payment_method:str=Form('pix'),address:str=Form(''),neighborhood:str=Form(''),address_reference:str=Form(''),change_for:str=Form(''),notes:str=Form(''),request_key:str=Form(...),save_address:str=Form('')):
+    def whatsapp_checkout257(request:Request,slug:str,customer_name:str=Form(...),customer_phone:str=Form(''),cart_json:str=Form(...),fulfillment_type:str=Form('pickup'),payment_method:str=Form('pix'),address:str=Form(''),neighborhood:str=Form(''),address_reference:str=Form(''),change_for:str=Form(''),notes:str=Form(''),request_key:str=Form(...),save_address:str=Form(''),scheduled_for380:str=Form('')):
         p=store(g,slug);user=g['require_user'](request,'customer')
         if user and user['id']==p['user_id']:raise HTTPException(403,'Você não pode fazer pedidos na sua própria loja.')
         name=str(user.get('name','')).strip()
@@ -142,7 +144,7 @@ def install(g):
             from nowup_checkout229 import begin_checkout,remember_checkout
             identity=user['id'] if user and user['role']=='customer' else 0
             if not re.fullmatch(r'[A-Za-z0-9_-]{16,128}',request_key):raise HTTPException(400,'Atualize o carrinho antes de enviar.')
-            existing,key,digest=begin_checkout(conn,identity,p['id'],request_key,{'cart':cart_json,'name':name,'phone':customer_phone,'fulfillment':fulfillment_type,'payment':payment_method,'address':address,'neighborhood':neighborhood,'reference':address_reference,'change':change_for,'notes':notes,'channel':'independent257'})
+            existing,key,digest=begin_checkout(conn,identity,p['id'],request_key,{'cart':cart_json,'name':name,'phone':customer_phone,'fulfillment':fulfillment_type,'payment':payment_method,'address':address,'neighborhood':neighborhood,'reference':address_reference,'change':change_for,'scheduled_for380':scheduled_for380,'notes':notes,'channel':'independent257'})
             if existing:
                 row=conn.execute('SELECT d.response FROM store_dispatch257 d JOIN orders o ON o.id=d.order_id WHERE o.tracking_token=?',(existing,)).fetchone()
                 if not row:raise HTTPException(409,'Pedido já registrado. Confira seu acompanhamento.')
@@ -152,7 +154,7 @@ def install(g):
             fresh=conn.execute("SELECT p.* FROM professionals p JOIN users u ON u.id=p.user_id WHERE p.id=? AND p.blocked=0 AND p.admission_status='approved' AND p.plan_active IN ('cardapio','completo') AND p.is_premium=1 AND p.offer_mode IN ('menu','catalog') AND u.is_active=1"+lock,(p['id'],)).fetchone()
             if not fresh:raise HTTPException(409,'Loja indisponível')
             p=dict(fresh)
-            clean,subtotal,fee,area,total,change=validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighborhood,change_for)
+            clean,subtotal,fee,area,total,change=validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighborhood,change_for,scheduled_for380)
         except Exception:
             conn.close();raise
         from nowup_whatsapp_receipt import build as build_receipt
@@ -166,6 +168,8 @@ def install(g):
             cur=conn.execute("""INSERT INTO orders(professional_id,customer_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at,subtotal_cents,delivery_fee_cents,neighborhood,address_reference,change_for_cents,tracking_token)
                 VALUES(?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?)""",(p['id'],identity or None,name,customer_phone,fulfillment_type,address.strip(),notes.strip(),status376,total,created,created,subtotal,fee,area,address_reference.strip(),change,token))
             oid=cur.lastrowid;code=f'NU-{oid:06d}'
+            from nowup_scheduling380 import save as save_schedule
+            scheduled380=save_schedule(conn,oid,p,scheduled_for380)
             conn.execute("UPDATE orders SET payment_method=?,order_code=?,order_origin=? WHERE id=?",(payment_method,code,'external' if mode=='whatsapp' else 'nowup',oid))
             conn.execute('INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)',(oid,status376,created))
             for product,qty,item_notes,chosen,unit in clean:
@@ -199,6 +203,7 @@ def install(g):
             template=(saved_message['message'] if saved_message else '') or 'Olá, {saudacao}! Fiz o pedido {pedido} pelo NowUp. Pode revisar e confirmar, por favor?'
             for field,value in {'saudacao':greeting,'pedido':code,'loja':p['display_name'],'total':money(total)}.items():
                 template=template.replace('{'+field+'}',value)
+            if scheduled380:template+='\nHorário solicitado para hoje: '+datetime.fromisoformat(scheduled380).astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%H:%M')+' (aguardando confirmação)'
             result['message']=template+'\nPedido '+code+' — revisão pelo lojista:\n'+result['merchant_url']
             result['receipt']['order_url']=result['order_url']
             if mode!='panel':result['whatsapp_url']='https://wa.me/'+number+'?text='+quote(result['message'],safe='')

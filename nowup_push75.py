@@ -1,3 +1,4 @@
+from datetime import datetime
 """Private per-session Web Push subscriptions; durable order delivery queue."""
 from contextlib import contextmanager
 import base64, hashlib, json, logging, re, threading, time
@@ -125,7 +126,9 @@ def test(request:Request):
     return {'ok':True}
 
 def enqueue_on_connection(c,user_id,order_id):
-    c.execute('INSERT OR IGNORE INTO push_jobs(user_id,order_id,created,next_try) VALUES(?,?,?,?)',(user_id,order_id,time.time(),time.time()))
+    row=c.execute('SELECT accept_after380 FROM orders WHERE id=?',(order_id,)).fetchone()
+    start=max(time.time(),datetime.fromisoformat(row[0]).timestamp()) if row and row[0] else time.time()
+    c.execute('INSERT OR IGNORE INTO push_jobs(user_id,order_id,created,next_try) VALUES(?,?,?,?)',(user_id,order_id,start,start))
 
 def process():
     now=time.time()
