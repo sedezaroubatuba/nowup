@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 import nowup_banners207 as banners
 
 @pytest.fixture
-def client(tmp_path):
+def client(tmp_path,monkeypatch):
  path=tmp_path/'banners.db'
  def db():
   c=sqlite3.connect(path);c.row_factory=sqlite3.Row;return c
@@ -21,7 +21,7 @@ def client(tmp_path):
  def user(request,role):
   if request.headers.get('x-owner')!='1':raise HTTPException(403)
   return {'id':1}
- banners.G.clear();banners.configure({'db':db,'ensure_column':ensure,'require_user':user})
+ monkeypatch.setattr(banners,'G',{});banners.configure({'db':db,'ensure_column':ensure,'require_user':user})
  banners.initialize();banners.initialize()
  app=FastAPI();app.include_router(banners.router)
  with TestClient(app,follow_redirects=False) as client:yield client,db

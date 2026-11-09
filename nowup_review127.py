@@ -62,6 +62,8 @@ def install(g):
         n=c.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(uid,title,message,link,now()))
         g['nowup_alerts112'].enqueue(c,uid,n.lastrowid,{'title':title,'body':message,'url':link,'tag':f"nowup-revision-{o['id']}"})
     def status(c,o,value):
+        from nowup_inventory391 import order_status
+        order_status(c,o['id'],value)
         c.execute('UPDATE orders SET status=?,updated_at=? WHERE id=?',(value,now(),o['id']))
         c.execute('INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)',(o['id'],value,now()))
     @app.post('/painel/pedidos/{order_id}/revisao')

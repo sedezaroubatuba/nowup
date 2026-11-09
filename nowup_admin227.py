@@ -313,6 +313,8 @@ def update_order(c,a,oid,v,why):
   rank={'new':0,'reviewing':0,'revision_approved':0,'confirmed':1,'preparing':2,'ready':3,'out_for_delivery':4,'completed':5}
   if target in rank and rank[target]<rank.get(o['status'],0):fail(409,'Não é permitido voltar etapas do pedido.')
   if target in {'cancelled','rejected'} and len(why.strip())<8:fail(400,'Justifique o cancelamento.')
+  from nowup_inventory391 import order_status
+  order_status(c,oid,target)
   c.execute('UPDATE orders SET status=?,cancellation_reason=?,updated_at=? WHERE id=?',(target,why[:300] if target in {'cancelled','rejected'} else '',stamp(),oid));c.execute('INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)',(oid,target,stamp()))
   if o['customer_id']:
    message='Seu pedido foi atualizado pela equipe NowUp: '+G['ORDER_STATUS_LABELS'].get(target,target)+'.'

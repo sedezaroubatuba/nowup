@@ -34,7 +34,7 @@ def phone(raw):
     return digits
 
 
-def validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighborhood,change_for,scheduled_for380=""):
+def validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighborhood,change_for,scheduled_for380="",stock_only391=False):
     if not isinstance(cart_json,str) or len(cart_json.encode())>262144:raise HTTPException(400,'Carrinho inválido')
     if fulfillment_type not in ('delivery','pickup'):raise HTTPException(400,"Escolha entrega ou retirada.")
     if payment_method not in ('pix','cash','credit','debit','on_delivery'):raise HTTPException(400,"Escolha uma forma de pagamento válida.")
@@ -58,6 +58,7 @@ def validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighbor
             raise HTTPException(400,"Um produto do carrinho ficou indisponível. Atualize o cardápio antes de enviar o pedido.")
         if product:
             product=dict(product)
+            if dict(p).get('business_type')=='fashion':product['_selection391']=raw.get('customization',{})
             user_notes305=item_notes
             quantities255[pid]=quantities255.get(pid,0)+qty
             if product.get('sold_by_weight370') and quantities255[pid]>1:raise HTTPException(400,'Escolha o peso total em um único item por produto.')
@@ -93,8 +94,8 @@ def validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighbor
     if fulfillment_type=="delivery" and not address.strip():
         raise HTTPException(400,"Informe o endereço para entrega")
     if fulfillment_type=="delivery" and not p["allows_delivery"]: raise HTTPException(400,"Esta loja não realiza entregas")
-    if fulfillment_type=="pickup" and not p["allows_pickup"]: raise HTTPException(400,"Esta loja não permite retirada")
-    if subtotal < (p["minimum_order_cents"] or 0): raise HTTPException(400,"O pedido não atingiu o valor mínimo")
+    if not stock_only391 and fulfillment_type=="pickup" and not p["allows_pickup"]: raise HTTPException(400,"Esta loja não permite retirada")
+    if not stock_only391 and subtotal < (p["minimum_order_cents"] or 0): raise HTTPException(400,"O pedido não atingiu o valor mínimo")
     delivery_fee=0
     if fulfillment_type=="delivery":
         try: delivery_fee,neighborhood=g['delivery_quote89'](conn,p,neighborhood)
@@ -130,7 +131,7 @@ def install(g):
         return RedirectResponse('/painel?ok=whatsapp#cardapio-independente',303)
 
     @app.post('/p/{slug}/menu/whatsapp')
-    def whatsapp_checkout257(request:Request,slug:str,customer_name:str=Form(...),customer_phone:str=Form(''),cart_json:str=Form(...),fulfillment_type:str=Form('pickup'),payment_method:str=Form('pix'),address:str=Form(''),neighborhood:str=Form(''),address_reference:str=Form(''),change_for:str=Form(''),notes:str=Form(''),request_key:str=Form(...),save_address:str=Form(''),scheduled_for380:str=Form('')):
+    def whatsapp_checkout257(request:Request,slug:str,customer_name:str=Form(...),customer_phone:str=Form(''),cart_json:str=Form(...),fulfillment_type:str=Form('pickup'),payment_method:str=Form('pix'),address:str=Form(''),neighborhood:str=Form(''),address_reference:str=Form(''),change_for:str=Form(''),notes:str=Form(''),request_key:str=Form(...),save_address:str=Form(''),scheduled_for380:str=Form(''),basket_key391:str=Form('')):
         p=store(g,slug);user=g['require_user'](request,'customer')
         fashion385=dict(p).get('business_type')=='fashion'
         if fashion385 and dict(p).get('is_demo') and p['slug'] in ('nowup-moda-demonstracao','nowup-moda-modelo'):
@@ -174,13 +175,18 @@ def install(g):
             created=datetime.now(timezone.utc).isoformat();token=secrets.token_urlsafe(24)
             cur=conn.execute("""INSERT INTO orders(professional_id,customer_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at,subtotal_cents,delivery_fee_cents,neighborhood,address_reference,change_for_cents,tracking_token)
                 VALUES(?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?)""",(p['id'],identity or None,name,customer_phone,fulfillment_type,address.strip(),notes.strip(),status376,total,created,created,subtotal,fee,area,address_reference.strip(),change,token))
-            oid=cur.lastrowid;code=f'NU-{oid:06d}'
+            oid=cur.lastrowid
+            from nowup_inventory391 import attach
+            attach(conn,p,identity,basket_key391,clean,oid)
+            code=f'NU-{oid:06d}'
             from nowup_scheduling380 import save as save_schedule
             scheduled380=save_schedule(conn,oid,p,scheduled_for380)
             conn.execute("UPDATE orders SET payment_method=?,order_code=?,order_origin=? WHERE id=?",(payment_method,code,'external' if mode=='whatsapp' else 'nowup',oid))
             conn.execute('INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)',(oid,status376,created))
             for product,qty,item_notes,chosen,unit in clean:
                 item=conn.execute('INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes,combo_pack305) VALUES(?,?,?,?,?,?,?)',(oid,product['id'],product['name'],qty,unit,item_notes,product.get('combo_pack305','')))
+                from nowup_inventory391 import snapshot as fashion_snapshot391
+                fashion_snapshot391(conn,item.lastrowid,product)
                 from nowup_weight370 import snapshot
                 snapshot(conn,item.lastrowid,product)
                 for option in chosen:conn.execute('INSERT INTO order_item_options(order_item_id,option_id,option_name,price_cents) VALUES(?,?,?,?)',(item.lastrowid,option['id'],option['name'],option['price_cents']))

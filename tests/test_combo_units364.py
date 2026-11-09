@@ -97,9 +97,13 @@ def test_whatsapp_lists_each_unit_and_charges_extra_once(combo,monkeypatch):
     assert response.status_code==200,response.text
     result=response.json()
     assert result['total_cents']==4850
-    assert 'X-frango 1: Retirar: Tomate' in result['message']
-    assert 'X-frango 2: Retirar: Cebola' in result['message']
-    assert 'X-frango 1: Bacon extra (R$ 3,50)' in result['message']
+    assert result['merchant_url'] in result['message']
+    with m.db() as c:
+        saved=c.execute('SELECT notes FROM order_items').fetchone()[0]
+        assert 'X-frango 1: Retirar: Tomate' in saved
+        assert 'X-frango 2: Retirar: Cebola' in saved
+    page=client.get(result['redirect']);assert page.status_code==200
+    assert 'Tomate' in page.text and 'Cebola' in page.text and 'Bacon extra' in page.text
 
 
 def test_meal_combo_uses_item_refs_and_keeps_outer_drinks_in_one_place(combo):

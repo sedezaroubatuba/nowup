@@ -1,0 +1,32 @@
+name: Fashion inventory PostgreSQL concurrency
+on:
+  pull_request:
+    paths: ['nowup_inventory391.py', 'nowup_database239.py', 'tools/check_inventory391_postgres.py', '.github/workflows/inventory391.yml']
+  push:
+    branches: [codex/categorias-icones-v230]
+    paths: ['nowup_inventory391.py', 'nowup_database239.py', 'tools/check_inventory391_postgres.py', '.github/workflows/inventory391.yml']
+permissions:
+  contents: read
+jobs:
+  postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: nowup_test
+          POSTGRES_USER: nowup_test
+          POSTGRES_PASSWORD: isolated-test-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U nowup_test -d nowup_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - run: python tools/check_inventory391_postgres.py
+        env:
+          NOWUP_TEST_PG_URL391: postgresql://nowup_test:isolated-test-only@localhost:5432/nowup_test

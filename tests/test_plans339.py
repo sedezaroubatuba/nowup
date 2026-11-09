@@ -39,9 +39,10 @@ def test_both_plans_keep_menu_checkout_and_all_merchant_tools(shop, monkeypatch,
     rejected = client.post('/painel/plano',data={'plan':'vitrine','offer_mode':'services'},follow_redirects=False)
     assert 'erro=plano' in rejected.headers['location']
 
-def test_plan_switch_reuses_store_products_and_link(shop):
+def test_plan_switch_reuses_store_products_and_link(shop,monkeypatch):
     import nowup_admin227 as adm
     m, client, slug, pid, url, data, product = shop
+    monkeypatch.setattr(adm,'G',dict(adm.G))
     adm.configure(vars(m))
     adm.initialize()
     import nowup_verification257 as verification

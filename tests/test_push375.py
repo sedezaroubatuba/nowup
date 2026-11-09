@@ -53,6 +53,7 @@ def test_retry_only_targets_the_device_that_failed(checkout,monkeypatch):
 
 def test_support_reply_has_push_and_a_valid_support_destination(checkout,monkeypatch):
     m,client,_,_,_,customer=checkout
+    monkeypatch.setattr(m.nowup_admin205,'G',dict(m.nowup_admin205.G))
     m.nowup_admin205.configure(vars(m));m.nowup_admin205.initialize()
     r=client.post('/suporte',data={'subject':'Ajuda','body':'Preciso de orientação'},follow_redirects=False);assert r.status_code==303,r.text
     tid=int(r.headers['location'].split('chamado=')[1])

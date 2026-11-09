@@ -8,16 +8,18 @@ def setup345(env):
     main,_,_,a,b=env
     main.nowup_push75.initialize();main.nowup_alerts112.initialize()
     sent=[]
-    main.send_email=lambda *args,**kw: sent.append(args) or True
-    main.email_service_configured=lambda: True
-    main.normalize_email=lambda value: value.strip().lower() if '@' in value else ''
-    main.os.environ['NOWUP_BASE_URL']='http://testserver'
+    patch=pytest.MonkeyPatch()
+    patch.setattr(main,'send_email',lambda *args,**kw: sent.append(args) or True)
+    patch.setattr(main,'email_service_configured',lambda:True)
+    patch.setattr(main,'normalize_email',lambda value:value.strip().lower() if '@' in value else '')
+    patch.setenv('NOWUP_BASE_URL','http://testserver')
     with main.db() as c:
         c.execute("UPDATE professionals SET plan_active='cardapio',is_premium=1,offer_mode='menu',admission_status='approved',blocked=0 WHERE id IN (?,?)",(a,b))
         stores=[dict(c.execute('SELECT * FROM professionals WHERE id=?',(pid,)).fetchone()) for pid in (a,b)]
         uid=c.execute("INSERT INTO users(role,name,email,phone,password_hash,email_verified,created_at) VALUES('customer','Marketplace','shared345@example.com','12999998888',?,1,?)",(main.hash_password('market-password345'),main.now_iso())).lastrowid
         c.execute('INSERT INTO sessions(token,user_id,expires_at) VALUES(?,?,?)',('market345',uid,(datetime.now(timezone.utc)+timedelta(days=1)).isoformat()));c.commit()
-    return main,stores,sent
+    yield main,stores,sent
+    patch.undo()
 
 
 def signup(client,p,name,password):

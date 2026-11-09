@@ -17,6 +17,7 @@
     let lastPayload='',token='';
     checkoutForm229.addEventListener('submit',async event=>{
       event.preventDefault();
+      if(window.NOWUP_FASHION_STOCK391&&!await window.NOWUP_FASHION_STOCK391.ready())return;
       if(cfg.demoBrowse386){window.alert('Demonstração: nenhum pedido real será enviado.');return;}
       if(checkoutForm229.dataset.submitting229==='1')return;
       const fields=[...new FormData(checkoutForm229)].filter(([name])=>name!=='request_key');const payload=JSON.stringify(fields);
@@ -96,6 +97,8 @@
   if(!customerId)try{if(localStorage.getItem(key)===null){const legacy=localStorage.getItem(key+'/menu');if(legacy!==null){localStorage.setItem(key,legacy);localStorage.removeItem(key+'/menu');}}}catch(_){}
   try{(JSON.parse(localStorage.getItem(key)||'[]')||[]).forEach(([id,v])=>{if(v&&v.name)cart.set(String(id),{...v,productId:Number(v.productId||String(id).split(':')[0]),unitPrice:Number(v.unitPrice||v.price||0),options:Array.isArray(v.options)?v.options:[],max:Number(v.max||99)})})}catch(_){localStorage.removeItem(key)}
   window.NOWUP_CART160={
+    restore391(rows){cart.clear();for(const {id,...v} of rows)cart.set(id,v);render();},
+    removeProduct(productId){for(const [id,v] of cart)if(Number(v.productId)===Number(productId))cart.delete(id);render();},
     entries389(){return [...cart].map(([id,v])=>({id,...JSON.parse(JSON.stringify(v))}));},
     quantity(productId){return [...cart.values()].filter(v=>Number(v.productId)===Number(productId)).reduce((sum,v)=>sum+(Number(v.quantity)||0),0);},
     setWeight(card,grams){
