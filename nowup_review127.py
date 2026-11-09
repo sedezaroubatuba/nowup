@@ -69,7 +69,9 @@ def install(g):
         u=auth(request,'professional');form=await request.form();c=db()
         try:
             c.execute('BEGIN IMMEDIATE');initialize(c)
-            o=c.execute('SELECT o.* FROM orders o JOIN professionals p ON p.id=o.professional_id WHERE o.id=? AND p.user_id=?',(order_id,u['id'])).fetchone()
+            from nowup_scheduling380 import expire
+            expire(c,order_id=order_id);c.commit();c.execute('BEGIN IMMEDIATE')
+            o=c.execute('SELECT o.* FROM orders o JOIN professionals p ON p.id=o.professional_id WHERE o.id=? AND p.user_id=?'+(' FOR UPDATE OF o' if getattr(c,'dialect','sqlite')=='postgres' else ''),(order_id,u['id'])).fetchone()
             if not o:raise HTTPException(404,'Pedido não encontrado')
             if o['status'] not in EARLY:raise HTTPException(409,'Pedido aguardando resposta ou já confirmado')
             if not o['customer_id']:raise HTTPException(400,'Este fluxo exige um cliente cadastrado')
@@ -90,6 +92,8 @@ def install(g):
         u=auth(request,'customer');form=await request.form();decision=form.get('decision');c=db()
         try:
             c.execute('BEGIN IMMEDIATE');initialize(c)
+            from nowup_scheduling380 import expire
+            expire(c,order_id=order_id);c.commit();c.execute('BEGIN IMMEDIATE')
             o=c.execute('SELECT * FROM orders WHERE tracking_token=? AND customer_id=?',(token,u['id'])).fetchone()
             if not o:raise HTTPException(404,'Pedido não encontrado')
             r=c.execute('SELECT * FROM order_revisions WHERE order_id=? ORDER BY id DESC LIMIT 1',(o['id'],)).fetchone()

@@ -7,7 +7,7 @@
   const title=document.title;const testButton=root.querySelector('[data-test-order-alerts]'),disableButton=root.querySelector('[data-disable-order-alerts]');
   function running(){return enabled&&audio?.state==='running';}
   const stored=()=>{try{return localStorage.getItem('nowup-order-alerts')!=='0';}catch(_){return false;}};
-  function render(){const on=running();root.dataset.soundState=on?'active':'inactive';button.textContent=on?'✓ Campainha ativada':'🔊 ATIVAR CAMPAINHA';button.disabled=on;testButton.hidden=!on;disableButton.hidden=!enabled;status.textContent=on?'Campainha pronta. Novos pedidos tocam até serem atendidos.':'Som não está liberado. Toque em ATIVAR CAMPAINHA e confirme que ouviu o teste.';}
+  function render(){const on=running();root.dataset.soundState=on?'active':'inactive';button.textContent=on?'✓ Campainha ativada':'🔊 ATIVAR CAMPAINHA';button.disabled=on;testButton.hidden=!on;disableButton.hidden=!enabled;status.textContent=on?'Campainha pronta. Pedidos sem resposta são cancelados após 5 minutos.':'Som não está liberado. Toque em ATIVAR CAMPAINHA e confirme que ouviu o teste.';}
   async function unlock(){try{if(!audio||audio.state==='closed'){audio=new(window.AudioContext||window.webkitAudioContext)();audio.onstatechange=()=>{render();if(running()&&pendingId){alarm();lastAlarm=Date.now();}};}await audio.resume();return audio.state==='running';}catch(_){return false;}}
   let tones=[];
   function silence(){tones.forEach(o=>{try{o.stop();}catch(_){}});tones=[];}
