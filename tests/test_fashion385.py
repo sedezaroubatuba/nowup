@@ -110,7 +110,12 @@ def test_demo_stores_editable_isolated_and_seed_is_idempotent(checkout,monkeypat
   assert c.execute('SELECT name FROM products WHERE id=?',(product['id'],)).fetchone()[0]=='Vestido editado'
   foreign=c.execute('SELECT id FROM products WHERE professional_id=?',(model['id'],)).fetchone()[0]
  assert client.post('/admin/moda385/demonstracao/produtos/'+str(foreign),data={'name':'Intruso','price':'1','category':'Vestidos'},follow_redirects=False).status_code==404
+ monkeypatch.setattr(m,'current_user',lambda request:None)
  public=client.get('/p/nowup-moda-demonstracao/menu');assert public.status_code==200,public.text[:500]
+ assert 'data-demo-browse386="1" data-login-required="0"' in public.text
+ assert 'Demonstração • acesso livre' in public.text and '"demoBrowse386": true' in public.text
+ normal=client.get('/p/'+demo['slug'].replace('nowup-moda-demonstracao','not-a-store')+'/menu')
+ assert normal.status_code==404
  assert client.get('/p/nowup-moda-modelo/menu').status_code==404
 
 

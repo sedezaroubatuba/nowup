@@ -1,6 +1,9 @@
 (()=>{'use strict';
  const configNode=document.getElementById('store-app256');if(!configNode)return;
  const cfg=JSON.parse(configNode.textContent);let deferred=null,installedHere=false;
+ if(configNode.dataset.demoBrowse386==='1'){
+  document.addEventListener('click',e=>{const b=e.target.closest?.('[data-checkout],[data-dock-checkout]');if(b&&b.closest('[data-native-menu]')){e.preventDefault();e.stopImmediatePropagation();window.alert('Loja de demonstração: explore as peças, fotos e tamanhos sem login. Não são enviados pedidos reais.');}},true);
+ }
  if(configNode.dataset.loginRequired==='1'){
   document.addEventListener('click',e=>{const b=e.target.closest?.('[data-add],[data-login-buy252],.nu201-open,.nu190-add,.nu151-choose,[data-checkout],[data-dock-checkout],[data-cart-summary]');if(b&&b.closest('[data-native-menu]')&&!b.disabled){e.preventDefault();e.stopImmediatePropagation();location.assign(cfg.login);}},true);
  }
