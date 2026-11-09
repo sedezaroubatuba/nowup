@@ -1377,7 +1377,7 @@ def order_tracking(request: Request, token: str):
         response.delete_cookie('nowup_cart_completed_token')
         response.delete_cookie('nowup_cart_completed')
     response.headers['Cache-Control']='no-store'
-    response.headers['Referrer-Policy']='no-referrer'
+    response.headers['Referrer-Policy']='same-origin'
     response.headers['X-Robots-Tag']='noindex, nofollow'
     return response
 

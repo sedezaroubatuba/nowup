@@ -28,10 +28,16 @@ def test_merchant_link_uses_owner_session_even_with_customer_cookie(setup345):
     assert 'Editar pedido antes de confirmar' in merchant.text
     assert 'Confirmar pedido e liberar Pix' in merchant.text
     assert 'data-pix-payment' not in merchant.text
+    assert merchant.headers['referrer-policy']=='same-origin'
+    assert not soup.select('[data-order-alerts], [data-more-substitute], [data-substitute]')
+    assert soup.select_one('.nu379-fields [name=qty_'+str(item)+']')
+    assert soup.select_one('textarea[name=message]')
     buyer_page=client.get('/p/'+store['slug']+'/pedido/'+token)
     assert buyer_page.status_code==200 and 'details class="nu378-edit"' not in buyer_page.text
     # Editing can start directly from new, before any confirmation or Pix.
     revision={'keep':str(item),'qty_'+str(item):'1','price_'+str(item):'38.00','return_to':'link'}
+    client.headers.pop('origin')
+    client.headers['Referer']='http://testserver/pedido/'+token
     proposal=client.post('/painel/pedidos/'+str(oid)+'/revisao',data=revision)
     assert proposal.status_code==303 and proposal.headers['location']=='/pedido/'+token
     with m.db() as c:

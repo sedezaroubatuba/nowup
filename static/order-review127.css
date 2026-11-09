@@ -1,3 +1,37 @@
 .nu-revision{margin:12px 0;padding:14px;background:#fff;border:1px solid #dce4ee;border-radius:12px;color:#17304b}.nu-revision:empty{display:none}.nu-review-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.nu-review-actions form{margin:0;flex:1}.nu-revision button{cursor:pointer;border:0;border-radius:9px;padding:12px 16px;font-size:15px;font-weight:700;min-height:46px}.nu-review-actions button{width:100%}.nu-confirm{background:#17864b;color:white}.nu-review{background:#e98416;color:#fff}.nu-refuse{background:#c33333;color:#fff}.nu-review-item{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #e4eaf0}.nu-review-item label:first-child{flex:1;min-width:0}.nu-review-item input[type=number]{width:75px}.nu-revision label{display:block;margin:6px 0}.nu-revision select,.nu-revision input:not([type=checkbox]){max-width:100%;box-sizing:border-box;padding:8px}.nu-revision select{width:100%}.nu-revision input[name=message]{width:100%}.nu-revision small{display:block}.nu-revision input[type=checkbox]{width:20px;height:20px}.nu-pix-key{overflow-wrap:anywhere}
 
 .nu378-edit>summary{display:block;background:#7535b9;color:#fff;border-radius:10px;padding:14px 16px;min-height:46px;box-sizing:border-box;font-weight:700;cursor:pointer;margin:12px 0}.nu378-edit[open]>summary{margin-bottom:16px}.nu-review-item input[data-review-price]{width:130px}
+
+/* Merchant review: touch-friendly fields and a single item card per row. */
+.nu378-edit{border:1px solid #e5dcf3;border-radius:16px;overflow:hidden;background:#faf8fd;margin:16px 0}
+.nu378-edit>summary{margin:0;border-radius:0;background:#f1e9fa;color:#642da0;padding:16px 18px;list-style:none}
+.nu378-edit>summary::after{content:'＋';float:right;font-size:20px}
+.nu378-edit[open]>summary{margin:0;border-bottom:1px solid #e5dcf3}
+.nu378-edit[open]>summary::after{content:'−'}
+.nu378-edit [data-review-form]{padding:18px;min-width:0}
+.nu379-eyebrow{font-size:11px;font-weight:800;letter-spacing:.08em;color:#8051ad}
+.nu379-edit-heading h3{margin:6px 0;font-size:22px;color:#30203e}
+.nu379-edit-heading p,.nu379-approval-note{font-size:14px;line-height:1.5;color:#716879;margin:8px 0 18px}
+.nu379-items{display:grid;gap:12px}
+.nu-revision .nu379-item{display:block;padding:16px;background:#fff;border:1px solid #e6e1ed;border-radius:14px;min-width:0}
+.nu-revision .nu379-keep{display:flex;align-items:flex-start;gap:12px;margin:0 0 16px;cursor:pointer}
+.nu379-keep span{min-width:0;overflow-wrap:anywhere;line-height:1.4}
+.nu379-keep b{font-size:16px;color:#33243e}
+.nu379-keep small{font-size:12px;color:#85768c;margin-top:4px}
+.nu-revision .nu379-keep input{flex:none;margin:2px 0 0;accent-color:#7535b9;width:22px;height:22px}
+.nu379-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.nu-revision .nu379-fields label{font-size:13px;font-weight:600;color:#675b70;margin:0;min-width:0}
+.nu-revision .nu379-fields input{width:100%;min-width:0;margin-top:7px;min-height:48px;background:#fcfbfe;border:1px solid #d9d0e4;border-radius:10px;font:16px system-ui;color:#30203e;padding:10px 12px;box-shadow:none}
+.nu-revision .nu379-fields input:focus,.nu-revision .nu379-message textarea:focus{outline:2px solid #9d73cb;outline-offset:2px}
+.nu379-item-note{font-size:12px;color:#8b7f94;margin-top:10px}
+.nu379-item:has([name=keep]:not(:checked)){background:#f4f1f6;border-style:dashed}
+.nu379-item:has([name=keep]:not(:checked)) .nu379-keep b{text-decoration:line-through;color:#8b7f94}
+.nu-revision .nu379-message{font-size:14px;font-weight:700;color:#51405e;margin:20px 0 14px}
+.nu379-message small{display:inline;font-size:12px;font-weight:400;color:#8b7f94;margin-left:4px}
+.nu-revision .nu379-message textarea{box-sizing:border-box;width:100%;resize:vertical;min-height:90px;border:1px solid #d9d0e4;border-radius:12px;padding:12px;font:15px system-ui;margin-top:8px;background:#fff;color:#30203e}
+.nu379-total{background:#eee6f7;border-radius:12px;padding:16px;display:grid;gap:12px;color:#593082}
+.nu379-total>span{display:flex;justify-content:space-between;font-size:14px}
+.nu379-total>strong{padding-top:12px;border-top:1px solid #d8c7e9;font-size:20px}
+.nu379-approval-note{margin:12px 0;max-width:52ch}
+.nu-revision .nu379-submit{width:100%;background:#7535b9;line-height:1.4;min-height:50px}
+@media(max-width:420px){.nu378-edit [data-review-form]{padding:12px}.nu-revision .nu379-item{padding:13px}.nu379-fields{gap:10px}.nu-revision .nu379-fields input{padding:10px;font-size:16px}}
