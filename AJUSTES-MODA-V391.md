@@ -46,9 +46,11 @@ Não é permitido reduzir um saldo abaixo do que já está reservado nem trocar 
 
 | Arquivo | Mudança |
 |---|---|
+| `requirements-dev.txt`, `tests/test_pix.py` | Inclui o decodificador de QR Code na instalação de desenvolvimento e torna obrigatória a leitura do QR Pix no teste. |
 | `conftest.py` | Ambiente descartável para a suíte; força SQLite de teste e retira DSN de produção durante pytest. |
 | `tests/test_inventory391.py` | Disputa de 30 clientes por 10 peças, expiração, remoção, cores independentes, checkout, confirmação, cancelamento e reenvio. |
 | `tools/check_inventory391_postgres.py` | Mesmas invariantes centrais com transações concorrentes em PostgreSQL real, em esquema aleatório descartável. |
+| `.github/workflows/security308.yml` | Instala as dependências JavaScript para tornar obrigatória a verificação DOM do painel na suíte de servidor. |
 | `.github/workflows/inventory391.yml` | Executa a validação de estoque com PostgreSQL 18 isolado. |
 | `tests/fashion-layout391.test.cjs` | Confere filtro por categoria, busca e reutilização dos cards compactos. |
 | `tests/merchant-settings.dom.cjs` | Nome novo do verificador de HTML recebido por stdin; evita que `npm test` fique esperando entrada. |

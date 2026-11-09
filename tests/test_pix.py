@@ -76,7 +76,7 @@ def test_old_settings_do_not_silently_enable_pix_qr():
 
 
 def test_actual_qr_can_be_decoded_back_to_the_exact_payload():
-    zxing = pytest.importorskip('zxingcpp')
+    import zxingcpp as zxing
     result = payment({'pix_key': KEY, 'pix_key_type': 'random',
                       'pix_receiver_name': 'Loja exemplo', 'pix_receiver_city': 'Ubatuba'}, 7790, 'NUABC')
     raw = base64.b64decode(result['qr_image'].split(',')[1])

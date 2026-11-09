@@ -18,8 +18,8 @@
  const balance=(s,c)=>product.variants.filter(v=>(product.mode==='total'||!s||v.size===s)&&(product.mode!=='variants'||!c||v.color===c)).reduce((n,v)=>n+v.available,0);
  sizes.forEach(i=>{i.disabled=balance(i.value,color)<=0;i.closest('label').title=i.disabled?'Esgotado':'';});colors.forEach(i=>{i.disabled=product.mode==='variants'&&balance(size,i.value)<=0;i.closest('label').title=i.disabled?'Esgotado':'';});
  const left=balance(size,color),note=card.querySelector('.nu389-balance');if(note)note.textContent=left?left+' unidades disponíveis':'Esgotado';
- const add=card.querySelector('[data-add]');if(add){add.disabled=left===0;if(!left)add.textContent='Esgotado';}
- root.querySelectorAll('[data-source256="'+product.id+'"]').forEach(node=>{const toggle=node.querySelector('.nu201-open');if(toggle){toggle.disabled=product.variants.every(v=>v.available===0);if(toggle.disabled)toggle.textContent='Esgotado';}});
+ const add=card.querySelector('[data-add]');if(add){add.disabled=left===0;if(!left)add.textContent='Esgotado';else if(add.textContent==='Esgotado')add.textContent='Adicionar ao carrinho';}
+ root.querySelectorAll('[data-source256="'+product.id+'"]').forEach(node=>{const toggle=node.querySelector('.nu201-open');if(toggle){toggle.disabled=product.variants.every(v=>v.available===0);toggle.dataset.stockSoldOut391=toggle.disabled?'1':'0';if(toggle.disabled)toggle.textContent='Esgotado';}});
  }}
  async function refresh(){try{const r=await fetch(path+'/menu/estoque?basket_key='+encodeURIComponent(basket),{cache:'no-store'});if(r.ok)stock((await r.json()).stock);}catch(_){} }
  function schedule(force=false){if(suppress)return;const rows=entries(),body=JSON.stringify(payload(rows));if(body===last&&!force){buttons();return;}last=body;const current=++version;pending=true;valid=false;label.textContent='Reservando peças…';retry.hidden=true;buttons();
