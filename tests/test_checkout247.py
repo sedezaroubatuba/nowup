@@ -11,6 +11,8 @@ def checkout(tmp_path,monkeypatch):
     m=importlib.import_module('app');monkeypatch.setattr(m,'DB_PATH',tmp_path/'db')
     uploads=tmp_path/'uploads';uploads.mkdir();monkeypatch.setattr(m,'UPLOAD_DIR',uploads)
     import cms
+    import admin_customization,email_verification
+    monkeypatch.setattr(admin_customization,'DB_PATH',m.DB_PATH);monkeypatch.setattr(email_verification,'DB_PATH',m.DB_PATH)
     monkeypatch.setattr(cms,'DB_PATH',m.DB_PATH);monkeypatch.setattr(cms,'UPLOAD_DIR',uploads)
     m.init_db();m.nowup_push75.initialize();m.nowup_alerts112.initialize()
     with m.db() as c:

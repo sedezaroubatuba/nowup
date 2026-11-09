@@ -21,6 +21,9 @@ def env(tmp_path_factory):
     patch.setattr(m,'DB_PATH',directory/'test.db')
     patch.setattr(m,'UPLOAD_DIR',directory/'uploads')
     patch.setattr(cms,'DB_PATH',directory/'test.db')
+    import admin_customization,email_verification
+    patch.setattr(admin_customization,'DB_PATH',directory/'test.db')
+    patch.setattr(email_verification,'DB_PATH',directory/'test.db')
     patch.setattr(cms,'UPLOAD_DIR',directory/'uploads')
     (directory/'uploads').mkdir(exist_ok=True)
     for callback in m.app.router.on_startup:

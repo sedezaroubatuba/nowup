@@ -13,7 +13,7 @@ import nowup_admin205 as m
 import nowup_admin97 as legacy
 
 @pytest.fixture
-def env(tmp_path):
+def env(tmp_path,monkeypatch):
  path=tmp_path/'db.sqlite'
  def db():
   c=sqlite3.connect(path);c.row_factory=sqlite3.Row;c.execute('PRAGMA foreign_keys=ON');return c
@@ -47,6 +47,8 @@ def env(tmp_path):
  templates.env.globals.update(active_app.templates.env.globals)
  templates.env.filters.update(active_app.templates.env.filters)
  def context(r,**kw):return dict({'request':r,'user':auth(r),'settings':{},'categories':[],'banners':[],'business_slides':[]},**kw)
+ monkeypatch.setattr(m,'G',dict(m.G))
+ for name in ('_db','_auth','_templates','_context'):monkeypatch.setattr(legacy,name,getattr(legacy,name))
  m.configure(dict(nowup_alerts112=None,db=db,require_user=auth,templates=templates,context=context,normalize_email=lambda x:x.strip().lower() if '@' in x else '',verification_token=lambda:('token','2026-10-19T12:00:00+00:00'),send_verification=lambda *a:True,slugify=lambda s:s.lower().replace(' ','-')))
  legacy.configure(db,auth,templates,context);legacy.init_support();m.initialize();m.initialize()
  app=FastAPI();app.include_router(m.router)
