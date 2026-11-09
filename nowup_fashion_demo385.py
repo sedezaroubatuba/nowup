@@ -16,6 +16,16 @@ NAMES={
  'cinto':('Cinto roxo fino','Cinto rosé delicado','Cinto preto clássico'),
  'bolsa':('Bolsa roxa compacta','Bolsa rosé casual','Bolsa preta clássica')}
 
+def upgrade_ai_images386(g):
+    """Replace only our original sample drawings, preserving merchant edits."""
+    assets=Path(__file__).parent/'static'/'fashion-ai386'
+    with closing(g['db']()) as c,c:
+        for asset in assets.glob('*.webp'):
+            target=g['UPLOAD_DIR']/('moda386-'+asset.name)
+            if not target.exists():shutil.copyfile(asset,target)
+            old='moda385-'+asset.stem+'.svg'
+            c.execute("UPDATE products SET image_filename=? WHERE image_filename=? AND professional_id IN (SELECT id FROM professionals WHERE is_demo=1 AND slug IN ('nowup-moda-demonstracao','nowup-moda-modelo'))",(target.name,old))
+
 def initialize(g):
     assets=Path(__file__).parent/'static'/'fashion-demo385'
     g['UPLOAD_DIR'].mkdir(parents=True,exist_ok=True)
@@ -52,6 +62,7 @@ def initialize(g):
             for product in ids['camiseta']:
                 c.execute('UPDATE products SET related256=? WHERE id=?',(','.join(map(str,ids['tenis'][:2]+ids['cinto'][:2])),product))
             c.execute("INSERT INTO store_banners207(professional_id,title,image,mode,product_ids,active,link,sort_order) VALUES(?,?,?,'info','[]',1,'',0)",(pid,'Novidades da coleção','moda385-cover.svg'))
+    upgrade_ai_images386(g)
 
 def install(g):
     original_user=g['current_user']

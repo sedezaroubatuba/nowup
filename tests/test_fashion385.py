@@ -96,10 +96,13 @@ def test_demo_stores_editable_isolated_and_seed_is_idempotent(checkout,monkeypat
   assert c.execute('SELECT COUNT(*) FROM products WHERE professional_id=?',(model['id'],)).fetchone()[0]==26
   product=dict(c.execute('SELECT * FROM products WHERE professional_id=? ORDER BY id',(demo['id'],)).fetchone())
   assert product['related256']
-  c.execute("UPDATE products SET name='Editado pelo dono' WHERE id=?",(product['id'],))
+  assert c.execute("SELECT COUNT(*) FROM products WHERE professional_id=? AND image_filename LIKE 'moda386-%'",(demo['id'],)).fetchone()[0]==26
+  c.execute("UPDATE products SET name='Editado pelo dono',image_filename='foto-personalizada.webp' WHERE id=?",(product['id'],))
   admin=dict(c.execute("SELECT * FROM users WHERE role='admin' LIMIT 1").fetchone())
  initialize(vars(m))
- with m.db() as c:assert c.execute('SELECT name FROM products WHERE id=?',(product['id'],)).fetchone()[0]=='Editado pelo dono'
+ with m.db() as c:
+  edited=c.execute('SELECT name,image_filename FROM products WHERE id=?',(product['id'],)).fetchone()
+  assert edited[0]=='Editado pelo dono' and edited[1]=='foto-personalizada.webp'
  assert client.get('/admin/moda385/demonstracao').status_code in (303,403)
  monkeypatch.setattr(m,'current_user',lambda request:getattr(request.state,'fashion_owner385',None) or admin)
  response=client.get('/admin/moda385/demonstracao');assert response.status_code==200,response.text[:500]
