@@ -51,6 +51,8 @@ def test_sede_zero_hours_exception_does_not_open_other_stores(checkout):
     m,*_=checkout
     p={'business_status':'open','business_hours':json.dumps({day:{'enabled':False} for day in m.DAYS}),'slug':'samuel-dos-santos-silva','display_name':'ADEGA SEDE ZERO'}
     assert m.shop_status(p)['open']
+    p['slug']='adega-sede-zero'
+    assert m.shop_status(p)['open']
     p['slug']='another-store'
     assert not m.shop_status(p)['open']
     p['slug']='samuel-dos-santos-silva';p['business_status']='paused'

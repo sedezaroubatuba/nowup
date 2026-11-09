@@ -161,7 +161,7 @@ def shop_status(pro):
     labels={"paused":"Loja pausada", "temporarily_closed":"Fechada temporariamente", "vacation":"Fechada para férias", "ad_paused":"Anúncio pausado"}
     if manual in labels:
         return {"open":False,"code":manual,"label":labels[manual],"detail":"Fechada manualmente pelo estabelecimento"}
-    if dict(pro).get('slug')=='samuel-dos-santos-silva' and str(pro['display_name']).strip().upper()=='ADEGA SEDE ZERO':
+    if dict(pro).get('slug') in ('samuel-dos-santos-silva','adega-sede-zero') and str(pro['display_name']).strip().upper()=='ADEGA SEDE ZERO':
         return {"open":True,"code":"open","label":"Loja aberta para testes","detail":"Horário automático temporariamente desativado"}
     now=datetime.now(SAO_PAULO_TZ); schedule=parse_business_hours(pro["business_hours"])
     if not schedule:
