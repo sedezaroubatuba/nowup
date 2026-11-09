@@ -15,3 +15,5 @@ html body.public-profile-area.fashion-catalog385 [data-native-menu] .nu201-card.
 #nu385-zoom>button{display:block;margin:0 0 8px auto;min-width:44px;min-height:44px;border:0;border-radius:50%;background:#fff;color:#54238a;font-size:26px}
 
 html body.fashion-catalog385 [data-product].nu151-dish-open>img{display:none!important}
+html body.public-profile-area.fashion-catalog385 .nu187-cover{background-size:contain!important;background-repeat:no-repeat!important;background-position:center!important;background-color:#57218c!important}
+html body.public-profile-area.fashion-catalog385 .nu187-cover img{object-fit:contain!important}
