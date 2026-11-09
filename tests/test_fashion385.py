@@ -60,7 +60,7 @@ def test_create_edit_fashion_product_and_merchant_render(shop,monkeypatch):
  from pathlib import Path
  Path('/tmp/fashion-panel385.html').write_text(page.text)
  public=client.get('/p/'+slug+'/menu');assert public.status_code==200,public.text[:500]
- assert '/static/fashion385.js?v=389' in public.text and 'data-fashion-photos385=' in public.text
+ assert '/static/fashion385.js?v=391' in public.text and 'data-fashion-photos385=' in public.text
  assert 'name="size_kind385"' in page.text and 'Moda e acessórios' in page.text and 'Novidades' in page.text
  data.update(size_kind385='numbers',sizes385='36, 38, 40',brand387='Minha marca',material387='Algodão',composition387='100% algodão',guide387='numbers')
  r=client.post('/painel/cardapio/produtos/'+str(product['id']),data=data,follow_redirects=False);assert r.status_code==303,r.text

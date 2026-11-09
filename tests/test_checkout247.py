@@ -10,6 +10,8 @@ def checkout(tmp_path,monkeypatch):
     monkeypatch.setenv('NOWUP_ADMIN_PASSWORD','isolated-release247-password')
     m=importlib.import_module('app');monkeypatch.setattr(m,'DB_PATH',tmp_path/'db')
     uploads=tmp_path/'uploads';uploads.mkdir();monkeypatch.setattr(m,'UPLOAD_DIR',uploads)
+    import cms
+    monkeypatch.setattr(cms,'DB_PATH',m.DB_PATH);monkeypatch.setattr(cms,'UPLOAD_DIR',uploads)
     m.init_db();m.nowup_push75.initialize();m.nowup_alerts112.initialize()
     with m.db() as c:
         pro=c.execute('SELECT * FROM professionals ORDER BY id LIMIT 1').fetchone()

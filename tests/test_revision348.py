@@ -7,9 +7,10 @@ from fastapi import HTTPException
 from test_checkout247 import checkout
 
 @pytest.mark.parametrize('promo,expected',[(750,0),(300,300)])
-def test_admin_price_change_revalidates_promotion_and_checkout(checkout,promo,expected):
+def test_admin_price_change_revalidates_promotion_and_checkout(checkout,monkeypatch,promo,expected):
     import nowup_admin227 as admin
     m,client,url,data,pid,_=checkout
+    monkeypatch.setattr(admin,'G',dict(admin.G))
     admin.configure(vars(m));admin.initialize()
     with m.db() as c:
         c.execute('UPDATE products SET price_cents=1000,promo_price_cents=? WHERE id=?',(promo,pid))
@@ -140,6 +141,7 @@ def test_chat_is_limited_and_does_not_create_extra_notifications(checkout):
 def test_receipt_limit_preserves_replay_and_private_access(checkout,monkeypatch):
     m,client,url,data,*_=checkout
     import nowup_receipts206 as receipts
+    monkeypatch.setattr(receipts,'G',dict(receipts.G))
     receipts.configure(vars(m));receipts.initialize()
     client.post(url,data=data,follow_redirects=False)
     with m.db() as c:oid=c.execute('SELECT id FROM orders').fetchone()[0]

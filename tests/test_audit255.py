@@ -72,6 +72,7 @@ def test_staff_permissions_fail_cleanly(value):
 def panel(checkout,monkeypatch):
  m,_,_,_,_,_=checkout
  m.nowup_admin227.initialize()
+ monkeypatch.setattr(m.nowup_home210,'G',dict(m.nowup_home210.G))
  m.nowup_home210.configure(vars(m))
  actor={'id':1,'role':'admin','name':'Auditor','email':'audit@example.invalid'}
  monkeypatch.setitem(admin.G,'current_user',lambda request:actor)

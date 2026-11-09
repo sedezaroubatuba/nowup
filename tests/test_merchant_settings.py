@@ -22,11 +22,11 @@ def test_rendered_store_settings_and_product_areas(channel, monkeypatch):
     monkeypatch.setattr(m, 'current_user', lambda request: owner)
     response=client.get('/painel')
     assert response.status_code==200,response.text
-    jsdom=os.environ.get('NOWUP_JSDOM','/tmp/nowup-ui/node_modules/jsdom')
+    jsdom=os.environ.get('NOWUP_JSDOM',str(Path(__file__).resolve().parents[1]/'node_modules/jsdom'))
     if not Path(jsdom).exists():
         import pytest
         pytest.skip('Set NOWUP_JSDOM to run merchant navigation checks')
     if Path(jsdom).exists():
-        result=subprocess.run(['node','tests/merchant-settings.test.cjs'],input=response.text,text=True,
+        result=subprocess.run(['node','tests/merchant-settings.dom.cjs'],input=response.text,text=True,
                               capture_output=True,env={**os.environ,'NOWUP_JSDOM':jsdom})
         assert result.returncode==0,result.stdout+result.stderr

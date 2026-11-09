@@ -49,3 +49,32 @@ html body.fashion-catalog385 .nu151-dish-dialog .product-buy [data-step263]{disp
 html body .product-form :is([data-stock-total389],[data-stock-sizes389])[hidden]{display:none!important}
 
 .nu389-color span{gap:7px}.nu389-color i{display:inline-block;width:17px;height:17px;border-radius:50%;border:1px solid #b3a7bd;flex-shrink:0}
+
+/* Keep the shared quantity controls visible after adding a fashion item. */
+html body.fashion-catalog385 [data-native-menu] .nu201-card .nu-step263:not([hidden]){display:flex!important;position:relative!important;z-index:3;align-items:center;justify-content:space-between;width:100%;background:#16834b!important;color:white!important;border-radius:9px}
+html body.fashion-catalog385 [data-native-menu] .nu201-card .nu-step263[hidden]{display:none!important}
+html body.fashion-catalog385 [data-native-menu] .nu201-card .nu-step263 button{color:white!important;background:transparent!important;min-width:40px;min-height:42px;border:0;font-size:22px}
+html body.fashion-catalog385 [data-native-menu] .nu201-card .nu391-remove{position:relative;z-index:3;display:block;width:100%;min-height:36px;border:0;background:#f4f0f8;color:#7132bf;border-radius:8px;margin-top:5px;cursor:pointer}
+
+html body .product-form [data-stock-variants391][hidden]{display:none!important}
+
+.nu391-reservation{font-size:12px;color:#5a4274;padding:4px 8px;background:white}.nu391-reservation button{border:1px solid #7132bf;border-radius:8px;padding:8px;background:white;color:#7132bf;margin-left:6px}
+
+/* Vertical masonry, shared by categories and search; no product carousels. */
+html body.nu391-fashion [data-native-menu] .nu-menu-sticky{position:sticky!important;top:0!important;z-index:100!important;background:#fff!important;box-shadow:0 4px 10px #30124412;padding-bottom:4px!important}
+html body.nu391-fashion [data-native-menu] .menu-category-nav{position:static!important;display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;width:100%!important;max-height:none!important;gap:8px!important}
+html body.nu391-fashion [data-native-menu] .menu-category-nav>button{width:auto!important;flex:0 0 auto!important;white-space:nowrap!important}
+html body.nu391-fashion [data-native-menu] :is(.nu187-intro,.nu190-showcase,.nu191-category-view,.menu-layout,.nu187-back){display:none!important}
+html body.nu391-fashion [data-native-menu] .nu391-fashion-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-auto-rows:4px;column-gap:12px;row-gap:0;align-items:start;max-width:1000px;margin:16px auto 0;scroll-margin-top:160px}
+html body.nu391-fashion [data-native-menu] .nu391-fashion-grid>.nu391-fashion-card{display:flex!important;flex-direction:column!important;align-self:start!important;width:100%!important;height:auto!important;min-height:0!important;min-width:0!important;gap:0!important;padding:0!important;border:1px solid #e6dfed!important;border-radius:14px!important;overflow:hidden;box-shadow:0 2px 5px #24123410;position:relative!important;background:white!important}
+html body.nu391-fashion [data-native-menu] .nu391-fashion-grid>.nu391-fashion-card[hidden]{display:none!important}
+html body.nu391-fashion [data-native-menu] .nu391-fashion-card>img{display:block!important;width:100%!important;height:auto!important;aspect-ratio:var(--nu391-photo-ratio);object-fit:contain!important;background:#f7f4f8!important;border-radius:0!important}
+html body.nu391-fashion [data-native-menu] .nu391-fashion-card .nu190-card-content{display:flex!important;flex-direction:column!important;padding:10px!important;gap:7px!important;min-width:0!important}
+html body.nu391-fashion [data-native-menu] .nu391-fashion-card h3{font-size:clamp(13px,3.4vw,18px)!important;line-height:1.25!important;margin:0!important;overflow-wrap:anywhere}
+html body.nu391-fashion [data-native-menu] .nu391-fashion-card strong{font-size:clamp(16px,4vw,22px)!important;line-height:1.2!important;margin:0!important}
+html body.nu391-fashion [data-native-menu] .nu391-fashion-card .nu201-open{position:relative!important;inset:auto!important;display:block;width:100%!important;height:auto!important;min-height:40px!important;font-size:14px!important;color:#fff!important;background:#7132bf!important;z-index:2;padding:8px!important}
+html body.nu391-fashion [data-native-menu] .nu391-fashion-card .nu201-open[hidden]{display:none!important}
+html body.nu391-fashion [data-native-menu] .nu391-fashion-card.nu-cart-in262{border:2px solid #16834b!important}
+html body.nu391-fashion [data-native-menu] .nu391-fashion-card.nu391-featured:before{content:'Destaque';position:absolute;top:10px;left:8px;padding:5px 9px;background:#7132bf;color:#fff;border-radius:12px;font-size:11px;font-weight:700;z-index:1;pointer-events:none}
+html body.nu391-fashion .nu391-empty{padding:24px;text-align:center}
+html body.nu391-fashion [data-native-menu]>.container{display:block!important;max-width:1100px!important;margin-inline:auto!important}

@@ -26,6 +26,13 @@ def env(tmp_path_factory):
     os.environ['NOWUP_ADMIN_EMAIL']='admin@test.invalid'
     os.environ['NOWUP_ADMIN_PASSWORD']='isolated-local-test-password'
     m=importlib.import_module('app')
+    import cms
+    patch=pytest.MonkeyPatch()
+    patch.setattr(m,'DB_PATH',directory/'test.db')
+    patch.setattr(m,'UPLOAD_DIR',directory/'uploads')
+    patch.setattr(cms,'DB_PATH',directory/'test.db')
+    patch.setattr(cms,'UPLOAD_DIR',directory/'uploads')
+    (directory/'uploads').mkdir(exist_ok=True)
     for callback in m.app.router.on_startup:
         if callback.__name__!='start': callback()
     with m.db() as c:
@@ -35,7 +42,9 @@ def env(tmp_path_factory):
             c.execute('INSERT INTO sessions(token,user_id,expires_at) VALUES(?,?,?)',(f'icon-test-{idx}',p['user_id'],(datetime.now(timezone.utc)+timedelta(days=1)).isoformat()))
         c.commit()
     client=TestClient(m.app,headers={'Origin':'http://testserver'}); client.cookies.set('nowup_session','icon-test-0')
-    return m,client,stores
+    yield m,client,stores
+    client.close()
+    patch.undo()
 
 def test_save_rename_and_tenant_boundary(env):
     m,client,stores=env; pid=stores[0]['id']

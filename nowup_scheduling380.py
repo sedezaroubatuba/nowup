@@ -66,6 +66,8 @@ def expire(c,now=None,order_id=None):
     for o in rows:
         changed=c.execute("UPDATE orders SET status='cancelled',cancellation_reason=?,updated_at=? WHERE id=? AND status='new' AND created_at<=? AND (COALESCE(accept_after380,'')='' OR accept_after380<=?)",(REASON,stamp,o['id'],cutoff,cutoff)).rowcount
         if not changed:continue
+        from nowup_inventory391 import order_status
+        order_status(c,o['id'],'cancelled')
         count+=1
         c.execute('INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)',(o['id'],'cancelled',stamp))
         c.execute('DELETE FROM push_jobs WHERE order_id=?',(o['id'],))

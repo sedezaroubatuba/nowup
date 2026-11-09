@@ -92,6 +92,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   add.addEventListener('click',()=>{const original=card.querySelector('[data-add]');if(!original||original.disabled)return;const choose=card.querySelector('.nu151-choose');if(choose){choose.click();return;}const quantity=card.querySelector('[data-product-quantity]');if(quantity)quantity.value=String(normalize());original.click();close();});back.addEventListener('click',()=>{close();toggle.focus();});
   panel.append(controls,add,back);const actions=make('div','nu-cart-actions262');actions.append(toggle,step);if(item.classList.contains('nu275-combo-card')){toggle.classList.add('nu284-combo-open');toggle.setAttribute('aria-label','Personalizar '+card.dataset.name);step.hidden=true;}content.append(actions,panel);item.append(content);cartRefreshers.push(sync);sync();return item;
  }
+ if(body.classList.contains('fashion-catalog385')&&window.NOWUP_FASHION_LAYOUT391){window.NOWUP_FASHION_LAYOUT391({root,originals,compact,sticky,nav,intro,showcase,categoryView,layout,back,cartRefreshers,search});return;}
  const buttons=nav?Array.from(nav.querySelectorAll('[data-category-filter]')):[],groups=new Map();
  // Keep category selection and its scroll container aligned without moving the page.
  function markCategory362(key){

@@ -58,11 +58,12 @@ def test_complete_appears_in_showcase_but_standalone_does_not(shop):
             assert bool(c.execute('SELECT p.id FROM professionals p WHERE p.id=? AND '+m.public_business_scope(),(pid,)).fetchone())==visible
 
 
-def test_requested_upgrade_is_targeted_and_does_not_rewrite_payments(shop):
+def test_requested_upgrade_is_targeted_and_does_not_rewrite_payments(shop,monkeypatch):
     import json
     import nowup_admin227 as adm
     from nowup_upgrade352 import upgrade_sede_zero
     m,client,slug,pid,*_=shop
+    monkeypatch.setattr(adm,'G',dict(adm.G))
     adm.configure(vars(m));adm.initialize()
     with m.db() as c:
         assert not upgrade_sede_zero(c)

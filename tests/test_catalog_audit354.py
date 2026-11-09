@@ -10,7 +10,8 @@ def test_whatsapp_reports_explain_new_recorded_flow(shop,monkeypatch):
     monkeypatch.setattr(m,'current_user',lambda request:owner)
     panel=client.get('/painel')
     assert panel.status_code==200
-    assert 'Só no WhatsApp (registro nos relatórios)' in panel.text
+    assert 'O WhatsApp recebe o link do pedido.' in panel.text
+    assert 'podem ser revisados pelo link' in panel.text
     report=client.get('/painel/vendas-manuais/relatorios')
     assert report.status_code==200
     assert 'ficam registrados com origem WhatsApp' in report.text

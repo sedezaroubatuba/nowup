@@ -16,6 +16,13 @@ def env(tmp_path_factory):
     os.environ['NOWUP_ADMIN_PASSWORD']='isolated-local-test-password'
     sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
     m=importlib.import_module('app')
+    import cms
+    patch=pytest.MonkeyPatch()
+    patch.setattr(m,'DB_PATH',directory/'test.db')
+    patch.setattr(m,'UPLOAD_DIR',directory/'uploads')
+    patch.setattr(cms,'DB_PATH',directory/'test.db')
+    patch.setattr(cms,'UPLOAD_DIR',directory/'uploads')
+    (directory/'uploads').mkdir(exist_ok=True)
     for callback in m.app.router.on_startup:
         if callback.__name__!='start':callback()
     with m.db() as c:
@@ -34,7 +41,9 @@ def env(tmp_path_factory):
         c.commit()
     client=TestClient(m.app,headers={'Origin':'http://testserver'})
     client.cookies.set('nowup_session','merchant-test')
-    return m,client,ids,p['id'],other['id']
+    yield m,client,ids,p['id'],other['id']
+    client.close()
+    patch.undo()
 
 def test_board_scope_dates_and_totals(env):
     m,client,ids,pid,_=env
