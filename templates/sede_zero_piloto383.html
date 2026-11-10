@@ -3,14 +3,13 @@
 {% set piloto383_store = pro is defined and pro and pro.slug in ['samuel-dos-santos-silva', 'adega-sede-zero'] %}
 {% if (piloto383_store and request.url.path.rstrip('/') in ['/p/samuel-dos-santos-silva', '/p/samuel-dos-santos-silva/menu', '/p/adega-sede-zero', '/p/adega-sede-zero/menu']) or (piloto383_home_enabled and request.url.path == '/') %}
 <link rel="stylesheet" href="/static/sede-zero-piloto383.css?v=383">
-<dialog id="nu383-pilot" aria-label="Sede Zero e NowUp: compartilhe nosso cardápio" data-share-url="{{external_menu355(request,pro.slug if piloto383_store else 'adega-sede-zero')}}">
+<dialog id="nu383-pilot" aria-label="Sede Zero e NowUp: compartilhe nosso cardápio" data-share-url="{% if store_app256 %}{{external_menu355(request,pro.slug if piloto383_store else 'adega-sede-zero')}}{% else %}/p/{{pro.slug if piloto383_store else 'adega-sede-zero'}}/menu{% endif %}">
  <div class="nu383-art">
   <img src="/static/sede-zero-piloto383.webp?v=383" width="1024" height="1536" alt="Você está no nosso projeto piloto. Compartilhe o cardápio da Sede Zero! Envie o link para os amigos e ajude o NowUp a crescer. Em breve: vitrine NowUp, mais lojas da sua cidade em um só lugar. Sem comissão por venda para o lojista. Menos custos para as lojas, mais espaço para oferecer preços baixos para você. A Sede Zero é nossa loja piloto. Sua participação ajuda a testar e melhorar a experiência." fetchpriority="high">
-  <span class="nu383-countdown" aria-live="polite">3</span>
-  <button class="nu383-close" type="button" aria-label="Fechar cartaz" hidden>×</button>
+  <button class="nu383-close" type="button" aria-label="Fechar cartaz">×</button>
   <button class="nu383-share" type="button" aria-label="Compartilhe o cardápio da Sede Zero com os amigos"></button>
  </div>
  <p class="nu383-status" role="status" hidden></p>
 </dialog>
-<script defer src="/static/sede-zero-piloto383.js?v=383"></script>
+<script defer src="/static/sede-zero-piloto383.js?v=400"></script>
 {% endif %}
