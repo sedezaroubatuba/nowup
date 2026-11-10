@@ -42,12 +42,13 @@
           const validTrack=typeof json?.redirect==='string'&&json.redirect.startsWith(path+'/pedido/')&&/^[A-Za-z0-9_-]+$/.test(json.redirect.slice((path+'/pedido/').length));
           if(!response.ok||!json?.prepared||(!json.recorded&&!validWA)||(json.recorded&&!validTrack)||!validWA)throw new Error(typeof json?.detail==='string'?json.detail:'Não foi possível preparar o pedido. Revise os dados.');
           if(json.recorded&&localStorage.getItem(key)===snapshot){cart.clear();localStorage.removeItem(key);localStorage.removeItem(infoKey);sessionStorage.removeItem('nowup-checkout247:'+key);render();}
-          feedback.textContent='Pedido '+json.order_code+' registrado para revisão. O pagamento será liberado após a confirmação.';
+          feedback.textContent='Pedido '+json.order_code+' enviado. '+(json.pix?'O Pix já está disponível.':json.payment_method==='pix'?'Solicite os dados Pix à loja.':'Pagamento na entrega ou retirada.');
           const old=checkoutForm229.querySelector('[data-whatsapp-ready257]');if(old){old.receiptCleanup?.();old.remove();}
           const ready=document.createElement('div');ready.dataset.whatsappReady257='';
           if(validWA){const link=document.createElement('a');link.className='btn primary full-btn';link.href=json.whatsapp_url;link.textContent='Abrir WhatsApp e enviar pedido';link.rel='noopener';link.target='_blank';ready.append(link);}
           if(validTrack){const tracking=document.createElement('a');tracking.className='btn soft full-btn';tracking.href=json.redirect;tracking.textContent='Acompanhar pedido e pagar';ready.append(tracking);}
-          const note=document.createElement('p');note.textContent='No WhatsApp, toque em Enviar. A loja receberá o link para confirmar ou editar. Depois, acompanhe o pedido e o Pix em Acompanhar pedido e pagar.';ready.append(note);
+          if(json.pix&&window.NOWUP_PIX){const host=document.createElement('div');host.setAttribute('data-order-chat-proof377','');window.NOWUP_PIX.attach(host,json.pix);ready.append(host);}
+          const note=document.createElement('p');note.textContent='No WhatsApp, toque em Enviar. A loja receberá seu pedido para conferir e atender. '+(json.pix?'Você já pode pagar com o Pix deste pedido.':json.payment_method==='pix'?'Combine os dados do Pix com a loja.':'Acerte o pagamento na entrega ou retirada.');ready.append(note);
           checkoutForm229.append(ready);
           ready.scrollIntoView({block:'start',behavior:'smooth'});
           if(whatsappWindow390&&!whatsappWindow390.closed){whatsappWindow390.location.replace(json.whatsapp_url);whatsappWindow390=null;if(validTrack)location.assign(json.redirect);}

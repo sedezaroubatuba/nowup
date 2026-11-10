@@ -422,7 +422,7 @@ window.NOWUP_TUTORIALS395=[
     "page": "pedidos-ativos",
     "target": "#pedidos-ativos",
     "title": "Revisão antes do pagamento",
-    "text": "No fluxo com revisão, confira ou edite os itens antes de confirmar e liberar o Pix. Se alterar o pedido, acompanhe a aprovação do cliente e confirme o total final."
+    "text": "Confira o estoque antes de abrir a loja. O cliente pode pagar com Pix assim que envia o pedido. Confira os itens e o recebimento no banco; se cancelar um pedido já pago, devolva o Pix. Alterações de itens e total continuam sujeitas à aprovação do cliente."
    },
    {
     "page": "pedidos-ativos",

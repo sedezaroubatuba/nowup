@@ -27,6 +27,7 @@ def test_same_day_slots_only_and_store_opt_in(checkout):
 
 def test_expiry_only_unanswered_marketplace_and_not_scheduled_before_open(channel):
     m,client,slug,pid,data,product,customer=channel
+    data['payment_method']='cash'
     response=client.post('/p/'+slug+'/menu/pedido',data=data,headers={'Accept':'application/json'})
     assert response.status_code==200,response.text
     now=datetime.now(timezone.utc)

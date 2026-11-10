@@ -58,13 +58,15 @@ def save(c,oid,p,raw):
 
 def expire(c,now=None,order_id=None):
     now=now or datetime.now(timezone.utc);stamp=now.isoformat();cutoff=(now-timedelta(minutes=5)).isoformat()
-    where="status='new' AND COALESCE(order_origin,'legacy')<>'external' AND created_at<=? AND (COALESCE(accept_after380,'')='' OR accept_after380<=?)"
+    # Pix is payable immediately; without bank reconciliation a timeout cannot
+    # distinguish an unpaid order from money already received by the merchant.
+    where="status='new' AND payment_method<>'pix' AND COALESCE(order_origin,'legacy')<>'external' AND created_at<=? AND (COALESCE(accept_after380,'')='' OR accept_after380<=?)"
     params=[cutoff,cutoff]
     if order_id is not None:where+=' AND id=?';params.append(order_id)
     rows=c.execute('SELECT id,customer_id,order_code,tracking_token FROM orders WHERE '+where+' ORDER BY id LIMIT 500',params).fetchall()
     count=0
     for o in rows:
-        changed=c.execute("UPDATE orders SET status='cancelled',cancellation_reason=?,updated_at=? WHERE id=? AND status='new' AND created_at<=? AND (COALESCE(accept_after380,'')='' OR accept_after380<=?)",(REASON,stamp,o['id'],cutoff,cutoff)).rowcount
+        changed=c.execute("UPDATE orders SET status='cancelled',cancellation_reason=?,updated_at=? WHERE id=? AND status='new' AND payment_method<>'pix' AND created_at<=? AND (COALESCE(accept_after380,'')='' OR accept_after380<=?)",(REASON,stamp,o['id'],cutoff,cutoff)).rowcount
         if not changed:continue
         from nowup_inventory391 import order_status
         order_status(c,o['id'],'cancelled')

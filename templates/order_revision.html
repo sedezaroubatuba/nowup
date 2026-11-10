@@ -10,8 +10,8 @@
 <div class="nu390-confirm-total"><span>Total para confirmar</span><strong>R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</strong></div>
 <div class="nu-review-actions">
 
-<form action="/painel/pedidos/{{order.id}}/status" method="post">{% if order_link377 %}<input type="hidden" name="return_to" value="link">{% endif %}<button data-confirm390 name="status" value="confirmed" class="nu-confirm">Confirmar pedido{{' e liberar Pix' if order.payment_method=='pix' else ' sem alterações'}}</button></form>
-<form action="/painel/pedidos/{{order.id}}/status" method="post" data-cancel-form><input type="hidden" name="status" value="rejected"><input type="hidden" name="reason"><button class="nu-refuse">Recusar pedido</button></form></div>
+<form action="/painel/pedidos/{{order.id}}/status" method="post">{% if order_link377 %}<input type="hidden" name="return_to" value="link">{% endif %}<button data-confirm390 name="status" value="confirmed" class="nu-confirm">Itens disponíveis — aceitar pedido</button></form>
+{% if order.payment_method=='pix' %}<p>Antes de recusar, confira o recebimento: se o cliente já pagou, devolva o Pix pelo aplicativo do banco.</p>{% endif %}<form action="/painel/pedidos/{{order.id}}/status" method="post" data-cancel-form><input type="hidden" name="status" value="rejected"><input type="hidden" name="reason"><button class="nu-refuse">Recusar pedido</button></form></div>
 <details class="nu378-edit" {% if order.status=='reviewing' %}open{% endif %}><summary class="nu-review">Editar pedido antes de confirmar</summary>
 <form action="/painel/pedidos/{{order.id}}/revisao" method="post" data-review-form data-fee="{{order.delivery_fee_cents}}">
 {% if order_link377 %}<input type="hidden" name="return_to" value="link">{% endif %}<header class="nu379-edit-heading"><span class="nu379-eyebrow">CONFERÊNCIA DO PEDIDO</span><h3>Ajustar itens</h3><p>Desmarque os produtos indisponíveis e ajuste a quantidade ou o valor, se necessário.</p></header>

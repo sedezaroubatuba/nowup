@@ -26,7 +26,7 @@ def test_merchant_link_uses_owner_session_even_with_customer_cookie(setup345):
     soup=BeautifulSoup(merchant.text,'html.parser')
     assert soup.select_one('details.nu378-edit [name="price_'+str(item)+'"]')
     assert 'Editar pedido antes de confirmar' in merchant.text
-    assert 'Confirmar pedido e liberar Pix' in merchant.text
+    assert 'Itens disponíveis — aceitar pedido' in merchant.text
     assert 'data-pix-payment' not in merchant.text
     assert merchant.headers['referrer-policy']=='same-origin'
     assert not soup.select('[data-order-alerts], [data-more-substitute], [data-substitute]')

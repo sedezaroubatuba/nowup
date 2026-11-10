@@ -12,6 +12,15 @@
   if(input instanceof Request){const url=scoped(input.url);return fetch0.call(this,url===input.url?input:new Request(url,input),options);}
   return fetch0.call(this,scoped(input),options);
  };
- document.addEventListener('click',event=>{const link=event.target.closest?.('a[href]');if(link)link.href=scoped(link.href);},true);
+ function navigation(value){
+  const url=new URL(scoped(value),location.href);
+  if(url.origin!==location.origin)return url.href;
+  const routes={'/entrar':store.login,'/cadastro/cliente':store.signup,'/recuperar-senha':store.forgot,'/cliente':store.orders,'/sair':store.logout};
+  if(routes[url.pathname])return new URL(routes[url.pathname],location.origin).href;
+  if(url.pathname===prefix||url.pathname===prefix+'/menu')return new URL(store.menu,location.origin).href;
+  if(url.pathname.startsWith(prefix+'/')||url.pathname.startsWith('/static/')||url.pathname.startsWith('/uploads/'))return url.href;
+  return new URL(store.menu,location.origin).href;
+ }
+ document.addEventListener('click',event=>{const link=event.target.closest?.('a[href]');if(link)link.href=navigation(link.href);},true);
  document.addEventListener('submit',event=>{if(event.target.action)event.target.action=scoped(event.target.action);},true);
 })();

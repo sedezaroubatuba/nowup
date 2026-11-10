@@ -96,8 +96,8 @@ def test_checkout_uses_only_merchant_key_and_server_prices(channel):
     response = client.post('/p/' + slug + '/menu/whatsapp', data=data)
     assert response.status_code == 200, response.text
     result = response.json()
-    assert 'pix' not in result and 'pix' not in result['receipt']
-    assert result['review_required'] is True
+    assert result['pix']==result['receipt']['pix']
+    assert result['review_required'] is False
     assert result['receipt']['order_code'] == result['order_code']
     assert client.post('/p/' + slug + '/menu/whatsapp', data=data).json() == result
     with m.db() as c:
@@ -105,7 +105,7 @@ def test_checkout_uses_only_merchant_key_and_server_prices(channel):
         assert c.execute('SELECT status FROM orders').fetchone()[0] == 'new'
     before = client.get(result['redirect'])
     assert before.status_code == 200
-    assert 'data-pix-payment' not in before.text
+    assert 'data-pix-payment' in before.text
     with m.db() as c:
         c.execute("UPDATE orders SET status='confirmed'")
     after = client.get(result['redirect'])

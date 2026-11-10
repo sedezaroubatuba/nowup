@@ -1380,7 +1380,10 @@ def order_tracking(request: Request, token: str):
         if order['created_at']<(datetime.now(timezone.utc)-timedelta(days=7)).isoformat():
             conn.close();raise HTTPException(404,'Link expirado. Consulte seus pedidos na sua conta.')
         conn.close()
-        return templates.TemplateResponse('order_public348.html',context(request,tracking_status348=ORDER_STATUS_LABELS.get(order['status'],'Em andamento')),headers={'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow'})
+        merchant398=request.url.path=='/pedido/'+token and (request.query_params.get('lojista')=='1' or order['order_origin']=='external')
+        response=templates.TemplateResponse('order_public348.html',context(request,tracking_status348=ORDER_STATUS_LABELS.get(order['status'],'Em andamento'),merchant_login398=merchant398,merchant_store398=order['display_name'] if merchant398 else ''),headers={'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow'})
+        if merchant398:response.set_cookie('nowup_merchant_order398',token,max_age=1800,httponly=True,secure=os.getenv('NOWUP_HTTPS')=='1' or request.url.scheme=='https',samesite='lax',path='/')
+        return response
     items=conn.execute("SELECT * FROM order_items WHERE order_id=? ORDER BY id",(order["id"],)).fetchall(); options={}
     for option in conn.execute("""SELECT oio.* FROM order_item_options oio JOIN order_items oi ON oi.id=oio.order_item_id
       WHERE oi.order_id=? ORDER BY oio.id""",(order["id"],)).fetchall(): options.setdefault(option["order_item_id"],[]).append(option)

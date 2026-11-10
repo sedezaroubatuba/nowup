@@ -197,4 +197,17 @@ def install(g):
                 p=await run_in_threadpool(store,g,slug)
                 return RedirectResponse(presentation(p)[targets[request.url.path]],303)
             except HTTPException:pass
-        return await call_next(request)
+        response=await call_next(request)
+        p=getattr(request.state,'store_app256',None)
+        target=response.headers.get('location','')
+        if p and request.url.path.startswith('/p/'+p['slug']+'/') and target.startswith('/') and not target.startswith('//'):
+            view=presentation(p);prefix=view['scope'].rstrip('/');url=urlsplit(target)
+            auth={'/entrar':view['login'],'/cadastro/cliente':view['signup'],'/recuperar-senha':view['forgot'],'/cliente':view['orders']}
+            if url.path in auth:
+                base=urlsplit(auth[url.path]);query='&'.join(q for q in (base.query,url.query) if q)
+                response.headers['location']=base.path+('?' + query if query else '')+('#'+url.fragment if url.fragment else '')
+            elif url.path.startswith(('/pedido/','/pedidos/','/suporte')):
+                response.headers['location']=prefix+target
+            elif not (url.path==prefix or url.path.startswith(prefix+'/')):
+                response.headers['location']=view['menu']
+        return response

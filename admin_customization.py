@@ -133,7 +133,19 @@ def secure_login(request: Request, email: str=Form(...),password: str=Form(...),
             conn=db(); conn.execute("DELETE FROM admin_login_codes WHERE challenge=?",(challenge,)); conn.commit(); conn.close(); return RedirectResponse("/entrar?tipo=admin&erro=2fa",303)
         resp=RedirectResponse("/admin/codigo",303); resp.set_cookie("nowup_admin_challenge",challenge,max_age=600,httponly=True,samesite="lax",secure=os.getenv("NOWUP_HTTPS","0")=="1"); return resp
     if u["role"]=="professional":
-        return create_secure_session(u["id"],"/painel")
+        # The WhatsApp token only identifies the destination. Ownership is
+        # checked after password authentication; possession never grants login.
+        order_token=request.cookies.get('nowup_merchant_order398','')
+        dest='/painel'
+        if order_token and len(order_token)<=120:
+            conn=db()
+            try:
+                owned=conn.execute('SELECT o.id FROM orders o JOIN professionals p ON p.id=o.professional_id WHERE o.tracking_token=? AND p.user_id=?',(order_token,u['id'])).fetchone()
+                if owned:dest='/pedido/'+order_token
+            finally:conn.close()
+        response=create_secure_session(u["id"],dest)
+        response.delete_cookie('nowup_merchant_order398',path='/')
+        return response
     return create_secure_session(u["id"],"/")
 
 @router.get("/admin/codigo")

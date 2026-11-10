@@ -112,6 +112,21 @@ def money(cents):
     return 'R$ '+f'{cents/100:.2f}'.replace('.',',')
 
 
+def immediate_payment398(g,conn,result,token):
+    # Never replay a cached QR after an edit, cancellation or changed store key.
+    order=g['tracked_order'](conn,token)
+    pix=g['pix_payment'](order,order['total_cents'],'NU'+str(order['id'])) if order and order['payment_method']=='pix' and order['status'] in ('new','confirmed','preparing','ready','out_for_delivery','completed') else None
+    result.pop('pix',None);result['receipt'].pop('pix',None)
+    if order:
+        result['total_cents']=order['total_cents'];result['receipt']['total']=money(order['total_cents'])
+        if order['status'] in ('cancelled','rejected'):result['receipt']['status']='Pedido encerrado — se já pagou, solicite a devolução à loja'
+        elif order['status'] in ('reviewing','awaiting_approval','revision_approved'):result['receipt']['status']='Pedido em revisão — aguarde a atualização do total para pagar'
+    if pix:result['pix']=pix;result['receipt']['pix']=pix
+    elif order and order['payment_method']=='pix' and order['status'] in ('new','confirmed','preparing','ready','out_for_delivery','completed'):
+        result['receipt']['status']='Pedido enviado — solicite os dados Pix à loja'
+    return result
+
+
 def install(g):
     app=g['app']
     @app.post('/painel/cardapio/whatsapp')
@@ -156,8 +171,9 @@ def install(g):
             if existing:
                 row=conn.execute('SELECT d.response FROM store_dispatch257 d JOIN orders o ON o.id=d.order_id WHERE o.tracking_token=?',(existing,)).fetchone()
                 if not row:raise HTTPException(409,'Pedido já registrado. Confira seu acompanhamento.')
+                result=immediate_payment398(g,conn,json.loads(row[0]),existing)
                 conn.rollback();conn.close()
-                return JSONResponse(json.loads(row[0]),headers=HEADERS)
+                return JSONResponse(result,headers=HEADERS)
             lock=" FOR UPDATE" if getattr(conn,'dialect','sqlite')=='postgres' else ''
             fresh=conn.execute("SELECT p.* FROM professionals p JOIN users u ON u.id=p.user_id WHERE p.id=? AND p.blocked=0 AND p.admission_status='approved' AND p.plan_active IN ('cardapio','completo') AND p.is_premium=1 AND p.offer_mode IN ('menu','catalog') AND u.is_active=1"+lock,(p['id'],)).fetchone()
             if not fresh:raise HTTPException(409,'Loja indisponível')
@@ -201,19 +217,20 @@ def install(g):
             remember_checkout(conn,identity,p['id'],key,digest,oid,created)
             result.update(recorded=True,whatsapp_only=(mode=='whatsapp'),redirect='/p/'+slug+'/pedido/'+token,order_code=code)
             result['receipt']['order_code']=code
-            result['review_required']=True
+            result['review_required']=False
             result['whatsapp_only']=False
-            result['receipt']['status']='Aguardando revisão do lojista — pagamento após confirmação'
+            result['payment_method']=payment_method
+            result['receipt']['status']='Pedido enviado — Pix disponível no acompanhamento' if payment_method=='pix' else 'Pedido enviado — pagamento na entrega ou retirada'
             from nowup_menu_origin355 import email_origin
             base=email_origin() or str(request.base_url).rstrip('/')
             result['order_url']=base+result['redirect']
             management_base=g['os'].getenv('NOWUP_PUBLIC_ORIGIN','').strip().rstrip('/') or g['os'].getenv('NOWUP_BASE_URL','').strip().rstrip('/') or str(request.base_url).rstrip('/')
-            result['merchant_url']=management_base+'/pedido/'+token
+            result['merchant_url']=management_base+'/pedido/'+token+'?lojista=1'
             from zoneinfo import ZoneInfo
             hour=datetime.now(ZoneInfo('America/Sao_Paulo')).hour
             greeting='bom dia' if 5<=hour<12 else 'boa tarde' if hour<18 else 'boa noite'
             saved_message=conn.execute('SELECT message FROM store_order_settings377 WHERE professional_id=?',(p['id'],)).fetchone()
-            template=(saved_message['message'] if saved_message else '') or 'Olá, {saudacao}! Fiz o pedido {pedido} pelo NowUp. Pode revisar e confirmar, por favor?'
+            template=(saved_message['message'] if saved_message else '') or 'Olá, {saudacao}! Fiz o pedido {pedido} pelo NowUp. Pode conferir os itens e atender, por favor?'
             for field,value in {'saudacao':greeting,'pedido':code,'loja':p['display_name'],'total':money(total)}.items():
                 template=template.replace('{'+field+'}',value)
             if scheduled380:template+='\nHorário solicitado para hoje: '+datetime.fromisoformat(scheduled380).astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%H:%M')+' (aguardando confirmação)'
@@ -224,6 +241,7 @@ def install(g):
             if mode!='panel':result['whatsapp_url']='https://wa.me/'+number+'?text='+quote(result['message'],safe='')
             conn.execute('INSERT INTO store_dispatch257(order_id,response) VALUES(?,?)',(oid,json.dumps(result,ensure_ascii=False)))
             conn.commit()
+            immediate_payment398(g,conn,result,token)
             return JSONResponse(result,headers=HEADERS)
         finally:conn.close()
 
