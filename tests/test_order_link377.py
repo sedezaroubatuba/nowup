@@ -26,7 +26,7 @@ def test_full_review_changed_price_requires_buyer_acceptance(channel,monkeypatch
     assert result['pix'] and 'data-pix-payment' in client.get(result['redirect']).text
     monkeypatch.setattr(m,'current_user',lambda request:owner)
     page=client.get(result['redirect'])
-    assert page.status_code==200 and 'Itens disponíveis — aceitar pedido' in page.text and 'Conversa' in page.text
+    assert page.status_code==200 and 'Confirmar pedido e notinha' in page.text and 'Conversa' in page.text
     revision={'keep':str(item['id']),'qty_'+str(item['id']):'1','price_'+str(item['id']):'38.00','message':'Preço corrigido: confirma?'}
     assert client.post('/painel/pedidos/'+str(order['id'])+'/revisao',data=revision,follow_redirects=False).status_code==303
     with m.db() as c:
@@ -93,4 +93,4 @@ def test_private_order_details_skip_intro_and_do_not_overlay_actions(channel,mon
     assert page.status_code==200
     assert 'id="nowup-opening260"' not in page.text
     assert 'id="order-detail-alerts381"' in page.text
-    assert 'Itens disponíveis — aceitar pedido' in page.text
+    assert 'Confirmar pedido e notinha' in page.text

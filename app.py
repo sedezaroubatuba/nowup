@@ -738,6 +738,8 @@ def init_db():
     ensure_column(conn,'products','inventory_version391',"INTEGER NOT NULL DEFAULT 0")
     from nowup_inventory391 import initialize as initialize_inventory391
     initialize_inventory391(conn)
+    from nowup_notinha401 import initialize as initialize_notinha401
+    initialize_notinha401(conn)
     defaults = {
       "brand_name": "NowUp",
       "primary_color": "#08131F",
@@ -2270,6 +2272,7 @@ def pro_order_status(request: Request, order_id: int, status: str=Form(...), rea
     conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)",(order_id,status,now_iso()))
     if order["customer_id"] and status != order["status"]:
         label=ORDER_STATUS_LABELS.get(status,status); message=("A loja está conferindo a disponibilidade dos seus itens. Aguarde a confirmação." if status=="reviewing" else f"Seu pedido foi atualizado para: {label}.")
+        if status=="confirmed":message="A loja confirmou seu pedido. Sua notinha está disponível no acompanhamento."
         if reason: message += f" Motivo: {reason}"
         notification=conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(order["customer_id"],"Atualização do pedido",message,f"/pedido/{order['tracking_token']}",now_iso()))
         nowup_alerts112.enqueue(conn,order["customer_id"],notification.lastrowid,{"title":label,"body":message,"url":f"/pedido/{order['tracking_token']}","tag":f"nowup-status-{order_id}"})
@@ -3269,3 +3272,7 @@ nowup_fashion385.install(globals())
 
 from nowup_inventory391 import install as install_inventory391
 install_inventory391(globals())
+
+# Shared, authenticated receipt and explicit merchant Pix reconciliation.
+import nowup_notinha401
+nowup_notinha401.install(globals())

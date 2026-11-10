@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Notinha {{order.order_code}} | NowUp{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/order-receipt401.css?v=401">
+<main class="nu401-receipt"><header><h1>{{'Notinha confirmada' if confirmed401 else 'Notinha de conferência'}}</h1><p>{{order.display_name}} · {{order.order_code}}</p></header>
+{% if not confirmed401 %}<p class="alert nu401-no-print">Pedido ainda não confirmado. Confira os itens e o pagamento antes do aceite.</p>{% endif %}
+<pre class="nu401-paper">{{receipt_text401}}</pre>
+<div class="nu401-no-print">
+{% if merchant401 %}
+{% if order.payment_method=='pix' and confirmed401 and not payment_checked %}<form action="/painel/pedidos/{{order.id}}/conferir-pix" method="post"><label><input type="checkbox" required> Conferi o crédito deste valor no banco</label><button class="btn primary">Registrar Pix recebido</button></form>{% endif %}
+<p><a class="btn soft" href="/pedido/{{order.tracking_token}}">Conferir / editar pedido</a></p>
+{% if confirmed401 %}{% if whatsapp401 %}<a class="btn primary" href="{{whatsapp401}}" target="_blank" rel="noopener noreferrer">Enviar notinha no WhatsApp</a>{% else %}<p>Confira o WhatsApp do cliente para enviar a notinha.</p>{% endif %}<button type="button" class="btn soft" data-print401>Imprimir para o motoboy</button>{% else %}<p>WhatsApp e impressão ficam disponíveis após a confirmação.</p>{% endif %}
+{% else %}<a class="btn primary" href="{{('/p/' ~ order.slug ~ '/pedido/' if order.order_origin=='external' else '/pedido/') ~ order.tracking_token}}">Acompanhar pedido</a>{% if confirmed401 %}<button type="button" class="btn soft" data-print401>Imprimir notinha</button>{% endif %}{% endif %}
+<p class="tiny">Os valores refletem o pedido atual. Alterações de itens e valores precisam do aceite do cliente. Se já houve Pix, confira a diferença a cobrar ou devolver.</p>
+</div></main><script src="/static/order-receipt401.js?v=401" defer></script>
+{% endblock %}
