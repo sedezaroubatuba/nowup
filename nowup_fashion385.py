@@ -47,6 +47,39 @@ def save_photos(g,conn,pid,uploads):
     conn.execute('UPDATE products SET fashion_photos385=? WHERE id=?',(json.dumps(images),pid))
 
 def install(g):
+    from fastapi import Request
+    from fastapi.responses import RedirectResponse
+
+    @g['app'].post('/painel/pedidos/{order_id}/pix-combinado')
+    def release_agreed_pix(request: Request, order_id: int):
+        owner=g['require_user'](request,'professional')
+        conn=g['db']()
+        try:
+            conn.execute('BEGIN IMMEDIATE')
+            lock=' FOR UPDATE' if getattr(conn,'dialect','sqlite')=='postgres' else ''
+            order=conn.execute('''SELECT o.*,p.business_type,p.pix_key,p.pix_key_type,
+                p.pix_receiver_name,p.pix_receiver_city FROM orders o
+                JOIN professionals p ON p.id=o.professional_id
+                WHERE o.id=? AND p.user_id=?'''+lock,(order_id,owner['id'])).fetchone()
+            if not order:raise HTTPException(404,'Pedido não encontrado')
+            order=dict(order)
+            if order['business_type']!='fashion':raise HTTPException(409,'Esta opção é para pedidos de moda.')
+            if order['status'] not in ('confirmed','preparing','ready','out_for_delivery'):
+                raise HTTPException(409,'Confirme o pedido e aguarde a aprovação de qualquer alteração antes de liberar o Pix.')
+            if order['payment_method'] not in ('on_delivery','pix'):
+                raise HTTPException(409,'Este pedido já tem outra forma de pagamento definida.')
+            if not g['pix_payment'](order,order['total_cents'],'NU'+str(order_id)):
+                raise HTTPException(409,'Complete a chave Pix, o nome do recebedor e a cidade nas configurações de pagamento da loja.')
+            if order['payment_method']!='pix':
+                conn.execute("UPDATE orders SET payment_method='pix',change_for_cents=0,updated_at=? WHERE id=?",(g['now_iso'](),order_id))
+            conn.commit()
+            return RedirectResponse('/pedido/'+order['tracking_token'],303)
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
     g['templates'].env.globals['fashion_editor385']=editor
     from nowup_fashion387 import install as install387
     install387(g)

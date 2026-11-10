@@ -1356,7 +1356,7 @@ ORDER_STATUS_LABELS={
 }
 
 def tracked_order(conn, token: str):
-    return conn.execute("""SELECT o.*,p.display_name,p.slug,p.whatsapp,p.prep_minutes,p.pix_key,p.pix_key_type,p.pix_receiver_name,p.pix_receiver_city
+    return conn.execute("""SELECT o.*,p.display_name,p.slug,p.whatsapp,p.prep_minutes,p.pix_key,p.pix_key_type,p.pix_receiver_name,p.pix_receiver_city,p.business_type AS store_business_type
       FROM orders o JOIN professionals p ON p.id=o.professional_id
       WHERE o.tracking_token=?""",(token,)).fetchone()
 

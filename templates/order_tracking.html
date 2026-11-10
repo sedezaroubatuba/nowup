@@ -23,6 +23,11 @@
 </section>
 <section id="conversa377" role="tabpanel" aria-labelledby="tab-conversa377" class="panel order-card" hidden><h2>Conversa sobre este pedido</h2>{% set chat_order_id=order.id %}{% include 'order_chat.html' %}</section>
 <section id="pagamento377" role="tabpanel" aria-labelledby="tab-pagamento377" class="panel order-card" hidden><h2>Pagamento</h2>
+{% if not review_customer and order.store_business_type=='fashion' and order.payment_method=='on_delivery' and order.status in ['confirmed','preparing','ready','out_for_delivery'] %}
+<p>Depois de combinar o pagamento com o cliente, libere o QR Code com o total confirmado deste pedido.</p>
+<form action="/painel/pedidos/{{order.id}}/pix-combinado" method="post"><button class="btn primary" type="submit">Liberar Pix combinado com o cliente</button></form>
+<p>Use a chave Pix cadastrada em Configurações da loja → Entrega, retirada e pagamento.</p>
+{% endif %}
 {% if payable377 %}{% if order.pix_key %}<h3>Pix da loja</h3><p>Chave Pix: <strong>{{order.pix_key}}</strong></p><p>Valor confirmado: <strong>R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</strong></p>{% set pix=pix_payment(order,order.total_cents,'NU' ~ order.id) %}{% if pix %}<div data-pix-payment data-order-chat-proof377><script type="application/json">{{pix|tojson}}</script></div><script src="/static/pix-payments.js?v=377" defer></script>{% else %}<p>Não foi possível gerar o QR Code. Combine o pagamento com a loja na aba Conversa.</p>{% endif %}<p>A confirmação do pedido não confirma o recebimento do Pix. Confira o destinatário antes de pagar.</p><button type="button" class="btn primary" data-open-conversa377>Anexar comprovante na conversa</button>{% else %}<p>A loja ainda não cadastrou uma chave Pix. Solicite na aba Conversa.</p>{% endif %}
 {% elif order.status in ['cancelled','rejected'] %}<p>Pedido encerrado. Nenhum Pix está disponível neste link.</p>
 {% elif order.payment_method=='pix' %}<p>Aguardando confirmação da loja{% if order.status=='awaiting_approval' %} e seu aceite da alteração{% endif %}. O QR Code e o Pix Copia e Cola aparecerão aqui com o valor confirmado.</p>
