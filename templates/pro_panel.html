@@ -109,7 +109,7 @@ body.fashion-store385 :is(a[href="#lanches-refeicoes322"],a[href="#combos-loja"]
 <div class="row">
 <a class="btn soft" href="#perfil">✏️ Editar perfil</a>
 <a class="btn primary" href="/p/{{pro.slug}}">Ver minha loja</a>
-<button class="btn soft" type="button" data-copy-profile data-profile-url="/p/{{pro.slug}}">🔗 Copiar link</button>
+<button class="btn soft" type="button" data-copy-profile data-profile-url="{{external_menu355(request,pro.slug) if pro.plan_active in ['cardapio','completo'] else '/p/'+pro.slug}}">🔗 Copiar link</button>
 </div>
 </section>
 <section class="stats pro-stats" id="estatisticas">

@@ -162,7 +162,7 @@
   }
   window.NOWUP_OPEN_ORDER353=openOrderDialog353;
   checkout.addEventListener('click',()=>openOrderDialog353(dialog));dockCheckout?.addEventListener('click',()=>{if(!checkout.disabled)openOrderDialog353(dialog)});dialog.querySelector('[data-dialog-close]')?.addEventListener('click',()=>dialog.close());
-  function checkoutFields(){const delivery=fulfillment?.value==='delivery',address=dialog.querySelector('[data-address]');if(address){address.hidden=!delivery;address.querySelectorAll('input:not([type=checkbox]),select').forEach(i=>i.required=delivery)}const change=dialog.querySelector('[data-change]');if(change)change.hidden=payment?.value!=='cash';render()}
+  function checkoutFields(){const delivery=fulfillment?.value==='delivery',address=dialog.querySelector('[data-address]');if(address){address.hidden=!delivery;address.querySelectorAll('input,select').forEach(i=>i.required=delivery&&['address','neighborhood'].includes(i.name))}const change=dialog.querySelector('[data-change]');if(change)change.hidden=payment?.value!=='cash';render()}
   dialog.querySelector('[data-delivery-zone265]')?.addEventListener('change',render);
   fulfillment?.addEventListener('change',checkoutFields);payment?.addEventListener('change',checkoutFields);// Cart is cleared only after the server confirms a successfully created order.
   const slides=[...root.querySelectorAll('.nu-daily-slide')],dots=[...root.querySelectorAll('[data-promo-index]')];let promoIndex=0;const showPromo=i=>{promoIndex=i;slides.forEach((s,n)=>s.classList.toggle('active',n===i));dots.forEach((d,n)=>d.classList.toggle('active',n===i))};dots.forEach((d,i)=>d.addEventListener('click',()=>showPromo(i)));if(slides.length>1)setInterval(()=>showPromo((promoIndex+1)%slides.length),4000);

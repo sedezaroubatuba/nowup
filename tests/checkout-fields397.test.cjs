@@ -1,0 +1,12 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const code=fs.readFileSync('static/menu88.js','utf8');
+const fn=code.match(/function checkoutFields\(\)\{.*\}\n/)[0];
+const fields=[{name:'address'},{name:'neighborhood'},{name:'address_reference'},{name:'save_address'},{name:'',type:'search'}];
+const address={hidden:true,querySelectorAll:()=>fields};
+const context={fulfillment:{value:'delivery'},dialog:{querySelector:s=>s==='[data-address]'?address:null},payment:{value:'pix'},render:()=>{}};
+vm.createContext(context);vm.runInContext(fn+';checkoutFields();',context);
+assert.equal(address.hidden,false);assert.equal(fields[0].required,true);assert.equal(fields[1].required,true);
+assert.equal(fields[2].required,false);assert.equal(fields[3].required,false);assert.equal(fields[4].required,false);
+context.fulfillment.value='pickup';vm.runInContext('checkoutFields()',context);
+assert.equal(address.hidden,true);assert(fields.every(f=>!f.required));
+console.log('PASS: selected delivery neighborhood suffices; search, reference and save checkbox stay optional; pickup requires no delivery fields');

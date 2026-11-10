@@ -91,7 +91,11 @@ def install(g):
         return RedirectResponse(cookie_path(p)+'entrar?erro='+error,303)
 
     @app.get('/p/{slug}/cadastro')
-    def signup_page(request:Request,slug:str): return view(request,slug,'signup_customer.html')
+    def signup_page(request:Request,slug:str):
+        p=store(g,slug)
+        with g['db']() as c:
+            zones=[dict(row) for row in c.execute('SELECT name FROM professional_delivery_zones WHERE professional_id=? AND active=1 ORDER BY name',(p['id'],))]
+        return view(request,slug,'signup_customer.html',signup_delivery_zones397=zones)
 
     @app.post('/p/{slug}/cadastro')
     def signup(request:Request,slug:str,name:str=Form(...),email:str=Form(...),phone:str=Form(...),password:str=Form(...),password_confirm:str=Form(...),accept_terms:str=Form(''),address:str=Form(''),neighborhood:str=Form(''),city:str=Form(''),state:str=Form(''),marketing_email309:str=Form(''),marketing_whatsapp309:str=Form('')):
@@ -104,6 +108,10 @@ def install(g):
         elif not g['normalize_phone'](phone):error='telefone'
         elif not 8<=len(password)<=128 or password!=password_confirm or not accept_terms:error='senha'
         elif not g['email_service_configured']():error='email_indisponivel'
+        if not error:
+            with g['db']() as c:
+                try:_,neighborhood=g['delivery_quote89'](c,p,neighborhood)
+                except HTTPException:error='bairro'
         if error:return RedirectResponse(cookie_path(p)+'cadastro?erro='+error,303)
         token,expires=g['verification_token']()
         with g['db']() as c:
