@@ -23,10 +23,13 @@ def store(g,slug,active=True):
         return dict(row)
     finally:c.close()
 
+def round_logo402(p):
+    return p['slug'] in ('adega-sede-zero','samuel-dos-santos-silva')
+
 def presentation(p):
     slug=p['slug'];prefix='/p/'+quote(slug,safe='')
     return {'slug':slug,'name':p['display_name'],'menu':prefix+'/menu?loja=1',
-        'manifest':prefix+'/manifest.webmanifest','icon':prefix+'/app-icon/192.png',
+        'manifest':prefix+'/manifest.webmanifest','icon':prefix+'/app-icon/192.png'+('?v=402' if round_logo402(p) else ''),'round_logo402':round_logo402(p),
         'worker':prefix+'/service-worker355.js','scope':prefix+'/',
         'terms':prefix+'/termos','privacy':prefix+'/privacidade',
         'whatsapp':prefix+'/menu/whatsapp','orders':prefix+'/pedidos','logout':prefix+'/sair','login':prefix+'/entrar?tipo=cliente','signup':prefix+'/cadastro','forgot':prefix+'/recuperar-senha','reset':prefix+'/redefinir-senha','waiting':prefix+'/aguardando','resend':prefix+'/reenviar-verificacao','completion':prefix+'/cart-completion345'}
@@ -89,7 +92,7 @@ def install(g):
             'lang':'pt-BR','description':'Cardápio e pedidos de '+p['display_name'][:120],
             'start_url':view['menu'],'scope':prefix,'display':'standalone',
             'background_color':'#ffffff','theme_color':'#7136bf',
-            'icons':[{'src':prefix+'app-icon/'+str(size)+'.png','sizes':f'{size}x{size}','type':'image/png','purpose':'any maskable'} for size in (192,512)]}
+            'icons':[{'src':prefix+'app-icon/'+str(size)+'.png'+('?v=402' if round_logo402(p) else ''),'sizes':f'{size}x{size}','type':'image/png','purpose':'any' if round_logo402(p) else 'any maskable'} for size in (192,512)]}
         return JSONResponse(result,media_type='application/manifest+json',headers=HEADERS)
 
     @app.get('/p/{slug}/app-icon/{size}.png')
@@ -109,15 +112,23 @@ def install(g):
                             try:data=base64.b64decode(row[0],validate=True)
                             except (ValueError,TypeError):data=None
                 finally:c.close()
-        canvas=Image.new('RGB',(size,size),'#7136bf')
+        canvas=Image.new('RGBA' if round_logo402(p) else 'RGB',(size,size),(0,0,0,0) if round_logo402(p) else '#7136bf')
         try:
             if not data:raise ValueError()
             with Image.open(io.BytesIO(data)) as im:
                 if im.width*im.height>24_000_000:raise ValueError()
-                logo=ImageOps.contain(im.convert('RGBA'),(int(size*.7),int(size*.7)))
-                canvas.paste(logo,((size-logo.width)//2,(size-logo.height)//2),logo)
+                if round_logo402(p):
+                    logo=ImageOps.fit(im.convert('RGBA'),(size,size),method=Image.Resampling.LANCZOS)
+                    mask=Image.new('L',(size,size),0);ImageDraw.Draw(mask).ellipse((0,0,size-1,size-1),fill=255)
+                    from PIL import ImageChops
+                    logo.putalpha(ImageChops.multiply(logo.getchannel('A'),mask))
+                    canvas.alpha_composite(logo)
+                else:
+                    logo=ImageOps.contain(im.convert('RGBA'),(int(size*.7),int(size*.7)))
+                    canvas.paste(logo,((size-logo.width)//2,(size-logo.height)//2),logo)
         except (ValueError,OSError,Image.DecompressionBombError):
             # A store without a logo still has an independent deterministic icon.
+            if round_logo402(p):ImageDraw.Draw(canvas).ellipse((0,0,size-1,size-1),fill='#7136bf')
             draw=ImageDraw.Draw(canvas);initial=''.join(w[0] for w in p['display_name'].split()[:2]).upper() or 'L'
             try:
                 from PIL import ImageFont
