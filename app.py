@@ -3276,3 +3276,6 @@ install_inventory391(globals())
 # Shared, authenticated receipt and explicit merchant Pix reconciliation.
 import nowup_notinha401
 nowup_notinha401.install(globals())
+
+import nowup_cover403
+nowup_cover403.install(globals())

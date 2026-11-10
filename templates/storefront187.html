@@ -1,6 +1,6 @@
 <template id="nu187-store-template">
 <section class="nu187-intro" aria-label="Informações da loja">
- <div class="nu187-cover" {% if pro.cover_filename %}style="background-image:url('/uploads/{{pro.cover_filename}}')"{% endif %}></div>
+ {% if pro.cover_filename=='sede-zero-capa403.webp' %}<style>.nu187-cover.nu403-cover::after{display:none!important}</style>{% endif %}<div class="nu187-cover{% if pro.cover_filename=='sede-zero-capa403.webp' %} nu403-cover{% endif %}" {% if pro.cover_filename %}style="{% if pro.cover_filename=='sede-zero-capa403.webp' %}height:auto!important;aspect-ratio:2.5;background-size:contain!important;background-repeat:no-repeat;{% endif %}background-image:url('/uploads/{{pro.cover_filename}}')"{% endif %}></div>
  <div class="nu187-identity">
   <div class="nu187-avatar">{% if pro.avatar_filename %}<img src="/uploads/{{pro.avatar_filename}}" alt="Perfil de {{pro.display_name}}">{% else %}<span>🏪</span>{% endif %}</div>
   <h1>{{pro.display_name}}</h1>
