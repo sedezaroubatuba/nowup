@@ -1,6 +1,11 @@
 /* One compact renderer for fashion home, categories and search. */
 window.NOWUP_FASHION_LAYOUT391=({root,originals,compact,sticky,nav,intro,showcase,categoryView,layout,back,cartRefreshers,search})=>{
  const body=document.body;body.classList.remove('nu187-store-home','nu191-category');body.classList.add('nu391-fashion');
+ // Fashion uses native sticky positioning; the legacy fixed-bar spacer must not move the grid.
+ body.classList.remove('nu170-fixed-catalog','nu145-browsing');
+ sticky.classList.remove('nu-search-fixed');
+ for(const key of ['left','width','--nu-sticky-top'])sticky.style.removeProperty(key);
+ const legacyAnchor=root.querySelector('.nu-search-anchor');if(legacyAnchor)legacyAnchor.style.setProperty('display','none','important');
  intro.hidden=showcase.hidden=categoryView.hidden=true;layout.hidden=true;back.hidden=true;if(nav)sticky.append(nav);
  const grid=document.createElement('main');grid.className='nu391-fashion-grid';grid.setAttribute('aria-label','Peças da loja');layout.before(grid);
  const empty=document.createElement('p');empty.className='nu391-empty';empty.textContent='Nenhuma peça encontrada.';empty.hidden=true;grid.after(empty);
