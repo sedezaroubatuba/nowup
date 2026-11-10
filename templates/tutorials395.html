@@ -1,0 +1,21 @@
+<section id="tutoriais395" class="panel" data-fashion="{{'1' if pro.business_type=='fashion' else '0'}}" aria-label="Tutoriais da minha loja">
+<h1>Tutoriais da minha loja</h1>
+<p>Veja onde clicar, como preencher e o que conferir na sua loja. Use <b>Mostrar no painel</b> para acompanhar nos próprios campos ou leia o passo a passo.</p>
+<p>O guia apenas orienta: preencha e salve seus cadastros nos botões da loja. Você pode fechar o tutorial a qualquer momento.</p>
+{% if pro.business_type!='fashion' %}
+<details data-layout-examples395 open><summary>Como fica com 1, 2 ou 4 produtos?</summary>
+<p>Exemplos de exposição por página do carrossel. As fotos, os textos e a quantidade de itens da sua loja podem mudar o resultado. Altere em <a href="#exibicao-produtos" data-nav198>Minha loja → Personalização</a>.</p>
+<div class="nu395-layouts">
+{% for count,label in [(1,'Foto grande — 1 produto por vez'),(2,'Lado a lado — 2 produtos por página'),(4,'Compacto — 4 produtos por página')] %}
+<article class="nu395-layout"><h3>{{label}}</h3><div class="nu395-demo" data-count="{{count}}" aria-label="Exemplo de {{count}} produtos">
+{% for i in range(count) %}{% set item=products[i] if products|length>i else none %}
+<article>{% if item and item.image_filename %}<img loading="lazy" src="/uploads/{{item.image_filename|e}}" alt="{{item.name|e}}">{% else %}<div class="nu395-symbol" aria-hidden="true">▦</div>{% endif %}
+<b>{{item.name if item else ['Produto A','Produto B','Produto C','Produto D'][i]}}</b>
+<small>{% if item %}R$ {{'%.2f'|format(item.price_cents/100)|replace('.',',')}}{% else %}Exemplo{% endif %}</small><span>Adicionar</span></article>
+{% endfor %}</div></article>{% endfor %}
+</div></details>
+{% else %}<p>Seu catálogo de moda usa o mosaico próprio de peças, com tamanhos, cores e estoque. Confira o tutorial Catálogo de moda.</p>{% endif %}
+<label>Buscar tutorial<input class="input" type="search" data-tutorial-search395 placeholder="Ex.: Pix, categoria, combo ou fotos"></label>
+<div class="nu395-topics" data-tutorial-list395></div><p data-tutorial-empty395 hidden>Nenhum tutorial encontrado. Tente outra palavra.</p>
+<noscript>Ative o JavaScript do navegador para consultar os tutoriais guiados.</noscript>
+</section>
