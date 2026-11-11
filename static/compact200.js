@@ -11,10 +11,13 @@
   const submit=form.querySelector('button[type=submit],button:not([type])');if(!submit)return;submit.type='submit';
   api.heading.remove();
   if(!meal){
-   // Remove food controls from ordinary registration. Keep existing values in the serializer when editing.
-   for(const node of [api.ing.toggle.closest('label'),api.ing.body,api.shared,api.groups.toggle.closest('label'),api.groups.body,api.manualBox321,api.questionLabel333,api.utensils.closest('label'),api.notes.closest('label')])node?.remove();
+   // Ordinary products retain optional ingredient and customization controls.
+   const customization=make('details','',{class:'full nu322-settings'});
+   customization.append(make('summary','Ingredientes e personalização'));
+   for(const node of [api.ing.toggle.closest('label'),api.ing.body,api.shared,api.groups.toggle.closest('label'),api.groups.body,api.manualBox321,api.questionLabel333,api.utensils.closest('label'),api.notes.closest('label')])if(node)customization.append(node);
+   host.before(customization);
    const modeLabel=api.mode?.closest('label'),picker=form.querySelector('[data-shared-picker155]'),paid=make('details','',{class:'full nu322-settings'});paid.append(make('summary','Adicionais pagos (opcional)'));if(modeLabel)paid.append(modeLabel);if(picker){const fold=make('details');fold.append(make('summary','Selecionar adicionais cadastrados'),picker);paid.append(fold);}paid.append(api.extras);host.before(paid);paid.open=api.mode?.value!=='none';
-   const type=form.querySelector('[data-combo-type303]');function sync(){host.hidden=type?.value==='1';paid.hidden=type?.value==='1';}type?.addEventListener('change',sync);sync();
+   const type=form.querySelector('[data-combo-type303]');function sync(){host.hidden=type?.value==='1';paid.hidden=type?.value==='1';customization.hidden=type?.value==='1';}type?.addEventListener('change',sync);sync();
    return;
   }
   api.notes.checked=true;api.notes.closest('label').remove();api.ing.toggle.checked=true;api.ing.toggle.closest('label').remove();api.ing.sync();

@@ -117,7 +117,6 @@ def parse_config(raw):
             gid = item['group_id301']
             if not isinstance(gid, str) or not gid.isalnum() or len(gid) > 40:fail('Grupo do combo inválido.')
             output['combo_items'][index]['group_id301'] = gid
-    if sum(bool(i.get('principal')) for i in output['combo_items']) > 1:fail('Selecione somente um produto principal por combo.')
     manual = data.get('combo_manual', [])
     if not isinstance(manual, list) or len(manual) > 20 or any(not isinstance(i, dict) for i in manual):fail('Itens manuais inválidos.')
     manual_names = names([i.get('name') for i in manual], 'Itens manuais', 20)
