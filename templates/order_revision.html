@@ -1,5 +1,5 @@
 {% set revision=order_revision(order.id) %}
-<section class="nu-revision" data-review-box><p><a class="btn soft" href="{{('/p/' ~ store_app256.slug) if review_customer and store_app256 else ''}}/pedidos/{{order.id}}/notinha">{{"Ver notinha confirmada" if order.status in ["confirmed","preparing","ready","out_for_delivery","completed"] else "Abrir notinha de conferência"}}</a></p>{% if order.scheduled_for380 %}<p class="alert"><b>Agendamento solicitado: {{schedule_label380(order.scheduled_for380)}}</b><br>{{'Aguardando confirmação da loja para esse horário.' if order.status in ['new','reviewing','awaiting_approval','revision_approved'] else 'Consulte o status do pedido abaixo.'}}</p>{% endif %}
+<section class="nu-revision" data-review-box>{% if not review_customer %}<p><a class="btn soft" href="{{('/p/' ~ store_app256.slug) if review_customer and store_app256 else ''}}/pedidos/{{order.id}}/notinha">{{"Imprimir pedido" if order.status in ["confirmed","preparing","ready","out_for_delivery","completed"] else "Imprimir conferência"}}</a></p>{% endif %}{% if order.scheduled_for380 %}<p class="alert"><b>Agendamento solicitado: {{schedule_label380(order.scheduled_for380)}}</b><br>{{'Aguardando confirmação da loja para esse horário.' if order.status in ['new','reviewing','awaiting_approval','revision_approved'] else 'Consulte o status do pedido abaixo.'}}</p>{% endif %}
 {% if revision and revision.state=='pending' and order.status=='awaiting_approval' %}
 <h3>Aguardando aprovação do cliente</h3><p>O pedido original permanece válido até a aprovação.</p>
 {% if revision.message %}<p>{{revision.message}}</p>{% endif %}
@@ -10,7 +10,7 @@
 <div class="nu390-confirm-total"><span>Total para confirmar</span><strong>R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</strong></div>
 <div class="nu-review-actions">
 
-<form action="/painel/pedidos/{{order.id}}/status" method="post">{% if order_link377 %}<input type="hidden" name="return_to" value="link">{% endif %}<button data-confirm390 name="status" value="confirmed" class="nu-confirm">Confirmar pedido e notinha</button></form>
+<form action="/painel/pedidos/{{order.id}}/status" method="post">{% if order_link377 %}<input type="hidden" name="return_to" value="link">{% endif %}<button data-confirm390 name="status" value="confirmed" class="nu-confirm">Confirmar pedido</button></form>
 {% if order.payment_method=='pix' %}<p>Antes de recusar, confira o recebimento: se o cliente já pagou, devolva o Pix pelo aplicativo do banco.</p>{% endif %}<form action="/painel/pedidos/{{order.id}}/status" method="post" data-cancel-form><input type="hidden" name="status" value="rejected"><input type="hidden" name="reason"><button class="nu-refuse">Recusar pedido</button></form></div>
 <details class="nu378-edit" {% if order.status=='reviewing' %}open{% endif %}><summary class="nu-review">Editar pedido antes de confirmar</summary>
 <form action="/painel/pedidos/{{order.id}}/revisao" method="post" data-review-form data-fee="{{order.delivery_fee_cents}}">

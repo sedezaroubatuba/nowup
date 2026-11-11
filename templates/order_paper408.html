@@ -1,0 +1,18 @@
+<article class="nu401-paper" aria-label="Notinha do pedido">
+<header class="nu406-brand"><span class="nu406-receipt-icon" aria-hidden="true">✓</span><span class="nu406-eyebrow">RESUMO DO PEDIDO</span><h2>{{order.display_name}}</h2><p class="nu406-order-code">PEDIDO {{order.order_code or order.id}}</p><span class="nu406-badge {{'is-confirmed' if confirmed401 else 'is-pending'}}">Situação: {{receipt_text401.split('\n')[2].split(': ',1)[-1]}}</span></header>
+<div class="nu406-receipt-body">
+{% for line in receipt_text401.split('\n')[3:] %}
+{% if not line.strip() %}<div class="nu406-space" aria-hidden="true"></div>
+{% elif line=='ITENS' %}<h3 class="nu406-section-title">ITENS</h3>
+{% elif line.startswith('TOTAL:') %}<p class="nu406-grand-total"><span>TOTAL: </span><strong>{{line.split(': ',1)[-1]}}</strong></p>
+{% elif line.startswith(('Subtotal:', 'Entrega: R$', 'Forma de pagamento:', 'Troco para:')) %}<p class="nu406-summary"><span>{{line.split(': ',1)[0]}}: </span><b>{{line.split(': ',1)[-1]}}</b></p>
+{% elif line.startswith('Pix recebido e conferido') %}<p class="nu406-payment is-paid"><span aria-hidden="true">✓</span><span>{{line}}</span></p>
+{% elif line.startswith('Recebimento do Pix a conferir') %}<p class="nu406-payment is-pending"><span aria-hidden="true">◷</span><span>{{line}}</span></p>
+{% elif line.startswith('Resumo do pedido') %}<footer class="nu406-footer">{{line}}</footer>
+{% elif line.startswith('PEDIDO ENCERRADO') %}<p class="nu406-payment is-closed">{{line}}</p>
+{% elif ' × ' in line and not line.startswith(' ') %}<p class="nu406-item"><span class="nu406-item-quantity">{{line.split(' × ',1)[0]}} × </span><span class="nu406-item-text">{{line.split(' × ',1)[-1].rsplit(' — ',1)[0]}}<strong class="nu407-receipt-price">{{line.rsplit(' — ',1)[-1]}}</strong></span></p>
+{% elif line.startswith(' ') %}<p class="nu406-item-detail">{{line.strip()}}</p>
+{% elif ': ' in line %}<p class="nu406-detail"><span>{{line.split(': ',1)[0]}}: </span> <b>{{line.split(': ',1)[-1]}}</b></p>
+{% else %}<p class="nu406-detail">{{line}}</p>{% endif %}
+{% endfor %}
+</div></article>

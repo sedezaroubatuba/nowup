@@ -281,6 +281,10 @@ def update_store(c,a,oid,v,why):
   plan=next((x for x in rows(c,'plans') if x['id']==v['plan']),None)
   if not plan:fail(400,'Plano SaaS não encontrado.')
   m.update(plan=plan['id'],price=(3990 if p['business_type']=='fashion' and plan['id']=='cardapio' else plan['price']),subscribedAt=m.get('subscribedAt',localday()))
+  if p['plan_requested']==plan['id']:
+   from nowup_channels408 import approve_category
+   approve_category(c,oid)
+   columns.update(plan_requested='',plan_requested_offer='')
   columns.update(plan_active=plan['id'],is_premium=1)
   if p['offer_mode'] not in ('menu','catalog'):columns['offer_mode']='menu'
  if 'price' in v and 'plan' not in v:m['price']=number(v['price'])

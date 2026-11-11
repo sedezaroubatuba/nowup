@@ -1818,11 +1818,15 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     return templates.TemplateResponse("pro_panel.html", context(request, kanban=kanban, manual=nowup_sales107.panel_data(request,conta), combo_catalog298=combo_catalog298, pair_catalog328=[{"id":row["id"],"name":row["name"]} for row in products], meal_ids322=meal_ids322, ingredient_catalog320=ingredient_catalog320, included_catalog195=included_catalog195, shared_extras=shared_extras, shared_selected=shared_selected, pro=p, photos=photos, posts=posts, products=products, product_groups=product_groups, delivery_zones=delivery_zones, merchant_overview=merchant_overview, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, today_orders=today_orders, day_order_summary=day_order_summary, order_day=order_day.isoformat(), today_day=today.isoformat(), order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
 
 @app.post('/painel/plano')
-def request_store_plan(request: Request, plan: str=Form(...), offer_mode: str=Form('services')):
+def request_store_plan(request: Request, plan: str=Form(...), offer_mode: str=Form('services'), category_id: int=Form(0)):
     user=require_user(request,'professional')
     if plan not in ('cardapio','ambos','completo') or offer_mode not in ('menu','catalog'):
         return RedirectResponse('/painel?erro=plano#plano',303)
     conn=db()
+    from nowup_channels408 import request_category
+    try: request_category(conn,user['id'],plan,category_id)
+    except Exception:
+        conn.rollback();conn.close();raise
     conn.execute('UPDATE professionals SET plan_requested=?,plan_requested_offer=? WHERE user_id=?',(plan,offer_mode,user['id']))
     # O conteúdo escolhido só muda quando o ADM aprovar, preservando o plano em operação.
     conn.commit();conn.close()
@@ -2780,6 +2784,7 @@ def admin_review_professional(request: Request, pid:int, decision:str, reason:st
     conn.execute("UPDATE professionals SET admission_status=?,admission_reason=?,blocked=? WHERE id=?",
                  (decision,reason.strip()[:500] if decision=='rejected' else '',0 if decision=='approved' else 1,pid))
     if decision=='approved':
+        nowup_channels408.approve_category(conn,pid)
         conn.execute("UPDATE professionals SET plan_active=plan_requested,is_premium=CASE WHEN plan_requested IN ('cardapio','ambos','completo') THEN 1 ELSE 0 END,offer_mode=CASE WHEN plan_requested='vitrine' THEN 'services' WHEN plan_requested_offer IN ('menu','catalog') THEN plan_requested_offer ELSE offer_mode END,plan_requested='',plan_requested_offer='',plan_granted=? WHERE id=?",(1 if complimentary=='1' else 0,pid))
     if decision=='approved': conn.execute("UPDATE users SET is_active=1 WHERE id=?",(pro["user_id"],))
     conn.execute("INSERT INTO admission_mail(professional_id,decision,state,updated_at) VALUES(?,?,'pending',?) ON CONFLICT(professional_id) DO UPDATE SET decision=excluded.decision,state='pending',updated_at=excluded.updated_at",(pid,decision,now_iso()))
@@ -2800,6 +2805,7 @@ def admin_approve_store_plan(request: Request,pid:int,payment_confirmed: str=For
     try: require_review(conn,pid,p['plan_requested'])
     except HTTPException:
         conn.rollback();conn.close();raise
+    nowup_channels408.approve_category(conn,pid)
     conn.execute("UPDATE professionals SET plan_active=plan_requested,is_premium=CASE WHEN plan_requested IN ('cardapio','ambos','completo') THEN 1 ELSE 0 END,offer_mode=CASE WHEN plan_requested='vitrine' THEN 'services' WHEN plan_requested_offer IN ('menu','catalog') THEN plan_requested_offer ELSE offer_mode END,plan_granted=?,plan_requested='',plan_requested_offer='' WHERE id=?",(1 if complimentary=='1' else 0,pid))
     conn.commit();conn.close();return RedirectResponse('/admin?ok=plano#profissionais',303)
 
@@ -3295,3 +3301,6 @@ nowup_cover403.install(globals())
 # Live merchant notice: acceptance returns its authenticated order fragment.
 import nowup_order_popup407
 nowup_order_popup407.install(globals())
+
+import nowup_channels408
+nowup_channels408.install(globals())

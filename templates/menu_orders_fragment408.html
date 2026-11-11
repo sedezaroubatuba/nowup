@@ -1,0 +1,8 @@
+<p><b>{{kanban.count}}</b> pedido(s) hoje · <b>{{kanban.active}}</b> em andamento · R$ {{'%.2f'|format(kanban.total/100)|replace('.',',')}} em pedidos hoje (exceto cancelados e recusados).</p>
+{% for stage in kanban.stages %}<section><h2>{{stage.title}}</h2>
+{% for order in stage.orders %}<article class="panel" style="padding:18px;margin:12px 0" data-menu-order408="{{order.id}}">
+<h3>{{order.order_code or ('Pedido #' ~ order.id)}} · {{order.customer_name}}</h3><p>{{status_labels.get(order.status,order.status)}} · {{order.local_time}}</p>
+{% for item in order.items405 %}<p>{{item.quantity}} × {{item.product_name}}{% if item.notes %} · {{item.notes}}{% endif %}</p>{% endfor %}
+<p><strong>R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</strong> · {{'Entrega' if order.fulfillment_type=='delivery' else 'Retirada'}}</p>
+<a class="btn primary" href="/pedido/{{order.tracking_token}}#pedido377">Ver pedido</a>
+</article>{% else %}<p>Nenhum pedido nesta etapa.</p>{% endfor %}</section>{% endfor %}

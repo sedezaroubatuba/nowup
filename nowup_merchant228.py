@@ -9,12 +9,13 @@ STAGES = (
 )
 
 
-def board(conn, professional_id, lower, upper, tz):
+def board(conn, professional_id, lower, upper, tz, channel="vitrine"):
+    origin_filter = "COALESCE(o.order_origin,'legacy')='external'" if channel == "cardapio" else "COALESCE(o.order_origin,'legacy')<>'external'"
     active = tuple(status for _, _, statuses in STAGES[:3] for status in statuses)
     placeholders = ','.join('?' for _ in active)
     rows = conn.execute(f"""SELECT o.*,
       COALESCE((SELECT SUM(quantity) FROM order_items WHERE order_id=o.id),0) item_count
-      FROM orders o WHERE o.professional_id=? AND COALESCE(o.order_origin,'legacy')<>'external' AND
+      FROM orders o WHERE o.professional_id=? AND {origin_filter} AND
       (o.status IN ({placeholders}) OR (o.created_at>=? AND o.created_at<?))
       ORDER BY o.id DESC""", (professional_id, *active, lower, upper)).fetchall()
     stages = [dict(key=key, title=title, orders=[]) for key, title, _ in STAGES]
