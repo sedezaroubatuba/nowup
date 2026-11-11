@@ -73,7 +73,8 @@ def test_contact_routes_limit_and_xlsx_authorization(checkout,monkeypatch):
 def test_whatsapp_history_is_idempotent_private_and_not_a_paid_order(channel,monkeypatch):
     m,client,slug,pid,data,product,customer=channel
     result=client.post('/p/'+slug+'/menu/whatsapp',data=data).json()
-    assert result['recorded'] and result['review_required'] and not result['whatsapp_only'] and result['order_code'].startswith('NU-')
+    # Current flow releases Pix on checkout; it no longer requires prior review.
+    assert result['recorded'] and not result['review_required'] and not result['whatsapp_only'] and result['order_code'].startswith('NU-')
     assert client.post('/p/'+slug+'/menu/whatsapp',data=data).json()==result
     with m.db() as c:
         order=dict(c.execute('SELECT * FROM orders').fetchone())
@@ -85,7 +86,7 @@ def test_whatsapp_history_is_idempotent_private_and_not_a_paid_order(channel,mon
         assert c.execute('SELECT COUNT(*) FROM orders WHERE status=\'completed\'').fetchone()[0]==0
         owner=dict(c.execute('SELECT * FROM users WHERE id=(SELECT user_id FROM professionals WHERE id=?)',(pid,)).fetchone())
     page=client.get('/p/'+slug+'/pedidos');assert result['order_code'] in page.text
-    page=client.get(result['redirect']);assert 'Aguardando revisão do lojista' in page.text
+    page=client.get(result['redirect']);assert 'Aguardando atendimento da loja' in page.text
     assert 'Seu pedido chegou à sala de pedidos' not in page.text
     data['notes']='changed';assert client.post('/p/'+slug+'/menu/whatsapp',data=data).status_code==409
     other=dict(customer,id=customer['id']+10000);monkeypatch.setattr(m,'current_user',lambda request:other)

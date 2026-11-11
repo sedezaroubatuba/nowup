@@ -26,6 +26,9 @@ def env(tmp_path_factory):
     patch.setattr(email_verification,'DB_PATH',directory/'test.db')
     patch.setattr(cms,'UPLOAD_DIR',directory/'uploads')
     (directory/'uploads').mkdir(exist_ok=True)
+    # Home banner setup runs at module configuration time; this fixture changes
+    # the database after app import, so initialize its independent database too.
+    m.nowup_home210.configure(vars(m))
     for callback in m.app.router.on_startup:
         if callback.__name__!='start':callback()
     with m.db() as c:
