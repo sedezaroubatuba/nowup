@@ -110,8 +110,8 @@ def check_origin(request):
         if not valid: raise HTTPException(403,'Origem inválida.')
     if request.headers.get('sec-fetch-site')=='cross-site': raise HTTPException(403,'Origem inválida.')
 
-def owned(c,pid,sid):
-    row=c.execute('SELECT * FROM manual_sales107 WHERE id=? AND professional_id=?',(sid,pid)).fetchone()
+def owned(c,pid,sid,for_update=False):
+    row=c.execute('SELECT * FROM manual_sales107 WHERE id=? AND professional_id=?'+(' FOR UPDATE' if for_update and getattr(c,'dialect','sqlite')=='postgres' else ''),(sid,pid)).fetchone()
     if not row: raise HTTPException(404,'Venda não encontrada.')
     return dict(row)
 
@@ -187,7 +187,7 @@ def create(request:Request,label:str=Form(...),channel:str=Form(...),token:str=F
 def mutate(request:Request,sid:int,version:int=Form(...),action:str=Form(...),product_id:int=Form(0),quantity:int=Form(1),item_id:int=Form(0),payment_id:int=Form(0),method:str=Form(''),amount:str=Form(''),label:str=Form(''),notes:str=Form(''),reason:str=Form(''),refund:str=Form('')):
     check_origin(request)
     with connection() as c:
-        u,p=merchant(c,request);c.execute('BEGIN IMMEDIATE');s=owned(c,p['id'],sid)
+        u,p=merchant(c,request);c.execute('BEGIN IMMEDIATE');s=owned(c,p['id'],sid,True)
         if s['status']=='cancelled' or (s['status']=='completed' and action!='cancel'): raise HTTPException(409,'Esta conta já foi fechada ou cancelada.')
         if version!=s['version']: raise HTTPException(409,'A conta foi atualizada. Volte à conta e confira os valores antes de tentar novamente.')
         detail=''
@@ -238,7 +238,7 @@ def finalize(request:Request,sid:int,version:int=Form(...),payments_json:str=For
             parts.append((part['method'],money(part.get('amount'))))
     except (ValueError,TypeError): raise HTTPException(400,'Confira as formas e valores do pagamento.')
     with connection() as c:
-        u,p=merchant(c,request);c.execute('BEGIN IMMEDIATE');sale=owned(c,p['id'],sid)
+        u,p=merchant(c,request);c.execute('BEGIN IMMEDIATE');sale=owned(c,p['id'],sid,True)
         if sale['status']!='open' or sale['version']!=version: raise HTTPException(409,'Conta atualizada. Confira os valores antes de finalizar novamente.')
         if sale['total_cents']<=0 or paid(c,sid)+sum(value for _,value in parts)!=sale['total_cents']: raise HTTPException(400,'A soma dos pagamentos deve ser igual ao total da conta.')
         for method,value in parts:

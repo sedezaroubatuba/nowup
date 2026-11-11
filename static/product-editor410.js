@@ -12,6 +12,7 @@
   form.dataset.editor410='1';form.classList.add('nu410-form');const kind=kindOf(form),name=kinds.find(k=>k[0]===kind)[1];
   const original=[...form.children],heading=el('header',null,'nu410-header'),isEdit=/\/produtos\/\d+$/.test(new URL(form.action,location.href).pathname);
   heading.append(el('span','CADASTRO DE PRODUTOS','nu410-eyebrow'),el('h2',isEdit?'Editar '+name.toLowerCase():'Novo '+name.toLowerCase()),el('p','Preencha os dados e configure as opções deste produto.'));
+  if(isEdit)heading.append(el('p','Código interno: '+new URL(form.action,location.href).pathname.split('/').pop(),'nu410-help'));
   if(!isEdit){const nav=el('nav',null,'nu410-types');nav.setAttribute('aria-label','Tipo de produto');kinds.forEach(([key,label,id])=>{const a=el('a',label,key===kind?'is-active':'');a.href='#'+id;a.dataset.nav198='';if(key===kind)a.setAttribute('aria-current','page');nav.append(a);});heading.append(nav);}
   const grid=el('div',null,'nu410-grid'),basic=el('section',null,'nu410-basic'),options=el('section',null,'nu410-options'),footer=el('div',null,'nu410-actions');
   basic.append(el('h3',kind==='combo'?'Dados do combo':kind==='weight'?'Cadastro por quilo':'Dados do produto'));options.append(el('h3',kind==='combo'?'Monte o combo':'Opções deste produto'));

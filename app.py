@@ -3311,3 +3311,6 @@ nowup_order_popup407.install(globals())
 
 import nowup_channels408
 nowup_channels408.install(globals())
+
+import nowup_checkout411
+nowup_checkout411.install(globals())

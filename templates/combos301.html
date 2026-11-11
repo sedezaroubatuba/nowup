@@ -25,7 +25,7 @@
 <div class="product-admin-grid" data-combos-list301>
 {% for product in products if (product.is_combo256 or product.category|lower == 'combos') and product.id not in meal_ids322|default([]) %}
 <details id="combo-editor328-{{product.id}}" data-product-id="{{product.id}}" class="product-admin-card" data-combo-card301 data-name="{{product.name}}">
-<summary>{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" alt="">{% endif %}<div><b>{{product.name}}</b><small>Editar combo · R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</small></div></summary>
+<summary>{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" alt="">{% endif %}<div><b>{{product.name}}</b><small>Código interno: {{product.id}}</small><small>Editar combo · R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</small></div></summary>
 {{combo_form301(product)}}
 <form action="/painel/cardapio/produtos/{{product.id}}/excluir" method="post" data-confirm-delete><button class="btn danger tiny">Excluir combo</button></form>
 </details>
