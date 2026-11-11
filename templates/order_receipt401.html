@@ -1,10 +1,27 @@
 {% extends 'base.html' %}
 {% block title %}Notinha {{order.order_code}} | NowUp{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="/static/order-receipt401.css?v=401">
-<main class="nu401-receipt"><header><h1>{{'Notinha confirmada' if confirmed401 else 'Notinha de conferência'}}</h1><p>{{order.display_name}} · {{order.order_code}}</p></header>
+<link rel="stylesheet" href="/static/order-receipt401.css?v=406">
+<main class="nu401-receipt"><header class="nu406-heading nu401-no-print"><span class="nu406-eyebrow">SEU PEDIDO, EM CADA DETALHE</span><h1>{{'Notinha confirmada' if confirmed401 else 'Notinha de conferência'}}</h1><p>{{order.display_name}} · {{order.order_code}}</p></header>
 {% if not confirmed401 %}<p class="alert nu401-no-print">Pedido ainda não confirmado. Confira os itens e o pagamento antes do aceite.</p>{% endif %}
-<pre class="nu401-paper">{{receipt_text401}}</pre>
+<article class="nu401-paper" aria-label="Notinha do pedido">
+<header class="nu406-brand"><span class="nu406-receipt-icon" aria-hidden="true">✓</span><span class="nu406-eyebrow">RESUMO DO PEDIDO</span><h2>{{order.display_name}}</h2><p class="nu406-order-code">PEDIDO {{order.order_code or order.id}}</p><span class="nu406-badge {{'is-confirmed' if confirmed401 else 'is-pending'}}">Situação: {{receipt_text401.split('\n')[2].split(': ',1)[-1]}}</span></header>
+<div class="nu406-receipt-body">
+{% for line in receipt_text401.split('\n')[3:] %}
+{% if not line.strip() %}<div class="nu406-space" aria-hidden="true"></div>
+{% elif line=='ITENS' %}<h3 class="nu406-section-title">ITENS</h3>
+{% elif line.startswith('TOTAL:') %}<p class="nu406-grand-total"><span>TOTAL: </span><strong>{{line.split(': ',1)[-1]}}</strong></p>
+{% elif line.startswith(('Subtotal:', 'Entrega: R$', 'Forma de pagamento:', 'Troco para:')) %}<p class="nu406-summary"><span>{{line.split(': ',1)[0]}}: </span><b>{{line.split(': ',1)[-1]}}</b></p>
+{% elif line.startswith('Pix recebido e conferido') %}<p class="nu406-payment is-paid"><span aria-hidden="true">✓</span><span>{{line}}</span></p>
+{% elif line.startswith('Recebimento do Pix a conferir') %}<p class="nu406-payment is-pending"><span aria-hidden="true">◷</span><span>{{line}}</span></p>
+{% elif line.startswith('Resumo do pedido') %}<footer class="nu406-footer">{{line}}</footer>
+{% elif line.startswith('PEDIDO ENCERRADO') %}<p class="nu406-payment is-closed">{{line}}</p>
+{% elif ' × ' in line and not line.startswith(' ') %}<p class="nu406-item"><span class="nu406-item-quantity">{{line.split(' × ',1)[0]}} × </span><span>{{line.split(' × ',1)[-1]}}</span></p>
+{% elif line.startswith(' ') %}<p class="nu406-item-detail">{{line.strip()}}</p>
+{% elif ': ' in line %}<p class="nu406-detail"><span>{{line.split(': ',1)[0]}}: </span> <b>{{line.split(': ',1)[-1]}}</b></p>
+{% else %}<p class="nu406-detail">{{line}}</p>{% endif %}
+{% endfor %}
+</div></article>
 <div class="nu401-no-print">
 {% if merchant401 %}
 {% if order.payment_method=='pix' and confirmed401 and not payment_checked %}<form action="/painel/pedidos/{{order.id}}/conferir-pix" method="post"><label><input type="checkbox" required> Conferi o crédito deste valor no banco</label><button class="btn primary">Registrar Pix recebido</button></form>{% endif %}

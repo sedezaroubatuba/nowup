@@ -77,6 +77,8 @@
       if(url.pathname==='/entrar')throw Error('Sua sessão terminou. Entre novamente.');
       if(url.searchParams.has('erro'))throw Error('O pedido mudou ou esta ação não é permitida. Atualize e confira os itens.');
       if(!response.headers?.get('content-type')?.includes('application/json')&&(url.pathname!=='/painel'||url.searchParams.get('ok')!=='pedido'))throw Error('Confira o pedido antes de continuar.');
+      const id=Number(new URL(form.action).pathname.split('/')[3]);
+      window.dispatchEvent(new CustomEvent('nowup:order-status',{detail:{id,status:form.elements.status.value}}));
       pending=false;await refresh(true);
     }catch(error){announce(error.name==='AbortError'?'Não foi possível confirmar o resultado. Atualize o quadro antes de tentar novamente.':error.message,true);}
     finally{clearTimeout(timeout);pending=false;if(button.isConnected){button.disabled=false;button.textContent=label;}}

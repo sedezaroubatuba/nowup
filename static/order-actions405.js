@@ -23,6 +23,7 @@
    const r=await fetch(form.action,{method:'POST',body,credentials:'same-origin',signal:controller.signal});
    if(!r.ok){let message='Não foi possível salvar. Tente novamente.';try{message=(await r.json()).detail||message;}catch(_){}throw Error(message);}
    const url=new URL(r.url);if(url.pathname==='/entrar')throw Error('Entre novamente para continuar.');if(url.searchParams.has('erro'))throw Error('O pedido mudou. Confira os dados antes de continuar.');
+   if(path.endsWith('/status'))window.dispatchEvent(new CustomEvent('nowup:order-status',{detail:{id:Number(path.split('/')[3]),status:body.get('status')}}));
    const doc=new DOMParser().parseFromString(await r.text(),'text/html');
    const card=form.closest('.order-card[id]'),track=document.querySelector('[data-order-link377]');
    if(card){const fresh=doc.getElementById(card.id);if(!fresh)throw Error('Status salvo. Atualize os pedidos para conferir.');card.replaceWith(fresh);}

@@ -4,6 +4,7 @@
   const button=root.querySelector('[data-enable-order-alerts]'),status=root.querySelector('[data-alert-status]');
   const box=document.querySelector('[data-new-order-alert]'),message=document.querySelector('[data-new-order-message]'),open=document.querySelector('[data-open-new-order]');
   let cursor=Number(root.dataset.latestOrderId||0),audio,enabled=false,busy=false,lastAlarm=0,pendingId=0;
+  const resolved406=new Set();
   const title=document.title;const testButton=root.querySelector('[data-test-order-alerts]'),disableButton=root.querySelector('[data-disable-order-alerts]');
   function running(){return enabled&&audio?.state==='running';}
   const stored=()=>{try{return localStorage.getItem('nowup-order-alerts')!=='0';}catch(_){return false;}};
@@ -18,13 +19,20 @@
   async function restore(event){if(event?.target?.closest('[data-enable-order-alerts],[data-test-order-alerts],[data-disable-order-alerts]'))return;if(!running()&&stored()){enabled=await unlock();render();if(enabled&&pendingId){alarm();lastAlarm=Date.now();}}}
   document.addEventListener('pointerdown',restore);document.addEventListener('keydown',restore);
   open?.addEventListener('click',()=>{if(pendingId)location.assign('/painel?abrir_pedido='+pendingId+'#pedido-'+pendingId);});
+  window.addEventListener('nowup:order-status',event=>{
+    const id=Number(event.detail?.id),state=event.detail?.status;
+    if(!Number.isSafeInteger(id)||id<=0||!['confirmed','reviewing','preparing','ready','out_for_delivery','completed','cancelled','rejected'].includes(state))return;
+    resolved406.add(id);
+    if(pendingId===id){silence();navigator.vibrate?.(0);pendingId=0;lastAlarm=0;box.hidden=true;document.title=title;}
+    check();
+  });
   async function check(){
     if(busy)return;busy=true;const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
     try{
       const response=await fetch('/painel/pedidos/novos?after='+cursor,{credentials:'same-origin',cache:'no-store',signal:controller.signal});
       if(response.status===401||response.status===403){enabled=false;pendingId=0;silence();box.hidden=true;document.title=title;status.textContent='Entre na conta para continuar recebendo avisos.';return;}
       if(!response.ok)throw new Error();const data=await response.json();cursor=Math.max(cursor,Number(data.latest_id||0));
-      if(data.pending_count>0&&data.pending_order){
+      if(data.pending_count>0&&data.pending_order&&!resolved406.has(Number(data.pending_order.id))){
         pendingId=data.pending_order.id;message.textContent=`${data.pending_count} pedido(s) aguardando aceite. ${data.pending_order.customer_name||'Cliente'} — R$ ${(data.pending_order.total_cents/100).toFixed(2).replace('.',',')}`;box.hidden=false;document.title='🔔 Pedido aguardando | NowUp';
         if(enabled&&Date.now()-lastAlarm>=2200){alarm();lastAlarm=Date.now();}
       }else{silence();pendingId=0;box.hidden=true;document.title=title;lastAlarm=0;}
