@@ -44,4 +44,10 @@ body.nowup-login-white{background:#fff!important;background-image:none!important
 <p style="text-align:right;margin:10px 0 0"><a class="muted tiny" href="{{store_app256.forgot if store_app256 else '/recuperar-senha'}}">Esqueci minha senha</a></p>
 <p class="muted tiny" style="margin-top:16px">Ainda não tem conta?</p>
 <div class="row" style="flex-wrap:wrap"><a class="btn soft" href="{{store_app256.signup if store_app256 else '/cadastro/cliente'}}">Criar conta de cliente</a>{% if not store_app256 %}<a class="btn soft" href="/cadastro/profissional">Cadastrar minha loja</a>{% endif %}</div>
-</div></div></div>{% endblock %}
+</div>
+{% if store_app256 %}<section class="storeapp-merchant405" aria-labelledby="storeapp-merchant-title405" style="margin-top:24px;padding-top:20px;border-top:1px solid #dce4ed">
+<h2 id="storeapp-merchant-title405">Sou lojista / proprietário</h2>
+<p class="muted tiny">Use sua conta de lojista para gerenciar a loja, os produtos e os pedidos.</p>
+{% if user and user.role=='professional' %}<a class="btn soft" data-store-merchant405 href="/painel">Acessar meu painel</a>{% else %}<a class="btn soft" data-store-merchant405 href="/entrar?tipo=profissional">Entrar como lojista</a>{% endif %}
+</section>{% endif %}
+</div></div>{% endblock %}

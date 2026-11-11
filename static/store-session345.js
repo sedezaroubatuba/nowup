@@ -15,6 +15,10 @@
  function navigation(value){
   const url=new URL(scoped(value),location.href);
   if(url.origin!==location.origin)return url.href;
+  // Explicit merchant entry uses the existing role-checked login and panel.
+  // Customer login, recovery and orders must keep their store-specific session.
+  if(url.pathname==='/entrar'&&url.searchParams.get('tipo')==='profissional')return new URL('/entrar?tipo=profissional',location.origin).href;
+  if(url.pathname==='/painel')return new URL('/painel',location.origin).href;
   const routes={'/entrar':store.login,'/cadastro/cliente':store.signup,'/recuperar-senha':store.forgot,'/cliente':store.orders,'/sair':store.logout};
   if(routes[url.pathname])return new URL(routes[url.pathname],location.origin).href;
   if(url.pathname===prefix||url.pathname===prefix+'/menu')return new URL(store.menu,location.origin).href;

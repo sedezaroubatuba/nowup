@@ -109,6 +109,54 @@ def test_store_forms_keep_brand_and_scope(setup345):
     assert r.status_code==303 and r.headers['location']=='/'
 
 
+def test_exclusive_store_exposes_merchant_entry_without_mixing_accounts(setup345):
+    from bs4 import BeautifulSoup
+    main,(a,b),_=setup345
+    client=TestClient(main.app,headers={'Origin':'http://testserver'},follow_redirects=False)
+    for tail in ('menu?loja=1','entrar?tipo=cliente'):
+        page=client.get('/p/'+a['slug']+'/'+tail)
+        soup=BeautifulSoup(page.text,'html.parser')
+        assert soup.select_one('.storeapp-actions256 a[href="/entrar?tipo=profissional"]')
+        assert '/static/store-session345.js?v=405' in page.text
+    login=BeautifulSoup(page.text,'html.parser')
+    form=login.select_one('#nowup-login-form349')
+    assert form['action']=='/p/'+a['slug']+'/entrar?tipo=cliente'
+    assert form.select_one('[name="tipo"]')['value']=='cliente'
+    assert login.select_one('.storeapp-merchant405 a')['href']=='/entrar?tipo=profissional'
+    merchant_page=client.get('/entrar?tipo=profissional')
+    merchant_form=BeautifulSoup(merchant_page.text,'html.parser').select_one('#nowup-login-form349')
+    assert merchant_form['action']=='/entrar'
+    assert merchant_form.select_one('[name="tipo"]')['value']=='profissional'
+
+    # A customer password cannot become a merchant session via the new link.
+    denied=client.post('/entrar',data={'email':'shared345@example.com','password':'market-password345','tipo':'profissional'})
+    assert 'erro=perfil' in denied.headers['location']
+    assert 'nowup_session=' not in denied.headers.get('set-cookie','')
+    assert client.get('/painel/kanban228').status_code==401
+
+    # Authentication uses the existing central owner account, even when the
+    # entry link was reached from another shop. The panel stays the owner's.
+    with main.db() as c:
+        owner=c.execute('SELECT * FROM users WHERE id=?',(a['user_id'],)).fetchone()
+        c.execute('UPDATE users SET password_hash=?,email_verified=1 WHERE id=?',(main.hash_password('merchant-entry405-password'),owner['id']))
+    response=client.post('/entrar',data={'email':owner['email'],'password':'merchant-entry405-password','tipo':'profissional'})
+    assert response.status_code==303 and response.headers['location']=='/painel'
+    assert 'HttpOnly' in response.headers['set-cookie']
+    assert not client.cookies.get('nowup_loja345_'+str(a['id']))
+    with main.db() as c:
+        session=c.execute('SELECT user_id,store_id345 FROM sessions WHERE token=?',(client.cookies.get('nowup_session'),)).fetchone()
+        assert session['user_id']==a['user_id'] and not session['store_id345']
+    assert client.get('/painel/kanban228').status_code==200
+    for p in (a,b):
+        page=client.get('/p/'+p['slug']+'/entrar')
+        soup=BeautifulSoup(page.text,'html.parser')
+        assert soup.select_one('.storeapp-actions256 a[href="/painel"]')
+        assert soup.select_one('.storeapp-merchant405 a')['href']=='/painel'
+        assert 'data-enable-order-alerts' not in page.text
+    # Global merchant alerts continue to exist in the authenticated panel.
+    assert 'data-enable-order-alerts' in client.get('/painel').text
+
+
 def test_order_chat_and_tracking_use_store_scope(setup345):
     main,(a,b),_=setup345
     client=TestClient(main.app,headers={'Origin':'http://testserver'},follow_redirects=False)

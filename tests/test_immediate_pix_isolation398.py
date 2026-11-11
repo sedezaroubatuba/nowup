@@ -70,6 +70,11 @@ def test_cardapio_pages_do_not_render_marketplace_navigation(channel):
         for a in soup.select('a[href]'):
             url=urlsplit(a['href'])
             if url.scheme or not url.path or url.path.startswith(('/static/','/uploads/')):continue
+            # Only explicit merchant entry can leave the customer storefront;
+            # it still uses the central role/ownership-checked login and panel.
+            if a.has_attr('data-store-merchant405'):
+                assert a['href'] in ('/entrar?tipo=profissional','/painel')
+                continue
             assert url.path==prefix or url.path.startswith(prefix+'/'),(path,a['href'])
     # Explicit marketplace still has its own header and navigation.
     with m.db() as c:c.execute("UPDATE professionals SET plan_active='completo' WHERE id=?",(pid,))
