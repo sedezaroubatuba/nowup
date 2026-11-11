@@ -4,15 +4,15 @@ FEATURES = ('Todos os recursos do painel do lojista: produtos, combos, ingredien
             'e atualizações disponibilizadas no painel.')
 PLANS = {
     'cardapio': ('Só cardápio/catálogo', 4990),
-    'ambos': ('Vitrine com pedidos no NowUp', 9990),
-    'completo': ('Vitrine + catálogo com link e WhatsApp', 14990),
+    'ambos': ('Vitrine (plano anterior, fora da oferta piloto)', 9990),
+    'completo': ('Cardápio + Vitrine de Ubatuba por cortesia', 4990),
 }
 
 def admin_plans():
     descriptions = {
         'cardapio': ' Link próprio e pedidos no WhatsApp, com Instagram e site; sem exposição na vitrine geral.',
         'ambos': ' Exposição na vitrine geral, com cardápio e pedidos somente dentro do NowUp.',
-        'completo': ' Exposição na vitrine geral e link próprio com pedidos no WhatsApp, Instagram e site.',
+        'completo': ' Cardápio por R$ 49,90/mês e Vitrine de Ubatuba por cortesia durante o piloto, sujeita à aprovação administrativa. Pedidos e painéis separados; mesma conta do lojista.',
     }
     return [dict(id=key, name=name, price=price, features=FEATURES + descriptions[key])
             for key, (name, price) in PLANS.items()]
@@ -31,11 +31,19 @@ def synchronize_admin(conn):
         conn.execute("INSERT INTO adm227_entities(kind,id,data) VALUES('plans',?,?)", (index, json.dumps(value, ensure_ascii=False)))
 
 
+def showcase_city409(city, state='SP'):
+    return (city or '').strip().casefold() == 'ubatuba' and (state or 'SP').strip().upper() == 'SP'
+
+
+def offers409(pro):
+    details=dict(pro)
+    keys=('cardapio','completo') if showcase_city409(details.get('city'),details.get('state')) else ('cardapio',)
+    return {key:PLANS[key] for key in keys}
+
+
 def for_store(pro):
-    plans=dict(PLANS)
-    if dict(pro).get('business_type')=='fashion':
-        plans['cardapio']=('Moda e acessórios • catálogo com WhatsApp',3990)
-    return plans
+    # Keep historical plan identifiers readable; new sales use offers409.
+    return dict(PLANS)
 
 
 def require_internal_checkout405(pro, request, channel):

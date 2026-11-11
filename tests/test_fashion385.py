@@ -31,7 +31,7 @@ def test_fashion_signup_simple_plan_category_novidades_and_price(registration):
  r=client.post('/cadastro/profissional',data=data)
  assert r.status_code==303 and r.headers['location']=='/cadastro/aguardando',r.text
  p=registered(m,data['email']);assert p['business_type']=='fashion' and p['offer_mode']=='catalog' and p['simple_menu346']==1
- assert p['plan_requested']=='cardapio' and for_store(p)['cardapio'][1]==3990
+ assert p['plan_requested']=='cardapio' and for_store(p)['cardapio'][1]==4990
  with m.db() as c:
   names={row[0] for row in c.execute('SELECT name FROM product_categories WHERE professional_id=?',(p['id'],))}
   assert {'Novidades','Roupas','Vestidos','Camisetas','Sapatos','Acessórios'}<=names
@@ -40,7 +40,7 @@ def test_fashion_signup_simple_plan_category_novidades_and_price(registration):
  Path('/tmp/fashion-signup385.html').write_text(client.get('/cadastro/profissional').text)
  assert PLANS['cardapio'][1]==4990 and for_store({'business_type':'store'})['cardapio'][1]==4990
  data=payload();data.update(business_type='fashion',plan='ambos')
- assert 'erro=plano' in client.post('/cadastro/profissional',data=data).headers['location']
+ assert client.post('/cadastro/profissional',data=data).status_code==400  # Ubatuba courtesy requires the same document review.
 
 def test_create_edit_fashion_product_and_merchant_render(shop,monkeypatch):
  m,client,slug,store_id,url,order_data,old_product=shop

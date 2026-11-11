@@ -30,6 +30,8 @@ def install(g):
     def categories():
         with g['db']() as c:return c.execute('SELECT id,name FROM categories WHERE active=1 ORDER BY sort_order,name').fetchall()
     g['templates'].env.globals['channel_categories408']=categories
+    from nowup_plans339 import offers409
+    g['templates'].env.globals['offers409']=offers409
     def receipt_text(order):
         with g['db']() as c:return g['nowup_notinha401'].receipt(c,order,g['ORDER_STATUS_LABELS'])
     g['templates'].env.globals['receipt_text408']=receipt_text

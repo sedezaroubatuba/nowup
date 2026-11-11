@@ -1,0 +1,11 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),{JSDOM}=require('jsdom');
+test('city changes expose only eligible plans and preserve separate channel descriptions',()=>{
+ const dom=new JSDOM(`<form id="merchant-signup346"><select name="plan"><option value="cardapio">Cardápio — R$ 49,90</option><option value="completo">Cardápio R$ 49,90 + Vitrine cortesia</option></select><input name="city" value="Caraguatatuba"><select name="state"><option>SP</option><option>RJ</option></select><select name="business_type"><option value="store">Loja</option><option value="fashion">Moda</option></select><select name="offer_mode"><option value="menu">Cardápio</option><option value="catalog">Catálogo</option></select><select name="doc_type"><option value="CNPJ">CNPJ</option><option value="CPF">CPF</option></select><input name="document"><fieldset id="signup-documents346"></fieldset><input type="radio" name="category_choice346" value="1"><input id="signup-other346" type="radio" name="category_choice346" value="other"><div id="signup-segment346"><input name="business_segment346"></div><p id="signup-document-note346"></p><p id="signup-category-note346"></p><p id="signup-plan-note346"></p><div id="fashion-signup385"></div></form>`,{runScripts:'outside-only'});
+ const w=dom.window,f=w.document.querySelector('form'),plan=f.elements.plan,full=plan.querySelector('[value=completo]');
+ try{w.eval(fs.readFileSync('static/merchant-signup346.js','utf8'));assert.equal(plan.value,'cardapio');assert(full.hidden&&full.disabled);
+ f.elements.city.value='Ubatuba';f.elements.city.dispatchEvent(new w.Event('input'));assert(!full.hidden&&!full.disabled);
+ plan.value='completo';plan.dispatchEvent(new w.Event('change'));assert.equal(f.elements.document.required,true);assert.match(w.document.getElementById('signup-plan-note346').textContent,/cortesia/);
+ f.elements.city.value='São Sebastião';f.elements.city.dispatchEvent(new w.Event('input'));assert.equal(plan.value,'cardapio');assert(full.hidden&&full.disabled);assert.equal(f.elements.document.required,false);
+ f.elements.city.value='Ubatuba';f.elements.state.value='RJ';f.elements.state.dispatchEvent(new w.Event('change'));assert(full.hidden&&full.disabled);
+ }finally{w.close();}
+});

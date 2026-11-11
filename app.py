@@ -1490,7 +1490,7 @@ def signup_customer(name: str=Form(...), email: str=Form(...), phone: str=Form("
 
 @app.get("/cadastro/profissional", response_class=HTMLResponse)
 def signup_pro_page(request: Request):
-    return templates.TemplateResponse("signup_professional.html", context(request, active_cities=active_cities()))
+    return templates.TemplateResponse("signup_professional.html", context(request, active_cities=['Ubatuba']))
 
 @app.post("/cadastro/profissional")
 def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Form(...), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), doc_type: str=Form("CNPJ"), document: str=Form(""), business_type: str=Form("professional"), offer_mode: str=Form("services"), plan: str=Form(...), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[]), address: str=Form(""), state: str=Form(""), legal_name: str=Form(""), owner_name: str=Form(""), owner_cpf: str=Form(""), owner_role: str=Form(""), facade: Optional[UploadFile]=File(None), company: Optional[UploadFile]=File(None), identity: Optional[UploadFile]=File(None), address_proof: Optional[UploadFile]=File(None), category_choice346: str=Form(""), business_segment346: str=Form(""), marketing_email372: str=Form("")):
@@ -1500,9 +1500,11 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
         return RedirectResponse('/cadastro/profissional?erro=plano',303)
     if offer_mode not in ('menu','catalog'):
         return RedirectResponse('/cadastro/profissional?erro=plano',303)
-    if business_type=='fashion':
-        if plan!='cardapio':return RedirectResponse('/cadastro/profissional?erro=plano',303)
-        offer_mode='catalog'
+    from nowup_plans339 import showcase_city409
+    if plan in ('ambos','completo') and not showcase_city409(city,state):
+        return RedirectResponse('/cadastro/profissional?erro=cidade_vitrine',303)
+    if plan=='ambos':plan='completo'
+    if business_type=='fashion':offer_mode='catalog'
     import nowup_verification257 as verification
     simple346=plan=='cardapio'
     fields257 = dict(legal_name=legal_name,owner_name=owner_name,owner_cpf=owner_cpf,owner_role=owner_role)
@@ -1537,7 +1539,7 @@ def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Fo
         business_type="other"
     cities=active_cities()
     city=city.strip()[:120]
-    if not simple346 and city not in cities:
+    if not simple346 and not showcase_city409(city,state):
         return RedirectResponse('/cadastro/profissional?erro=cidade_vitrine',303)
     selected346=category_ids[:1]
     if category_choice346:
@@ -1823,6 +1825,11 @@ def request_store_plan(request: Request, plan: str=Form(...), offer_mode: str=Fo
     if plan not in ('cardapio','ambos','completo') or offer_mode not in ('menu','catalog'):
         return RedirectResponse('/painel?erro=plano#plano',303)
     conn=db()
+    from nowup_plans339 import offers409
+    pro409=conn.execute('SELECT * FROM professionals WHERE user_id=?',(user['id'],)).fetchone()
+    if plan=='ambos':plan='completo'
+    if not pro409 or plan not in offers409(pro409):
+        conn.close();raise HTTPException(400,'Fora de Ubatuba, somente o Cardápio por R$ 49,90 está disponível.')
     from nowup_channels408 import request_category
     try: request_category(conn,user['id'],plan,category_id)
     except Exception:

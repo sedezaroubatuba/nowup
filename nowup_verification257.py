@@ -61,10 +61,10 @@ def require_review(c,pid,target_plan=None):
     details=dict(p) if p else {}
     target=target_plan or details.get('plan_requested') or details.get('plan_active')
     if target=='cardapio':return
-    if details.get('simple_menu346') and target in ('vitrine','ambos','completo'):
-        cities=c.execute("SELECT value FROM site_settings WHERE key='active_cities'").fetchone()
-        enabled=[x.strip() for x in (cities[0] if cities else 'Ubatuba').split(',') if x.strip()]
-        if details.get('city') not in enabled:raise HTTPException(400,'A vitrine não está disponível na cidade desta loja.')
+    if target in ('vitrine','ambos','completo'):
+        from nowup_plans339 import showcase_city409
+        if not showcase_city409(details.get('city'),details.get('state')):
+            raise HTTPException(400,'A Vitrine piloto está disponível somente em Ubatuba. Outras cidades usam somente o Cardápio por R$ 49,90.')
     row=c.execute('SELECT status FROM merchant_evidence257 WHERE professional_id=?',(pid,)).fetchone()
     if details.get('simple_menu346') and target in ('vitrine','ambos','completo') and not row:
         raise HTTPException(400,'Para ativar a vitrine, envie o CNPJ e os documentos em Documentos da loja e aguarde a conferência.')

@@ -15,7 +15,7 @@ def test_admin_migration_preserves_old_contract_metadata():
     assert [json.loads(r[0]) for r in c.execute("SELECT data FROM adm227_entities WHERE kind='plans' ORDER BY id")] == admin_plans()
     assert c.execute("SELECT data FROM adm227_entities WHERE kind='storemeta'").fetchone()[0] == '{"plan":"start","price":7900}'
     assert json.loads(c.execute("SELECT data FROM adm227_entities WHERE kind='plans_archive339'").fetchone()[0])['id'] == 'start'
-    assert {k:v[1] for k,v in PLANS.items()} == {'cardapio':4990,'ambos':9990,'completo':14990}
+    assert {k:v[1] for k,v in PLANS.items()} == {'cardapio':4990,'ambos':9990,'completo':4990}
 
 @pytest.mark.parametrize('plan', ['cardapio', 'ambos', 'completo'])
 def test_plans_keep_merchant_tools_and_use_only_entitled_checkout(shop, monkeypatch, plan):
@@ -39,7 +39,7 @@ def test_plans_keep_merchant_tools_and_use_only_entitled_checkout(shop, monkeypa
     assert '<option value="vitrine"' not in panel.text
     signup = client.get('/cadastro/profissional')
     assert '<option value="vitrine"' not in signup.text
-    assert '49,90' in signup.text and '99,90' in signup.text
+    assert '49,90' in signup.text and 'cortesia' in signup.text and '99,90' not in signup.text
     rejected = client.post('/painel/plano',data={'plan':'vitrine','offer_mode':'services'},follow_redirects=False)
     assert 'erro=plano' in rejected.headers['location']
 
