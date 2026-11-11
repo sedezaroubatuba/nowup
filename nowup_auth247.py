@@ -45,3 +45,16 @@ def verification_token348(user):
     if valid:return token,expires
     import secrets
     return secrets.token_urlsafe(32),(datetime.now(timezone.utc)+timedelta(hours=24)).isoformat()
+
+
+def password_matches404(password, stored, verify):
+    """Do equal-cost password work for unknown/inactive and existing accounts.
+
+    The fixed dummy credential can never authenticate: a real stored hash is
+    required independently of the comparison result. Rate limiting stays first.
+    """
+    if not isinstance(password, str) or len(password) > 128:
+        return False
+    dummy = "00000000000000000000000000000000$5bef77d1f5b62578a218575132d4f1e0edab72039084aa7fe9960148fc5d9e49"
+    matched = verify(password, stored or dummy)
+    return bool(stored) and matched

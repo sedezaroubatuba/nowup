@@ -1,0 +1,31 @@
+name: Isolated Pix soak404 - 300 orders over two hours
+on:
+  push:
+    branches: [codex/security404-pix-soak]
+    paths: ['.github/workflows/pix-soak404.yml', 'tools/soak404.py']
+permissions:
+  contents: read
+concurrency:
+  group: isolated-pix-soak404
+  cancel-in-progress: false
+jobs:
+  soak:
+    runs-on: ubuntu-latest
+    timeout-minutes: 140
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements-dev.txt
+      - name: 150 marketplace and 150 standalone Pix checkouts
+        run: python tools/soak404.py --count 300 --duration 7200 --output "$RUNNER_TEMP/nowup-soak404"
+      - name: Save isolated results (no production data)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nowup-pix-soak404-results
+          path: |
+            ${{ runner.temp }}/nowup-soak404/status.json
+            ${{ runner.temp }}/nowup-soak404/requests.jsonl
+          retention-days: 14

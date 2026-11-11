@@ -556,7 +556,8 @@ def team_login(request:Request,email:str=Form(...),password:str=Form(...)):
  with connection() as c:
   limited(c,'login:'+tokenhash(email.strip().lower())+':'+tokenhash(request.client.host if request.client else ''))
   m=next((s for s in rows(c,'staff') if s['email']==email.strip().lower() and s['enabled']),None)
-  if not m or not G['verify_password'](password,m.get('password_hash','')):return form_page('Acesso não confirmado','<a href="/admin/super/equipe/entrar">Tentar novamente</a>','Confira o e-mail e a senha.')
+  from nowup_auth247 import password_matches404
+  if not password_matches404(password,m.get('password_hash','') if m else None,G['verify_password']):return form_page('Acesso não confirmado','<a href="/admin/super/equipe/entrar">Tentar novamente</a>','Confira o e-mail e a senha.')
   challenge=secrets.token_urlsafe(32);code=f'{secrets.randbelow(1000000):06d}';c.execute('DELETE FROM adm227_challenges WHERE staff_id=?',(m['id'],));c.execute('INSERT INTO adm227_challenges(challenge_hash,staff_id,code_hash,expires_at) VALUES(?,?,?,?)',(tokenhash(challenge),m['id'],tokenhash(code),(datetime.now(timezone.utc)+timedelta(minutes=10)).isoformat()));c.commit()
   sent=G['send_email'](m['email'],m['name'],'Código de acesso da equipe NowUp','<p>Seu código de acesso é <strong>'+code+'</strong>. Expira em 10 minutos.</p>')
   if not sent:

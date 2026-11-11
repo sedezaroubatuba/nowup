@@ -1,7 +1,7 @@
 /* Display the CURRENT order state alongside historical notification text. */
 (() => {
  const list=document.querySelector('[data-notification-list]');if(!list)return;
- let states={},busy=false;
+ let states={},busy=false,stopped=false;
  function render(){
   list.querySelectorAll('[data-notification-id]').forEach(row=>{
    const state=states[row.dataset.notificationId];if(!state)return;
@@ -13,9 +13,9 @@
   });
  }
  async function update(){
-  if(busy||document.hidden)return;busy=true;
+  if(stopped||busy||document.hidden||!list.getClientRects().length)return;busy=true;
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
-  try{const response=await fetch('/painel/notificacoes/status200',{credentials:'same-origin',cache:'no-store',signal:controller.signal});if(response.ok){states=(await response.json()).orders||{};render();}}catch(_){}finally{clearTimeout(timer);busy=false;}
+  try{const response=await fetch('/painel/notificacoes/status200',{credentials:'same-origin',cache:'no-store',signal:controller.signal});if(response.status===401||response.status===403){stopped=true;return;}if(response.ok){states=(await response.json()).orders||{};render();}}catch(_){}finally{clearTimeout(timer);busy=false;}
  }
  new MutationObserver(render).observe(list,{childList:true,subtree:true});
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)update();});

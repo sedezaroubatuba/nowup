@@ -114,7 +114,8 @@ def secure_login(request: Request, email: str=Form(...),password: str=Form(...),
     if u and 'customer_store345' in u.keys() and u['customer_store345']:
         u=None
     suffix=f"&tipo={tipo}" if tipo in ("cliente","profissional","admin") else ""
-    if not u or not verify_password(password,u["password_hash"]):
+    from nowup_auth247 import password_matches404
+    if not password_matches404(password,u["password_hash"] if u else None,verify_password):
         return RedirectResponse(f"/entrar?erro=1{suffix}",303)
     if u["role"]!="admin" and "email_verified" in u.keys() and not u["email_verified"]:
         return RedirectResponse(f"/entrar?erro=verificacao{suffix}",303)
@@ -172,10 +173,6 @@ def admin_code_verify(request: Request, code:str=Form(...)):
 
 @router.get("/admin/entrar")
 def force_admin_login(request: Request):
-    token=request.cookies.get("nowup_session")
-    if token:
-        conn=db(); conn.execute("DELETE FROM sessions WHERE token=?",(token,)); conn.commit(); conn.close()
-    resp=RedirectResponse("/entrar?tipo=admin",303)
-    resp.delete_cookie("nowup_session")
-    return resp
+    # A link/prefetch must never revoke a live login. Explicit logout is POST /sair.
+    return RedirectResponse("/entrar?tipo=admin",303)
 

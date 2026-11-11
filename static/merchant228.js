@@ -6,7 +6,7 @@
   const host=root.querySelector('[data-board228]'),room=root.querySelector('#pedidos-ativos');
   const search=root.querySelector('[data-search-input228]'),message=root.querySelector('[data-live228]');
   const mobile=matchMedia('(max-width:900px)');
-  let selected='new',busy=false,pending=false,timer;
+  let selected='new',busy=false,pending=false,timer,lastBoardHTML=null;
   const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   const announce=(text,error=false)=>{message.textContent=text;message.toggleAttribute('data-error',error);};
   function filter(){
@@ -43,11 +43,13 @@
       if(response.status===401||response.status===403){announce('Sua sessão terminou. Entre novamente para atualizar os pedidos.',true);clearInterval(timer);return;}
       if(!response.ok||response.redirected)throw Error('Não foi possível atualizar.');
       const html=await response.text();
+      if(html===lastBoardHTML){announce('Pedidos atualizados • nenhuma alteração.');return;}
       const doc=new DOMParser().parseFromString(html,'text/html');
       if(!doc.querySelector('.mk228-board'))throw Error('Entre novamente para atualizar os pedidos.');
       const focus=document.activeElement?.dataset?.stage228;
       // Server-rendered, escaped merchant data, from this application's authenticated endpoint.
       host.replaceChildren(...doc.body.childNodes);
+      lastBoardHTML=html;
       select(selected);filter();
       if(focus)host.querySelector('[data-stage228="'+focus+'"]')?.focus();
       announce('Atualizado às '+new Intl.DateTimeFormat('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date())+' • atualização automática.');

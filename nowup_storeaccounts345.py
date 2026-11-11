@@ -85,7 +85,8 @@ def install(g):
         check(g['db'],request,str(p['id'])+':'+email)
         with g['db']() as c: u=customer(c,p,email.strip().lower())
         error='1'
-        if u and len(password)<=128 and g['verify_password'](password,u['password_hash']):
+        from nowup_auth247 import password_matches404
+        if password_matches404(password,u['password_hash'] if u else None,g['verify_password']):
             if u['email_verified']: return session_response(g,request,p,u['id'])
             error='verificacao'
         return RedirectResponse(cookie_path(p)+'entrar?erro='+error,303)
