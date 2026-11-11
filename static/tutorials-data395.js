@@ -421,7 +421,7 @@ window.NOWUP_TUTORIALS395=[
    {
     "page": "pedidos-ativos",
     "target": "#pedidos-ativos",
-    "title": "Revisão antes do pagamento",
+    "title": "Pix disponível ao enviar o pedido",
     "text": "Confira o estoque antes de abrir a loja. O cliente pode pagar com Pix assim que envia o pedido. Confira os itens e o recebimento no banco; se cancelar um pedido já pago, devolva o Pix. Alterações de itens e total continuam sujeitas à aprovação do cliente."
    },
    {
@@ -476,7 +476,7 @@ window.NOWUP_TUTORIALS395=[
     "page": "perfil",
     "target": "#perfil",
     "title": "Pedidos pelo WhatsApp",
-    "text": "No cardápio independente, o cliente precisa tocar em Enviar no WhatsApp. A mensagem leva o link de revisão; esses pedidos ficam registrados nos relatórios e podem seguir pelo link, sem entrar na fila interna. Confira o destino em Link da loja, WhatsApp e redes sociais."
+    "text": "No cardápio independente, o cliente precisa tocar em Enviar no WhatsApp. A mensagem leva o link de acompanhamento e atendimento; esses pedidos ficam registrados nos relatórios e podem seguir pelo link, sem entrar na fila interna. Confira o destino em Link da loja, WhatsApp e redes sociais."
    }
   ]
  },
