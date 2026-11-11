@@ -35,7 +35,7 @@
   async function refresh(manual=false){
     if(busy||pending||(!manual&&(document.hidden||!usableBoard())))return;
     // Do not remove a card while the merchant is selecting or submitting an action.
-    if(!manual&&host.contains(document.activeElement)&&document.activeElement.closest('[data-change228]'))return;
+    if(!manual&&host.contains(document.activeElement)&&document.activeElement.closest('form'))return;
     busy=true;
     const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),10000);
     try{
@@ -71,12 +71,12 @@
     button.disabled=true;button.textContent='Salvando…';
     const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),15000);
     try{
-      const response=await fetch(form.action,{method:'POST',credentials:'same-origin',body:new FormData(form),signal:controller.signal});
+      const response=await fetch(form.action,{method:'POST',credentials:'same-origin',body:new FormData(form),headers:{Accept:'application/json'},signal:controller.signal});
       const url=new URL(response.url);
       if(!response.ok){let detail='Não foi possível salvar o status.';try{detail=(await response.json()).detail||detail;}catch(_){}throw Error(detail);}
       if(url.pathname==='/entrar')throw Error('Sua sessão terminou. Entre novamente.');
       if(url.searchParams.has('erro'))throw Error('O pedido mudou ou esta ação não é permitida. Atualize e confira os itens.');
-      if(url.pathname!=='/painel'||url.searchParams.get('ok')!=='pedido')throw Error('Confira o pedido antes de continuar.');
+      if(!response.headers?.get('content-type')?.includes('application/json')&&(url.pathname!=='/painel'||url.searchParams.get('ok')!=='pedido'))throw Error('Confira o pedido antes de continuar.');
       pending=false;await refresh(true);
     }catch(error){announce(error.name==='AbortError'?'Não foi possível confirmar o resultado. Atualize o quadro antes de tentar novamente.':error.message,true);}
     finally{clearTimeout(timeout);pending=false;if(button.isConnected){button.disabled=false;button.textContent=label;}}
@@ -106,5 +106,5 @@
   window.addEventListener('online',()=>refresh());
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
   window.addEventListener('hashchange',()=>{if(usableBoard())refresh();});
-  select(selected);filter();timer=setInterval(()=>refresh(),10000);
+  select(selected);filter();timer=setInterval(()=>refresh(),2000);
 })();

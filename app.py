@@ -1407,12 +1407,14 @@ def order_tracking(request: Request, token: str):
 
 @app.get("/pedido/{token}/status")
 def order_tracking_status(request: Request, token: str):
-    conn=db(); order=tracked_order(conn,token); conn.close()
+    conn=db(); order=tracked_order(conn,token)
+    paid=bool(order and nowup_notinha401.payment_checked(conn,order))
+    conn.close()
     if order and order['created_at']<(datetime.now(timezone.utc)-timedelta(days=7)).isoformat():
         viewer=current_user(request)
         if not viewer or viewer['id']!=order['customer_id']:raise HTTPException(404,'Link expirado')
     if not order: raise HTTPException(404,"Pedido não encontrado")
-    return JSONResponse({"status":order["status"],"label":ORDER_STATUS_LABELS.get(order["status"],order["status"]),"updated_at":order["updated_at"]},headers={"Cache-Control":"private, no-store","Referrer-Policy":"no-referrer","X-Robots-Tag":"noindex, nofollow"})
+    return JSONResponse({"payment_confirmed":paid,"status":order["status"],"label":ORDER_STATUS_LABELS.get(order["status"],order["status"]),"updated_at":order["updated_at"]},headers={"Cache-Control":"private, no-store","Referrer-Policy":"no-referrer","X-Robots-Tag":"noindex, nofollow"})
 
 @app.post("/pedido/{token}/whatsapp")
 def order_tracking_whatsapp(request: Request, token: str):
@@ -2279,6 +2281,8 @@ def pro_order_status(request: Request, order_id: int, status: str=Form(...), rea
         notification=conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(order["customer_id"],"Atualização do pedido",message,f"/pedido/{order['tracking_token']}",now_iso()))
         nowup_alerts112.enqueue(conn,order["customer_id"],notification.lastrowid,{"title":label,"body":message,"url":f"/pedido/{order['tracking_token']}","tag":f"nowup-status-{order_id}"})
     conn.commit(); conn.close()
+    if "application/json" in request.headers.get("accept", ""):
+        return JSONResponse({"id":order_id,"status":status},headers={"Cache-Control":"private, no-store"})
     if return_to=="link":return RedirectResponse("/pedido/"+order["tracking_token"],303)
     return RedirectResponse(f"/painel?ok=pedido&abrir_pedido={order_id}#pedido-{order_id}",303)
 

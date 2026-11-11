@@ -19,6 +19,13 @@ def board(conn, professional_id, lower, upper, tz):
       ORDER BY o.id DESC""", (professional_id, *active, lower, upper)).fetchall()
     stages = [dict(key=key, title=title, orders=[]) for key, title, _ in STAGES]
     today = []
+    items_by_order = {}
+    ids = [row['id'] for row in rows]
+    for offset in range(0, len(ids), 400):
+        batch = ids[offset:offset+400]
+        marks = ','.join('?' for _ in batch)
+        for item in conn.execute(f'SELECT order_id,product_name,quantity,notes FROM order_items WHERE order_id IN ({marks}) ORDER BY id',batch):
+            items_by_order.setdefault(item['order_id'], []).append(dict(item))
     for raw in rows:
         order = dict(raw)
         if lower <= order['created_at'] < upper:
@@ -26,6 +33,7 @@ def board(conn, professional_id, lower, upper, tz):
         created = datetime.fromisoformat(order['created_at']).astimezone(tz)
         order['local_time'] = created.strftime('%d/%m • %H:%M')
         order['previous_day'] = not (lower <= order['created_at'] < upper)
+        order['items405'] = items_by_order.get(order['id'], [])
         status = order['status']
         order['next_status'], order['next_label'] = {
             'new': ('confirmed', 'Aceitar pedido'),

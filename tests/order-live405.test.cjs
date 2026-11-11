@@ -1,0 +1,12 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');const {JSDOM}=require('jsdom');const fs=require('node:fs');
+const tick=()=>new Promise(r=>setImmediate(r));
+test('payment polling removes QR without navigating or disturbing conversation',async()=>{
+ const dom=new JSDOM(`<main data-order-link377 data-customer390="1" data-payment390="pix" data-current-status="confirmed" data-updated377="a" data-status-url="/pedido/token/status"><div id="pagamento377"><textarea>000201payload</textarea><img alt="QR"></div><section id="conversa377"><textarea>Mensagem em andamento</textarea></section></main>`,{url:'https://nowup.test/pedido/token',runScripts:'outside-only',pretendToBeVisual:true});
+ const w=dom.window;w.fetch=async url=>url.endsWith('/status')?{ok:true,json:async()=>({status:'confirmed',updated_at:'a',payment_confirmed:true})}:{ok:false};
+ try{w.eval(fs.readFileSync('static/order-link377.js','utf8'));await tick();await tick();assert.equal(w.document.querySelector('#pagamento377 textarea'),null);assert.match(w.document.querySelector('[data-pix-confirmed405]').textContent,/Pix confirmado/);assert.equal(w.document.querySelector('#conversa377 textarea').value,'Mensagem em andamento');}finally{w.close();}
+});
+test('status action preserves clicked button value and replaces only changed card',async()=>{
+ const dom=new JSDOM(`<article class="order-card" id="pedido-1"><form method="post" action="/painel/pedidos/1/status"><button name="status" value="confirmed">Confirmar</button></form></article><textarea id="draft">Não perder</textarea><article id="pedido-2">Outro pedido</article>`,{url:'https://nowup.test/painel',runScripts:'outside-only',pretendToBeVisual:true});
+ const w=dom.window;let submitted;w.fetch=async(url,opts)=>{submitted=opts.body.get('status');return {ok:true,url:'https://nowup.test/painel?ok=pedido',text:async()=>'<article class="order-card" id="pedido-1">Pedido confirmado</article>'};};
+ try{w.eval(fs.readFileSync('static/order-actions405.js','utf8'));const form=w.document.querySelector('form');form.dispatchEvent(new w.SubmitEvent('submit',{bubbles:true,cancelable:true,submitter:form.querySelector('button')}));await tick();await tick();assert.equal(submitted,'confirmed');assert.equal(w.document.querySelector('#pedido-1').textContent,'Pedido confirmado');assert.equal(w.document.querySelector('#draft').value,'Não perder');assert.equal(w.document.querySelector('#pedido-2').textContent,'Outro pedido');}finally{w.close();}
+});

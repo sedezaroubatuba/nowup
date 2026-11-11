@@ -8,15 +8,23 @@
  root.querySelector('[data-open-conversa377]')?.addEventListener('click',()=>select('conversa377'));
  root.querySelector('[data-copy-order377]')?.addEventListener('click',async()=>{const box=root.querySelector('[data-copy-feedback377]');try{await navigator.clipboard.writeText(location.origin+root.dataset.shareUrl377);box.textContent='Link copiado. Envie ao cliente para conferir o pedido e o pagamento.';}catch(_){box.textContent='Copie o endereço desta página e envie ao cliente.';}});
  // Keep the clicked submitter enabled so its status=confirmed value is posted.
- root.querySelector('[data-confirm390]')?.form.addEventListener('submit',e=>{const form=e.currentTarget;if(form.dataset.sending390){e.preventDefault();return;}form.dataset.sending390='1';const b=form.querySelector('[data-confirm390]');b.textContent='Aceitando pedido…';b.setAttribute('aria-disabled','true');b.style.pointerEvents='none';});
- let current=root.dataset.currentStatus,busy=false,timer=null,stopped=closed.has(current);
- const interval=()=>waiting.has(current)?2000:8000;
+ let current=root.dataset.currentStatus,busy=false,timer=null,stopped=false;
+ const interval=()=>2000;
  function schedule(){clearTimeout(timer);if(!stopped)timer=setTimeout(poll,interval());}
  async function poll(){clearTimeout(timer);if(stopped)return;if(document.hidden||busy){schedule();return;}busy=true;const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),6000);
   try{const r=await fetch(root.dataset.statusUrl,{credentials:'same-origin',cache:'no-store',signal:controller.signal});if(r.status===401||r.status===403||r.status===404){stopped=true;return;}if(!r.ok)return;const data=await r.json();const changed=data.status!==current||Boolean(root.dataset.updated377&&data.updated_at!==root.dataset.updated377);
+   if(data.payment_confirmed&&payable.has(data.status)){
+    const payment=document.getElementById('pagamento377');
+    if(payment&&!payment.querySelector('[data-pix-confirmed405]')){const notice=document.createElement('p');notice.dataset.pixConfirmed405='';notice.setAttribute('role','status');notice.style.cssText='background:#dcfce7;color:#166534;padding:20px;border-radius:14px;font-weight:700';notice.textContent='✓ Pix confirmado — recebimento conferido pela loja.';payment.replaceChildren(notice);}
+   }
    if(changed){
     if(root.dataset.customer390==='1'&&root.dataset.payment390==='pix'&&waiting.has(current)&&payable.has(data.status))history.replaceState(null,'','#pagamento377');
-    location.reload();stopped=true;return;
+    const response=await fetch(location.pathname,{credentials:'same-origin',cache:'no-store',signal:controller.signal});
+    if(!response.ok)return;
+    const doc=new DOMParser().parseFromString(await response.text(),'text/html');
+    for(const id of ['orderLiveStatus','pedido377','pagamento377']){const old=document.getElementById(id),fresh=doc.getElementById(id);if(old&&fresh){old.replaceChildren(...fresh.childNodes);}}
+    root.querySelectorAll('[data-pix-payment]').forEach(host=>{const config=host.querySelector('script[type="application/json"]');if(config&&window.NOWUP_PIX){window.NOWUP_PIX.attach(host,JSON.parse(config.textContent));}});
+    current=data.status;root.dataset.currentStatus=current;root.dataset.updated377=data.updated_at;return;
    }root.dataset.updated377=data.updated_at;
   }catch(_){}finally{clearTimeout(timeout);busy=false;schedule();}
  }

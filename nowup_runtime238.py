@@ -29,6 +29,13 @@ def mutation_origin_allowed(request):
     if is_menu_host(request):
         target = menu_origin()
     expected = origin_tuple(target)
+    # Fetch Metadata is set by the browser. A request from this exact public
+    # origin remains valid when the canonical domain differs (custom domain).
+    actual = origin_tuple(str(base))
+    if request.headers.get('sec-fetch-site') == 'same-origin':
+        source = request.headers.get('origin', request.headers.get('referer', ''))
+        if actual is not None and origin_tuple(source) == actual:
+            return True
     if 'origin' in request.headers:
         return expected is not None and origin_tuple(request.headers['origin']) == expected
     return expected is not None and origin_tuple(request.headers.get('referer', '')) == expected
