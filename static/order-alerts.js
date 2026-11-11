@@ -18,7 +18,7 @@
   disableButton.addEventListener('click',()=>{enabled=false;silence();try{localStorage.setItem('nowup-order-alerts','0');}catch(_){}render();});
   async function restore(event){if(event?.target?.closest('[data-enable-order-alerts],[data-test-order-alerts],[data-disable-order-alerts]'))return;if(!running()&&stored()){enabled=await unlock();render();if(enabled&&pendingId){alarm();lastAlarm=Date.now();}}}
   document.addEventListener('pointerdown',restore);document.addEventListener('keydown',restore);
-  open?.addEventListener('click',()=>{if(pendingId)location.assign('/painel?abrir_pedido='+pendingId+'#pedido-'+pendingId);});
+  open?.addEventListener('click',()=>{if(pendingId){if(window.NowUpOrder407)window.NowUpOrder407.openDetails(pendingId);else location.assign('/painel?abrir_pedido='+pendingId+'#pedido-'+pendingId);};});
   window.addEventListener('nowup:order-status',event=>{
     const id=Number(event.detail?.id),state=event.detail?.status;
     if(!Number.isSafeInteger(id)||id<=0||!['confirmed','reviewing','preparing','ready','out_for_delivery','completed','cancelled','rejected'].includes(state))return;
@@ -33,9 +33,9 @@
       if(response.status===401||response.status===403){enabled=false;pendingId=0;silence();box.hidden=true;document.title=title;status.textContent='Entre na conta para continuar recebendo avisos.';return;}
       if(!response.ok)throw new Error();const data=await response.json();cursor=Math.max(cursor,Number(data.latest_id||0));
       if(data.pending_count>0&&data.pending_order&&!resolved406.has(Number(data.pending_order.id))){
-        pendingId=data.pending_order.id;message.textContent=`${data.pending_count} pedido(s) aguardando aceite. ${data.pending_order.customer_name||'Cliente'} — R$ ${(data.pending_order.total_cents/100).toFixed(2).replace('.',',')}`;box.hidden=false;document.title='🔔 Pedido aguardando | NowUp';
+        pendingId=data.pending_order.id;message.textContent=`${data.pending_count} pedido(s) aguardando aceite. ${data.pending_order.customer_name||'Cliente'} — R$ ${(data.pending_order.total_cents/100).toFixed(2).replace('.',',')}`;box.hidden=false;document.title='🔔 Pedido aguardando | NowUp';window.NowUpOrder407?.showPending(data.pending_order,data.pending_count);
         if(enabled&&Date.now()-lastAlarm>=2200){alarm();lastAlarm=Date.now();}
-      }else{silence();pendingId=0;box.hidden=true;document.title=title;lastAlarm=0;}
+      }else{silence();pendingId=0;if(box.dataset.view407!=='detail')box.hidden=true;document.title=title;lastAlarm=0;}
       render();if(pendingId&&!running())status.textContent='PEDIDO AGUARDANDO! Toque em ATIVAR CAMPAINHA para liberar o som.';
     }catch(_){status.textContent='Conexão instável. Tentando novamente sem fechar o painel.';}
     finally{clearTimeout(timer);busy=false;}

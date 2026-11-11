@@ -1,0 +1,20 @@
+{% import 'order_line347.html' as lines347 %}
+<section class="nu407-detail" data-detail407 data-order-id407="{{order.id}}" data-order-status407="{{order.status}}">
+<p class="nu407-state">{{status_labels.get(order.status,order.status)}}</p>
+<h2>Pedido {{order.order_code or order.id}}</h2>
+<p><b>{{order.customer_name}}</b> · {{order.customer_phone}}</p>
+<p>{{'Entrega' if order.fulfillment_type=='delivery' else 'Retirada no local'}}{% if order.address %} · {{order.address}}{% endif %}</p>
+{% if order.address_reference %}<p>Referência: {{order.address_reference}}</p>{% endif %}
+{% for item in items %}{{lines347.line(item,options.get(item.id,[]),true)}}{% endfor %}
+<div class="nu407-summary"><span>Subtotal</span><b>R$ {{'%.2f'|format(order.subtotal_cents/100)|replace('.',',')}}</b></div>
+<div class="nu407-summary"><span>Entrega</span><b>R$ {{'%.2f'|format(order.delivery_fee_cents/100)|replace('.',',')}}</b></div>
+<div class="nu407-total"><span>TOTAL</span><strong>R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</strong></div>
+{% if order.notes %}<p>Observações: {{order.notes}}</p>{% endif %}
+{% if order.payment_method=='pix' %}<p class="nu407-payment">{{'✓ Pix recebido e conferido pela loja.' if payment_checked else 'Pix: recebimento a conferir pela loja.'}}</p>{% endif %}
+{% include 'order_revision.html' %}
+{% if order.status in ['confirmed','preparing','ready','out_for_delivery'] %}
+<form action="/painel/pedidos/{{order.id}}/status" method="post"><label>Atualizar pedido<select name="status">{% for value in ['confirmed','preparing','ready','out_for_delivery','completed'] %}<option value="{{value}}" {% if order.status==value %}selected{% endif %}>{{status_labels.get(value,value)}}</option>{% endfor %}</select></label><button type="submit" class="nu407-accept">Salvar status</button></form>
+{% if order.payment_method=='pix' and not payment_checked %}<form action="/painel/pedidos/{{order.id}}/conferir-pix" method="post"><label><input type="checkbox" required> Conferi o crédito no banco</label><button type="submit" class="nu407-secondary">Confirmar Pix recebido</button></form>{% endif %}
+{% endif %}
+<a class="nu407-secondary" href="/pedido/{{order.tracking_token}}" target="_blank" rel="noopener">Conversa e acompanhamento completo</a>
+</section>

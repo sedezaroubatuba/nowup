@@ -1838,9 +1838,12 @@ def pro_new_orders(request: Request, after: int=0):
       WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND id>? AND created_at>=? AND created_at<? ORDER BY id ASC LIMIT 10""",(p["id"],max(0,after),lower,upper)).fetchall()
     latest=conn.execute("SELECT COALESCE(MAX(id),0) FROM orders WHERE professional_id=?",(p["id"],)).fetchone()[0]
     pending=conn.execute("SELECT COUNT(*) FROM orders WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND status='new' AND (accept_after380='' OR accept_after380<=?)",(p["id"],now_iso())).fetchone()[0]
-    pending_order=conn.execute("SELECT id,order_code,customer_name,total_cents,created_at,status FROM orders WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND status='new' AND (accept_after380='' OR accept_after380<=?) ORDER BY id DESC LIMIT 1",(p["id"],now_iso())).fetchone()
+    pending_order=conn.execute("SELECT id,order_code,customer_name,total_cents,subtotal_cents,delivery_fee_cents,payment_method,fulfillment_type,address_reference,notes,updated_at,created_at,status FROM orders WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND status='new' AND (accept_after380='' OR accept_after380<=?) ORDER BY id DESC LIMIT 1",(p["id"],now_iso())).fetchone()
+    pending_data=dict(pending_order) if pending_order else None
+    if pending_data:
+        pending_data['items']=[dict(i) for i in conn.execute('SELECT product_name,quantity,unit_price_cents,notes FROM order_items WHERE order_id=? ORDER BY id',(pending_data['id'],))]
     conn.close()
-    return JSONResponse({"latest_id":latest,"pending_count":pending,"pending_order":dict(pending_order) if pending_order else None,"orders":[{"id":r["id"],"customer_name":r["customer_name"] or "Cliente","total_cents":r["total_cents"],"created_at":r["created_at"]} for r in rows]})
+    return JSONResponse({"latest_id":latest,"pending_count":pending,"pending_order":pending_data,"orders":[{"id":r["id"],"customer_name":r["customer_name"] or "Cliente","total_cents":r["total_cents"],"created_at":r["created_at"]} for r in rows]})
 
 def notification_orders200(conn, user_id):
     rows=conn.execute("""SELECT n.id AS notification_id,o.id AS order_id,o.order_code,o.status
@@ -2262,7 +2265,10 @@ def pro_order_status(request: Request, order_id: int, status: str=Form(...), rea
     if order["status"] in {'new','reviewing','revision_approved'} and status not in {'reviewing','confirmed','cancelled','rejected'}:
         conn.close(); raise HTTPException(409,"Confirme o pedido antes de iniciar o preparo")
     if status==order["status"]:
-        conn.rollback(); conn.close(); return RedirectResponse("/pedido/"+order["tracking_token"] if return_to=="link" else f"/painel?abrir_pedido={order_id}#pedido-{order_id}",303)
+        conn.rollback(); conn.close()
+        if "application/json" in request.headers.get("accept", ""):
+            return order_status_response407(request,order_id,status)
+        return RedirectResponse("/pedido/"+order["tracking_token"] if return_to=="link" else f"/painel?abrir_pedido={order_id}#pedido-{order_id}",303)
     rank={"reviewing":0,"revision_approved":0,"new":0,"confirmed":1,"preparing":2,"ready":3,"out_for_delivery":4,"completed":5}
     if order["status"] in {"completed","cancelled","rejected","whatsapp_finalized"} or (status in rank and rank[status]<rank.get(order["status"],0)):
         conn.rollback(); conn.close(); return RedirectResponse(f"/painel?erro=pedido-encerrado&abrir_pedido={order_id}#pedido-{order_id}",303)
@@ -2282,7 +2288,7 @@ def pro_order_status(request: Request, order_id: int, status: str=Form(...), rea
         nowup_alerts112.enqueue(conn,order["customer_id"],notification.lastrowid,{"title":label,"body":message,"url":f"/pedido/{order['tracking_token']}","tag":f"nowup-status-{order_id}"})
     conn.commit(); conn.close()
     if "application/json" in request.headers.get("accept", ""):
-        return JSONResponse({"id":order_id,"status":status},headers={"Cache-Control":"private, no-store"})
+        return order_status_response407(request,order_id,status)
     if return_to=="link":return RedirectResponse("/pedido/"+order["tracking_token"],303)
     return RedirectResponse(f"/painel?ok=pedido&abrir_pedido={order_id}#pedido-{order_id}",303)
 
@@ -3285,3 +3291,7 @@ nowup_notinha401.install(globals())
 
 import nowup_cover403
 nowup_cover403.install(globals())
+
+# Live merchant notice: acceptance returns its authenticated order fragment.
+import nowup_order_popup407
+nowup_order_popup407.install(globals())
