@@ -28,7 +28,7 @@
  box.addEventListener('submit',async event=>{const form=event.target;if(!(form instanceof HTMLFormElement))return;const path=new URL(form.action,location.href).pathname;if(!/^\/painel\/pedidos\/\d+\/(status|revisao|editar|conferir-pix)$/.test(path))return;event.preventDefault();event.stopImmediatePropagation();if(busy)return;
   const data=new FormData(form);if(event.submitter?.name)data.set(event.submitter.name,event.submitter.value);
   if(form.hasAttribute('data-cancel-form')&&!data.get('reason')){const reason=await window.NowUpDialog.prompt('Informe o motivo da recusa:','',{required:true});if(!reason?.trim())return;data.set('reason',reason.trim());}
-  busy=true;const buttons=[...box.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);info('Salvando pedido…');
+  ++serial;busy=true;const buttons=[...box.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);info('Salvando pedido…');
   try{const id=Number(path.split('/')[3]),statusAction=path.endsWith('/status');const r=await request(form.action,{method:'POST',body:data,headers:statusAction?{Accept:'application/json','X-NowUp-Order-Detail':'1'}:{}});cache.delete(id);
    if(statusAction){const result=await r.json();if(result.id!==id||!result.html407)throw Error('Confira o pedido antes de tentar novamente.');window.dispatchEvent(new CustomEvent('nowup:order-status',{detail:{id,status:result.status}}));detail(result.html407);info('✓ Atualização salva.');}
    else{detail(await prefetch(id));info('✓ Atualização salva.');}
