@@ -36,3 +36,14 @@ def for_store(pro):
     if dict(pro).get('business_type')=='fashion':
         plans['cardapio']=('Moda e acessórios • catálogo com WhatsApp',3990)
     return plans
+
+
+def require_internal_checkout405(pro, request, channel):
+    """The internal endpoint cannot grant or impersonate the WhatsApp channel."""
+    from fastapi import HTTPException
+    if pro['plan_active'] not in ('ambos', 'completo'):
+        raise HTTPException(403, 'Este plano finaliza pedidos pelo link próprio no WhatsApp.')
+    if (channel != 'internal' or request.headers.get('x-nowup-store-app') == '256'
+            or request.query_params.get('loja') == '1'
+            or request.query_params.get('origem') == 'externo'):
+        raise HTTPException(403, 'Para pedir pelo link próprio, use a finalização pelo WhatsApp disponível no plano da loja.')

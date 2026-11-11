@@ -1300,7 +1300,8 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
             conn.close(); raise HTTPException(400,'Informe nome e WhatsApp válidos')
         if not p["is_premium"] or p["offer_mode"] not in ("menu","catalog"):
             conn.close(); raise HTTPException(403,"Ative um plano com cardápio ou catálogo para usar este recurso")
-        if request.headers.get('x-nowup-store-app')=='256':order_channel='external'
+        from nowup_plans339 import require_internal_checkout405
+        require_internal_checkout405(p,request,order_channel)
         from nowup_checkout229 import begin_checkout, completed_response
         existing,checkout_key229,checkout_hash229=begin_checkout(conn,logged['id'],p['id'],request_key,{
             'cart':cart_json,'name':customer_name,'phone':customer_phone,'fulfillment':fulfillment_type,
@@ -1313,6 +1314,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
         lock255=" FOR UPDATE" if getattr(conn,'dialect','sqlite')=='postgres' else ""
         p=conn.execute("SELECT * FROM professionals WHERE id=? AND blocked=0 AND admission_status='approved' AND plan_active IN ('cardapio','ambos','completo') AND EXISTS(SELECT 1 FROM users owner255 WHERE owner255.id=professionals.user_id AND owner255.is_active=1)"+lock255,(p['id'],)).fetchone()
         if not p:raise HTTPException(409,"Esta loja não está recebendo pedidos. Revise seu carrinho.")
+        require_internal_checkout405(p,request,order_channel)
         clean_items,subtotal,delivery_fee,neighborhood,total,change_for_cents=nowup_storeapp257.validate(globals(),conn,p,cart_json,fulfillment_type,payment_method,address,neighborhood,change_for,scheduled_for380)
         customer_id=logged['id'] if logged else None
         created=now_iso(); tracking_token=secrets.token_urlsafe(24)
@@ -1325,7 +1327,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
         from nowup_inventory391 import attach
         attach(conn,dict(p),customer_id,basket_key391,clean_items,order_id)
         nowup_scheduling380.save(conn,order_id,p,scheduled_for380)
-        order_code=f"NU-{order_id:06d}"; conn.execute("UPDATE orders SET payment_method=?,order_code=?,order_origin=? WHERE id=?",(payment_method,order_code,"external" if order_channel=="external" or p["plan_active"]=="cardapio" else "nowup",order_id))
+        order_code=f"NU-{order_id:06d}"; conn.execute("UPDATE orders SET payment_method=?,order_code=?,order_origin='nowup' WHERE id=?",(payment_method,order_code,order_id))
         conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)",(order_id,"new",created))
         for product,qty,item_notes,chosen,unit in clean_items:
             item_cur=conn.execute("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes,combo_pack305) VALUES(?,?,?,?,?,?,?)",(order_id,product["id"],product["name"],qty,unit,item_notes,product.get("combo_pack305", "")))

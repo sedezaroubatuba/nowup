@@ -6,6 +6,7 @@ from test_checkout247 import checkout
 @pytest.fixture
 def shop(checkout,monkeypatch):
     m,client,url,data,pid,customer=checkout
+    customer.update(name='Audit',phone='12999999999')
     with m.db() as c:
         p=c.execute('SELECT p.* FROM professionals p JOIN products pr ON pr.professional_id=p.id WHERE pr.id=?',(pid,)).fetchone();slug=p['slug']
         c.execute("UPDATE professionals SET display_name='Sede Zero',avatar_filename='',plan_active='completo' WHERE id=?",(p['id'],))
@@ -64,6 +65,7 @@ def test_explicit_store_link_and_cardapio_only_show_store_brand(shop):
 def test_scoped_checkout_stays_idempotent_and_tracks_only_its_store(shop):
     m,client,slug,pid,url,data,_=shop
     headers={'Accept':'application/json','X-Nowup-Store-App':'256'}
+    url='/p/'+slug+'/menu/whatsapp'
     first=client.post(url,data=data,headers=headers);assert first.status_code==200,first.text
     target=first.json()['redirect'];assert target.startswith('/p/'+slug+'/pedido/')
     assert client.post(url,data=data,headers=headers).json()['redirect']==target
@@ -120,7 +122,7 @@ def test_real_customer_login_returns_to_store_and_preserves_session(shop,monkeyp
 
 def test_customer_history_is_scoped_by_customer_and_store(shop,monkeypatch):
     m,client,slug,pid,url,data,_=shop
-    client.post(url,data=data,headers={'Accept':'application/json','X-Nowup-Store-App':'256'})
+    client.post('/p/'+slug+'/menu/whatsapp',data=data,headers={'Accept':'application/json','X-Nowup-Store-App':'256'})
     page=client.get('/p/'+slug+'/pedidos');assert page.status_code==200,page.text
     assert 'Acompanhar pedido' in page.text and 'Sede Zero' in page.text
     with m.db() as c:other=c.execute('SELECT slug FROM professionals WHERE id<>? LIMIT 1',(pid,)).fetchone()[0]

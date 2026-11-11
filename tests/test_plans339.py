@@ -18,14 +18,18 @@ def test_admin_migration_preserves_old_contract_metadata():
     assert {k:v[1] for k,v in PLANS.items()} == {'cardapio':4990,'ambos':9990,'completo':14990}
 
 @pytest.mark.parametrize('plan', ['cardapio', 'ambos', 'completo'])
-def test_both_plans_keep_menu_checkout_and_all_merchant_tools(shop, monkeypatch, plan):
+def test_plans_keep_merchant_tools_and_use_only_entitled_checkout(shop, monkeypatch, plan):
     m, client, slug, pid, url, data, product = shop
     with m.db() as c:
         c.execute('UPDATE professionals SET plan_active=?,is_premium=1,is_demo=0 WHERE id=?',(plan,pid))
         owner = dict(c.execute('SELECT u.* FROM users u JOIN professionals p ON p.user_id=u.id WHERE p.id=?',(pid,)).fetchone())
     menu = client.get('/p/'+slug+'/menu')
     assert menu.status_code == 200
-    assert client.post(url,data=data,headers={'Accept':'application/json'}).json()['confirmed']
+    result=client.post(url,data=data,headers={'Accept':'application/json'})
+    if plan=='cardapio':
+        assert result.status_code==403
+    else:
+        assert result.json()['confirmed']
     monkeypatch.setattr(m,'current_user',lambda request:owner)
     m.nowup_sales107.initialize()
     panel = client.get('/painel')

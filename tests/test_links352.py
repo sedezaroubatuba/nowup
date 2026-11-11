@@ -58,6 +58,50 @@ def test_complete_appears_in_showcase_but_standalone_does_not(shop):
             assert bool(c.execute('SELECT p.id FROM professionals p WHERE p.id=? AND '+m.public_business_scope(),(pid,)).fetchone())==visible
 
 
+@pytest.mark.parametrize('plan', ['cardapio','ambos','completo'])
+@pytest.mark.parametrize('bypass', ['form','header','loja','origem'])
+def test_internal_endpoint_cannot_impersonate_independent_checkout(channel,plan,bypass):
+    m,client,slug,pid,data,product,customer=channel
+    with m.db() as c:c.execute('UPDATE professionals SET plan_active=? WHERE id=?',(plan,pid))
+    headers={'Accept':'application/json'}
+    query=''
+    if bypass=='form':data['order_channel']='external'
+    elif bypass=='header':headers['X-Nowup-Store-App']='256'
+    elif bypass=='loja':query='?loja=1'
+    else:query='?origem=externo'
+    response=client.post('/p/'+slug+'/menu/pedido'+query,data=data,headers=headers)
+    assert response.status_code==403,response.text
+    with m.db() as c:
+        assert c.execute('SELECT COUNT(*) FROM orders').fetchone()[0]==0
+        assert c.execute('SELECT COUNT(*) FROM checkout_requests229').fetchone()[0]==0
+        assert c.execute("SELECT COUNT(*) FROM notifications WHERE title='Novo pedido no NowUp'").fetchone()[0]==0
+
+
+@pytest.mark.parametrize('plan', ['cardapio','ambos','completo'])
+def test_order_channels_keep_identical_server_prices_and_separate_destinations(channel,plan):
+    import json
+    m,client,slug,pid,data,product,customer=channel
+    with m.db() as c:c.execute('UPDATE professionals SET plan_active=? WHERE id=?',(plan,pid))
+    data['cart_json']=json.dumps([{'id':product,'quantity':2,'price':1}])
+    native=client.post('/p/'+slug+'/menu/pedido',data=data,headers={'Accept':'application/json'})
+    assert native.status_code==(403 if plan=='cardapio' else 200),native.text
+    data['request_key']='independent-price-parity405'
+    external=client.post('/p/'+slug+'/menu/whatsapp',data=data)
+    assert external.status_code==(404 if plan=='ambos' else 200),external.text
+    if plan!='ambos':
+        result=external.json()
+        assert result['recorded'] and result['mode']=='whatsapp'
+        assert result['whatsapp_url'].startswith('https://wa.me/')
+        assert result['total_cents']==600
+    with m.db() as c:
+        orders=c.execute('SELECT order_origin,total_cents FROM orders ORDER BY id').fetchall()
+        assert [(r['order_origin'],r['total_cents']) for r in orders]=={
+            'cardapio':[('external',600)],'ambos':[('nowup',600)],
+            'completo':[('nowup',600),('external',600)]}[plan]
+        assert c.execute('SELECT price_cents FROM products WHERE id=?',(product,)).fetchone()[0]==300
+        assert c.execute("SELECT COUNT(*) FROM notifications WHERE title='Novo pedido no NowUp'").fetchone()[0]==(0 if plan=='cardapio' else 1)
+
+
 def test_requested_upgrade_is_targeted_and_does_not_rewrite_payments(shop,monkeypatch):
     import json
     import nowup_admin227 as adm
