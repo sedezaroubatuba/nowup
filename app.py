@@ -3333,3 +3333,6 @@ nowup_costs413.install(globals())
 
 import nowup_onboarding416
 nowup_onboarding416.install(globals())
+
+import nowup_sessions420
+nowup_sessions420.install(globals())

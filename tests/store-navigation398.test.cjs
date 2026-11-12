@@ -1,6 +1,6 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const store={slug:'shop',menu:'/p/shop/menu?loja=1',login:'/p/shop/entrar?tipo=cliente',signup:'/p/shop/cadastro',forgot:'/p/shop/recuperar-senha',orders:'/p/shop/pedidos',logout:'/p/shop/sair'};
-const listeners={},context={URL,Request,location:{origin:'https://nowup.local',href:'https://nowup.local/p/shop/menu?loja=1'},window:{fetch:()=>{}},document:{getElementById:()=>({textContent:JSON.stringify(store)}),addEventListener:(name,f)=>listeners[name]=f}};
+const listeners={},context={URL,Request,location:{origin:'https://nowup.local',href:'https://nowup.local/p/shop/menu?loja=1'},window:{fetch:()=>{},addEventListener(){}},document:{getElementById:()=>({textContent:JSON.stringify(store)}),addEventListener:(name,f)=>listeners[name]=f}};
 vm.runInNewContext(fs.readFileSync('static/store-session345.js','utf8'),context);
 function click(path){const a={href:new URL(path,context.location.href).href};listeners.click({target:{closest:()=>a}});return a.href;}
 assert.equal(click('/'),'https://nowup.local/p/shop/menu?loja=1');

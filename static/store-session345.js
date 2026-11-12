@@ -25,6 +25,9 @@
   if(url.pathname.startsWith(prefix+'/')||url.pathname.startsWith('/static/')||url.pathname.startsWith('/uploads/'))return url.href;
   return new URL(store.menu,location.origin).href;
  }
+ let checking420=false,lastCheck420=0;
+ async function resume420(){if(document.hidden||checking420||node.dataset.demoBrowse386==='1'||Date.now()-lastCheck420<1500)return;checking420=true;lastCheck420=Date.now();try{const response=await fetch0.call(window,prefix+'/sessao420',{credentials:'same-origin',cache:'no-store'});if(!response.ok)return;const data=await response.json();if(typeof data.authenticated!=='boolean')return;const wasAuthenticated=node.dataset.loginRequired==='0',nowAuthenticated=data.authenticated&&data.role==='customer',renderedId=Number(node.dataset.customerId420||0);if(wasAuthenticated!==nowAuthenticated||(nowAuthenticated&&renderedId&&renderedId!==Number(data.user_id))){location.reload();}}catch(_){}finally{checking420=false;}}
+ window.addEventListener('pageshow',resume420);window.addEventListener('focus',resume420);window.addEventListener('online',resume420);document.addEventListener('visibilitychange',()=>{if(!document.hidden)resume420();});
  document.addEventListener('click',event=>{const link=event.target.closest?.('a[href]');if(link)link.href=navigation(link.href);},true);
  document.addEventListener('submit',event=>{if(event.target.action)event.target.action=scoped(event.target.action);},true);
 })();

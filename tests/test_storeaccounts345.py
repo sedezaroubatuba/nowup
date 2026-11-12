@@ -117,7 +117,7 @@ def test_exclusive_store_exposes_merchant_entry_without_mixing_accounts(setup345
         page=client.get('/p/'+a['slug']+'/'+tail)
         soup=BeautifulSoup(page.text,'html.parser')
         assert soup.select_one('.storeapp-actions256 a[href="/entrar?tipo=profissional"]')
-        assert '/static/store-session345.js?v=405' in page.text
+        assert '/static/store-session345.js?v=420' in page.text
     login=BeautifulSoup(page.text,'html.parser')
     form=login.select_one('#nowup-login-form349')
     assert form['action']=='/p/'+a['slug']+'/entrar?tipo=cliente'

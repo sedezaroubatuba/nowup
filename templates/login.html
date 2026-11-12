@@ -50,4 +50,4 @@ body.nowup-login-white{background:#fff!important;background-image:none!important
 <p class="muted tiny">Use sua conta de lojista para gerenciar a loja, os produtos e os pedidos.</p>
 {% if user and user.role=='professional' %}<a class="btn soft" data-store-merchant405 href="/painel">Acessar meu painel</a>{% else %}<a class="btn soft" data-store-merchant405 href="/entrar?tipo=profissional">Entrar como lojista</a>{% endif %}
 </section>{% endif %}
-</div></div>{% endblock %}
+</div></div>{% if request.query_params.get('tipo') not in ['admin','cms'] %}<script id="login-session420" type="application/json">{{ {'url':('/p/' ~ store_app256.slug ~ '/sessao420') if store_app256 else '/sessao420','role':'customer' if store_app256 or request.query_params.get('tipo')=='cliente' else ('professional' if request.query_params.get('tipo')=='profissional' else ''),'destination':store_app256.menu if store_app256 else ''}|tojson }}</script><script defer src="/static/login-session420.js?v=420"></script>{% endif %}{% endblock %}

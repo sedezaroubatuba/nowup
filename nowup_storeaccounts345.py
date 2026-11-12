@@ -76,7 +76,12 @@ def install(g):
         return g['templates'].TemplateResponse(template,g['context'](request,**kwargs),headers=HEADERS)
 
     @app.get('/p/{slug}/entrar')
-    def login_page(request:Request,slug:str): return view(request,slug,'login.html')
+    def login_page(request:Request,slug:str):
+        p=store(g,slug);request.state.store_app256=p
+        user=g['current_user'](request)
+        if user and user['role']=='customer' and user.get('customer_store345')==p['id']:
+            return RedirectResponse(presentation(p)['menu'],303,headers=HEADERS)
+        return view(request,slug,'login.html')
 
     @app.post('/p/{slug}/entrar')
     def login(request:Request,slug:str,email:str=Form(...),password:str=Form(...)):
