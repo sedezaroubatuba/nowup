@@ -1,0 +1,136 @@
+{
+  "source_commit": "e178dfb793a69b9342bb1b9ecd51dcf2de6aa2eb",
+  "date": "2026-11-12",
+  "scope": "Cardápio próprio com WhatsApp",
+  "backend_initial": {
+    "passed": 534,
+    "failed": 3,
+    "total": 537,
+    "seconds": 140.23,
+    "failures": [
+      "Dependência jsdom não instalada no caminho exigido pelo teste",
+      "Expectativa antiga de Pix imediato em test_order_link377",
+      "Expectativa antiga de Pix imediato em test_pix"
+    ]
+  },
+  "targeted_recheck": {
+    "passed": 23,
+    "failed": 0,
+    "seconds": 8.24,
+    "includes": "Três falhas iniciais resolvidas sem alteração do comportamento de produção; inclui teste novo de carga"
+  },
+  "frontend": {
+    "files": 45,
+    "initial_passed": 44,
+    "initial_failed": 1,
+    "rechecked_failed_file": "merchant-signup346.dom.cjs passou com DOM real atualizado",
+    "final_unresolved_failures": 0,
+    "contextual_merchant_settings_dom": "passou na rechecagem Python"
+  },
+  "burst": {
+    "engine": "isolated SQLite; not production PostgreSQL or WhatsApp delivery",
+    "scenarios": [
+      {
+        "scenario": "10 simultaneous",
+        "count": 10,
+        "success": 10,
+        "seconds": 0.17,
+        "median_seconds": 0.116,
+        "p95_seconds": 0.142,
+        "statuses": []
+      },
+      {
+        "scenario": "150 orders, concurrency 10",
+        "count": 150,
+        "success": 150,
+        "seconds": 1.385,
+        "median_seconds": 0.027,
+        "p95_seconds": 0.458,
+        "statuses": []
+      }
+    ],
+    "merchant_links_open_without_login": 10,
+    "merchant_orders_completed": 10,
+    "duplicate_checkout": "no duplicate",
+    "anti_spam": [
+      200,
+      200,
+      200,
+      200,
+      200,
+      429
+    ]
+  },
+  "live_public": [
+    {
+      "path": "/health",
+      "response": "200 https://nowup-i9n4.onrender.com/health",
+      "curl_exit": 0,
+      "bytes": 29
+    },
+    {
+      "path": "/p/adega-sede-zero?loja=1",
+      "response": "200 https://nowupbrasil.com/p/adega-sede-zero?loja=1",
+      "curl_exit": 0,
+      "bytes": 1050579
+    },
+    {
+      "path": "/p/adega-sede-zero/menu?loja=1",
+      "response": "200 https://nowupbrasil.com/p/adega-sede-zero/menu?loja=1",
+      "curl_exit": 0,
+      "bytes": 1044714
+    },
+    {
+      "path": "/p/adega-sede-zero/entrar",
+      "response": "200 https://nowupbrasil.com/p/adega-sede-zero/entrar",
+      "curl_exit": 0,
+      "bytes": 67145
+    },
+    {
+      "path": "/p/adega-sede-zero/cadastro",
+      "response": "200 https://nowupbrasil.com/p/adega-sede-zero/cadastro",
+      "curl_exit": 0,
+      "bytes": 66581
+    },
+    {
+      "path": "/p/adega-sede-zero/recuperar-senha",
+      "response": "200 https://nowupbrasil.com/p/adega-sede-zero/recuperar-senha",
+      "curl_exit": 0,
+      "bytes": 65082
+    },
+    {
+      "path": "/p/adega-sede-zero/manifest.webmanifest",
+      "response": "200 https://nowupbrasil.com/p/adega-sede-zero/manifest.webmanifest",
+      "curl_exit": 0,
+      "bytes": 527
+    },
+    {
+      "path": "/entrar?tipo=profissional",
+      "response": "200 https://nowupbrasil.com/entrar?tipo=profissional",
+      "curl_exit": 0,
+      "bytes": 70872
+    },
+    {
+      "path": "/painel",
+      "response": "401 https://nowupbrasil.com/painel",
+      "curl_exit": 0,
+      "bytes": 38
+    }
+  ],
+  "live_metrics": {
+    "observed_cpu_cores_min": 0.0037693533,
+    "observed_cpu_cores_max": 0.00408696,
+    "memory_bytes_min": 113053700,
+    "memory_bytes_max": 113623040,
+    "latency_series_available": false,
+    "context": "Tráfego baixo durante observação; não é medição da carga simulada"
+  },
+  "limitations": [
+    "Carga isolada em SQLite, não em PostgreSQL/Render de produção",
+    "Nenhuma mensagem real enviada pelo WhatsApp",
+    "Entrega real de e-mail não validada",
+    "Nenhuma cobrança ou assinatura financeira real criada",
+    "Sem sessão real autenticada do proprietário no navegador de produção",
+    "Não garante inspeção manual de cada botão, aparelho e navegador"
+  ]
+}

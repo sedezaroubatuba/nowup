@@ -1,20 +1,17 @@
-const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/strict');
-function input(value=''){return {value,required:false,disabled:false,hidden:false,checked:false,listeners:{},addEventListener(kind,fn){this.listeners[kind]=fn},emit(kind='change'){this.listeners[kind]?.()},setCustomValidity(message){this.validationMessage=message}};}
-const cpf=input(),plan=input(),type=input('CNPJ'),documentField=input(),city=input('Ubatuba'),kind=input('store'),other=input(),known=input('1'),segmentField=input(),docs=input();
-type.querySelector=()=>cpf;
-const radios=[known,other],elements={plan,doc_type:type,document:documentField,city,business_type:kind,business_segment346:segmentField};
-const form={elements,querySelectorAll:()=>radios};
-const ids={'merchant-signup346':form,'signup-documents346':docs,'signup-other346':other,'signup-segment346':input(),'signup-document-note346':{},'signup-category-note346':{},'signup-plan-note346':{},'signup-cities-config346':{textContent:'["Ubatuba"]'}};
-const window={addEventListener(){}};
-vm.runInNewContext(fs.readFileSync('static/merchant-signup346.js','utf8'),{document:{getElementById:id=>ids[id]},window});
-assert(docs.hidden&&docs.disabled);
-plan.value='cardapio';plan.emit();assert(docs.hidden&&docs.disabled);assert.equal(documentField.required,false);assert.equal(known.required,false);
-type.value='CPF';city.value='São Sebastião';city.emit('input');assert.equal(city.validationMessage,'');assert.equal(type.value,'CPF');
-plan.value='ambos';plan.emit();assert.equal(docs.hidden,false);assert.equal(docs.disabled,false);assert.equal(documentField.required,true);assert.equal(type.value,'CNPJ');assert(cpf.disabled);assert(known.required);assert(city.validationMessage.includes('Ubatuba'));
-plan.value='completo';plan.emit();assert(!docs.hidden&&!docs.disabled&&documentField.required&&cpf.disabled);
-city.value='Ubatuba';city.emit('input');assert.equal(city.validationMessage,'');
-plan.value='cardapio';plan.emit();assert(docs.disabled&&docs.hidden);assert.equal(documentField.required,false);assert.equal(cpf.disabled,false);assert.equal(known.required,false);
-other.checked=true;other.emit();assert.equal(ids['signup-segment346'].hidden,false);assert(segmentField.required&&!segmentField.disabled);
-other.checked=false;known.checked=true;known.emit();assert(ids['signup-segment346'].hidden&&segmentField.disabled);assert.equal(segmentField.required,false);
-kind.value='other';kind.emit();assert(other.checked&&segmentField.required&&!segmentField.disabled);
-console.log('Plan switching, optional CPF/CNPJ, document upload requirements, city restrictions and manual category passed.');
+// Use real select/option nodes: this form now changes options by city and segment.
+const {JSDOM}=require('jsdom'),fs=require('node:fs'),assert=require('node:assert/strict');
+const dom=new JSDOM(`<form id="merchant-signup346"><select name="plan"><option value="">Escolha</option><option value="cardapio">Cardápio</option><option value="ambos">Vitrine anterior</option><option value="completo">Cardápio e vitrine</option></select><select name="doc_type"><option value="CPF">CPF</option><option value="CNPJ">CNPJ</option></select><input name="document"><input name="city" value="Ubatuba"><select name="state"><option>SP</option><option>RJ</option></select><select name="business_type"><option value="store">Loja</option><option value="fashion">Moda</option><option value="other">Outro</option></select><select name="offer_mode"><option value="menu">Cardápio</option><option value="catalog">Catálogo</option></select><input type="radio" name="category_choice346" value="1" checked><input id="signup-other346" type="radio" name="category_choice346" value="other"><div id="signup-segment346"><input name="business_segment346"></div><fieldset id="signup-documents346"></fieldset><div id="fashion-signup385"></div><span id="signup-document-note346"></span><span id="signup-category-note346"></span><span id="signup-plan-note346"></span></form>`,{url:'https://test.invalid/cadastro',runScripts:'outside-only'});
+const w=dom.window,f=w.document.querySelector('form'),e=f.elements,docs=w.document.getElementById('signup-documents346'),other=w.document.getElementById('signup-other346');
+const set=(name,value,kind='change')=>{e[name].value=value;e[name].dispatchEvent(new w.Event(kind,{bubbles:true}));};
+try{
+ w.eval(fs.readFileSync('static/merchant-signup346.js','utf8'));
+ assert.equal(e.plan.value,'completo');assert(!docs.hidden&&e.document.required);
+ set('plan','cardapio');assert(docs.hidden&&docs.disabled);assert(!e.document.required);
+ set('doc_type','CPF');set('city','São Sebastião','input');assert.equal(e.plan.value,'cardapio');assert.equal(e.city.validationMessage,'');assert.equal(e.doc_type.value,'CPF');assert(e.plan.querySelector('[value=completo]').disabled);
+ set('city','Ubatuba','input');set('plan','completo');assert(!docs.hidden&&!docs.disabled&&e.document.required);assert.equal(e.doc_type.value,'CNPJ');assert(e.doc_type.querySelector('[value=CPF]').disabled);
+ set('plan','cardapio');assert(docs.hidden&&docs.disabled&&!e.document.required);assert(!e.doc_type.querySelector('[value=CPF]').disabled);
+ other.checked=true;other.dispatchEvent(new w.Event('change',{bubbles:true}));assert(e.business_segment346.required&&!e.business_segment346.disabled);
+ set('business_type','fashion');assert.equal(e.offer_mode.value,'catalog');assert(e.offer_mode.querySelector('[value=menu]').disabled);assert(!w.document.getElementById('fashion-signup385').hidden);
+ set('state','RJ');assert.equal(e.plan.value,'cardapio');assert(e.plan.querySelector('[value=completo]').hidden);
+ console.log('Cadastro validado com DOM real: planos por cidade, CPF opcional no Cardápio, CNPJ/documentos na Vitrine e catálogo de moda.');
+}finally{w.close();}
