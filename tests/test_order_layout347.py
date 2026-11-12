@@ -44,9 +44,9 @@ def test_tracking_renders_four_separate_products_totals_and_local_dates(env):
         c.execute('INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)',(oid,'new',stamp));c.commit()
     response=client.get('/pedido/layout347-public-test');assert response.status_code==200,response.text
     soup=BeautifulSoup(response.text,'html.parser')
-    assert len(soup.select('.nu347-lines .nu347-line'))==4
-    assert len(soup.select('.nu347-order-totals>div'))==3
-    assert '405,89' in soup.select_one('.nu347-grand-total').text
+    assert len(soup.select('.nu401-paper .nu406-item'))==4
+    assert '401,89' in soup.select_one('.nu401-paper').text and '4,00' in soup.select_one('.nu401-paper').text
+    assert '405,89' in soup.select_one('.nu406-grand-total').text
     assert '03/11/2026 às 12:59' in soup.select_one('.order-timeline time').text
     assert soup.select_one('link[href="/static/order-layout347.css?v=348"]')
 

@@ -740,6 +740,8 @@ def init_db():
     initialize_inventory391(conn)
     from nowup_notinha401 import initialize as initialize_notinha401
     initialize_notinha401(conn)
+    from nowup_costs413 import initialize as initialize_costs413
+    initialize_costs413(conn)
     defaults = {
       "brand_name": "NowUp",
       "primary_color": "#08131F",
@@ -1937,18 +1939,21 @@ def pro_dish_publish151(request: Request, publish: Optional[str]=Form(None)):
     return RedirectResponse("/painel?ok=pratos-publicacao#pratos",303)
 
 @app.post("/painel/pratos")
-def pro_dish_add151(request: Request, name: str=Form(...), description: str=Form(""), price: str=Form(...), max_choices: int=Form(3), photo: Optional[UploadFile]=File(None)):
+def pro_dish_add151(request: Request, name: str=Form(...), description: str=Form(""), price: str=Form(...), max_choices: int=Form(3), photo: Optional[UploadFile]=File(None), cost_price413: str=Form("")):
     u=require_user(request,"professional")
     clean=name.strip()[:140]
     if not clean:raise HTTPException(400,"Informe o nome do prato.")
     if not 1<=max_choices<=20:raise HTTPException(400,"Escolha de 1 a 20 adicionais.")
     cents=price_to_cents(price);conn=db()
     try:
-        p=require_premium_catalog(conn,u["id"]);category=ensure_dish_category151(conn,p["id"])
+        p=require_premium_catalog(conn,u["id"])
         fn=save_image(photo) if photo and photo.filename else ""
+        cost413=nowup_costs413.prepare(conn,p["id"],cost_price413)
+        category=ensure_dish_category151(conn,p["id"])
         created=now_iso()
         cur=conn.execute("INSERT INTO products(professional_id,name,description,category,price_cents,image_filename,available,created_at,updated_at,is_dish) VALUES(?,?,?,?,?,?,?,?,?,1)",(p["id"],clean,description.strip()[:600],category["name"],cents,fn,category["active"],created,created))
         pid=cur.lastrowid
+        nowup_costs413.save(conn,p["id"],pid,cost413)
         conn.execute("INSERT INTO product_option_groups(product_id,name,min_choices,max_choices) VALUES(?,'Adicionais',0,?)",(pid,max_choices))
         conn.commit()
     finally:conn.close()
@@ -2033,7 +2038,7 @@ def catalog_return328(request, fallback):
     return RedirectResponse(fallback,303)
 
 @app.post("/painel/cardapio/produtos")
-def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None), sold_by_weight370: Optional[str]=Form(None), size_kind385: str=Form("none"), sizes385: str=Form(""), colors385: str=Form(""), extra_photos385: list[UploadFile]=File(default=[]), brand387: str=Form(""), material387: str=Form(""), composition387: str=Form(""), guide387: str=Form("none"), measurements387: str=Form(""), stock_mode389: str=Form("none"), stock_total389: str=Form(""), stock_sizes389: str=Form(""), stock_variants391: str=Form(""), stock_version391: str=Form("")):
+def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None), sold_by_weight370: Optional[str]=Form(None), size_kind385: str=Form("none"), sizes385: str=Form(""), colors385: str=Form(""), extra_photos385: list[UploadFile]=File(default=[]), brand387: str=Form(""), material387: str=Form(""), composition387: str=Form(""), guide387: str=Form("none"), measurements387: str=Form(""), stock_mode389: str=Form("none"), stock_total389: str=Form(""), stock_sizes389: str=Form(""), stock_variants391: str=Form(""), stock_version391: str=Form(""), cost_price413: str=Form("")):
     from nowup_promotions285 import promotional_cents
     promo_cents285=promotional_cents(price_to_cents(price),promo_price,promo_mode,promo_percent,promo_enabled,price_to_cents)
     is_combo256,category=combo_kind(category,is_combo256)
@@ -2041,7 +2046,8 @@ def pro_product_add(request: Request, name: str=Form(...), description: str=Form
     from nowup_weight370 import configure as configure_weight370
     if sold_by_weight370 == '1':configure_weight370(price_to_cents(price),is_combo256,extras_mode,custom192)
     if custom192 and custom192["free_count"]>max_choices:raise HTTPException(400,"A quantidade grátis não pode superar o máximo de adicionais.")
-    u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); fn=""
+    u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]);
+    fn=""
     if nowup_fashion385.is_fashion(p):
         from nowup_inventory391 import lock_store
         lock_store(conn,p['id'])
@@ -2066,7 +2072,10 @@ def pro_product_add(request: Request, name: str=Form(...), description: str=Form
     from nowup_pairs256 import validate_pairs
     try: pair_ids256=validate_pairs(conn,p["id"],related256)
     except HTTPException: conn.close(); raise
+    try: cost413=nowup_costs413.prepare(conn,p["id"],cost_price413)
+    except Exception:conn.rollback();conn.close();raise
     created=now_iso(); cur=conn.execute("INSERT INTO products(professional_id,name,description,category,price_cents,image_filename,available,created_at,updated_at,promo_price_cents,featured,max_quantity) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",(p["id"],name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,created,created,promo_cents285,1 if featured else 0,max(1,min(99,max_quantity))))
+    nowup_costs413.save(conn,p['id'],cur.lastrowid,cost413)
     conn.execute('UPDATE products SET sold_by_weight370=? WHERE id=?',(int(sold_by_weight370=='1'),cur.lastrowid))
     conn.execute("UPDATE products SET sold_cold=? WHERE id=?",(1 if sold_cold else 0,cur.lastrowid))
     conn.execute("UPDATE products SET is_combo256=?,recommend256=?,related256=? WHERE id=?",(bool(is_combo256),bool(recommend256),pair_ids256,cur.lastrowid))
@@ -2086,7 +2095,7 @@ def pro_product_add(request: Request, name: str=Form(...), description: str=Form
     conn.commit(); conn.close(); return catalog_return328(request,"/painel?ok=combo#combos-loja" if is_combo256 else "/painel?ok=refeicao#lanches-refeicoes322" if custom192 and custom192.get("is_meal317") else "/painel?ok=produto#novo-produto")
 
 @app.post("/painel/cardapio/produtos/{product_id}")
-def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None), sold_by_weight370: Optional[str]=Form(None), size_kind385: str=Form("none"), sizes385: str=Form(""), colors385: str=Form(""), extra_photos385: list[UploadFile]=File(default=[]), brand387: str=Form(""), material387: str=Form(""), composition387: str=Form(""), guide387: str=Form("none"), measurements387: str=Form(""), stock_mode389: str=Form("none"), stock_total389: str=Form(""), stock_sizes389: str=Form(""), stock_variants391: str=Form(""), stock_version391: str=Form("")):
+def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None), sold_by_weight370: Optional[str]=Form(None), size_kind385: str=Form("none"), sizes385: str=Form(""), colors385: str=Form(""), extra_photos385: list[UploadFile]=File(default=[]), brand387: str=Form(""), material387: str=Form(""), composition387: str=Form(""), guide387: str=Form("none"), measurements387: str=Form(""), stock_mode389: str=Form("none"), stock_total389: str=Form(""), stock_sizes389: str=Form(""), stock_variants391: str=Form(""), stock_version391: str=Form(""), cost_price413: str=Form("")):
     from nowup_promotions285 import promotional_cents
     promo_cents285=promotional_cents(price_to_cents(price),promo_price,promo_mode,promo_percent,promo_enabled,price_to_cents)
     is_combo256,category=combo_kind(category,is_combo256)
@@ -2094,7 +2103,8 @@ def pro_product_edit(request: Request, product_id: int, name: str=Form(...), des
     from nowup_weight370 import configure as configure_weight370
     if sold_by_weight370 == '1':configure_weight370(price_to_cents(price),is_combo256,extras_mode,custom192)
     if custom192 and custom192["free_count"]>max_choices:raise HTTPException(400,"A quantidade grátis não pode superar o máximo de adicionais.")
-    u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=?",(product_id,p["id"])).fetchone()
+    u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]);
+    product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=?",(product_id,p["id"])).fetchone()
     if product and product['sold_by_weight370']:
         try:configure_weight370(price_to_cents(price),is_combo256,extras_mode,custom192)
         except HTTPException:conn.close();raise
@@ -2134,7 +2144,10 @@ def pro_product_edit(request: Request, product_id: int, name: str=Form(...), des
     if photo and photo.filename:
         new_fn=save_image(photo)
         fn=new_fn
+    try: cost413=nowup_costs413.prepare(conn,p["id"],cost_price413)
+    except Exception:conn.rollback();conn.close();raise
     conn.execute("UPDATE products SET name=?,description=?,category=?,price_cents=?,image_filename=?,available=?,updated_at=?,promo_price_cents=?,featured=?,max_quantity=? WHERE id=?",(name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,now_iso(),promo_cents285,1 if featured else 0,max(1,min(99,max_quantity)),product_id)); configure_personalization153(conn,product_id,bool(personalizable),max_choices) if extras_mode=="legacy" else configure_shared155(conn,p["id"],product_id,extras_mode,extra_ids,max_choices)
+    nowup_costs413.save(conn,p['id'],product_id,cost413)
     conn.execute("UPDATE products SET sold_cold=? WHERE id=? AND professional_id=?",(1 if sold_cold else 0,product_id,p["id"]))
     if nowup_fashion385.is_fashion(p):
         try:
@@ -3314,3 +3327,6 @@ nowup_channels408.install(globals())
 
 import nowup_checkout411
 nowup_checkout411.install(globals())
+
+import nowup_costs413
+nowup_costs413.install(globals())

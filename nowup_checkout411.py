@@ -1,5 +1,7 @@
 """Optional merchant POS and named tables, backed by the existing sales ledger."""
 import secrets
+import json
+from nowup_kitchen413 import metadata,needs_choices,compose
 from urllib.parse import quote
 import unicodedata
 from datetime import datetime,date
@@ -24,6 +26,8 @@ def install(g):
                 sale_id INTEGER PRIMARY KEY REFERENCES manual_sales107(id),
                 table_id INTEGER NOT NULL DEFAULT 0,service TEXT NOT NULL CHECK(service IN ('counter','pickup','delivery')));
                 CREATE INDEX IF NOT EXISTS checkout_table_sales411 ON checkout_sales411(table_id,sale_id);''')
+            g['ensure_column'](c,'checkout_sales411','customer_name413',"TEXT NOT NULL DEFAULT ''")
+            c.execute('CREATE TABLE IF NOT EXISTS checkout_item_details413(item_id INTEGER PRIMARY KEY REFERENCES manual_items107(id) ON DELETE CASCADE,snapshot TEXT NOT NULL)')
     g['app'].router.add_event_handler('startup',startup)
     def begin(c):c.execute('BEGIN' if getattr(c,'dialect','sqlite')=='postgres' else 'BEGIN IMMEDIATE')
     def lock(c):return ' FOR UPDATE' if getattr(c,'dialect','sqlite')=='postgres' else ''
@@ -36,7 +40,8 @@ def install(g):
         s['items']=[dict(r) for r in c.execute('SELECT i.*,pr.image_filename FROM manual_items107 i LEFT JOIN products pr ON pr.id=i.product_id AND pr.professional_id=? WHERE i.sale_id=? ORDER BY i.id',(pid,sid))]
         for item in s['items']:item['image_url']='/uploads/'+quote(item['image_filename'],safe='') if item['image_filename'] else ''
         s['payments']=[dict(r) for r in c.execute('SELECT * FROM manual_payments107 WHERE sale_id=? ORDER BY id',(sid,))]
-        s['table_id']=c.execute('SELECT table_id FROM checkout_sales411 WHERE sale_id=?',(sid,)).fetchone()[0]
+        info=c.execute('SELECT table_id,customer_name413 FROM checkout_sales411 WHERE sale_id=?',(sid,)).fetchone()
+        s['table_id']=info['table_id'];s['customer_name413']=info['customer_name413']
         return s
     def go(sid=0,tab='counter'):return RedirectResponse('/painel/checkout?tab='+tab+('&sale='+str(sid) if sid else ''),303)
     def new_sale(c,pid,uid,label,service,token,tid=0):
@@ -96,7 +101,7 @@ def install(g):
         return go(sid,'tables')
 
     @router.post('/painel/checkout/abrir')
-    def open_counter(request:Request,token:str=Form(...),service:str=Form('counter')):
+    def open_counter(request:Request,token:str=Form(...),service:str=Form('counter'),customer_name:str=Form('')):
         ledger.check_origin(request)
         if service not in ('counter','pickup','delivery') or not 16<=len(token)<=100:raise HTTPException(400,'Confira a origem da venda.')
         with ledger.connection() as c:
@@ -104,17 +109,28 @@ def install(g):
             # Serialize retries of the same creation token on Postgres too.
             c.execute('SELECT id FROM professionals WHERE id=?'+lock(c),(p['id'],)).fetchone()
             sid=new_sale(c,p['id'],u['id'],{'counter':'Venda no balcão','pickup':'Retirada manual','delivery':'Entrega manual'}[service],service,token)
+            if customer_name.strip():c.execute('UPDATE checkout_sales411 SET customer_name413=? WHERE sale_id=?',(customer_name.strip()[:120],sid))
         return go(sid)
 
     @router.get('/painel/checkout/catalogo')
     def catalog(request:Request,q:str=''):
         with ledger.connection() as c:
             u,p=ledger.merchant(c,request);query=q.strip()[:120]
-            rows=c.execute('''SELECT id,name,price_cents,promo_price_cents,sold_by_weight370,image_filename FROM products pr WHERE professional_id=? AND available=1
+            rows=c.execute('''SELECT pr.* FROM products pr WHERE professional_id=? AND available=1
                 AND (CAST(id AS TEXT)=? OR lower(name) LIKE lower(?))
                 AND NOT EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) AND pc.active=0)
                 ORDER BY CASE WHEN CAST(id AS TEXT)=? THEN 0 ELSE 1 END,name LIMIT 50''',(p['id'],query,'%'+query+'%',query)).fetchall()
-        return JSONResponse({'products':[dict(id=r['id'],name=r['name'],price_cents=current_price(r),weight=bool(r['sold_by_weight370']),image_url='/uploads/'+quote(r['image_filename'],safe='') if r['image_filename'] else '') for r in rows]},headers={'Cache-Control':'private, no-store'})
+            products=[dict(id=r['id'],name=r['name'],price_cents=current_price(r),weight=bool(r['sold_by_weight370']),image_url='/uploads/'+quote(r['image_filename'],safe='') if r['image_filename'] else '',configurable=needs_choices(c,p['id'],r)) for r in rows]
+        return JSONResponse({'products':products},headers={'Cache-Control':'private, no-store'})
+
+    @router.get('/painel/checkout/produtos/{product_id}/opcoes')
+    def options(request:Request,product_id:int):
+        with ledger.connection() as c:
+            u,p=ledger.merchant(c,request)
+            product=c.execute('SELECT * FROM products WHERE id=? AND professional_id=? AND available=1',(product_id,p['id'])).fetchone()
+            if not product:raise HTTPException(404,'Produto não encontrado.')
+            result=metadata(c,p['id'],product)
+        return JSONResponse(result,headers={'Cache-Control':'private, no-store'})
 
     @router.get('/painel/checkout/vendas/{sid}')
     def snapshot(request:Request,sid:int):
@@ -123,12 +139,20 @@ def install(g):
         return JSONResponse(data,headers={'Cache-Control':'private, no-store'})
 
     @router.post('/painel/checkout/vendas/{sid}/alterar')
-    def change(request:Request,sid:int,version:int=Form(...),action:str=Form(...),product_id:int=Form(0),quantity:int=Form(1),weight_grams:int=Form(0),item_id:int=Form(0),payment_id:int=Form(0),method:str=Form(''),amount:str=Form(''),notes:str=Form(''),reason:str=Form(''),refund:str=Form('')):
+    def change(request:Request,sid:int,version:int=Form(...),action:str=Form(...),product_id:int=Form(0),quantity:int=Form(1),weight_grams:int=Form(0),item_id:int=Form(0),payment_id:int=Form(0),method:str=Form(''),amount:str=Form(''),notes:str=Form(''),reason:str=Form(''),refund:str=Form(''),customer_name:str=Form(''),selections_json:str=Form('')):
         ledger.check_origin(request)
-        if action not in ('item','remove_item','payment','remove_payment','close','cancel'):raise HTTPException(400,'Ação inválida.')
+        if action not in ('item','remove_item','payment','remove_payment','close','cancel','customer'):raise HTTPException(400,'Ação inválida.')
         with ledger.connection() as c:
             u,p=ledger.merchant(c,request);mapped(c,p['id'],sid)
-        if action=='item':
+        if action=='customer':
+            clean=' '.join(customer_name.split())
+            if not clean or len(clean)>120:raise HTTPException(400,'Informe o nome do cliente, de até 120 caracteres.')
+            with ledger.connection() as c:
+                u,p=ledger.merchant(c,request);begin(c);s=ledger.owned(c,p['id'],sid,True)
+                if s['status']!='open' or s['version']!=version:raise HTTPException(409,'Conta atualizada. Confira antes de salvar o cliente.')
+                c.execute('UPDATE checkout_sales411 SET customer_name413=? WHERE sale_id=?',(clean,sid))
+                c.execute('UPDATE manual_sales107 SET version=version+1,updated_at=? WHERE id=?',(ledger.stamp(),sid));ledger.history(c,sid,u['id'],'customer','Cliente atualizado')
+        elif action=='item':
             with ledger.connection() as c:
                 u,p=ledger.merchant(c,request);begin(c);s=ledger.owned(c,p['id'],sid,True)
                 if s['status']!='open' or s['version']!=version:raise HTTPException(409,'Conta atualizada. Confira os valores antes de lançar novamente.')
@@ -139,6 +163,19 @@ def install(g):
                     if not 1<=weight_grams<=99900000:raise HTTPException(400,'Informe o peso em gramas.')
                     cents=(current_price(product)*weight_grams+999)//1000
                     c.execute('INSERT INTO manual_items107(sale_id,product_id,product_name,category,quantity,unit_price_cents,notes) VALUES(?,?,?,?,1,?,?)',(sid,product_id,product['name']+' — '+str(weight_grams)+' g',product['category'],cents,notes.strip()[:500]));ledger.recalc(c,sid)
+                elif needs_choices(c,p['id'],product):
+                    info=c.execute('SELECT table_id,customer_name413 FROM checkout_sales411 WHERE sale_id=?',(sid,)).fetchone()
+                    if not info['table_id'] and not info['customer_name413']:raise HTTPException(400,'Informe o nome do cliente para a comanda da cozinha.')
+                    try:
+                        if len(selections_json)>262144:raise ValueError()
+                        selections=json.loads(selections_json)
+                        if not isinstance(selections,list) or not 1<=quantity<=99 or len(selections)!=quantity:raise ValueError()
+                    except (ValueError,TypeError):raise HTTPException(400,'Confira as escolhas de cada unidade do produto.')
+                    for raw in selections:
+                        cents,details,snapshot=compose(g,c,p['id'],product,raw)
+                        item=c.execute('INSERT INTO manual_items107(sale_id,product_id,product_name,category,quantity,unit_price_cents,notes) VALUES(?,?,?,?,1,?,?)',(sid,product_id,product['name'],product['category'],cents,details)).lastrowid
+                        c.execute('INSERT INTO checkout_item_details413(item_id,snapshot) VALUES(?,?)',(item,snapshot))
+                    ledger.recalc(c,sid)
                 else:ledger.add_item(c,p['id'],sid,product_id,quantity,notes)
                 c.execute('UPDATE manual_sales107 SET version=version+1,updated_at=? WHERE id=?',(ledger.stamp(),sid));ledger.history(c,sid,u['id'],'item','Código '+str(product_id)+', quantidade '+str(weight_grams or quantity))
         else:
@@ -149,8 +186,8 @@ def install(g):
         return go(sid,'tables' if result['table_id'] else 'counter')
 
     @router.get('/painel/checkout/vendas/{sid}/imprimir')
-    def receipt(request:Request,sid:int):
+    def receipt(request:Request,sid:int,cozinha:int=0):
         with ledger.connection() as c:
             u,p=ledger.merchant(c,request);s=state(c,p['id'],sid)
-        return g['templates'].TemplateResponse('checkout_receipt411.html',g['context'](request,pro=p,checkout411=s,methods411=ledger.METHODS,cardapio_panel408=True),headers={'Cache-Control':'private, no-store'})
+        return g['templates'].TemplateResponse('checkout_receipt411.html',g['context'](request,pro=p,checkout411=s,methods411=ledger.METHODS,kitchen413=bool(cozinha),cardapio_panel408=True),headers={'Cache-Control':'private, no-store'})
     g['app'].include_router(router)

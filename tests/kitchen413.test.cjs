@@ -1,0 +1,12 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),{JSDOM}=require('jsdom');
+const config={ingredients:[{name:'Pão',removable:false},{name:'Tomate',removable:true}],groups:[],notes:true,utensils:false};
+const child={id:125,name:'X-bacon',config,options:[{id:7,name:'Queijo extra',price_cents:300,group_id:1}],limits:[{id:1,min_choices:0,max_choices:2}],max:2,editable:true};
+test('combo opens independent recipes for each included meal and preserves choices',()=>{const dom=new JSDOM('<div id="host"></div>',{runScripts:'outside-only'}),w=dom.window;
+try{w.eval(fs.readFileSync('static/kitchen413.js','utf8'));const cfg={ingredients:[],groups:[],combo_items:[{product_id:125,name:'X-bacon',quantity:2,principal:true}],notes:true,utensils:false};let chosen;
+w.NOWUP_KITCHEN413.open(w.document.getElementById('host'),{name:'Combo 2 X-bacon',config:cfg,combo:true,options:[],limits:[],max:0,children:{'125':child}},1,value=>chosen=value);
+const recipes=w.document.querySelectorAll('.cx413-recipe');assert.equal(recipes.length,3);const first=recipes[1],second=recipes[2];assert(first.querySelector('input[type=checkbox]').disabled);
+const remove=[...first.querySelectorAll('label')].find(n=>n.textContent.includes('Retirar Tomate')).querySelector('input');remove.checked=true;const extra=[...first.querySelectorAll('label')].find(n=>n.textContent.includes('Queijo extra')).querySelector('input');extra.checked=true;
+w.document.querySelector('button').click();assert(chosen);const units=chosen[0].customization.units364;assert.equal(units.length,2);assert.deepEqual(JSON.parse(JSON.stringify(units[0].customization.removed)),['Tomate']);assert.equal(units[0].options[0].id,7);assert.equal(units[1].options.length,0);assert.equal(units[1].customization.removed.length,0);
+}finally{w.close();}});
+test('mandatory registered choices are checked before launching',()=>{const dom=new JSDOM('<div id="host"></div>',{runScripts:'outside-only'}),w=dom.window;
+try{w.eval(fs.readFileSync('static/kitchen413.js','utf8'));let called=false;w.NOWUP_KITCHEN413.open(w.document.getElementById('host'),{...child,config:{...config,groups:[{id:'drink',name:'Bebida',min:1,max:1,options:['Cola','Guaraná']}]},combo:false,children:{}},1,()=>called=true);w.document.querySelector('button').click();assert.equal(called,false);assert.match(w.document.querySelector('[role=alert]').textContent,/Bebida/);w.document.querySelector('input[type=radio]').checked=true;w.document.querySelector('button').click();assert.equal(called,true);}finally{w.close();}});

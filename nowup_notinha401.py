@@ -6,7 +6,7 @@ from fastapi import Request, HTTPException
 from fastapi.responses import RedirectResponse
 
 CONFIRMED={'confirmed','preparing','ready','out_for_delivery','completed'}
-PAYMENTS={'pix':'Pix','cash':'Dinheiro','credit':'Cartão de crédito','debit':'Cartão de débito','on_delivery':'Combinar com a loja'}
+PAYMENTS={'pix':'Pix','cash':'Dinheiro','credit':'Cartão de crédito na entrega/retirada','debit':'Cartão de débito na entrega/retirada','on_delivery':'Combinar com a loja'}
 
 def initialize(c):
     c.execute('''CREATE TABLE IF NOT EXISTS order_payment_checks401(
@@ -25,6 +25,7 @@ def receipt(c,o,labels):
            'Situação: '+labels.get(o['status'],o['status']), '',
            'Cliente: '+o['customer_name'], 'Telefone: '+o['customer_phone'],
            ('Entrega: '+o['address']+(' — '+o['neighborhood'] if o['neighborhood'] else '')) if o['fulfillment_type']=='delivery' else 'Retirada no local']
+    if o['fulfillment_type']!='delivery' and o['address']:lines.append('Endereço informado: '+o['address'])
     if o['address_reference']:lines.append('Referência: '+o['address_reference'])
     lines+=['','ITENS']
     for row in c.execute('SELECT * FROM order_items WHERE order_id=? ORDER BY id',(o['id'],)):
