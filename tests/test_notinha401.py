@@ -60,3 +60,13 @@ def test_real_store_cookie_stays_inside_store(channel,monkeypatch):
     r=client.get(path);assert r.status_code==200,r.text
     assert 'href="/p/'+slug+'/pedido/' in r.text
     assert client.get('/pedidos/'+str(o['id'])+'/notinha').status_code==403
+
+
+def test_delivery_card_and_cash_instructions(channel):
+    m,client,result,o,item,owner,buyer=setup_order(channel)
+    with m.db() as c:
+        m.nowup_notinha401.initialize(c)
+        for method,change,expected in [('credit',0,'LEVAR MAQUININHA'),('debit',0,'LEVAR MAQUININHA'),('cash',0,'Sem troco.'),('cash',10000,'Troco: R$ 97,00')]:
+            c.execute("UPDATE orders SET payment_method=?,change_for_cents=?,fulfillment_type='delivery' WHERE id=?",(method,change,o['id']))
+            order=c.execute('SELECT o.*,p.display_name FROM orders o JOIN professionals p ON p.id=o.professional_id WHERE o.id=?',(o['id'],)).fetchone()
+            assert expected in m.nowup_notinha401.receipt(c,order,m.ORDER_STATUS_LABELS)

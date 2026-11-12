@@ -50,7 +50,11 @@ def receipt(c,o,labels):
             'TOTAL: '+money(o['total_cents']),'Forma de pagamento: '+PAYMENTS.get(o['payment_method'],'Combinar com a loja')]
     if o['payment_method']=='pix':
         lines.append('Pix recebido e conferido pelo lojista. Nada a cobrar na entrega.' if paid else 'Recebimento do Pix a conferir pelo lojista.')
-    elif o['change_for_cents']:lines.append('Troco para: '+money(o['change_for_cents']))
+    elif o['payment_method'] in ('credit','debit'):
+        lines+=['Pagamento na entrega ou retirada.', 'LEVAR MAQUININHA' if o['fulfillment_type']=='delivery' else 'Preparar maquininha na retirada.']
+    elif o['payment_method']=='cash':
+        lines.append('Pagamento na entrega ou retirada.')
+        lines.append('Troco para: '+money(o['change_for_cents'])+' — Troco: '+money(max(0,o['change_for_cents']-o['total_cents'])) if o['change_for_cents'] else 'Sem troco.')
     if o['notes']:lines.append('Observações: '+o['notes'])
     if o['status'] in {'cancelled','rejected'}:lines.append('PEDIDO ENCERRADO. Se houve pagamento, combine a devolução com a loja.')
     lines+=['','Resumo do pedido — não é documento fiscal.']

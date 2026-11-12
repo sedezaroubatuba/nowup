@@ -115,14 +115,15 @@ def money(cents):
 def immediate_payment398(g,conn,result,token):
     # Never replay a cached QR after an edit, cancellation or changed store key.
     order=g['tracked_order'](conn,token)
-    pix=g['pix_payment'](order,order['total_cents'],'NU'+str(order['id'])) if order and order['payment_method']=='pix' and order['status'] in ('new','confirmed','preparing','ready','out_for_delivery','completed') else None
+    pix=g['pix_payment'](order,order['total_cents'],'NU'+str(order['id'])) if order and order['payment_method']=='pix' and order['status'] in ('confirmed','preparing','ready','out_for_delivery','completed') else None
     result.pop('pix',None);result['receipt'].pop('pix',None)
     if order:
         result['total_cents']=order['total_cents'];result['receipt']['total']=money(order['total_cents'])
         if order['status'] in ('cancelled','rejected'):result['receipt']['status']='Pedido encerrado — se já pagou, solicite a devolução à loja'
+        elif order['status']=='new':result['receipt']['status']='Aguardando aceite da loja — você ainda não precisa pagar'
         elif order['status'] in ('reviewing','awaiting_approval','revision_approved'):result['receipt']['status']='Pedido em revisão — aguarde a atualização do total para pagar'
     if pix:result['pix']=pix;result['receipt']['pix']=pix
-    elif order and order['payment_method']=='pix' and order['status'] in ('new','confirmed','preparing','ready','out_for_delivery','completed'):
+    elif order and order['payment_method']=='pix' and order['status'] in ('confirmed','preparing','ready','out_for_delivery','completed'):
         result['receipt']['status']='Pedido enviado — solicite os dados Pix à loja'
     return result
 
@@ -220,7 +221,7 @@ def install(g):
             result['review_required']=False
             result['whatsapp_only']=False
             result['payment_method']=payment_method
-            result['receipt']['status']='Pedido enviado — Pix disponível no acompanhamento' if payment_method=='pix' else 'Pedido enviado — pagamento na entrega ou retirada'
+            result['receipt']['status']='Aguardando aceite da loja — o Pix será liberado após a confirmação' if payment_method=='pix' else 'Pedido enviado — pagamento na entrega ou retirada'
             from nowup_menu_origin355 import email_origin
             base=email_origin() or str(request.base_url).rstrip('/')
             result['order_url']=base+result['redirect']

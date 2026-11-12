@@ -1,6 +1,6 @@
 (()=>{'use strict';
  const root=document.querySelector('[data-order-link377]');if(!root)return;
- const waiting=new Set(['new','reviewing','awaiting_approval','revision_approved']),payable=new Set(['new','confirmed','preparing','ready','out_for_delivery','completed']),closed=new Set(['completed','cancelled','rejected','whatsapp_finalized']);
+ const waiting=new Set(['new','reviewing','awaiting_approval','revision_approved']),payable=new Set(['confirmed','preparing','ready','out_for_delivery','completed']),closed=new Set(['completed','cancelled','rejected','whatsapp_finalized']);
  function select(id){root.querySelectorAll('[role=tab]').forEach(b=>{const active=b.getAttribute('aria-controls')===id;b.setAttribute('aria-selected',String(active));document.getElementById(b.getAttribute('aria-controls')).hidden=!active;});history.replaceState(null,'','#'+id);}
  root.querySelectorAll('[role=tab]').forEach(b=>b.addEventListener('click',()=>select(b.getAttribute('aria-controls'))));
  if(['#pedido377','#conversa377','#pagamento377'].includes(location.hash))select(location.hash.slice(1));
@@ -18,7 +18,7 @@
     if(payment&&!payment.querySelector('[data-pix-confirmed405]')){const notice=document.createElement('p');notice.dataset.pixConfirmed405='';notice.setAttribute('role','status');notice.style.cssText='background:#dcfce7;color:#166534;padding:20px;border-radius:14px;font-weight:700';notice.textContent='✓ Pix confirmado — recebimento conferido pela loja.';payment.replaceChildren(notice);}
    }
    if(changed){
-    if(root.dataset.customer390==='1'&&root.dataset.payment390==='pix'&&waiting.has(current)&&payable.has(data.status))history.replaceState(null,'','#pagamento377');
+    if(root.dataset.customer390==='1'&&root.dataset.payment390==='pix'&&waiting.has(current)&&payable.has(data.status))select('pagamento377');
     const response=await fetch(location.pathname,{credentials:'same-origin',cache:'no-store',signal:controller.signal});
     if(!response.ok)return;
     const doc=new DOMParser().parseFromString(await response.text(),'text/html');

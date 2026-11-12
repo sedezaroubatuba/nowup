@@ -20,7 +20,7 @@ def pix_store(channel):
 
 @pytest.mark.parametrize('external',[False,True])
 @pytest.mark.parametrize('method',['pix','cash','debit','credit'])
-def test_pix_is_payable_immediately_and_other_methods_have_no_qr(channel,external,method):
+def test_pix_requires_merchant_acceptance_and_other_methods_have_no_qr(channel,external,method):
     m,client,slug,pid,data,product,buyer=pix_store(channel)
     data['payment_method']=method
     endpoint='/p/'+slug+'/menu/'+('whatsapp' if external else 'pedido')
@@ -28,11 +28,17 @@ def test_pix_is_payable_immediately_and_other_methods_have_no_qr(channel,externa
     result=r.json();page=client.get(result['redirect']);assert page.status_code==200
     node=BeautifulSoup(page.text,'html.parser').select_one('[data-pix-payment] script')
     with m.db() as c:assert c.execute('SELECT status FROM orders').fetchone()[0]=='new'
+    assert node is None and 'pix' not in result
+    with m.db() as c:c.execute("UPDATE orders SET status='confirmed'")
+    page=client.get(result['redirect'])
+    node=BeautifulSoup(page.text,'html.parser').select_one('[data-pix-payment] script')
     if method=='pix':
         assert node
         qr=json.loads(node.string);decoded=zxingcpp.read_barcode(Image.open(io.BytesIO(base64.b64decode(qr['qr_image'].split(',')[1]))))
         assert decoded.text==qr['payload'];assert parse(decoded.text)['54']=='3.00';assert parse(parse(decoded.text)['26'])['01']==KEY
-        if external:assert result['pix']==result['receipt']['pix']==qr
+        if external:
+            retry=client.post(endpoint,data=data).json()
+            assert retry['pix']==retry['receipt']['pix']==qr
     else:
         assert node is None and 'pix' not in result
         assert 'na entrega/retirada' in page.text or 'Dinheiro' in page.text
@@ -41,7 +47,9 @@ def test_pix_is_payable_immediately_and_other_methods_have_no_qr(channel,externa
 def test_cancelled_pix_has_refund_guidance_and_retry_cannot_replay_qr(channel):
     m,client,slug,pid,data,product,buyer=pix_store(channel)
     endpoint='/p/'+slug+'/menu/whatsapp'
-    first=client.post(endpoint,data=data).json();assert first.get('pix')
+    first=client.post(endpoint,data=data).json();assert not first.get('pix')
+    with m.db() as c:c.execute("UPDATE orders SET status='confirmed'")
+    assert client.post(endpoint,data=data).json().get('pix')
     with m.db() as c:c.execute("UPDATE orders SET status='cancelled'")
     retry=client.post(endpoint,data=data).json();assert 'pix' not in retry and 'pix' not in retry['receipt']
     page=client.get(first['redirect']);assert 'data-pix-payment' not in page.text and 'solicite a devolução do Pix' in page.text
@@ -120,4 +128,7 @@ def test_missing_pix_settings_does_not_claim_qr_is_available(channel):
     response=client.post('/p/'+slug+'/menu/whatsapp',data=data)
     assert response.status_code==200
     result=response.json();assert 'pix' not in result
+    assert 'Aguardando aceite da loja' in result['receipt']['status']
+    with m.db() as c:c.execute("UPDATE orders SET status='confirmed'")
+    result=client.post('/p/'+slug+'/menu/whatsapp',data=data).json()
     assert result['receipt']['status']=='Pedido enviado — solicite os dados Pix à loja'

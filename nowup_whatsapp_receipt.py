@@ -80,8 +80,10 @@ def build(store, name, phone, items, subtotal, fee, total, fulfillment,
     labels = {'pix': 'Pix', 'cash': 'Dinheiro', 'credit': 'Cartão de crédito',
               'debit': 'Cartão de débito', 'on_delivery': 'Combinar no atendimento'}
     paying = [labels[payment]]
-    if change:
-        paying.append('Troco para: ' + money(change))
+    if payment in ('credit','debit'):
+        paying += ['Pagamento na entrega ou retirada.', 'LEVAR MAQUININHA' if fulfillment=='delivery' else 'Preparar maquininha na retirada.']
+    if payment=='cash':
+        paying.append('Troco para: '+money(change)+' — Troco: '+money(max(0,change-total)) if change else 'Sem troco.')
     blocks.append({'title': 'PAGAMENTO', 'lines': paying})
     if notes.strip():
         blocks.append({'title': 'OBSERVAÇÕES DO PEDIDO', 'lines': notes.strip().splitlines()})
