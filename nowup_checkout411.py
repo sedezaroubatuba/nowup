@@ -1,5 +1,6 @@
 """Optional merchant POS and named tables, backed by the existing sales ledger."""
 import secrets
+from urllib.parse import quote
 import unicodedata
 from datetime import datetime,date
 from fastapi import Request,Form,HTTPException,APIRouter
@@ -32,7 +33,8 @@ def install(g):
         return sale
     def state(c,pid,sid):
         s=mapped(c,pid,sid);s['paid']=ledger.paid(c,sid);s['remaining']=s['total_cents']-s['paid']
-        s['items']=[dict(r) for r in c.execute('SELECT * FROM manual_items107 WHERE sale_id=? ORDER BY id',(sid,))]
+        s['items']=[dict(r) for r in c.execute('SELECT i.*,pr.image_filename FROM manual_items107 i LEFT JOIN products pr ON pr.id=i.product_id AND pr.professional_id=? WHERE i.sale_id=? ORDER BY i.id',(pid,sid))]
+        for item in s['items']:item['image_url']='/uploads/'+quote(item['image_filename'],safe='') if item['image_filename'] else ''
         s['payments']=[dict(r) for r in c.execute('SELECT * FROM manual_payments107 WHERE sale_id=? ORDER BY id',(sid,))]
         s['table_id']=c.execute('SELECT table_id FROM checkout_sales411 WHERE sale_id=?',(sid,)).fetchone()[0]
         return s
@@ -108,11 +110,11 @@ def install(g):
     def catalog(request:Request,q:str=''):
         with ledger.connection() as c:
             u,p=ledger.merchant(c,request);query=q.strip()[:120]
-            rows=c.execute('''SELECT id,name,price_cents,promo_price_cents,sold_by_weight370 FROM products pr WHERE professional_id=? AND available=1
+            rows=c.execute('''SELECT id,name,price_cents,promo_price_cents,sold_by_weight370,image_filename FROM products pr WHERE professional_id=? AND available=1
                 AND (CAST(id AS TEXT)=? OR lower(name) LIKE lower(?))
                 AND NOT EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) AND pc.active=0)
                 ORDER BY CASE WHEN CAST(id AS TEXT)=? THEN 0 ELSE 1 END,name LIMIT 50''',(p['id'],query,'%'+query+'%',query)).fetchall()
-        return JSONResponse({'products':[dict(id=r['id'],name=r['name'],price_cents=current_price(r),weight=bool(r['sold_by_weight370'])) for r in rows]},headers={'Cache-Control':'private, no-store'})
+        return JSONResponse({'products':[dict(id=r['id'],name=r['name'],price_cents=current_price(r),weight=bool(r['sold_by_weight370']),image_url='/uploads/'+quote(r['image_filename'],safe='') if r['image_filename'] else '') for r in rows]},headers={'Cache-Control':'private, no-store'})
 
     @router.get('/painel/checkout/vendas/{sid}')
     def snapshot(request:Request,sid:int):

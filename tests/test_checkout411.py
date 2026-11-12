@@ -135,3 +135,20 @@ def test_report_counts_link_and_manual_once_by_fulfillment(checkout):
         assert after['totals']['counter']-before['totals']['counter']==1000
         assert after['total']-before['total']==3000
         assert sum(r['code']=='CX-'+str(sid) for r in after['rows'])==1
+
+
+def test_fast_entry_order_and_catalogue_photos(checkout):
+    from bs4 import BeautifulSoup
+    m,client,pid,product,_=checkout
+    with m.db() as c:c.execute('UPDATE products SET image_filename=? WHERE id=?',('coca lata.jpg',product))
+    p=client.get('/painel/checkout/catalogo?q='+str(product)).json()['products'][0]
+    assert p['image_url']=='/uploads/coca%20lata.jpg' and p['price_cents']==500
+    sid=open_sale(client)
+    page=BeautifulSoup(client.get('/painel/checkout?sale='+str(sid)).text,'html.parser')
+    form=page.select_one('form[data-action411=item]')
+    fields=form.select('input')
+    assert fields.index(form.select_one('[name=quantity]'))<fields.index(form.select_one('[data-search411]'))
+    assert form.select_one('[data-launch412]').has_attr('hidden')
+    assert change(client,sid,'item',product_id=product,quantity=2).status_code==200
+    item=get(client,sid)['items'][0]
+    assert item['quantity']==2 and item['image_url']=='/uploads/coca%20lata.jpg'
