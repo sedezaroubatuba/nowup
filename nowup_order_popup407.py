@@ -11,7 +11,7 @@ def install(g):
                 JOIN professionals p ON p.id=o.professional_id WHERE o.id=? AND p.user_id=?''',
                 (order_id,user['id'])).fetchone()
             if not order:raise HTTPException(404,'Pedido não encontrado')
-            central=request.query_params.get('central')=='1'
+            central=request.query_params.get('central')=='1' or request.headers.get('x-nowup-whatsapp-central')=='1'
             if central and order['order_origin']!='external':raise HTTPException(404,'Pedido não encontrado nesta central')
             items=c.execute('SELECT * FROM order_items WHERE order_id=? ORDER BY id',(order_id,)).fetchall()
             options={}

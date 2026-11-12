@@ -1,5 +1,6 @@
 {% import 'order_line347.html' as lines347 %}
 <section class="nu407-detail" data-detail407 data-order-id407="{{order.id}}" data-order-status407="{{order.status}}">
+{% if central418 %}{% set receipt_text401=receipt_text408(order) %}{% set confirmed401=order.status in ['confirmed','preparing','ready','out_for_delivery','completed'] %}{% include 'order_paper408.html' %}{% else %}
 <p class="nu407-state">{{status_labels.get(order.status,order.status)}}</p>
 <h2>Pedido {{order.order_code or order.id}}</h2>
 <p><b>{{order.customer_name}}</b> · {{order.customer_phone}}</p>
@@ -10,6 +11,7 @@
 <div class="nu407-summary"><span>Entrega</span><b>R$ {{'%.2f'|format(order.delivery_fee_cents/100)|replace('.',',')}}</b></div>
 <div class="nu407-total"><span>TOTAL</span><strong>R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</strong></div>
 {% if order.notes %}<p>Observações: {{order.notes}}</p>{% endif %}
+{% endif %}
 {% if order.payment_method in ['credit','debit'] %}<p class="nu407-payment">{{'Crédito' if order.payment_method=='credit' else 'Débito'}} · {{'Levar maquininha' if order.fulfillment_type=='delivery' else 'Maquininha na retirada'}}</p>{% elif order.payment_method=='cash' %}<p class="nu407-payment">Dinheiro · {% if order.change_for_cents %}Troco para R$ {{'%.2f'|format(order.change_for_cents/100)|replace('.',',')}} · Troco: R$ {{'%.2f'|format((order.change_for_cents-order.total_cents)/100)|replace('.',',')}}{% else %}Sem troco{% endif %}</p>{% endif %}
 {% if order.payment_method=='pix' %}<p class="nu407-payment">{{'✓ Pix recebido e conferido pela loja.' if payment_checked else 'Pix: recebimento a conferir pela loja.'}}</p>{% endif %}
 {% include 'order_revision.html' %}
