@@ -51,14 +51,15 @@ def install(g):
         now=ledger.stamp();sid=c.execute('INSERT INTO manual_sales107(professional_id,label,channel,created_at,updated_at,creation_token) VALUES(?,?,?,?,?,?)',(pid,label,'delivery' if service=='delivery' else 'presential',now,now,token)).lastrowid
         c.execute('INSERT INTO checkout_sales411(sale_id,table_id,service) VALUES(?,?,?)',(sid,tid,service));ledger.history(c,sid,uid,'abrir','Mesa' if tid else service)
         return sid
-    def report(c,pid,day):
+    def report(c,pid,day,end=None):
+        end=end or day
         totals={'delivery':0,'pickup':0,'counter':0};methods={};rows=[]
         for s in c.execute("SELECT s.*,x.service,x.table_id FROM manual_sales107 s LEFT JOIN checkout_sales411 x ON x.sale_id=s.id WHERE s.professional_id=? AND s.status='completed'",(pid,)):
-            if ledger.local_day(s['closed_at'])!=day:continue
+            if not day<=ledger.local_day(s['closed_at'])<=end:continue
             kind=s['service'] or ('delivery' if s['channel']=='delivery' else 'counter');totals[kind]+=s['total_cents'];rows.append(dict(code='CX-'+str(s['id']),origin='Mesa' if s['table_id'] else 'Caixa manual',label=s['label'],kind=kind,cents=s['total_cents']))
             for p in c.execute('SELECT method,cents FROM manual_payments107 WHERE sale_id=?',(s['id'],)):methods[p['method']]=methods.get(p['method'],0)+p['cents']
         for o in c.execute("SELECT o.*,COALESCE((SELECT MAX(created_at) FROM order_status_history WHERE order_id=o.id AND status='completed'),o.updated_at,o.created_at) sold_at FROM orders o WHERE professional_id=? AND status='completed'",(pid,)):
-            if ledger.local_day(o['sold_at'])!=day:continue
+            if not day<=ledger.local_day(o['sold_at'])<=end:continue
             kind='delivery' if o['fulfillment_type']=='delivery' else 'pickup';totals[kind]+=o['total_cents'];methods[o['payment_method']]=methods.get(o['payment_method'],0)+o['total_cents'];rows.append(dict(code=o['order_code'] or str(o['id']),origin='Link' if o['order_origin']=='external' else 'Vitrine',label='',kind=kind,cents=o['total_cents']))
         return dict(totals=totals,total=sum(totals.values()),methods=methods,rows=rows)
     g['checkout_report411']=report
@@ -68,14 +69,16 @@ def install(g):
         if tab not in ('counter','tables','closed','summary'):tab='counter'
         try:chosen=date.fromisoformat(day) if day else datetime.now(ledger.TZ).date()
         except ValueError:raise HTTPException(400,'Data inválida.')
+        from nowup_period414 import selected_period
+        start,end=selected_period(request.query_params) if request.query_params.get('periodo') else (chosen,chosen)
         with ledger.connection() as c:
             u,p=ledger.merchant(c,request)
             current=state(c,p['id'],sale) if sale else None
             tables=[dict(r) for r in c.execute('''SELECT t.*,s.status,s.total_cents FROM checkout_tables411 t
                 LEFT JOIN manual_sales107 s ON s.id=t.current_sale WHERE t.professional_id=? ORDER BY t.id''',(p['id'],))] if tab=='tables' else []
             accounts=[dict(r) for r in c.execute("SELECT s.*,x.table_id FROM manual_sales107 s JOIN checkout_sales411 x ON x.sale_id=s.id WHERE s.professional_id=? AND "+("x.table_id>0 AND s.status<>'open'" if tab=='closed' else "x.table_id=0 AND s.status='open'")+" ORDER BY s.id DESC LIMIT 100",(p['id'],))] if tab in ('counter','closed') else []
-            summary=report(c,p['id'],chosen) if tab=='summary' else None
-        return g['templates'].TemplateResponse('checkout411.html',g['context'](request,pro=p,checkout411=current,tables411=tables,accounts411=accounts,tab411=tab,summary411=summary,day411=chosen.isoformat(),token411=secrets.token_urlsafe(24),methods411=ledger.METHODS,cardapio_panel408=True),headers={'Cache-Control':'private, no-store'})
+            summary=report(c,p['id'],start,end) if tab=='summary' else None
+        return g['templates'].TemplateResponse('checkout411.html',g['context'](request,pro=p,checkout411=current,tables411=tables,accounts411=accounts,tab411=tab,summary411=summary,day411=chosen.isoformat(),start=start.isoformat(),end=end.isoformat(),token411=secrets.token_urlsafe(24),methods411=ledger.METHODS,cardapio_panel408=True),headers={'Cache-Control':'private, no-store'})
 
     @router.post('/painel/checkout/mesas')
     def create_table(request:Request,name:str=Form(...)):

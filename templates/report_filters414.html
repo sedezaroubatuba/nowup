@@ -1,0 +1,5 @@
+<section class="s107-card cx411-card"><h2>Filtrar vendas</h2><div style="display:flex;gap:16px;flex-wrap:wrap">
+<form method="get"><input type="hidden" name="periodo" value="dia">{% if tab411 is defined %}<input type="hidden" name="tab" value="summary">{% endif %}<label>Dia<input name="dia" type="date" value="{{start}}" required></label><button>Ver dia</button></form>
+<form method="get"><input type="hidden" name="periodo" value="mes">{% if tab411 is defined %}<input type="hidden" name="tab" value="summary">{% endif %}<label>Mês<input name="mes" type="month" value="{{start[:7]}}" required></label><button>Ver mês</button></form>
+<form method="get"><input type="hidden" name="periodo" value="ano">{% if tab411 is defined %}<input type="hidden" name="tab" value="summary">{% endif %}<label>Ano<input name="ano" type="number" min="1" max="9998" value="{{start[:4]}}" required></label><button>Ver ano</button></form>
+</div><p>Período: {{start}} até {{end}} · Horário de Brasília.</p></section>

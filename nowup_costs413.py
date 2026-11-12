@@ -1,4 +1,4 @@
-"""Optional all-products cost control. Missing costs are never treated as zero."""
+"""Optional cost control. Missing costs use an explicit 50% estimate when enabled."""
 from decimal import Decimal,InvalidOperation
 from fastapi import Request,Form,HTTPException
 from fastapi.responses import RedirectResponse,JSONResponse
@@ -22,18 +22,30 @@ def status(c,pid):
     return dict(enabled=enabled,total=total,missing=missing,complete=enabled and missing==0)
 
 
+def effective_cost(c,pid,product_id):
+    """Keep estimates distinct from actual costs; use the current selling price."""
+    row=c.execute('SELECT p.*,pc.cost_cents FROM products p LEFT JOIN product_costs413 pc ON pc.product_id=p.id AND pc.professional_id=p.professional_id WHERE p.id=? AND p.professional_id=?',(product_id,pid)).fetchone()
+    if not row:raise HTTPException(404,'Produto não encontrado.')
+    setting=c.execute('SELECT enabled FROM cost_settings413 WHERE professional_id=?',(pid,)).fetchone()
+    if not setting or not setting['enabled']:return dict(cents=None,estimated=False)
+    from nowup_combos303 import current_price
+    return dict(cents=row['cost_cents'] if row['cost_cents'] is not None else (current_price(row)+1)//2,estimated=row['cost_cents'] is None)
+
+
 def prepare(c,pid,raw):
     # Share the store lock with activation to keep create/edit and activation atomic.
     c.execute('BEGIN IMMEDIATE')
     if getattr(c,'dialect','sqlite')=='postgres':c.execute('SELECT id FROM professionals WHERE id=? FOR UPDATE',(pid,)).fetchone()
     row=c.execute('SELECT enabled FROM cost_settings413 WHERE professional_id=?',(pid,)).fetchone()
     active=bool(row and row['enabled'])
-    if active and not str(raw).strip():raise HTTPException(400,'O controle de custos está ativo. Informe o custo deste produto.')
-    return cents(raw) if active else None
+    if raw=='__keep413':return None
+    return (cents(raw) if str(raw).strip() else -1) if active else None
 
 
 def save(c,pid,product_id,value):
     if value is None:return
+    if value==-1:
+        c.execute('DELETE FROM product_costs413 WHERE product_id=? AND professional_id=?',(product_id,pid));return
     c.execute('INSERT INTO product_costs413(product_id,professional_id,cost_cents,updated_at) VALUES(?,?,?,?) ON CONFLICT(product_id) DO UPDATE SET cost_cents=excluded.cost_cents,updated_at=excluded.updated_at',(product_id,pid,value,ledger.stamp()))
 
 
@@ -56,12 +68,14 @@ def install(g):
         page=max(1,page)
         with ledger.connection() as c:
             u,p=ledger.merchant(c,request);data=status(c,p['id'])
-            products=c.execute('SELECT p.id,p.name,p.sold_by_weight370,pc.cost_cents FROM products p LEFT JOIN product_costs413 pc ON pc.product_id=p.id AND pc.professional_id=p.professional_id WHERE p.professional_id=? ORDER BY p.id LIMIT 100 OFFSET ?',(p['id'],(page-1)*100)).fetchall()
+            products=c.execute('SELECT p.id,p.name,p.sold_by_weight370,p.price_cents,p.promo_price_cents,pc.cost_cents FROM products p LEFT JOIN product_costs413 pc ON pc.product_id=p.id AND pc.professional_id=p.professional_id WHERE p.professional_id=? ORDER BY p.id LIMIT 100 OFFSET ?',(p['id'],(page-1)*100)).fetchall()
+            from nowup_combos303 import current_price
+            products=[dict(r,estimate_cents=(current_price(r)+1)//2) for r in products]
         return g['templates'].TemplateResponse('costs413.html',g['context'](request,pro=p,costs413=data,cost_products413=products,cost_page413=page,cardapio_panel408=True),headers={'Cache-Control':'private, no-store'})
     @g['app'].post('/painel/custos/salvar')
     async def batch(request:Request):
         ledger.check_origin(request);form=await request.form()
-        values={int(key[5:]):cents(value) for key,value in form.items() if key.startswith('cost_') and key[5:].isdigit() and str(value).strip()}
+        values={int(key[5:]):cents(value) if str(value).strip() else -1 for key,value in form.items() if key.startswith('cost_') and key[5:].isdigit()}
         with ledger.connection() as c:
             u,p=ledger.merchant(c,request);c.execute('BEGIN IMMEDIATE')
             for pid,value in values.items():
@@ -75,7 +89,6 @@ def install(g):
             u,p=ledger.merchant(c,request);c.execute('BEGIN IMMEDIATE')
             if getattr(c,'dialect','sqlite')=='postgres':c.execute('SELECT id FROM professionals WHERE id=? FOR UPDATE',(p['id'],)).fetchone()
             data=status(c,p['id'])
-            if data['missing']:return RedirectResponse('/painel/custos?erro=pendencias',303)
             c.execute('INSERT INTO cost_settings413(professional_id,enabled) VALUES(?,1) ON CONFLICT(professional_id) DO UPDATE SET enabled=1',(p['id'],))
         return RedirectResponse('/painel/custos?ok=ativo',303)
     @g['app'].post('/painel/custos/desativar')

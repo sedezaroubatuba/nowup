@@ -249,11 +249,8 @@ def finalize(request:Request,sid:int,version:int=Form(...),payments_json:str=For
     return go(sid,sale['channel'])
 
 def period(params):
-    today=datetime.now(TZ).date()
-    try: start=date.fromisoformat(params.get('inicio') or today.replace(day=1).isoformat());end=date.fromisoformat(params.get('fim') or today.isoformat())
-    except ValueError: raise HTTPException(400,'Datas inválidas.')
-    if start>end or (end-start).days>366: raise HTTPException(400,'Escolha um período de até 367 dias.')
-    return start,end
+    from nowup_period414 import selected_period
+    return selected_period(params)
 
 def local_day(raw):
     dt=datetime.fromisoformat(raw.replace('Z','+00:00'))

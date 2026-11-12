@@ -39,20 +39,27 @@ def test_customer_name_and_per_unit_kitchen_details_and_prices(checkout):
     with m.db() as c:assert c.execute('SELECT COUNT(*) FROM checkout_item_details413 WHERE item_id=?',(item_id,)).fetchone()[0]==0
 
 
-def test_optional_costs_require_complete_catalogue_and_new_product_cost(checkout):
+def test_optional_costs_allow_explicit_half_price_estimate(checkout):
     m,client,pid,_,foreign=checkout
-    from nowup_costs413 import status
+    from nowup_costs413 import status,effective_cost
     with m.db() as c:
         assert not status(c,pid)['enabled']
         ids=[r[0] for r in c.execute('SELECT id FROM products WHERE professional_id=?',(pid,))]
     r=client.post('/painel/custos/ativar',follow_redirects=False)
-    assert 'erro=pendencias' in r.headers['location']
+    assert 'ok=ativo' in r.headers['location']
+    with m.db() as c:
+        assert effective_cost(c,pid,ids[0])['estimated']
+        assert effective_cost(c,pid,ids[0])['cents'] is not None
     assert client.post('/painel/custos/salvar',data={'cost_'+str(foreign):'1,00'},follow_redirects=False).status_code==404
     assert client.post('/painel/custos/salvar',data={'cost_'+str(ids[0]):'-1'},follow_redirects=False).status_code==400
     assert client.post('/painel/custos/salvar',data={'cost_'+str(i):'1,00' for i in ids},follow_redirects=False).status_code==303
     assert 'ok=ativo' in client.post('/painel/custos/ativar',follow_redirects=False).headers['location']
     data={'name':'Custo completo413','price':'10,00','category':'Geral','extras_mode':'none','available':'1'}
-    assert client.post('/painel/cardapio/produtos',data=data,follow_redirects=False).status_code==400
+    assert client.post('/painel/cardapio/produtos',data=data,follow_redirects=False).status_code==303
+    with m.db() as c:
+        created=c.execute('SELECT id FROM products WHERE professional_id=? AND name=?',(pid,data['name'])).fetchone()[0]
+        assert effective_cost(c,pid,created)=={'cents':500,'estimated':True}
+        c.execute('DELETE FROM products WHERE id=?',(created,))
     data['cost_price413']='4,00'
     assert client.post('/painel/cardapio/produtos',data=data,follow_redirects=False).status_code==303
     with m.db() as c:
@@ -61,11 +68,22 @@ def test_optional_costs_require_complete_catalogue_and_new_product_cost(checkout
         assert tuple(row)==(1000,400)
     assert client.post('/painel/pratos/publicacao',data={'publish':'1'},follow_redirects=False).status_code==303
     dish={'name':'Prato legado413','price':'15,00'}
-    assert client.post('/painel/pratos',data=dish,follow_redirects=False).status_code==400
+    assert client.post('/painel/pratos',data=dish,follow_redirects=False).status_code==303
+    with m.db() as c:c.execute('DELETE FROM products WHERE professional_id=? AND name=?',(pid,dish['name']))
     dish['cost_price413']='6,00'
     assert client.post('/painel/pratos',data=dish,follow_redirects=False).status_code==303
     with m.db() as c:assert status(c,pid)['complete']
+    assert client.get('/painel/custos').status_code==200
+    assert client.post('/painel/custos/salvar',data={'cost_'+str(ids[0]):''},follow_redirects=False).status_code==303
+    with m.db() as c:
+        assert effective_cost(c,pid,ids[0])['estimated']
+        c.execute('UPDATE products SET price_cents=1001,promo_price_cents=0 WHERE id=?',(ids[0],))
+        assert effective_cost(c,pid,ids[0])=={'cents':501,'estimated':True}
+    assert client.post('/painel/custos/salvar',data={'cost_'+str(ids[0]):'0,00'},follow_redirects=False).status_code==303
+    with m.db() as c:assert effective_cost(c,pid,ids[0])=={'cents':0,'estimated':False}
     client.post('/painel/custos/desativar',follow_redirects=False)
     data.pop('cost_price413');data['name']='Sem custo413'
     assert client.post('/painel/cardapio/produtos',data=data,follow_redirects=False).status_code==303
-    with m.db() as c:assert not status(c,pid)['enabled']
+    with m.db() as c:
+        assert not status(c,pid)['enabled']
+        assert effective_cost(c,pid,ids[0])=={'cents':None,'estimated':False}
