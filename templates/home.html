@@ -94,7 +94,7 @@ html body.v50-directory-home .v50-home .nu-logo-card{position:relative;backgroun
 html body.v50-directory-home .v50-home .nu-logo-card[data-store-open="1"]{background:linear-gradient(155deg,#fff 45%,#effff5)!important;border-color:#8ce5b0!important;box-shadow:0 2px 12px #22c55e20!important}
 html body.v50-directory-home .v50-home .nu-logo-card[data-store-open="0"]{background:#f3f4f6!important;border-color:#d7dce2!important;box-shadow:none!important}
 html body.v50-directory-home .v50-home .nu-logo-card .v50-photo{display:flex!important;align-items:center;justify-content:center;width:100%!important;height:auto!important;min-height:0!important;aspect-ratio:1.45!important;padding:12px!important;box-sizing:border-box;background:transparent!important;overflow:visible!important}
-html body.v50-directory-home .v50-home .nu-logo-card .v50-photo img{display:block;width:72%!important;height:auto!important;aspect-ratio:1!important;object-fit:contain!important;border-radius:50%!important;background:#fff;box-shadow:0 0 0 3px #fff,0 2px 8px #172b4512}
+html body.v50-directory-home .v50-home .nu-logo-card .v50-photo img{display:block;width:90%!important;height:auto!important;aspect-ratio:1!important;object-fit:contain!important;border-radius:50%!important;background:#fff;box-shadow:0 0 0 3px #fff,0 2px 8px #172b4512}
 html body.v50-directory-home .v50-home .nu-logo-card[data-store-open="0"] .v50-photo{filter:grayscale(.75);opacity:.58}
 html body.v50-directory-home .v50-home .nu-logo-card>div{align-items:center;text-align:center;gap:5px;padding:8px!important;flex:1}
 html body.v50-directory-home .v50-home .nu-logo-card h3{font-size:14px!important;min-height:0}
@@ -103,5 +103,16 @@ html body.v50-directory-home .v50-home .nu-logo-card[data-store-open="1"] .nu176
 html body.v50-directory-home .v50-home .nu-logo-card[data-store-open="0"] .v86-view-store{background:#e5e7eb!important;color:#374151!important}
 html body.v50-directory-home:not(.nu173-filtered) .v50-home .v50-business .v50-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
 @media(min-width:900px){html body.v50-directory-home:not(.nu173-filtered) .v50-home .v50-business .v50-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+
+/* Larger identities in the selected-category list, including narrow phones. */
+html body.v50-directory-home.nu173-filtered .v50-home .v50-business .v50-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
+html body.v50-directory-home.nu173-filtered .v50-home .v50-business .nu-logo-card{display:flex!important;flex-direction:column!important;padding:8px!important;gap:4px!important;min-height:0!important}
+html body.v50-directory-home.nu173-filtered .v50-home .v50-business .nu-logo-card .v50-photo{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;height:auto!important;min-height:0!important;aspect-ratio:1!important;padding:6px!important;border-radius:0!important}
+html body.v50-directory-home.nu173-filtered .v50-home .v50-business .nu-logo-card .v50-photo img{width:94%!important;height:auto!important;aspect-ratio:1!important;object-fit:contain!important;border-radius:50%!important}
+html body.v50-directory-home.nu173-filtered .v50-home .v50-business .nu-logo-card>div{display:flex!important;flex-direction:column!important;align-items:center!important;gap:8px!important;min-width:0!important;width:100%!important;box-sizing:border-box}
+html body.v50-directory-home.nu173-filtered .v50-home .v50-business .nu-logo-card h3{font-size:14px!important;text-align:center!important;min-height:2.5em!important}
+html body.v50-directory-home.nu173-filtered .v50-home .v50-business .nu-logo-card .nu176-store-status{white-space:normal!important;text-align:center!important}
+html body.v50-directory-home.nu173-filtered .v50-home .v50-business .nu-logo-card .v86-view-store{width:100%!important;min-height:40px!important}
+@media(min-width:900px){html body.v50-directory-home.nu173-filtered .v50-home .v50-business .v50-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
 </style>
 {% endblock %}
