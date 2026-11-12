@@ -3330,3 +3330,6 @@ nowup_checkout411.install(globals())
 
 import nowup_costs413
 nowup_costs413.install(globals())
+
+import nowup_onboarding416
+nowup_onboarding416.install(globals())
