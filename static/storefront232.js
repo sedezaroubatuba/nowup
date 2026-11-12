@@ -1,3 +1,13 @@
+/* Delegation also handles store headers inserted after page initialization. */
+document.addEventListener('click', event => {
+  const button = event.target.closest('.nu232-info-toggle');
+  if (!button) return;
+  const information = button.closest('.nu187-intro')?.querySelector('.nu187-information');
+  if (!information) return;
+  information.open = !information.open;
+  button.setAttribute('aria-expanded', String(information.open));
+  button.textContent = information.open ? 'Ver menos ‹' : 'Ver mais ›';
+});
 /* Integrated store cover and one sticky search/categories/banner group. */
 document.addEventListener('DOMContentLoaded', () => {
   'use strict';
@@ -6,9 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const intro = root?.querySelector('.nu187-intro');
   const nav = root?.querySelector('.menu-category-nav');
   if (!root || !bar || !intro) return;
-  const infoButton = intro.querySelector('.nu232-info-toggle');
-  const information = intro.querySelector('.nu187-information');
-  infoButton?.addEventListener('click', () => {information.open = !information.open; infoButton.setAttribute('aria-expanded', String(information.open)); infoButton.textContent = information.open ? 'Ver menos ‹' : 'Ver mais ›';});
   const mobile = matchMedia('(max-width:900px)');
   const body = document.body;
   let queued = false;
