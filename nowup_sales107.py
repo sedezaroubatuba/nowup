@@ -72,6 +72,9 @@ def initialize():
         CREATE INDEX IF NOT EXISTS manual_items107_sale ON manual_items107(sale_id);
         CREATE INDEX IF NOT EXISTS manual_payments107_sale ON manual_payments107(sale_id);
         ''')
+        cols={r[1] for r in c.execute('PRAGMA table_info(manual_sales107)')}
+        for name,definition in [('discount_kind415',"TEXT NOT NULL DEFAULT 'fixed'"),('discount_value415','INTEGER NOT NULL DEFAULT 0')]:
+            if name not in cols:c.execute('ALTER TABLE manual_sales107 ADD COLUMN '+name+' '+definition)
 
 def stamp(): return datetime.now(timezone.utc).isoformat()
 
@@ -118,7 +121,8 @@ def owned(c,pid,sid,for_update=False):
 def paid(c,sid): return c.execute('SELECT COALESCE(SUM(cents),0) FROM manual_payments107 WHERE sale_id=?',(sid,)).fetchone()[0]
 
 def recalc(c,sid):
-    total=c.execute('SELECT COALESCE(SUM(quantity*unit_price_cents),0) FROM manual_items107 WHERE sale_id=?',(sid,)).fetchone()[0]
+    from nowup_discounts415 import amounts
+    summary=amounts(c,sid);total=summary['subtotal_cents']-summary['discount_cents']
     if total>100000000: raise HTTPException(400,'Valor da conta acima do limite.')
     if total<paid(c,sid): raise HTTPException(400,'Retire ou corrija os pagamentos antes de reduzir o total da conta.')
     c.execute('UPDATE manual_sales107 SET total_cents=? WHERE id=?',(total,sid))
@@ -184,7 +188,7 @@ def create(request:Request,label:str=Form(...),channel:str=Form(...),token:str=F
     return go(sid,channel)
 
 @router.post('/painel/vendas-manuais/{sid}/alterar')
-def mutate(request:Request,sid:int,version:int=Form(...),action:str=Form(...),product_id:int=Form(0),quantity:int=Form(1),item_id:int=Form(0),payment_id:int=Form(0),method:str=Form(''),amount:str=Form(''),label:str=Form(''),notes:str=Form(''),reason:str=Form(''),refund:str=Form('')):
+def mutate(request:Request,sid:int,version:int=Form(...),action:str=Form(...),product_id:int=Form(0),quantity:int=Form(1),item_id:int=Form(0),payment_id:int=Form(0),method:str=Form(''),amount:str=Form(''),label:str=Form(''),notes:str=Form(''),reason:str=Form(''),refund:str=Form(''),discount_kind:str=Form('fixed'),discount_value:str=Form('')):
     check_origin(request)
     with connection() as c:
         u,p=merchant(c,request);c.execute('BEGIN IMMEDIATE');s=owned(c,p['id'],sid,True)
@@ -195,6 +199,11 @@ def mutate(request:Request,sid:int,version:int=Form(...),action:str=Form(...),pr
         elif action=='remove_item':
             if c.execute('DELETE FROM manual_items107 WHERE id=? AND sale_id=?',(item_id,sid)).rowcount!=1: raise HTTPException(404,'Item não encontrado.')
             recalc(c,sid);detail=f'Item {item_id}'
+        elif action=='discount':
+            from nowup_discounts415 import parse
+            value=parse(discount_kind,discount_value)
+            c.execute('UPDATE manual_sales107 SET discount_kind415=?,discount_value415=? WHERE id=?',(discount_kind,value,sid))
+            recalc(c,sid);detail=f'{discount_kind}: {value}'
         elif action=='label':
             if not label.strip() or len(label)>120: raise HTTPException(400,'Identificação inválida.')
             c.execute('UPDATE manual_sales107 SET label=? WHERE id=?',(label.strip(),sid));detail='Identificação alterada'
@@ -210,7 +219,7 @@ def mutate(request:Request,sid:int,version:int=Form(...),action:str=Form(...),pr
             detail=f'Pagamento {payment_id}, {payment["method"]}, {payment["cents"]} centavos: {reason.strip()[:500]}'
             c.execute('DELETE FROM manual_payments107 WHERE id=? AND sale_id=?',(payment_id,sid))
         elif action=='close':
-            if s['total_cents']<=0 or paid(c,sid)!=s['total_cents']: raise HTTPException(400,'Adicione produtos e registre o pagamento total antes de fechar.')
+            if not c.execute('SELECT 1 FROM manual_items107 WHERE sale_id=?',(sid,)).fetchone() or paid(c,sid)!=s['total_cents']: raise HTTPException(400,'Adicione produtos e registre o pagamento total antes de fechar.')
             c.execute("UPDATE manual_sales107 SET status='completed',closed_at=? WHERE id=?",(stamp(),sid));detail='Conta quitada'
         elif action=='cancel':
             if not reason.strip(): raise HTTPException(400,'Informe o motivo do cancelamento.')

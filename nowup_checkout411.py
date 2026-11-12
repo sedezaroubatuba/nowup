@@ -36,7 +36,8 @@ def install(g):
         if not c.execute('SELECT sale_id FROM checkout_sales411 WHERE sale_id=?',(sid,)).fetchone():raise HTTPException(404,'Venda não encontrada neste checkout.')
         return sale
     def state(c,pid,sid):
-        s=mapped(c,pid,sid);s['paid']=ledger.paid(c,sid);s['remaining']=s['total_cents']-s['paid']
+        from nowup_discounts415 import amounts
+        s=mapped(c,pid,sid);s.update(amounts(c,sid));s['paid']=ledger.paid(c,sid);s['remaining']=s['total_cents']-s['paid']
         s['items']=[dict(r) for r in c.execute('SELECT i.*,pr.image_filename FROM manual_items107 i LEFT JOIN products pr ON pr.id=i.product_id AND pr.professional_id=? WHERE i.sale_id=? ORDER BY i.id',(pid,sid))]
         for item in s['items']:item['image_url']='/uploads/'+quote(item['image_filename'],safe='') if item['image_filename'] else ''
         s['payments']=[dict(r) for r in c.execute('SELECT * FROM manual_payments107 WHERE sale_id=? ORDER BY id',(sid,))]
@@ -142,9 +143,9 @@ def install(g):
         return JSONResponse(data,headers={'Cache-Control':'private, no-store'})
 
     @router.post('/painel/checkout/vendas/{sid}/alterar')
-    def change(request:Request,sid:int,version:int=Form(...),action:str=Form(...),product_id:int=Form(0),quantity:int=Form(1),weight_grams:int=Form(0),item_id:int=Form(0),payment_id:int=Form(0),method:str=Form(''),amount:str=Form(''),notes:str=Form(''),reason:str=Form(''),refund:str=Form(''),customer_name:str=Form(''),selections_json:str=Form('')):
+    def change(request:Request,sid:int,version:int=Form(...),action:str=Form(...),product_id:int=Form(0),quantity:int=Form(1),weight_grams:int=Form(0),item_id:int=Form(0),payment_id:int=Form(0),method:str=Form(''),amount:str=Form(''),notes:str=Form(''),reason:str=Form(''),refund:str=Form(''),customer_name:str=Form(''),selections_json:str=Form(''),discount_kind:str=Form('fixed'),discount_value:str=Form('')):
         ledger.check_origin(request)
-        if action not in ('item','remove_item','payment','remove_payment','close','cancel','customer'):raise HTTPException(400,'Ação inválida.')
+        if action not in ('item','remove_item','payment','remove_payment','close','cancel','customer','discount'):raise HTTPException(400,'Ação inválida.')
         with ledger.connection() as c:
             u,p=ledger.merchant(c,request);mapped(c,p['id'],sid)
         if action=='customer':
@@ -182,7 +183,7 @@ def install(g):
                 else:ledger.add_item(c,p['id'],sid,product_id,quantity,notes)
                 c.execute('UPDATE manual_sales107 SET version=version+1,updated_at=? WHERE id=?',(ledger.stamp(),sid));ledger.history(c,sid,u['id'],'item','Código '+str(product_id)+', quantidade '+str(weight_grams or quantity))
         else:
-            ledger.mutate(request,sid,version,action,product_id=0,quantity=1,item_id=item_id,payment_id=payment_id,method=method,amount=amount,label='',notes='',reason=reason,refund=refund)
+            ledger.mutate(request,sid,version,action,product_id=0,quantity=1,item_id=item_id,payment_id=payment_id,method=method,amount=amount,label='',notes='',reason=reason,refund=refund,discount_kind=discount_kind,discount_value=discount_value)
         with ledger.connection() as c:
             u,p=ledger.merchant(c,request);result=state(c,p['id'],sid)
         if 'application/json' in request.headers.get('accept',''):return JSONResponse(result,headers={'Cache-Control':'no-store'})
