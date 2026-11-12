@@ -175,3 +175,9 @@ html body.public-profile-area.nu233-store [data-native-menu] .nu207-banners .nu2
 html body.public-profile-area.nu233-store [data-native-menu] .nu207-banners .nu207-controls{position:relative;justify-content:center;min-height:32px;gap:8px!important;margin:3px 0 0!important;padding:0 98px!important}
 html body.public-profile-area.nu233-store [data-native-menu] .nu207-controls>button{position:absolute;right:0;white-space:nowrap;font-size:11px!important;color:#79648e!important}
 html body.public-profile-area.nu233-store [data-native-menu] .nu216-banner-dot[aria-current=true]:after{width:20px;border-radius:8px;background:#7434c6}
+
+/* The cover already carries the brand: no floating avatar over store actions. */
+html body.public-profile-area.nu233-store [data-native-menu] .nu187-intro.nu233-has-cover .nu187-avatar{display:none!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu187-intro.nu233-has-cover .nu187-identity{pointer-events:none!important;min-height:0!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu187-intro .nu232-info-row{position:relative;z-index:2;flex-wrap:wrap!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu187-intro .nu232-info-toggle{position:relative;z-index:1;touch-action:manipulation}
