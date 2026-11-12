@@ -3,7 +3,7 @@ import json
 import re
 from urllib.parse import quote
 from fastapi import Request, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 
 CONFIRMED={'confirmed','preparing','ready','out_for_delivery','completed'}
 PAYMENTS={'pix':'Pix','cash':'Dinheiro','credit':'Cartão de crédito na entrega/retirada','debit':'Cartão de débito na entrega/retirada','on_delivery':'Combinar com a loja'}
@@ -95,4 +95,6 @@ def install(g):
             if o['payment_method']!='pix' or o['status'] not in CONFIRMED:raise HTTPException(409,'Confirme um pedido Pix antes de registrar o recebimento')
             c.execute('INSERT INTO order_payment_checks401(order_id,checked_by,amount_cents,checked_at) VALUES(?,?,?,?) ON CONFLICT(order_id) DO UPDATE SET checked_by=excluded.checked_by,amount_cents=excluded.amount_cents,checked_at=excluded.checked_at',(order_id,u['id'],o['total_cents'],g['now_iso']()))
             c.execute('UPDATE orders SET updated_at=? WHERE id=?',(g['now_iso'](),order_id));c.commit()
+        if 'application/json' in request.headers.get('accept',''):
+            return JSONResponse({'id':order_id,'payment_confirmed':True},headers={'Cache-Control':'private, no-store'})
         return RedirectResponse('/pedidos/'+str(order_id)+'/notinha',303)

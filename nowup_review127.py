@@ -2,7 +2,7 @@ from nowup_combos303 import current_price
 """Revisões de pedido com aprovação explícita e valores em centavos."""
 import json
 from fastapi import Request, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 
 EARLY={'new','reviewing','revision_approved'}
 
@@ -86,6 +86,8 @@ def install(g):
             c.execute("INSERT INTO order_revisions(order_id,items_json,total_cents,message,created_at) VALUES(?,?,?,?,?)",(order_id,json.dumps(items),total,message,now()))
             status(c,o,'awaiting_approval');notify(c,o,'Seu pedido precisa de aprovação',f'A loja propôs uma alteração. Novo total: R$ {total/100:.2f}. Confira e aceite ou recuse.')
             c.commit()
+            if 'application/json' in request.headers.get('accept',''):
+                return JSONResponse({'id':order_id,'status':'awaiting_approval'},headers={'Cache-Control':'private, no-store'})
             if form.get('return_to')=='link':return RedirectResponse('/pedido/'+o['tracking_token'],303)
             return RedirectResponse(f'/painel?abrir_pedido={order_id}#pedido-{order_id}',303)
         finally:c.close()

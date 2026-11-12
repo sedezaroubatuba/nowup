@@ -11,6 +11,8 @@ def install(g):
                 JOIN professionals p ON p.id=o.professional_id WHERE o.id=? AND p.user_id=?''',
                 (order_id,user['id'])).fetchone()
             if not order:raise HTTPException(404,'Pedido não encontrado')
+            central=request.query_params.get('central')=='1'
+            if central and order['order_origin']!='external':raise HTTPException(404,'Pedido não encontrado nesta central')
             items=c.execute('SELECT * FROM order_items WHERE order_id=? ORDER BY id',(order_id,)).fetchall()
             options={}
             for option in c.execute('''SELECT op.* FROM order_item_options op JOIN order_items i
@@ -18,7 +20,7 @@ def install(g):
                 options.setdefault(option['order_item_id'],[]).append(option)
             paid=g['nowup_notinha401'].payment_checked(c,order)
             return g['templates'].TemplateResponse('merchant_order407.html',{
-                'request':request,'user':user,'order':order,'items':items,'options':options,
+                'request':request,'central418':central,'user':user,'order':order,'items':items,'options':options,
                 'order_items_by_order':{order_id:items},'order_item_options':options,
                 'review_customer':False,'order_link377':False,'payment_checked':paid,
                 'status_labels':g['ORDER_STATUS_LABELS']},headers={'Cache-Control':'private, no-store'})

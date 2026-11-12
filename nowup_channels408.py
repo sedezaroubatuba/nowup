@@ -49,6 +49,10 @@ def install(g):
             if not pro:raise HTTPException(404,'Loja não encontrada')
             lower,upper=g['order_day_bounds'](datetime.now(g['SAO_PAULO_TZ']).date())
             board=g['nowup_merchant228'].board(c,pro['id'],lower,upper,g['SAO_PAULO_TZ'],channel='cardapio')
+            checks={r['order_id']:r['amount_cents'] for r in c.execute('SELECT p.order_id,p.amount_cents FROM order_payment_checks401 p JOIN orders o ON o.id=p.order_id WHERE o.professional_id=?',(pro['id'],))}
+            for stage in board['stages']:
+                for order in stage['orders']:
+                    order['payment_checked418']=order['payment_method']=='pix' and order['status'] in g['nowup_notinha401'].CONFIRMED and checks.get(order['id'])==order['total_cents']
         template='menu_orders_fragment408.html' if fragment else 'menu_orders408.html'
         return g['templates'].TemplateResponse(template,g['context'](request,pro=pro,kanban=board,
             status_labels=g['ORDER_STATUS_LABELS'],cardapio_panel408=True),headers={'Cache-Control':'private, no-store'})
