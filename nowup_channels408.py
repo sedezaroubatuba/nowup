@@ -55,9 +55,10 @@ def install(g):
             checks={r['order_id']:r['amount_cents'] for r in c.execute('SELECT p.order_id,p.amount_cents FROM order_payment_checks401 p JOIN orders o ON o.id=p.order_id WHERE o.professional_id=?',(pro['id'],))}
             for stage in board['stages']:
                 for order in stage['orders']:
+                    order['pix_pending422']=order['payment_method']=='pix' and checks.get(order['id'])!=order['total_cents']
                     if order['status']=='preparing':
                         order['next_status'],order['next_label']=('out_for_delivery','Saiu para entrega') if order['fulfillment_type']=='delivery' else ('completed','Marcar entregue / retirado')
-                    order['payment_checked418']=order['payment_method']=='pix' and order['status'] in g['nowup_notinha401'].CONFIRMED and checks.get(order['id'])==order['total_cents']
+                    order['payment_checked418']=order['payment_method']=='pix' and order['status'] in (g['nowup_notinha401'].CONFIRMED|{'new'}) and checks.get(order['id'])==order['total_cents']
         template='menu_orders_fragment408.html' if fragment else 'menu_orders408.html'
         return g['templates'].TemplateResponse(template,g['context'](request,pro=pro,kanban=board,
             status_labels={**g['ORDER_STATUS_LABELS'],'new':'Recebido','confirmed':'Pedido confirmado','completed':'Entregue'},wa_config421=wa_config421,cardapio_panel408=True),headers={'Cache-Control':'private, no-store'})
