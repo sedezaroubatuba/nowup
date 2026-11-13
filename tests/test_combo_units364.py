@@ -21,7 +21,7 @@ def combo(checkout):
         fries=c.execute("INSERT INTO products(professional_id,name,price_cents,extras_mode,available,created_at,updated_at) VALUES(?,'Batata',1000,'none',1,'2026-11-05','2026-11-05')",(store['id'],)).lastrowid
         parent=parse_config({'combo_items':[{'product_id':child,'name':'X-frango','quantity':2},{'product_id':fries,'name':'Batata','quantity':1}]})
         c.execute('UPDATE products SET name=?,price_cents=4500,is_combo256=1,customization192=? WHERE id=?',('2 X-frango + fritas',json.dumps(parent),combo_id));c.commit()
-    units=[{'key':'i0u0','product_id':child,'customization':{'removed':['Tomate']},'options':[{'id':option,'price':0}]},{'key':'i0u1','product_id':child,'customization':{'removed':['Cebola']},'options':[]}]
+    units=[{'key':'i0u0','product_id':child,'customization':{'removed':['Tomate']},'options':[{'id':option,'quantity':1}]},{'key':'i0u1','product_id':child,'customization':{'removed':['Cebola']},'options':[]}]
     raw={'id':combo_id,'quantity':1,'customization':{'units364':units}}
     return m,client,url,data,store,child,fries,option,raw
 
