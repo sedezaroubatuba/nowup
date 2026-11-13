@@ -309,12 +309,12 @@ def update_order(c,a,oid,v,why):
  o=c.execute('SELECT * FROM orders WHERE id=?',(oid,)).fetchone()
  if not o:fail(404,'Pedido não encontrado.')
  if 'status' in v and v['status']!=o['status']:
-  target=v['status'];allowed={'new','reviewing','confirmed','preparing','ready','out_for_delivery','completed','cancelled','rejected'}
+  target=v['status'];allowed={'new','awaiting_payment','reviewing','confirmed','preparing','ready','out_for_delivery','completed','cancelled','rejected'}
   if target not in allowed:fail(400,'Situação inválida.')
   if o['status'] in FINALS:fail(409,'Pedido encerrado: a situação não pode ser reaberta.')
   if o['status']=='awaiting_approval' and target not in {'cancelled','rejected'}:fail(409,'Aguarde a aprovação do cliente.')
-  if o['status'] in {'new','reviewing','revision_approved'} and target not in {'reviewing','confirmed','cancelled','rejected'}:fail(409,'Confirme o pedido antes de iniciar o preparo.')
-  rank={'new':0,'reviewing':0,'revision_approved':0,'confirmed':1,'preparing':2,'ready':3,'out_for_delivery':4,'completed':5}
+  if o['status'] in {'new','awaiting_payment','reviewing','revision_approved'} and target not in {'reviewing','confirmed','cancelled','rejected'}:fail(409,'Confirme o pedido antes de iniciar o preparo.')
+  rank={'new':0,'awaiting_payment':0,'reviewing':0,'revision_approved':0,'confirmed':1,'preparing':2,'ready':3,'out_for_delivery':4,'completed':5}
   if target in rank and rank[target]<rank.get(o['status'],0):fail(409,'Não é permitido voltar etapas do pedido.')
   if target in {'cancelled','rejected'} and len(why.strip())<8:fail(400,'Justifique o cancelamento.')
   from nowup_inventory391 import order_status
