@@ -12,7 +12,7 @@
  const label=document.createElement('span'),retry=document.createElement('button');retry.type='button';retry.textContent='Atualizar reserva';retry.hidden=true;status.append(label,retry);root.querySelector('.nu-menu-sticky')?.append(status);
  let accepted=[],last='',version=0,queue=Promise.resolve(),suppress=false,pending=false,valid=false,expires=0;
  const entries=()=>window.NOWUP_CART160?.entries389()||[];
- const payload=rows=>rows.map(v=>({id:v.productId,quantity:v.quantity,options:v.options||[],notes:v.notes||'',utensils:!!v.utensils,customization:v.customization||{groups:{},removed:[]}}));
+ const payload=rows=>rows.map(v=>({id:v.productId,quantity:v.quantity,options:(v.options||[]).map(o=>({id:Number(o.id),quantity:o.quantity||1})),notes:v.notes||'',utensils:!!v.utensils,customization:v.customization||{groups:{},removed:[]}}));
  function buttons(){if(pending||!valid)root.querySelectorAll('[data-checkout],[data-dock-checkout],form [type=submit]').forEach(b=>b.disabled=true);}
  function stock(data){for(const product of data||[]){const card=root.querySelector('[data-product][data-id="'+product.id+'"]');if(!card||product.mode==='none')continue;card.dataset.liveStock391=JSON.stringify(product);const colors=[...card.querySelectorAll('[data-group192="fashionColor385"]')],sizes=[...card.querySelectorAll('[data-group192="fashionSize385"]')];const size=sizes.find(i=>i.checked)?.value||'',color=colors.find(i=>i.checked)?.value||'';
  const balance=(s,c)=>product.variants.filter(v=>(product.mode==='total'||!s||v.size===s)&&(product.mode!=='variants'||!c||v.color===c)).reduce((n,v)=>n+v.available,0);
