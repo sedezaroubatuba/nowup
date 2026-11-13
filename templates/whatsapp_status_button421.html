@@ -1,0 +1,7 @@
+{% set wa_status421='cancelled' if order.status=='rejected' else order.status %}
+{% if wa_status421 in ['new','confirmed','preparing','out_for_delivery','completed','cancelled'] %}
+<div class="wa421" data-wa-status421="{{order.id}}" data-status421="{{wa_status421}}" data-phone421="{{order.customer_phone or ''}}" data-customer421="{{order.customer_name}}" data-code421="{{order.order_code or ('#' ~ order.id)}}">
+<a class="btn wa421-send" data-wa-send421 target="_blank" rel="noopener noreferrer" hidden>Enviar status no WhatsApp</a>
+<p data-wa-missing421 hidden>Cliente sem WhatsApp</p><small data-wa-sent421 role="status"></small><small>Envio manual: toque em Enviar na conversa do WhatsApp.</small>
+</div>
+{% endif %}
