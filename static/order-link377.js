@@ -1,6 +1,6 @@
 (()=>{'use strict';
  const root=document.querySelector('[data-order-link377]');if(!root)return;
- const waiting=new Set(['new','reviewing','awaiting_approval','revision_approved']),payable=new Set(['confirmed','preparing','ready','out_for_delivery','completed']),closed=new Set(['completed','cancelled','rejected','whatsapp_finalized']);
+ const waiting=new Set(['new','awaiting_payment','reviewing','awaiting_approval','revision_approved']),payable=new Set(['awaiting_payment','confirmed','preparing','ready','out_for_delivery','completed']),closed=new Set(['completed','cancelled','rejected','whatsapp_finalized']);
  function select(id){root.querySelectorAll('[role=tab]').forEach(b=>{const active=b.getAttribute('aria-controls')===id;b.setAttribute('aria-selected',String(active));document.getElementById(b.getAttribute('aria-controls')).hidden=!active;});history.replaceState(null,'','#'+id);}
  root.querySelectorAll('[role=tab]').forEach(b=>b.addEventListener('click',()=>select(b.getAttribute('aria-controls'))));
  if(['#pedido377','#conversa377','#pagamento377'].includes(location.hash))select(location.hash.slice(1));
