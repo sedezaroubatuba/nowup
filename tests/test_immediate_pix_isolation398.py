@@ -20,15 +20,16 @@ def pix_store(channel):
 
 @pytest.mark.parametrize('external',[False,True])
 @pytest.mark.parametrize('method',['pix','cash','debit','credit'])
-def test_pix_requires_merchant_acceptance_and_other_methods_have_no_qr(channel,external,method):
+def test_pix_is_available_while_awaiting_payment_and_other_methods_have_no_qr(channel,external,method):
     m,client,slug,pid,data,product,buyer=pix_store(channel)
     data['payment_method']=method
     endpoint='/p/'+slug+'/menu/'+('whatsapp' if external else 'pedido')
     r=client.post(endpoint,data=data,headers={'Accept':'application/json'});assert r.status_code==200,r.text
     result=r.json();page=client.get(result['redirect']);assert page.status_code==200
     node=BeautifulSoup(page.text,'html.parser').select_one('[data-pix-payment] script')
-    with m.db() as c:assert c.execute('SELECT status FROM orders').fetchone()[0]=='new'
-    assert node is None and 'pix' not in result
+    with m.db() as c:assert c.execute('SELECT status FROM orders').fetchone()[0]==('awaiting_payment' if method=='pix' else 'new')
+    assert bool(node)==(method=='pix')
+    assert ('pix' in result)==(method=='pix' and external)
     with m.db() as c:c.execute("UPDATE orders SET status='confirmed'")
     page=client.get(result['redirect'])
     node=BeautifulSoup(page.text,'html.parser').select_one('[data-pix-payment] script')
@@ -47,7 +48,7 @@ def test_pix_requires_merchant_acceptance_and_other_methods_have_no_qr(channel,e
 def test_cancelled_pix_has_refund_guidance_and_retry_cannot_replay_qr(channel):
     m,client,slug,pid,data,product,buyer=pix_store(channel)
     endpoint='/p/'+slug+'/menu/whatsapp'
-    first=client.post(endpoint,data=data).json();assert not first.get('pix')
+    first=client.post(endpoint,data=data).json();assert first.get('pix')
     with m.db() as c:c.execute("UPDATE orders SET status='confirmed'")
     assert client.post(endpoint,data=data).json().get('pix')
     with m.db() as c:c.execute("UPDATE orders SET status='cancelled'")
@@ -62,7 +63,7 @@ def test_pix_cannot_be_automatically_cancelled_after_customer_could_pay(channel)
     with m.db() as c:
         c.execute('UPDATE orders SET created_at=?',((now-timedelta(minutes=20)).isoformat(),))
         assert m.nowup_scheduling380.expire(c,now)==0
-        assert c.execute('SELECT status FROM orders').fetchone()[0]=='new'
+        assert c.execute('SELECT status FROM orders').fetchone()[0]=='awaiting_payment'
 
 
 def test_cardapio_pages_do_not_render_marketplace_navigation(channel):
@@ -128,7 +129,7 @@ def test_missing_pix_settings_does_not_claim_qr_is_available(channel):
     response=client.post('/p/'+slug+'/menu/whatsapp',data=data)
     assert response.status_code==200
     result=response.json();assert 'pix' not in result
-    assert 'Aguardando aceite da loja' in result['receipt']['status']
+    assert 'Aguardando Confirmação de Pagamento' in result['receipt']['status']
     with m.db() as c:c.execute("UPDATE orders SET status='confirmed'")
     result=client.post('/p/'+slug+'/menu/whatsapp',data=data).json()
-    assert result['receipt']['status']=='Pedido enviado — solicite os dados Pix à loja'
+    assert result['receipt']['status']=='Aguardando Confirmação de Pagamento — solicite os dados Pix à loja'
