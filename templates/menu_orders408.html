@@ -2,9 +2,12 @@
 {% block title %}Pedidos do WhatsApp | NowUp{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="/static/menu-orders418.css?v=419"><link rel="stylesheet" href="/static/order-review127.css?v=379"><link rel="stylesheet" href="/static/order-receipt401.css?v=407"><link rel="stylesheet" href="/static/order-popup407.css?v=407-2">
+<link rel="stylesheet" href="/static/whatsapp-status421.css?v=421">
+<script type="application/json" id="wa-config421">{{wa_config421|tojson}}</script>
 <main class="wc418" data-whatsapp-central418>
 <header class="wc418-header"><div><small>CARDÁPIO DA LOJA</small><h1>Pedidos do WhatsApp</h1><p>{{pro.display_name}} · Todos os pedidos do link próprio em uma tela.</p></div><a class="btn soft" href="/painel">Produtos e painel da loja</a></header>
 <nav class="wc418-links" aria-label="Canais de pedidos"><a class="btn primary" href="/painel/cardapio/pedidos" aria-current="page">WhatsApp / Cardápio</a>{% if pro.plan_active in ['ambos','completo'] %}<a class="btn soft" href="/painel#pedidos">Pedidos da Vitrine</a>{% endif %}<a class="btn soft" href="/p/{{pro.slug}}/menu?loja=1" target="_blank" rel="noopener">Abrir meu Cardápio</a></nav>
+<p><a class="btn soft" href="/painel/cardapio/mensagens-whatsapp">Mensagens WhatsApp · configurar textos</a></p>
 <p class="wc418-note">Os pedidos do Cardápio continuam sendo enviados pelo cliente ao WhatsApp. Aqui você atende os mesmos pedidos, sem duplicar e sem abrir cada link em uma aba. O registro nesta central não comprova o envio da mensagem no WhatsApp.</p>
 <div class="wc418-tools"><label>Buscar pedido ou cliente<input type="search" data-search418 placeholder="Número, cliente ou telefone" autocomplete="off"></label><label>Etapa<select data-stage418><option value="all">Todas as etapas</option>{% for stage in kanban.stages %}<option value="{{stage.key}}">{{stage.title}}</option>{% endfor %}</select></label><button type="button" class="btn soft" data-refresh418>Atualizar agora</button></div>
 <p class="wc418-live" role="status" aria-live="polite" data-menu-status408>Atualização automática a cada 5 segundos enquanto esta tela estiver aberta.</p>
@@ -12,5 +15,5 @@
 <div data-menu-orders408>{% include 'menu_orders_fragment408.html' %}</div>
 <p data-search-empty418 hidden>Nenhum pedido corresponde à busca nesta etapa.</p>
 <dialog class="wc418-dialog" data-central-dialog418 aria-labelledby="central-dialog-title418"><header><h2 id="central-dialog-title418">Atender pedido</h2><button type="button" class="btn soft" data-close418 aria-label="Fechar pedido">Fechar</button></header><div data-detail-host418></div></dialog>
-</main><script src="/static/menu-orders408.js?v=419" defer></script>
+</main><script src="/static/whatsapp-status421.js?v=421" defer></script><script src="/static/menu-orders408.js?v=419" defer></script>
 {% endblock %}
