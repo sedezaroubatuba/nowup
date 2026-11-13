@@ -18,7 +18,7 @@
 {% if order.status in ['confirmed','preparing','ready','out_for_delivery'] %}
 <form action="/painel/pedidos/{{order.id}}/status" method="post"><label>Atualizar pedido<select name="status">{% for value in ['confirmed','preparing','ready','out_for_delivery','completed'] %}<option value="{{value}}" {% if order.status==value %}selected{% endif %}>{{status_labels.get(value,value)}}</option>{% endfor %}</select></label><button type="submit" class="nu407-accept">Salvar status</button></form>
 {% endif %}
-{% if order.payment_method=='pix' and not payment_checked and order.status in ['confirmed','preparing','ready','out_for_delivery','completed'] %}<form action="/painel/pedidos/{{order.id}}/conferir-pix" method="post"><label><input type="checkbox" required> Conferi o crédito no banco</label><button type="submit" class="nu407-secondary">Confirmar Pix recebido</button></form>{% endif %}
+{% if order.payment_method=='pix' and not payment_checked and order.status in ['awaiting_payment','confirmed','preparing','ready','out_for_delivery','completed'] %}<form action="/painel/pedidos/{{order.id}}/conferir-pix" method="post"><label><input type="checkbox" required> Conferi o crédito no banco</label><button type="submit" class="nu407-secondary">Confirmar Pix recebido</button></form>{% endif %}
 <a class="nu407-secondary" href="/pedido/{{order.tracking_token}}" target="_blank" rel="noopener">Conversa e acompanhamento completo</a>
 </section>
 
