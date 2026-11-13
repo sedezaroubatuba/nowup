@@ -4,7 +4,7 @@ import json
 from fastapi import Request, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
 
-EARLY={'new','reviewing','revision_approved'}
+EARLY={'new','awaiting_payment','reviewing','revision_approved'}
 
 def initialize(conn):
     conn.execute('''CREATE TABLE IF NOT EXISTS order_revisions(id INTEGER PRIMARY KEY AUTOINCREMENT,order_id INTEGER NOT NULL,items_json TEXT NOT NULL,total_cents INTEGER NOT NULL,state TEXT NOT NULL DEFAULT 'pending',message TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL)''')
