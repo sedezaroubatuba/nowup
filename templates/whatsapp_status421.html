@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Mensagens WhatsApp | {{pro.display_name}}{% endblock %}
+{% block content %}
+<main class="container" style="max-width:800px;padding-block:24px">
+<h1>Mensagens WhatsApp</h1><p>{{pro.display_name}} · Configurações da Loja</p>
+<p><a href="/painel#perfil">Voltar às configurações</a> · <a href="/painel/cardapio/pedidos">Pedidos do Cardápio</a></p>
+{% if request.query_params.get('ok')=='salvo' %}<p role="status">Configurações salvas nesta loja.</p>{% endif %}
+<p>O botão abre uma mensagem pronta no WhatsApp do cliente. Você precisa tocar em <b>Enviar</b> no WhatsApp. Nenhuma mensagem é enviada automaticamente.</p>
+<form method="post" action="/painel/cardapio/mensagens-whatsapp" class="product-form">
+<label class="full"><span><input type="checkbox" name="enabled" value="1" {% if wa_settings421.enabled %}checked{% endif %}> Mostrar botão de envio nos pedidos do Cardápio</span></label>
+<p class="full">Variáveis disponíveis: <code>{% raw %}{{nome_cliente}}, {{numero_pedido}}, {{nome_loja}}{% endraw %}</code>.</p>
+{% for key,label,default in wa_statuses421 %}
+<label class="full">{{label}}<textarea name="{{key}}" required maxlength="1500" rows="4" style="width:100%" data-message421="{{key}}">{{wa_settings421.templates[key]}}</textarea><button type="button" class="btn soft" data-restore421="{{key}}">Restaurar padrão de {{label}}</button></label>
+{% endfor %}
+<div class="full"><button class="btn primary" name="action" value="save">Salvar mensagens</button> <button class="btn soft" name="action" value="restore" formnovalidate>Restaurar todos os padrões</button></div>
+</form>
+<script type="application/json" id="wa-defaults421">{{wa_defaults421|tojson}}</script>
+<script src="/static/whatsapp-status421.js?v=421" defer></script>
+</main>
+{% endblock %}
