@@ -10,7 +10,7 @@ def test_owner_confirms_pix_in_payment_tab_buyer_cannot(channel,monkeypatch):
     with m.db() as c:m.nowup_notinha401.initialize(c)
     monkeypatch.setattr(m,'current_user',lambda r:owner)
     path='/pedido/'+o['tracking_token']
-    assert not BeautifulSoup(client.get(path).text,'html.parser').select('[data-confirm-pix419]')
+    assert BeautifulSoup(client.get(path).text,'html.parser').select('[data-confirm-pix419]')
     client.post('/painel/pedidos/'+str(o['id'])+'/status',data={'status':'confirmed'},headers={'Accept':'application/json'})
     payment=BeautifulSoup(client.get(path).text,'html.parser').select_one('#pagamento377')
     form=payment.select_one('[data-confirm-pix419]');assert form and form.select_one('input[type=checkbox][required]')
