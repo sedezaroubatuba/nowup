@@ -120,5 +120,5 @@ def payment(store, cents, txid='***'):
     qr.add_data(code); qr.make(fit=True)
     output = io.BytesIO(); qr.make_image(fill_color='black', back_color='white').save(output, format='PNG')
     return {'payload': code, 'qr_image': 'data:image/png;base64,' + base64.b64encode(output.getvalue()).decode(),
-            'receiver': receiver, 'key': key, 'amount': 'R$ ' + f'{cents / 100:.2f}'.replace('.', ','),
+            'receiver': receiver, 'amount': 'R$ ' + f'{cents / 100:.2f}'.replace('.', ','),
             'confirmation': 'Confirmação do pagamento feita pela loja.'}
