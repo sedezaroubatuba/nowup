@@ -49,10 +49,15 @@ def install(g):
             if not pro:raise HTTPException(404,'Loja não encontrada')
             lower,upper=g['order_day_bounds'](datetime.now(g['SAO_PAULO_TZ']).date())
             board=g['nowup_merchant228'].board(c,pro['id'],lower,upper,g['SAO_PAULO_TZ'],channel='cardapio')
+            from nowup_whatsapp_status421 import settings as whatsapp_settings421
+            wa_config421=whatsapp_settings421(c,pro['id'])
+            wa_config421['storeName']=pro['display_name']
             checks={r['order_id']:r['amount_cents'] for r in c.execute('SELECT p.order_id,p.amount_cents FROM order_payment_checks401 p JOIN orders o ON o.id=p.order_id WHERE o.professional_id=?',(pro['id'],))}
             for stage in board['stages']:
                 for order in stage['orders']:
+                    if order['status']=='preparing':
+                        order['next_status'],order['next_label']=('out_for_delivery','Saiu para entrega') if order['fulfillment_type']=='delivery' else ('completed','Marcar entregue / retirado')
                     order['payment_checked418']=order['payment_method']=='pix' and order['status'] in g['nowup_notinha401'].CONFIRMED and checks.get(order['id'])==order['total_cents']
         template='menu_orders_fragment408.html' if fragment else 'menu_orders408.html'
         return g['templates'].TemplateResponse(template,g['context'](request,pro=pro,kanban=board,
-            status_labels=g['ORDER_STATUS_LABELS'],cardapio_panel408=True),headers={'Cache-Control':'private, no-store'})
+            status_labels={**g['ORDER_STATUS_LABELS'],'new':'Recebido','confirmed':'Pedido confirmado','completed':'Entregue'},wa_config421=wa_config421,cardapio_panel408=True),headers={'Cache-Control':'private, no-store'})
