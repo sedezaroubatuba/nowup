@@ -703,6 +703,8 @@ def init_db():
     ensure_column(conn, "order_items", "price_per_kg370", "INTEGER NOT NULL DEFAULT 0")
     import nowup_storeapp257
     nowup_storeapp257.initialize(conn)
+    from nowup_whatsapp_status421 import initialize as initialize_whatsapp_status421
+    initialize_whatsapp_status421(conn)
     import nowup_auth247
     nowup_auth247.initialize(conn)
     nowup_marketing309.initialize(conn)
@@ -3336,3 +3338,7 @@ nowup_onboarding416.install(globals())
 
 import nowup_sessions420
 nowup_sessions420.install(globals())
+
+# Per-store manual WhatsApp status links (Cardapio only).
+import nowup_whatsapp_status421
+nowup_whatsapp_status421.install(globals())
