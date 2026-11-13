@@ -24,7 +24,7 @@ def test_ten_cards_actions_payment_and_channel_isolation(channel,monkeypatch):
     assert 'ONLY-VITRINE-418' not in page.text and 'OTHER-STORE-418' not in page.text
     assert soup.select_one('[data-search418]') and soup.select_one('[data-central-dialog418]')
     card=soup.select_one('[data-menu-order408="'+str(o['id'])+'"]')
-    assert card.select_one('button[value=confirmed]') and 'Pix · aguarda aceite' in card.text
+    assert card.select_one('button[value=confirmed]') and 'Aguardando Confirmação de Pagamento' in card.text
     assert client.get('/painel/pedidos/'+str(foreign)+'/detalhes407?central=1').status_code==404
     path='/painel/pedidos/'+str(o['id'])
     accepted=client.post(path+'/status',data={'status':'confirmed'},headers=JSON,follow_redirects=False)
