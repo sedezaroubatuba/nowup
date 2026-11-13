@@ -1,12 +1,12 @@
 {% set revision=order_revision(order.id) %}
-<section class="nu-revision" data-review-box>{% if not review_customer %}<p><a class="btn soft" href="{{('/p/' ~ store_app256.slug) if review_customer and store_app256 else ''}}/pedidos/{{order.id}}/notinha">{{"Imprimir pedido" if order.status in ["confirmed","preparing","ready","out_for_delivery","completed"] else "Imprimir conferência"}}</a></p>{% endif %}{% if order.scheduled_for380 %}<p class="alert"><b>Agendamento solicitado: {{schedule_label380(order.scheduled_for380)}}</b><br>{{'Aguardando confirmação da loja para esse horário.' if order.status in ['new','reviewing','awaiting_approval','revision_approved'] else 'Consulte o status do pedido abaixo.'}}</p>{% endif %}
+<section class="nu-revision" data-review-box>{% if not review_customer %}<p><a class="btn soft" href="{{('/p/' ~ store_app256.slug) if review_customer and store_app256 else ''}}/pedidos/{{order.id}}/notinha">{{"Imprimir pedido" if order.status in ["confirmed","preparing","ready","out_for_delivery","completed"] else "Imprimir conferência"}}</a></p>{% endif %}{% if order.scheduled_for380 %}<p class="alert"><b>Agendamento solicitado: {{schedule_label380(order.scheduled_for380)}}</b><br>{{'Aguardando confirmação da loja para esse horário.' if order.status in ['new','awaiting_payment','reviewing','awaiting_approval','revision_approved'] else 'Consulte o status do pedido abaixo.'}}</p>{% endif %}
 {% if revision and revision.state=='pending' and order.status=='awaiting_approval' %}
 <h3>Aguardando aprovação do cliente</h3><p>O pedido original permanece válido até a aprovação.</p>
 {% if revision.message %}<p>{{revision.message}}</p>{% endif %}
 <h4>Pedido proposto</h4><p>Total anterior: R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</p>{% for item in revision['items'] %}<p>{{item.quantity}} × {{item.product_name}} — R$ {{'%.2f'|format(item.quantity*item.unit_price_cents/100)|replace('.',',')}}</p>{% endfor %}
 <p>Entrega: R$ {{'%.2f'|format(order.delivery_fee_cents/100)|replace('.',',')}}</p><strong>Novo total: R$ {{'%.2f'|format(revision.total_cents/100)|replace('.',',')}}</strong>
 {% if review_customer %}<form action="/pedido/{{order.tracking_token}}/revisao/{{revision.id}}" method="post" class="nu-review-actions"><button name="decision" value="accept" class="nu-confirm">Aceitar alteração</button><button name="decision" value="decline" class="nu-review">Não aceitar / pedir outra opção</button><button name="decision" value="cancel" class="nu-refuse">Cancelar pedido</button></form>{% endif %}
-{% elif not review_customer and order.status in ['new','reviewing','revision_approved'] %}
+{% elif not review_customer and order.status in ['new','awaiting_payment','reviewing','revision_approved'] %}
 <div class="nu390-confirm-total"><span>Total para confirmar</span><strong>R$ {{'%.2f'|format(order.total_cents/100)|replace('.',',')}}</strong></div>
 <div class="nu-review-actions">
 
