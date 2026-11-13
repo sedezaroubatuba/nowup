@@ -2231,7 +2231,7 @@ def pro_product_availability(request: Request, product_id: int, available: int=F
         if not changed: raise HTTPException(404,"Produto não encontrado")
         conn.commit()
     finally: conn.close()
-    return RedirectResponse("/painel?ok=disponibilidade#cardapio",303)
+    return catalog_return328(request,f"/painel?ok=disponibilidade#produto-editor328-{product_id}")
 
 @app.post("/painel/cardapio/adicionais")
 def pro_option_from_section(request: Request, product_id: int=Form(...), option_name: str=Form(...), option_price: str=Form("0"), option_kind: str=Form("add")):
