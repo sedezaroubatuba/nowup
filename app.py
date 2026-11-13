@@ -1,4 +1,6 @@
 from __future__ import annotations
+from fastapi import Depends
+from nowup_checkout_security422 import checkout_fields, check_store, initial_status
 import nowup_storeapp257
 import nowup_storeapp256
 import nowup_marketing309
@@ -705,6 +707,8 @@ def init_db():
     nowup_storeapp257.initialize(conn)
     from nowup_whatsapp_status421 import initialize as initialize_whatsapp_status421
     initialize_whatsapp_status421(conn)
+    from nowup_notinha401 import initialize as initialize_payment_checks422
+    initialize_payment_checks422(conn)
     import nowup_auth247
     nowup_auth247.initialize(conn)
     nowup_marketing309.initialize(conn)
@@ -1050,14 +1054,14 @@ def delivery_quote89(conn, pro, neighborhood):
 def merchant_overview89(conn, pro):
     lower,upper=order_day_bounds(datetime.now(SAO_PAULO_TZ).date())
     today=conn.execute("SELECT status,total_cents FROM orders WHERE professional_id=? AND created_at>=? AND created_at<?",(pro["id"],lower,upper)).fetchall()
-    active=[dict(row) for row in conn.execute("SELECT id,order_code,customer_name,status,created_at,fulfillment_type FROM orders WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND status IN ('new','reviewing','awaiting_approval','revision_approved','confirmed','preparing','ready','out_for_delivery') ORDER BY id",(pro["id"],))]
+    active=[dict(row) for row in conn.execute("SELECT id,order_code,customer_name,status,created_at,fulfillment_type FROM orders WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND status IN ('new','awaiting_payment','reviewing','awaiting_approval','revision_approved','confirmed','preparing','ready','out_for_delivery') ORDER BY id",(pro["id"],))]
     now=datetime.now(timezone.utc)
     for order in active:
         try: age=max(0,int((now-datetime.fromisoformat(order["created_at"])).total_seconds()/60))
         except ValueError: age=0
         order["age_minutes"]=age
-        order["late"]=age>5 if order["status"]=='new' else (age>int(pro["prep_minutes"] or 40) and order["status"] in ('confirmed','preparing'))
-    return {"today_count":len(today),"completed_cents":sum(r["total_cents"] for r in today if r["status"]=='completed'),"pending":sum(o["status"]=='new' for o in active),"active_count":len(active),"late_count":sum(o["late"] for o in active),"active_orders":active,"shop_status":shop_status(pro)}
+        order["late"]=age>5 if order["status"] in ('new','awaiting_payment') else (age>int(pro["prep_minutes"] or 40) and order["status"] in ('confirmed','preparing'))
+    return {"today_count":len(today),"completed_cents":sum(r["total_cents"] for r in today if r["status"]=='completed'),"pending":sum(o["status"] in ('new','awaiting_payment') for o in active),"active_count":len(active),"late_count":sum(o["late"] for o in active),"active_orders":active,"shop_status":shop_status(pro)}
 
 @app.get("/painel/resumo89")
 def pro_overview89(request: Request):
@@ -1284,13 +1288,14 @@ def cart_completion247(request: Request, request_key: str):
         return JSONResponse({'confirmed':bool(row),'path':'/p/'+row['slug'] if row else None},headers={'Cache-Control':'private, no-store'})
     finally:conn.close()
 
-@app.post("/p/{slug}/menu/pedido")
+@app.post("/p/{slug}/menu/pedido", dependencies=[Depends(checkout_fields)])
 def native_menu_order(request: Request, slug: str, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: str=Form(""), address_reference: str=Form(""), change_for: str=Form(""), notes: str=Form(""), cart_json: str=Form(...), save_address: Optional[str]=Form(None), order_channel: str=Form("internal"), request_key: str=Form(""), scheduled_for380: str=Form(""), basket_key391: str=Form("")):
     logged=current_user(request)
     conn=db()
     try:
         p=conn.execute("SELECT * FROM professionals WHERE slug=? AND blocked=0 AND admission_status='approved' AND plan_active IN ('cardapio','ambos','completo') AND EXISTS(SELECT 1 FROM users owner255 WHERE owner255.id=professionals.user_id AND owner255.is_active=1)",(slug,)).fetchone()
         if not p: conn.close(); raise HTTPException(404)
+        check_store(request,p["id"])
         if p['is_demo'] and slug in ('nowup-moda-demonstracao','nowup-moda-modelo'):
             conn.close();raise HTTPException(409,'Loja de demonstração: produtos e preços ilustrativos, sem pedidos reais.')
         if logged and logged['id']==p['user_id']:
@@ -1306,6 +1311,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
             conn.close(); raise HTTPException(403,"Ative um plano com cardápio ou catálogo para usar este recurso")
         from nowup_plans339 import require_internal_checkout405
         require_internal_checkout405(p,request,order_channel)
+        check_store(request,p["id"])
         from nowup_checkout229 import begin_checkout, completed_response
         existing,checkout_key229,checkout_hash229=begin_checkout(conn,logged['id'],p['id'],request_key,{
             'cart':cart_json,'name':customer_name,'phone':customer_phone,'fulfillment':fulfillment_type,
@@ -1319,11 +1325,12 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
         p=conn.execute("SELECT * FROM professionals WHERE id=? AND blocked=0 AND admission_status='approved' AND plan_active IN ('cardapio','ambos','completo') AND EXISTS(SELECT 1 FROM users owner255 WHERE owner255.id=professionals.user_id AND owner255.is_active=1)"+lock255,(p['id'],)).fetchone()
         if not p:raise HTTPException(409,"Esta loja não está recebendo pedidos. Revise seu carrinho.")
         require_internal_checkout405(p,request,order_channel)
+        check_store(request,p["id"])
         clean_items,subtotal,delivery_fee,neighborhood,total,change_for_cents=nowup_storeapp257.validate(globals(),conn,p,cart_json,fulfillment_type,payment_method,address,neighborhood,change_for,scheduled_for380)
         customer_id=logged['id'] if logged else None
         created=now_iso(); tracking_token=secrets.token_urlsafe(24)
         cur=conn.execute("""INSERT INTO orders(professional_id,customer_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at,subtotal_cents,delivery_fee_cents,neighborhood,address_reference,change_for_cents,tracking_token)
-          VALUES(?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?)""",(p["id"],customer_id,customer_name.strip()[:120],customer_phone.strip()[:30],fulfillment_type,address.strip()[:300],notes.strip()[:500],"new",total,created,created,subtotal,delivery_fee,neighborhood.strip()[:120],address_reference.strip()[:220],change_for_cents,tracking_token))
+          VALUES(?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?)""",(p["id"],customer_id,customer_name.strip()[:120],customer_phone.strip()[:30],fulfillment_type,address.strip()[:300],notes.strip()[:500],initial_status(payment_method),total,created,created,subtotal,delivery_fee,neighborhood.strip()[:120],address_reference.strip()[:220],change_for_cents,tracking_token))
         if not logged:
             conn.execute('INSERT INTO guest_order_limits(professional_id,phone,created_at) VALUES(?,?,?)',(p['id'],normalize_phone(customer_phone),created))
             conn.execute('DELETE FROM guest_order_limits WHERE created_at<?',((datetime.now(timezone.utc)-timedelta(days=2)).isoformat(),))
@@ -1332,7 +1339,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
         attach(conn,dict(p),customer_id,basket_key391,clean_items,order_id)
         nowup_scheduling380.save(conn,order_id,p,scheduled_for380)
         order_code=f"NU-{order_id:06d}"; conn.execute("UPDATE orders SET payment_method=?,order_code=?,order_origin='nowup' WHERE id=?",(payment_method,order_code,order_id))
-        conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)",(order_id,"new",created))
+        conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)",(order_id,initial_status(payment_method),created))
         for product,qty,item_notes,chosen,unit in clean_items:
             item_cur=conn.execute("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes,combo_pack305) VALUES(?,?,?,?,?,?,?)",(order_id,product["id"],product["name"],qty,unit,item_notes,product.get("combo_pack305", "")))
             from nowup_inventory391 import snapshot as fashion_snapshot391
@@ -1357,6 +1364,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
 
 ORDER_STATUS_LABELS={
   "whatsapp_finalized":"Finalizado no cardápio - WhatsApp",
+  "awaiting_payment":"Aguardando Confirmação de Pagamento",
   "new":"Aguardando aceite", "confirmed":"Pedido aceito", "preparing":"Em preparo",
   "reviewing":"Em conferência", "awaiting_approval":"Aguardando aprovação do cliente", "revision_approved":"Alteração aprovada",
   "ready":"Pronto", "out_for_delivery":"Saiu para entrega", "completed":"Concluído",
@@ -1852,8 +1860,8 @@ def pro_new_orders(request: Request, after: int=0):
     rows=conn.execute("""SELECT id,customer_name,total_cents,created_at FROM orders
       WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND id>? AND created_at>=? AND created_at<? ORDER BY id ASC LIMIT 10""",(p["id"],max(0,after),lower,upper)).fetchall()
     latest=conn.execute("SELECT COALESCE(MAX(id),0) FROM orders WHERE professional_id=?",(p["id"],)).fetchone()[0]
-    pending=conn.execute("SELECT COUNT(*) FROM orders WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND status='new' AND (accept_after380='' OR accept_after380<=?)",(p["id"],now_iso())).fetchone()[0]
-    pending_order=conn.execute("SELECT id,order_code,customer_name,total_cents,subtotal_cents,delivery_fee_cents,payment_method,fulfillment_type,address_reference,notes,updated_at,created_at,status FROM orders WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND status='new' AND (accept_after380='' OR accept_after380<=?) ORDER BY id DESC LIMIT 1",(p["id"],now_iso())).fetchone()
+    pending=conn.execute("SELECT COUNT(*) FROM orders WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND status IN ('new','awaiting_payment') AND (accept_after380='' OR accept_after380<=?)",(p["id"],now_iso())).fetchone()[0]
+    pending_order=conn.execute("SELECT id,order_code,customer_name,total_cents,subtotal_cents,delivery_fee_cents,payment_method,fulfillment_type,address_reference,notes,updated_at,created_at,status FROM orders WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND status IN ('new','awaiting_payment') AND (accept_after380='' OR accept_after380<=?) ORDER BY id DESC LIMIT 1",(p["id"],now_iso())).fetchone()
     pending_data=dict(pending_order) if pending_order else None
     if pending_data:
         pending_data['items']=[dict(i) for i in conn.execute('SELECT product_name,quantity,unit_price_cents,notes FROM order_items WHERE order_id=? ORDER BY id',(pending_data['id'],))]
@@ -2286,16 +2294,16 @@ def pro_order_status(request: Request, order_id: int, status: str=Form(...), rea
     if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
     if order["status"]=='awaiting_approval' and status not in {'cancelled','rejected'}:
         conn.close(); raise HTTPException(409,"Aguarde a aprovação do cliente")
-    if status=='reviewing' and order["status"] not in {'new','reviewing','revision_approved'}:
+    if status=='reviewing' and order["status"] not in {'new','awaiting_payment','reviewing','revision_approved'}:
         conn.close(); raise HTTPException(409,"Este pedido já foi confirmado")
-    if order["status"] in {'new','reviewing','revision_approved'} and status not in {'reviewing','confirmed','cancelled','rejected'}:
+    if order["status"] in {'new','awaiting_payment','reviewing','revision_approved'} and status not in {'reviewing','confirmed','cancelled','rejected'}:
         conn.close(); raise HTTPException(409,"Confirme o pedido antes de iniciar o preparo")
     if status==order["status"]:
         conn.rollback(); conn.close()
         if "application/json" in request.headers.get("accept", ""):
             return order_status_response407(request,order_id,status)
         return RedirectResponse("/pedido/"+order["tracking_token"] if return_to=="link" else f"/painel?abrir_pedido={order_id}#pedido-{order_id}",303)
-    rank={"reviewing":0,"revision_approved":0,"new":0,"confirmed":1,"preparing":2,"ready":3,"out_for_delivery":4,"completed":5}
+    rank={"reviewing":0,"revision_approved":0,"new":0,"awaiting_payment":0,"confirmed":1,"preparing":2,"ready":3,"out_for_delivery":4,"completed":5}
     if order["status"] in {"completed","cancelled","rejected","whatsapp_finalized"} or (status in rank and rank[status]<rank.get(order["status"],0)):
         conn.rollback(); conn.close(); return RedirectResponse(f"/painel?erro=pedido-encerrado&abrir_pedido={order_id}#pedido-{order_id}",303)
     reason=reason.strip()[:300]
@@ -2376,12 +2384,12 @@ def pro_update(request: Request, display_name: str=Form(...), business_type: str
     conn.commit(); conn.close(); return RedirectResponse("/painel?ok=perfil#perfil",303)
 
 def customer_order_summary202(conn, customer_id):
-    active=("new","reviewing","awaiting_approval","revision_approved","confirmed","preparing","ready","out_for_delivery")
+    active=("new","awaiting_payment","reviewing","awaiting_approval","revision_approved","confirmed","preparing","ready","out_for_delivery")
     cutoff=(datetime.now(timezone.utc)-timedelta(hours=24)).isoformat()
     rows=conn.execute("""SELECT o.id,o.order_code,o.status,o.fulfillment_type,o.tracking_token,
       o.updated_at,p.display_name FROM orders o JOIN professionals p ON p.id=o.professional_id
       WHERE o.customer_id=? AND o.tracking_token!='' AND
-      (o.status IN ('new','reviewing','awaiting_approval','revision_approved','confirmed','preparing','ready','out_for_delivery')
+      (o.status IN ('new','awaiting_payment','reviewing','awaiting_approval','revision_approved','confirmed','preparing','ready','out_for_delivery')
        OR (o.status IN ('completed','cancelled','rejected','whatsapp_finalized') AND o.updated_at>=?))
       ORDER BY CASE WHEN o.status IN ('completed','cancelled','rejected','whatsapp_finalized') THEN 1 ELSE 0 END,o.id DESC""",(customer_id,cutoff)).fetchall()
     result=[]
@@ -2580,7 +2588,7 @@ def admin(request: Request, inicio: str="", fim: str=""):
     if report_start>report_end: report_start,report_end=report_end,report_start
     if (report_end-report_start).days>366: report_start=report_end-timedelta(days=366)
     report_orders=conn.execute("""SELECT COUNT(*) total,
-      SUM(CASE WHEN status='new' THEN 1 ELSE 0 END) new_orders,
+      SUM(CASE WHEN status IN ('new','awaiting_payment') THEN 1 ELSE 0 END) new_orders,
       SUM(CASE WHEN status IN ('confirmed','preparing','ready','out_for_delivery') THEN 1 ELSE 0 END) accepted,
       SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) completed,
       SUM(CASE WHEN status IN ('cancelled','rejected') THEN 1 ELSE 0 END) cancelled,
