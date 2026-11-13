@@ -4,6 +4,7 @@
     const section=document.createElement('section');section.style.cssText='padding:18px;border:1px solid #dfd0ed;border-radius:16px;background:#fff;margin:16px 0;color:#241a31';
     const title=document.createElement('h3');title.textContent='Pagar com Pix';section.append(title);
     const amount=document.createElement('p');amount.textContent='Valor: '+pix.amount+' • Recebedor informado: '+pix.receiver;section.append(amount);
+    const warning=document.createElement('p');warning.setAttribute('role','alert');warning.dataset.pixWarning422='';warning.textContent='Atenção: antes de confirmar o pagamento no seu banco, confira se o destinatário é o estabelecimento escolhido';warning.style.cssText='padding:16px;border:2px solid #a16207;border-radius:12px;background:#fef3c7;color:#713f12;font-weight:750';section.append(warning);
     const img=document.createElement('img');img.src=pix.qr_image;img.alt='QR Code Pix com o valor do pedido';img.style.cssText='display:block;width:270px;max-width:100%;height:auto;margin:12px auto';section.append(img);
     const label=document.createElement('label');label.textContent='Pix Copia e Cola';
     const value=document.createElement('textarea');value.readOnly=true;value.value=pix.payload;value.rows=4;value.style.cssText='width:100%;box-sizing:border-box;font:13px monospace;word-break:break-all';label.append(value);section.append(label);
