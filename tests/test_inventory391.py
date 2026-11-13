@@ -25,7 +25,7 @@ def inventory(channel,monkeypatch):
   if request.headers.get('x-owner391'):return owner
   return dict(buyer,id=int(request.headers.get('x-user391',buyer['id'])))
  monkeypatch.setattr(m,'current_user',user)
- cart=lambda qty=2,color='Preto':json.dumps([{'id':product,'quantity':qty,'price':1,'customization':{'groups':{'fashionSize385':['M'],'fashionColor385':[color]}}}])
+ cart=lambda qty=2,color='Preto':json.dumps([{'id':product,'quantity':qty,'customization':{'groups':{'fashionSize385':['M'],'fashionColor385':[color]}}}])
  return m,client,slug,pid,data,product,buyer,ids,cart
 
 
