@@ -1,4 +1,4 @@
-{% set wa_status421='cancelled' if order.status=='rejected' else order.status %}
+{% set wa_status421='cancelled' if order.status=='rejected' else ('new' if order.status=='awaiting_payment' else order.status) %}
 {% if wa_status421 in ['new','confirmed','preparing','out_for_delivery','completed','cancelled'] %}
 <div class="wa421" data-wa-status421="{{order.id}}" data-status421="{{wa_status421}}" data-phone421="{{order.customer_phone or ''}}" data-customer421="{{order.customer_name}}" data-code421="{{order.order_code or ('#' ~ order.id)}}">
 <a class="btn wa421-send" data-wa-send421 target="_blank" rel="noopener noreferrer" hidden>Enviar status no WhatsApp</a>
