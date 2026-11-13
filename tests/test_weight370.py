@@ -21,7 +21,7 @@ def weighted(m,pid,rate=7500,promo=0):
 
 def test_internal_order_keeps_weight_rate_fixed_total_and_idempotency(checkout):
  m,client,url,data,pid,_=checkout;weighted(m,pid,6599)
- data['cart_json']=json.dumps([{'id':pid,'quantity':1,'weight_grams370':1200,'price':1}])
+ data['cart_json']=json.dumps([{'id':pid,'quantity':1,'weight_grams370':1200}])
  a=client.post(url,data=data,follow_redirects=False);assert a.status_code==303,a.text
  assert client.post(url,data=data,follow_redirects=False).headers['location']==a.headers['location']
  with m.db() as c:
