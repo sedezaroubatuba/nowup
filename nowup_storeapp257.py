@@ -1,3 +1,5 @@
+from fastapi import Depends
+from nowup_checkout_security422 import checkout_fields, check_store, initial_status
 from nowup_combos303 import current_price
 """Independent WhatsApp checkout, with shared server-side cart validation."""
 import json
@@ -46,6 +48,8 @@ def validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighbor
     if not isinstance(raw_items,list) or not raw_items: raise HTTPException(400,"Carrinho vazio")
     if len(raw_items)>50:
         raise HTTPException(400,"O carrinho permite até 50 itens diferentes. Divida o pedido.")
+    from nowup_checkout_security422 import validate_cart, check_totals
+    validate_cart(raw_items)
     clean_items=[]; subtotal=0; quantities255={}; fashion_stock389={}
     for raw in raw_items:
         try:
@@ -101,6 +105,7 @@ def validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighbor
         try: delivery_fee,neighborhood=g['delivery_quote89'](conn,p,neighborhood)
         except HTTPException: raise
     total=subtotal+delivery_fee
+    check_totals(subtotal,delivery_fee,total)
     payment_labels={"pix":"Pix","cash":"Dinheiro","credit":"Cartão de crédito","debit":"Cartão de débito","on_delivery":"Combinar no atendimento"}
     payment_method=payment_method if payment_method in payment_labels else "pix"
     change_for_cents=g['price_to_cents'](change_for) if payment_method=="cash" and change_for.strip() else 0
@@ -115,16 +120,18 @@ def money(cents):
 def immediate_payment398(g,conn,result,token):
     # Never replay a cached QR after an edit, cancellation or changed store key.
     order=g['tracked_order'](conn,token)
-    pix=g['pix_payment'](order,order['total_cents'],'NU'+str(order['id'])) if order and order['payment_method']=='pix' and order['status'] in ('confirmed','preparing','ready','out_for_delivery','completed') else None
+    paid=bool(order and g['nowup_notinha401'].payment_checked(conn,order))
+    pix=g['pix_payment'](order,order['total_cents'],'NU'+str(order['id'])) if order and not paid and order['payment_method']=='pix' and order['status'] in ('awaiting_payment','confirmed','preparing','ready','out_for_delivery','completed') else None
     result.pop('pix',None);result['receipt'].pop('pix',None)
     if order:
         result['total_cents']=order['total_cents'];result['receipt']['total']=money(order['total_cents'])
-        if order['status'] in ('cancelled','rejected'):result['receipt']['status']='Pedido encerrado — se já pagou, solicite a devolução à loja'
-        elif order['status']=='new':result['receipt']['status']='Aguardando aceite da loja — você ainda não precisa pagar'
+        if paid and order['status'] not in ('cancelled','rejected'):result['receipt']['status']='Pix recebido e confirmado pela loja'+(' — aguardando aceite dos itens' if order['status']=='new' else '')
+        elif order['status'] in ('cancelled','rejected'):result['receipt']['status']='Pedido encerrado — se já pagou, solicite a devolução à loja'
+        elif order['status']=='awaiting_payment':result['receipt']['status']='Aguardando Confirmação de Pagamento'
         elif order['status'] in ('reviewing','awaiting_approval','revision_approved'):result['receipt']['status']='Pedido em revisão — aguarde a atualização do total para pagar'
     if pix:result['pix']=pix;result['receipt']['pix']=pix
-    elif order and order['payment_method']=='pix' and order['status'] in ('confirmed','preparing','ready','out_for_delivery','completed'):
-        result['receipt']['status']='Pedido enviado — solicite os dados Pix à loja'
+    elif order and not paid and order['payment_method']=='pix' and order['status'] in ('awaiting_payment','confirmed','preparing','ready','out_for_delivery','completed'):
+        result['receipt']['status']='Aguardando Confirmação de Pagamento — solicite os dados Pix à loja'
     return result
 
 
@@ -146,9 +153,9 @@ def install(g):
         finally:conn.close()
         return RedirectResponse('/painel?ok=whatsapp#cardapio-independente',303)
 
-    @app.post('/p/{slug}/menu/whatsapp')
+    @app.post('/p/{slug}/menu/whatsapp', dependencies=[Depends(checkout_fields)])
     def whatsapp_checkout257(request:Request,slug:str,customer_name:str=Form(...),customer_phone:str=Form(''),cart_json:str=Form(...),fulfillment_type:str=Form('pickup'),payment_method:str=Form('pix'),address:str=Form(''),neighborhood:str=Form(''),address_reference:str=Form(''),change_for:str=Form(''),notes:str=Form(''),request_key:str=Form(...),save_address:str=Form(''),scheduled_for380:str=Form(''),basket_key391:str=Form('')):
-        p=store(g,slug);user=g['require_user'](request,'customer')
+        p=store(g,slug);check_store(request,p['id']);user=g['require_user'](request,'customer')
         fashion385=dict(p).get('business_type')=='fashion'
         if fashion385 and dict(p).get('is_demo') and p['slug'] in ('nowup-moda-demonstracao','nowup-moda-modelo'):
             raise HTTPException(409,'Loja de demonstração: produtos e preços ilustrativos, sem pedidos reais.')
@@ -188,7 +195,7 @@ def install(g):
         try:
             if len(message)>12000:raise HTTPException(400,'Pedido muito extenso para o WhatsApp. Divida os itens.')
             result={'prepared':True,'recorded':False,'mode':mode,'message':message,'total_cents':total,'receipt':receipt}
-            status376='new'
+            status376=initial_status(payment_method)
             created=datetime.now(timezone.utc).isoformat();token=secrets.token_urlsafe(24)
             cur=conn.execute("""INSERT INTO orders(professional_id,customer_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at,subtotal_cents,delivery_fee_cents,neighborhood,address_reference,change_for_cents,tracking_token)
                 VALUES(?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?)""",(p['id'],identity or None,name,customer_phone,fulfillment_type,address.strip(),notes.strip(),status376,total,created,created,subtotal,fee,area,address_reference.strip(),change,token))
@@ -221,7 +228,7 @@ def install(g):
             result['review_required']=False
             result['whatsapp_only']=False
             result['payment_method']=payment_method
-            result['receipt']['status']='Aguardando aceite da loja — o Pix será liberado após a confirmação' if payment_method=='pix' else 'Pedido enviado — pagamento na entrega ou retirada'
+            result['receipt']['status']='Aguardando Confirmação de Pagamento' if payment_method=='pix' else 'Pedido enviado — pagamento na entrega ou retirada'
             from nowup_menu_origin355 import email_origin
             base=email_origin() or str(request.base_url).rstrip('/')
             result['order_url']=base+result['redirect']
