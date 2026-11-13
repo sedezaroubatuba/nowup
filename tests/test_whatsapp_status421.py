@@ -63,6 +63,7 @@ def test_cardapio_status_link_data_and_mutation_leave_vitrine_untouched(env):
         assert [tuple(r) for r in c.execute("SELECT id,status FROM orders WHERE COALESCE(order_origin,'legacy')<>'external'")]==before
     fragment=client.get('/painel/cardapio/pedidos?fragment=1')
     assert f'data-wa-status421="{oid}"' in fragment.text
+    assert client.post(f'/painel/pedidos/{oid}/conferir-pix',headers={'Accept':'application/json'}).status_code==200
     for status in ('preparing','out_for_delivery','completed'):
         assert client.post(f'/painel/pedidos/{oid}/status',data={'status':status},headers={'Accept':'application/json'}).json()['status']==status
     assert 'data-status421="completed"' in client.get('/painel/cardapio/pedidos?fragment=1').text
