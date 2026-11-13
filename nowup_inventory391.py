@@ -141,6 +141,8 @@ def write_balances(c,product_ids):
 
 
 def order_status(c,oid,status):
+    from nowup_checkout_security422 import require_pix_received
+    require_pix_received(c,oid,status)
     o=c.execute('SELECT o.*,p.business_type FROM orders o JOIN professionals p ON p.id=o.professional_id WHERE o.id=?',(oid,)).fetchone()
     if not o or o['business_type']!='fashion':return
     lock_store(c,o['professional_id']);owner='order:'+str(oid)
