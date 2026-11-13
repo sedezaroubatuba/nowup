@@ -94,18 +94,22 @@ def test_checkout_uses_only_merchant_key_and_server_prices(channel):
     data['cart_json'] = json.dumps([{'id': product, 'quantity': 2, 'price': 1}])
     data['pix_key'] = 'bad-client-key'
     response = client.post('/p/' + slug + '/menu/whatsapp', data=data)
+    assert response.status_code == 400, response.text
+    data.pop('pix_key')
+    data['cart_json']=json.dumps([{'id':product,'quantity':2}])
+    response=client.post('/p/'+slug+'/menu/whatsapp',data=data)
     assert response.status_code == 200, response.text
     result = response.json()
-    assert 'pix' not in result and 'pix' not in result['receipt']
+    assert result['pix']==result['receipt']['pix']
     assert result['review_required'] is False
     assert result['receipt']['order_code'] == result['order_code']
     assert client.post('/p/' + slug + '/menu/whatsapp', data=data).json() == result
     with m.db() as c:
         assert c.execute('SELECT COUNT(*) FROM orders').fetchone()[0] == 1
-        assert c.execute('SELECT status FROM orders').fetchone()[0] == 'new'
+        assert c.execute('SELECT status FROM orders').fetchone()[0] == 'awaiting_payment'
     before = client.get(result['redirect'])
     assert before.status_code == 200
-    assert 'data-pix-payment' not in before.text
+    assert 'data-pix-payment' in before.text
     with m.db() as c:
         c.execute("UPDATE orders SET status='confirmed'")
     after = client.get(result['redirect'])
