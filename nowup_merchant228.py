@@ -2,7 +2,7 @@
 from datetime import datetime
 
 STAGES = (
-    ('new', 'Novos', ('new', 'reviewing', 'awaiting_approval', 'revision_approved')),
+    ('new', 'Novos', ('new', 'awaiting_payment', 'reviewing', 'awaiting_approval', 'revision_approved')),
     ('preparing', 'Em preparo', ('confirmed', 'preparing', 'ready')),
     ('delivery', 'Em entrega', ('out_for_delivery',)),
     ('closed', 'Encerrados', ('completed', 'cancelled', 'rejected', 'whatsapp_finalized')),
@@ -38,6 +38,7 @@ def board(conn, professional_id, lower, upper, tz, channel="vitrine"):
         status = order['status']
         order['next_status'], order['next_label'] = {
             'new': ('confirmed', 'Aceitar pedido'),
+            'awaiting_payment': ('confirmed', 'Conferir / aceitar itens'),
             'revision_approved': ('confirmed', 'Aceitar pedido'),
             'confirmed': ('preparing', 'Iniciar preparo'),
             'preparing': ('ready', 'Marcar como pronto'),
