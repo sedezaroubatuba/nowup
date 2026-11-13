@@ -29,17 +29,20 @@
    if(g.quantity_mode&&g.options.length===1)continue;
    if(g.quantity_mode){
     const box=el('fieldset','',{class:'nu301-quantity-group'}),count=el('small','',{'data-count-quantity301':'',role:'status'});
-    box.append(el('legend',g.name),el('p','Escolha '+g.max+' unidades no total. Você pode repetir sabores.'));
+    const groupName=g.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(),kind=/energ/.test(groupName)?'energéticos':/gelo/.test(groupName)?'gelos':null;
+    const title=g.min===g.max?(kind?'Escolha seus '+g.max+' '+kind:'Escolha '+g.max+' unidades · '+g.name):g.name;
+    box.append(el('legend',title),el('p',(g.min===g.max?'':'Escolha '+(g.min?'de '+g.min+' a ':'até ')+g.max+' unidades. ')+(kind==='gelos'?'Combine os sabores como preferir. Pode repetir!':'Misture as opções ou repita sua favorita.')));
+    const progress=el('progress','',{max:String(g.max),value:'0','aria-label':'Progresso de '+g.name});
     const controls=[];
-    const sync=()=>{const total=controls.reduce((n,i)=>n+(Number(i.value)||0),0);count.textContent=total+' de '+g.max+' unidades escolhidas';controls.forEach(i=>i._plus301.disabled=total>=g.max);};count._sync301=sync;
+    const sync=()=>{const total=controls.reduce((n,i)=>n+(Number(i.value)||0),0);count.textContent='Selecionados: '+total+' de '+g.max;progress.value=total;controls.forEach(i=>{i._plus301.disabled=total>=g.max;i._minus424.disabled=Number(i.value)<=0;i.closest('.nu301-quantity-option').classList.toggle('is-selected',Number(i.value)>0);});};count._sync301=sync;
     g.options.forEach(name=>{
      const row=el('div','',{class:'nu301-quantity-option'}),amount=el('div','',{class:'nu301-counter'}),minus=el('button','−',{type:'button','aria-label':'Diminuir '+name}),input=el('input','',{type:'number',min:'0',max:String(g.max),step:'1',value:'0','aria-label':'Quantidade de '+name,'data-quantity301':'','data-group192':g.id,'data-option301':name}),plus=el('button','+',{type:'button','aria-label':'Aumentar '+name});
-     input._plus301=plus;controls.push(input);
+     input._plus301=plus;input._minus424=minus;controls.push(input);
      function set(value){const other=controls.filter(i=>i!==input).reduce((n,i)=>n+(Number(i.value)||0),0);input.value=String(Math.max(0,Math.min(g.max-other,parseInt(value,10)||0)));sync();}
      plus.onclick=()=>{set(Number(input.value)+1);input.dispatchEvent(new Event('input',{bubbles:true}));};minus.onclick=()=>{set(Number(input.value)-1);input.dispatchEvent(new Event('input',{bubbles:true}));};input.oninput=()=>set(input.value);
-     const optionIndex=g.options.indexOf(name),ref=g.item_refs325?.[optionIndex],imageMap=parse(card.dataset.comboImages303)||{};const imageName=ref?imageMap[ref.kind+':'+ref.id]:imageMap[String(g.product_ids?.[optionIndex])];if(imageName){const image=el('img','',{src:'/uploads/'+encodeURIComponent(imageName),alt:'',width:'44',height:'44',loading:'lazy'});image.onerror=()=>image.remove();row.append(image);}amount.append(minus,input,plus);row.append(el('span',name),amount);box.append(row);
+     const optionIndex=g.options.indexOf(name),ref=g.item_refs325?.[optionIndex],imageMap=parse(card.dataset.comboImages303)||{};const imageName=ref?imageMap[ref.kind+':'+ref.id]:imageMap[String(g.product_ids?.[optionIndex])];if(imageName){const image=el('img','',{src:'/uploads/'+encodeURIComponent(imageName),alt:'',width:'44',height:'44',loading:'lazy'});image.onerror=()=>image.remove();row.append(image);}const info=el('div','',{class:'nu424-option-info'}),unit=name.match(/\s+(\d+(?:[.,]\d+)?\s*(?:ml|kg|g|l))\s*$/i),label=el('strong',unit?name.slice(0,unit.index):name);info.append(label);if(unit)info.append(el('small',unit[1].replace(/(\d)\s*(ml|kg|g|l)$/i,'$1 $2')));amount.append(minus,input,plus);info.append(amount);row.append(info);box.append(row);
     });
-    box.append(count);sync();section.append(box);continue;
+    box.append(count,progress);sync();section.append(box);continue;
    }
    const box=el('fieldset');box.append(el('legend',g.name),el('small',(g.min?'Obrigatório':'Opcional')+' · '+(g.min===g.max?`Escolha ${g.max}`:`Até ${g.max} escolhas`)+' · Incluído no preço'));for(const name of g.options){const label=el('label');const input=el('input','',{type:g.max===1&&g.min===1?'radio':'checkbox',name:`choice192-${card.dataset.id}-${g.id}`,'data-choice192':'','data-group192':g.id,value:name});input.onchange=()=>{if(box.querySelectorAll('input:checked').length>g.max){input.checked=false;box.querySelector('[data-count192]').textContent=`Escolha no máximo ${g.max}.`;return;}box.querySelector('[data-count192]').textContent=`${box.querySelectorAll('input:checked').length} de ${g.max} selecionado(s)`;};label.append(input,el('span',name));box.append(label);}box.append(el('small','0 de '+g.max+' selecionado(s)',{'data-count192':'','aria-live':'polite'}));section.append(box);}
   const ingredientsBox=section.querySelector('[data-ingredient192]')?.closest('fieldset');if(ingredientsBox)section.append(ingredientsBox);
