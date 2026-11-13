@@ -21,3 +21,5 @@
 {% if order.payment_method=='pix' and not payment_checked and order.status in ['confirmed','preparing','ready','out_for_delivery','completed'] %}<form action="/painel/pedidos/{{order.id}}/conferir-pix" method="post"><label><input type="checkbox" required> Conferi o crédito no banco</label><button type="submit" class="nu407-secondary">Confirmar Pix recebido</button></form>{% endif %}
 <a class="nu407-secondary" href="/pedido/{{order.tracking_token}}" target="_blank" rel="noopener">Conversa e acompanhamento completo</a>
 </section>
+
+{% if central418 %}{% include 'whatsapp_status_button421.html' %}{% endif %}
