@@ -27,6 +27,10 @@ def test_whatsapp_return_keeps_store_customer_and_recovers_order_after_login(set
     assert client.get(prefix+'/sessao420').json()['authenticated'] is True
     resume=BeautifulSoup(client.get(prefix+'/cardapio').text,'html.parser').select_one('[data-store-resume426] a')
     assert resume['href']==prefix+'/pedido/'+token
+    # Having a store cookie must not change the marketplace route's channel.
+    marketplace=BeautifulSoup(client.get(prefix+'/menu').text,'html.parser')
+    assert not marketplace.select_one('#store-app256')
+    assert '"whatsappCheckout": false' in str(marketplace)
     # Marketplace never acquires the store customer's identity.
     assert client.get('/sessao420').json()['authenticated'] is False
     client.post(prefix+'/sair')
