@@ -1,0 +1,51 @@
+/* Mobile-only layout, shared across merchant registration and customer dialogs. */
+@media(max-width:700px){
+ html body .nu437-form{display:flex!important;flex-direction:column!important;gap:10px!important;min-width:0;width:100%;box-sizing:border-box;padding:0!important}
+ .nu437-form>*{min-width:0;max-width:100%;box-sizing:border-box}
+ html body .nu437-fold{padding:0!important;margin:0!important;border:1px solid #dfd6e9!important;border-radius:12px!important;background:#fff!important;overflow:visible;min-width:0}
+ html body .nu437-fold>summary{display:list-item!important;cursor:pointer;padding:13px 14px!important;min-height:44px;box-sizing:border-box;font-size:15px!important;line-height:1.35!important;font-weight:700;color:#283446!important;background:#faf7ff!important;border-radius:12px;white-space:normal!important;word-break:normal!important;overflow-wrap:break-word!important}
+ .nu437-body{padding:12px;display:grid;gap:10px;min-width:0}
+ html body .nu437-form label{font-size:14px!important;line-height:1.4!important;min-width:0!important;margin:0!important}
+ html body .nu437-form :is(input:not([type=checkbox]):not([type=radio]),select,textarea){box-sizing:border-box;width:100%!important;min-width:0!important;max-width:100%;min-height:44px!important;padding:10px!important;font-size:16px!important;border-radius:10px}
+ html body .nu437-form :is(input[type=checkbox],input[type=radio]){flex:0 0 20px;width:20px!important;height:20px!important;min-height:20px!important}
+ html body .nu437-form textarea{min-height:76px!important}
+ html body .nu437-form fieldset{min-width:0!important;margin:8px 0!important;padding:10px!important}
+ html body .nu437-form .nu301-combo-item{border:0!important;padding:0!important;margin:8px 0!important}
+ .nu437-form .nu301-combo-item>legend{display:none}
+ html body .nu437-form :is(.nu301-selected-product,.nu300-product-result){display:grid!important;grid-template-columns:20px 36px minmax(0,1fr)!important;gap:8px!important;align-items:center!important;width:100%!important;min-width:0!important;padding:9px!important;box-sizing:border-box}
+ html body .nu437-form .nu300-product-result{grid-template-columns:36px minmax(0,1fr)!important}
+ html body .nu437-form :is(.nu301-selected-product,.nu300-product-result)>img{width:36px!important;height:40px!important;object-fit:contain}
+ html body .nu437-form :is(.nu301-selected-product,.nu300-product-result)>strong{font-size:14px!important;line-height:1.35!important;white-space:normal!important;word-break:normal!important;overflow-wrap:break-word!important;min-width:0!important;width:auto!important}
+ html body .nu437-form :is(.nu301-selected-product,.nu300-product-result)>small{grid-column:3;font-size:13px!important;color:#283446!important;margin:0}
+ html body .nu437-form .nu300-product-result>small{grid-column:2}
+ html body .nu437-form .nu192-row{display:flex!important;flex-wrap:wrap;gap:8px!important;min-width:0}
+ html body .nu437-form .nu192-row>input{flex:1 1 100px;width:0!important}
+ html body .nu437-form .btn{font-size:14px!important;min-height:44px!important;padding:10px 12px!important;white-space:normal!important}
+ .nu437-photo{order:-1;padding:10px;border:1px solid #dfd6e9;border-radius:12px;background:white}
+ .nu437-photo img{max-height:130px!important;width:auto!important;max-width:100%;object-fit:contain}
+ html body .nu437-save{position:sticky;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:15;display:flex;gap:8px;padding:10px;background:#fff;border-top:1px solid #e5dcef;box-shadow:0 -4px 14px #3020480b}
+ html body .nu437-save>.btn{width:100%;background:#7535c5!important;color:white!important;font-weight:700}
+ html body dialog.nowup-navigation{padding:16px!important;width:min(360px,94vw)!important}
+ html body .nowup-navigation-header{padding-bottom:12px!important;gap:8px}
+ html body .nowup-navigation-header b{font-size:19px!important}
+ html body .nowup-navigation-header small{font-size:13px!important;overflow-wrap:break-word}
+ html body .nowup-navigation-links{gap:6px!important;padding:12px 0!important}
+ html body .nowup-navigation-links a{min-height:44px!important;padding:10px 12px!important;background:#7535c5!important;color:#fff!important;border-radius:10px!important;gap:10px!important}
+ html body .nowup-navigation-links a span{font-size:14px!important;white-space:normal!important;word-break:normal!important}
+ html body .nowup-navigation-header button,html body .dialog-close{background:#7535c5!important;color:#fff!important;min-width:44px!important;min-height:44px!important;width:44px!important;height:44px!important;border-radius:12px!important}
+ html body dialog.checkout-dialog{box-sizing:border-box;width:calc(100vw - 24px)!important;max-width:440px!important;max-height:calc(100dvh - 32px)!important;padding:16px!important;border:1px solid #dfd6e9!important;border-radius:18px!important;overflow:auto!important;overscroll-behavior:contain;scroll-padding-top:65px;scroll-padding-bottom:90px}
+ html body .checkout-dialog form{display:grid!important;gap:10px!important;min-width:0!important}
+ html body .checkout-dialog h2{font-size:22px!important;line-height:1.25!important;margin:0 52px 8px 0!important;color:#283446!important}
+ html body .checkout-dialog .dialog-close{position:absolute!important;right:12px!important;top:12px!important;font-size:26px!important}
+ html body .checkout-dialog p{font-size:14px!important;line-height:1.45!important;margin:0 0 8px!important}
+ html body .checkout-dialog label{font-size:14px!important;line-height:1.4!important;margin:0!important;min-width:0}
+ html body .checkout-dialog :is(input:not([type=checkbox]):not([type=hidden]),select,textarea){box-sizing:border-box;width:100%!important;min-height:44px!important;padding:10px!important;font-size:16px!important;border-radius:10px!important;margin-top:4px!important}
+ html body .checkout-dialog textarea{min-height:64px!important}
+ html body .checkout-dialog .full-btn{position:sticky;bottom:-16px;z-index:2;background:#7535c5!important;color:white!important;font-size:15px!important;min-height:46px!important;border:4px solid #fff!important;box-shadow:0 -8px 12px #fff}
+ html body .nu437-form [hidden],html body .checkout-dialog [hidden]{display:none!important}
+}
+@media(max-width:700px){
+ html body .nu437-form [data-editor192]{padding:0!important;border:0!important;display:grid;gap:10px}
+ html body .nu437-form [data-editor192]>h3{font-size:16px!important;margin:4px 0!important}
+ html body .nu437-form [data-editor192] p{font-size:13px!important;line-height:1.4!important;margin:4px 0!important}
+}
