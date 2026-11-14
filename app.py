@@ -1391,13 +1391,19 @@ def order_tracking(request: Request, token: str):
     conn=db(); order=tracked_order(conn,token)
     if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
     viewer=current_user(request)
-    private348=bool(viewer and viewer['id'] in (order['customer_id'],conn.execute('SELECT user_id FROM professionals WHERE id=?',(order['professional_id'],)).fetchone()[0]))
+    owner426=conn.execute('SELECT user_id FROM professionals WHERE id=?',(order['professional_id'],)).fetchone()[0]
+    # Customer links must resolve under the store path before reading its cookie.
+    # The explicit merchant entry remains available for old WhatsApp messages.
+    if order['order_origin']=='external' and request.url.path=='/pedido/'+token and not (viewer and viewer['id']==owner426):
+        conn.close()
+        return RedirectResponse('/p/'+quote(order['slug'],safe='')+'/pedido/'+token+('?lojista=1' if request.query_params.get('lojista')=='1' else ''),303,headers={'Cache-Control':'private, no-store'})
+    private348=bool(viewer and viewer['id'] in (order['customer_id'],owner426))
     if not private348:
         if order['created_at']<(datetime.now(timezone.utc)-timedelta(days=7)).isoformat():
             conn.close();raise HTTPException(404,'Link expirado. Consulte seus pedidos na sua conta.')
         conn.close()
-        merchant398=request.url.path=='/pedido/'+token and (request.query_params.get('lojista')=='1' or order['order_origin']=='external')
-        response=templates.TemplateResponse('order_public348.html',context(request,tracking_status348=ORDER_STATUS_LABELS.get(order['status'],'Em andamento'),merchant_login398=merchant398,merchant_store398=order['display_name'] if merchant398 else ''),headers={'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow'})
+        merchant398=request.query_params.get('lojista')=='1'
+        response=templates.TemplateResponse('order_public348.html',context(request,tracking_status348=ORDER_STATUS_LABELS.get(order['status'],'Em andamento'),merchant_login398=merchant398,merchant_store398=order['display_name'] if merchant398 else '',customer_order426=token if order['order_origin']=='external' else ''),headers={'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow'})
         if merchant398:response.set_cookie('nowup_merchant_order398',token,max_age=1800,httponly=True,secure=os.getenv('NOWUP_HTTPS')=='1' or request.url.scheme=='https',samesite='lax',path='/')
         return response
     items=conn.execute("SELECT * FROM order_items WHERE order_id=? ORDER BY id",(order["id"],)).fetchall(); options={}
@@ -1448,8 +1454,9 @@ def whatsapp_click(slug: str):
     return public_store_contact(slug)
 
 @app.get("/p/{slug}/cardapio")
-def menu_click(slug: str):
-    return RedirectResponse("/p/"+quote(slug,safe="") + "/menu?loja=1",303)
+def menu_click(request: Request, slug: str):
+    request.state.store_app256=nowup_storeapp256.store(globals(),slug)
+    return native_menu(request,slug)
 
 @app.get("/p/{slug}/link")
 def external_click(slug: str):

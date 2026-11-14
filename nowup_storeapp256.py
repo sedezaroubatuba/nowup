@@ -28,7 +28,7 @@ def round_logo402(p):
 
 def presentation(p):
     slug=p['slug'];prefix='/p/'+quote(slug,safe='')
-    return {'slug':slug,'name':p['display_name'],'menu':prefix+'/menu?loja=1',
+    return {'slug':slug,'name':p['display_name'],'menu':prefix+'/cardapio',
         'manifest':prefix+'/manifest.webmanifest','icon':prefix+'/app-icon/192.png'+('?v=402' if round_logo402(p) else ''),'round_logo402':round_logo402(p),
         'worker':prefix+'/service-worker355.js','scope':prefix+'/',
         'terms':prefix+'/termos','privacy':prefix+'/privacidade',
@@ -63,7 +63,14 @@ def page_context(g,request,values):
         with g['db']() as c:
             row=c.execute('SELECT message FROM store_order_settings377 WHERE professional_id=?',(settings_pro377['id'],)).fetchone()
             order_message377=row['message'] if row else ''
-    return {'order_message377':order_message377,'store_order_whatsapp257':followup,'store_order_mode257':mode,'store_whatsapp_number257':number,'store_app256':presentation(p) if p else None,'store_whatsapp257':bool(p and request.url.path.rstrip('/').endswith('/menu'))}
+    resume426=None
+    if p and request.url.path.rstrip('/').endswith(('/menu','/cardapio')):
+        buyer426=g['current_user'](request)
+        if buyer426 and buyer426['role']=='customer':
+            with g['db']() as c:
+                row=c.execute("SELECT order_code,tracking_token,status FROM orders WHERE professional_id=? AND customer_id=? AND order_origin='external' AND status NOT IN ('completed','cancelled','rejected','whatsapp_finalized') ORDER BY id DESC LIMIT 1",(p['id'],buyer426['id'])).fetchone()
+                if row:resume426=dict(row)
+    return {'store_resume426':resume426,'order_message377':order_message377,'store_order_whatsapp257':followup,'store_order_mode257':mode,'store_whatsapp_number257':number,'store_app256':presentation(p) if p else None,'store_whatsapp257':bool(p and request.url.path.rstrip('/').endswith(('/menu','/cardapio')))}
 
 def install(g):
     app=g['app']

@@ -18,7 +18,7 @@ def test_store_login_is_reused_on_return_and_stays_store_scoped(setup345):
         state=client.get('/p/'+a['slug']+'/sessao420');assert state.status_code==200
         assert state.json()=={'authenticated':True,'role':'customer','user_id':uid}
         assert 'no-store' in state.headers['cache-control']
-        page=client.get('/p/'+a['slug']+'/entrar');assert page.status_code==303 and page.headers['location']=='/p/'+a['slug']+'/menu?loja=1'
+        page=client.get('/p/'+a['slug']+'/entrar');assert page.status_code==303 and page.headers['location']=='/p/'+a['slug']+'/cardapio'
     assert not client.get('/p/'+b['slug']+'/sessao420').json()['authenticated']
     assert not client.get('/sessao420').json()['authenticated']
     with m.db() as c:c.execute('DELETE FROM sessions WHERE token=?',(session,))

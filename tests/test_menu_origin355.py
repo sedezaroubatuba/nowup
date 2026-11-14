@@ -86,7 +86,7 @@ def test_store_emails_and_panel_links_use_dedicated_origin(dedicated, monkeypatc
     assert 'https://menu.example.com/p/' + slug + '/verificar-email?token=token' in sent[-1][3]
     from starlette.requests import Request
     req = Request({'type': 'http', 'scheme': 'http', 'path': '/', 'headers': [(b'host', b'testserver')], 'query_string': b''})
-    assert external_menu(req, slug) == 'https://menu.example.com/p/' + slug + '/menu?loja=1'
+    assert external_menu(req, slug) == 'https://menu.example.com/p/' + slug + '/cardapio'
 
 
 def test_merchant_panel_advertises_external_links_only_for_entitled_plans(dedicated, monkeypatch):
@@ -99,7 +99,7 @@ def test_merchant_panel_advertises_external_links_only_for_entitled_plans(dedica
     monkeypatch.setattr(m, 'current_user', lambda request: owner)
     r = old.get('/painel')
     assert r.status_code == 200, r.text
-    assert 'data-profile-url="https://menu.example.com/p/' + slug + '/menu?loja=1"' in r.text
+    assert 'data-profile-url="https://menu.example.com/p/' + slug + '/cardapio"' in r.text
     with m.db() as c:
         c.execute("UPDATE professionals SET plan_active='ambos' WHERE id=?", (pid,))
     r = old.get('/painel')

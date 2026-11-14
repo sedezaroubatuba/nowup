@@ -113,7 +113,7 @@ def test_real_customer_login_returns_to_store_and_preserves_session(shop,monkeyp
     with m.db() as c:
         c.execute("UPDATE users SET password_hash=?,email_verified=1,customer_store345=?,customer_email345=email WHERE email='audit247@example.invalid'",(m.hash_password('storeapp-test-password'),pid))
     response=client.post('/p/'+slug+'/entrar',data={'email':'audit247@example.invalid','password':'storeapp-test-password'},follow_redirects=False)
-    assert response.status_code==303 and response.headers['location']=='/p/'+slug+'/menu?loja=1'
+    assert response.status_code==303 and response.headers['location']=='/p/'+slug+'/cardapio'
     assert 'nowup_loja345_'+str(pid)+'=' in response.headers['set-cookie']
     assert 'nowup_session=' not in response.headers['set-cookie']
     bad=client.post('/p/'+slug+'/entrar',data={'email':'audit247@example.invalid','password':'wrong'},follow_redirects=False)

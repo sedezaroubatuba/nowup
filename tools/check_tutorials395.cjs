@@ -11,7 +11,8 @@ const reviewed=[
  'nowup_ingredients320.py','nowup_storeapp257.py','nowup_review127.py',
  'templates/cash424.html','templates/checkout_menu411.html','templates/menu_orders408.html',
  'nowup_cash424.py','nowup_checkout_security422.py',
- 'templates/order_status425.html','templates/order_tracking.html','templates/order_receipt401.html'
+ 'templates/order_status425.html','templates/order_tracking.html','templates/order_receipt401.html',
+ 'templates/store_app256.html','nowup_storeaccounts345.py','nowup_storeapp256.py','nowup_menu_origin355.py','static/menu88.js'
 ];
 const snapshot=Object.fromEntries(reviewed.map(file=>[file,crypto.createHash('sha256').update(fs.readFileSync(path.join(root,file))).digest('hex')]));
 const baseline=path.join(root,'tests/tutorials395-reviewed.json');

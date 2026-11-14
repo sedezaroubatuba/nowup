@@ -40,7 +40,7 @@ def external_menu(request, slug):
     base = menu_origin()
     if not base:
         base = str(request.base_url.replace(scheme='https') if os.getenv('NOWUP_HTTPS') == '1' else request.base_url).rstrip('/')
-    return base + '/p/' + quote(slug, safe='') + '/menu?loja=1'
+    return base + '/p/' + quote(slug, safe='') + '/cardapio'
 
 
 def email_origin():
@@ -73,13 +73,13 @@ def install(g):
                 request.state.store_app256 = await run_in_threadpool(store, g, parts[2])
             except HTTPException as exc:
                 return JSONResponse({'detail': exc.detail}, status_code=exc.status_code)
-        elif request.method in ('GET', 'HEAD') and store_path and request.url.path.rstrip('/').endswith('/menu'):
+        elif request.method in ('GET', 'HEAD') and store_path and request.url.path.rstrip('/').endswith(('/menu','/cardapio')):
             from nowup_storeapp256 import store
             try:
                 p = await run_in_threadpool(store, g, parts[2])
             except HTTPException:
                 p = None
-            explicit = request.query_params.get('loja') == '1' or request.query_params.get('origem') == 'externo'
+            explicit = request.url.path.rstrip('/').endswith('/cardapio') or request.query_params.get('loja') == '1' or request.query_params.get('origem') == 'externo'
             if p and (p['plan_active'] == 'cardapio' or explicit):
                 # Only navigation is redirected: never replay a form or checkout.
                 url = origin + request.url.path

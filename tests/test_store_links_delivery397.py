@@ -66,13 +66,13 @@ def test_pilot_and_primary_copy_button_use_exclusive_link(channel,monkeypatch):
     pro.update(slug='adega-sede-zero',plan_active='completo')
     request=Request({'type':'http','scheme':'https','server':('vitrine.example.com',443),'method':'GET','path':'/p/adega-sede-zero/menu','query_string':b'loja=1','headers':[(b'host',b'vitrine.example.com')]})
     pilot=m.templates.env.get_template('sede_zero_piloto383.html').render(pro=pro,request=request,store_app256={'slug':pro['slug']})
-    assert BeautifulSoup(pilot,'html.parser').select_one('[data-share-url]')['data-share-url']=='https://menu.example.com/p/adega-sede-zero/menu?loja=1'
+    assert BeautifulSoup(pilot,'html.parser').select_one('[data-share-url]')['data-share-url']=='https://menu.example.com/p/adega-sede-zero/cardapio'
     main_pilot=m.templates.env.get_template('sede_zero_piloto383.html').render(pro=pro,request=request,store_app256=None)
     assert BeautifulSoup(main_pilot,'html.parser').select_one('[data-share-url]')['data-share-url']=='/p/adega-sede-zero/menu'
     source=Path('templates/pro_panel.html').read_text()
     line=next(s for s in source.splitlines() if 'data-copy-profile' in s)
     button=m.templates.env.from_string(line).render(pro=pro,request=request)
-    assert BeautifulSoup(button,'html.parser').button['data-profile-url']=='https://menu.example.com/p/adega-sede-zero/menu?loja=1'
+    assert BeautifulSoup(button,'html.parser').button['data-profile-url']=='https://menu.example.com/p/adega-sede-zero/cardapio'
     pro['plan_active']='vitrine'
     button=m.templates.env.from_string(line).render(pro=pro,request=request)
     assert BeautifulSoup(button,'html.parser').button['data-profile-url']=='/p/adega-sede-zero'

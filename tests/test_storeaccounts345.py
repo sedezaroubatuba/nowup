@@ -52,7 +52,7 @@ def test_accounts_sessions_and_logout_are_store_exclusive(setup345):
         rows=c.execute("SELECT id FROM users WHERE email='shared345@example.com' OR customer_email345='shared345@example.com'").fetchall()
         assert len(rows)==3 and len({r['id'] for r in rows})==3
     r=client.post(path(a,'entrar'),data={'email':'shared345@example.com','password':'store-a-password345'})
-    assert r.status_code==303 and r.headers['location']==path(a,'menu')+'?loja=1'
+    assert r.status_code==303 and r.headers['location']==path(a,'cardapio')
     name='nowup_loja345_'+str(a['id'])
     token=client.cookies.get(name)
     assert token and client.cookies.get('nowup_session')=='market345'
