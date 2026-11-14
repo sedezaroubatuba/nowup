@@ -1,3 +1,4 @@
+{% if not review_customer %}{% include 'order_wait434.html' %}{% endif %}
 <article class="nu401-paper" aria-label="Notinha do pedido">
 <header class="nu406-brand"><span class="nu406-receipt-icon" aria-hidden="true">✓</span><span class="nu406-eyebrow">RESUMO DO PEDIDO</span><h2>{{order.display_name}}</h2><p class="nu406-order-code">PEDIDO {{order.order_code or order.id}}</p><span class="nu406-badge {{'is-confirmed' if confirmed401 else 'is-pending'}}">Situação: {{receipt_text401.split('\n')[2].split(': ',1)[-1]}}</span></header>
 <div class="nu406-receipt-body">

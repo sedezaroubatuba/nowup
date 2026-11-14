@@ -22,7 +22,7 @@
   open?.addEventListener('click',()=>{if(pendingId){if(window.NowUpOrder407)window.NowUpOrder407.openDetails(pendingId);else location.assign('/painel?abrir_pedido='+pendingId+'#pedido-'+pendingId);};});
   window.addEventListener('nowup:order-status',event=>{
     const id=Number(event.detail?.id),state=event.detail?.status;
-    if(!Number.isSafeInteger(id)||id<=0||!['confirmed','reviewing','preparing','ready','out_for_delivery','completed','cancelled','rejected'].includes(state))return;
+    if(!Number.isSafeInteger(id)||id<=0||!['confirmed','reviewing','preparing','ready','out_for_delivery','completed','cancelled','rejected','whatsapp_finalized'].includes(state))return;
     resolved406.add(id);
     if(pendingId===id){silence();navigator.vibrate?.(0);pendingId=0;lastAlarm=0;box.hidden=true;document.title=title;}
     check();

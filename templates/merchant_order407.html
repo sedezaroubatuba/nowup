@@ -1,6 +1,7 @@
 {% import 'order_line347.html' as lines347 %}
 <section class="nu407-detail" data-detail407 data-order-id407="{{order.id}}" data-order-status407="{{order.status}}">
 {% if central418 %}{% set receipt_text401=receipt_text408(order) %}{% set confirmed401=order.status in ['confirmed','preparing','ready','out_for_delivery','completed'] %}{% include 'order_paper408.html' %}{% else %}
+{% include 'order_wait434.html' %}
 <p class="nu407-state">{{status_labels.get(order.status,order.status)}}</p>
 <h2>Pedido {{order.order_code or order.id}}</h2>
 <p><b>{{order.customer_name}}</b> · {{order.customer_phone}}</p>
