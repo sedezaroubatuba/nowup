@@ -470,7 +470,7 @@ window.NOWUP_TUTORIALS395=[
     "page": "pedidos",
     "target": "#pedidos",
     "title": "Histórico e acompanhamento",
-    "text": "No histórico, confira detalhes e ações disponíveis. Alterar entrega, retirada ou bairro antes do aceite gera uma proposta com frete recalculado pelo servidor; o cliente precisa aprovar. Pedido encerrado ou incluído em caixa fechado não pode ser editado diretamente."
+    "text": "Abra o pedido e use Atualizar status do pedido na própria notinha, sem voltar à central WhatsApp. Para Pix, confira o recebimento em Pagamento antes do preparo. Na retirada, conclua como entregue / retirado; na entrega, marque Saiu para entrega e depois Entregue. Alterar entrega, retirada ou bairro antes do aceite gera uma proposta com frete recalculado pelo servidor; o cliente precisa aprovar. Pedido encerrado ou incluído em caixa fechado não pode ser editado diretamente."
    },
    {
     "page": "perfil",
