@@ -215,8 +215,8 @@ def mask_doc(doc: str):
     return "Documento verificado" if digits else ""
 
 def wa_link(phone: str, text: str):
-    # Contact data remains stored, but WhatsApp is not a site communication channel.
-    return '#'
+    digits=normalize_phone(phone)
+    return 'https://wa.me/55'+digits+'?text='+quote(text,safe='') if digits else ''
 
 def clean_link(raw: str):
     value=(raw or "").strip()[:500]
@@ -1236,6 +1236,7 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
             try: delivery_fee,neighborhood=delivery_quote89(conn,p,neighborhood)
             except HTTPException: conn.close(); raise
         total=subtotal+delivery_fee
+        if total<=0:raise HTTPException(400,"O total do pedido deve ser maior que zero.")
         payment_labels={"pix":"Pix","cash":"Dinheiro","credit":"Cartão de crédito","debit":"Cartão de débito","on_delivery":"Combinar no atendimento"}
         payment_method=payment_method if payment_method in payment_labels else "pix"
         change_for_cents=price_to_cents(change_for) if payment_method=="cash" and change_for.strip() else 0
@@ -1277,15 +1278,36 @@ def tracked_order(conn, token: str):
       FROM orders o JOIN professionals p ON p.id=o.professional_id
       WHERE o.tracking_token=?""",(token,)).fetchone()
 
-def order_whatsapp_message(conn, order):
+def order_whatsapp_message(conn, order, merchant=False):
     payment_labels={"pix":"Pix","cash":"Dinheiro","credit":"Cartão de crédito","debit":"Cartão de débito","on_delivery":"Combinar no atendimento"}
-    items=conn.execute("SELECT * FROM order_items WHERE order_id=? ORDER BY id",(order["id"],)).fetchall()
-    lines=[f"Olá! Quero falar sobre o pedido {order['order_code']} feito pelo NowUp:",""]
-    for item in items:
-        lines.append(f"{item['quantity']}x {item['product_name']} — R$ {(item['unit_price_cents']*item['quantity'])/100:.2f}")
-        if item["notes"]: lines.append(f"   Obs.: {item['notes']}")
-    lines += ["",f"Total: R$ {order['total_cents']/100:.2f}",f"Pagamento: {payment_labels.get(order['payment_method'],'A combinar')}",f"Cliente: {order['customer_name']}"]
-    return "\n".join(lines)
+    store=conn.execute("SELECT display_name FROM professionals WHERE id=?",(order['professional_id'],)).fetchone()
+    label=ORDER_STATUS_LABELS.get(order['status'],order['status'])
+    lines=[f"{store['display_name']} — Pedido {order['order_code']}",f"Status: {label}",f"Cliente: {order['customer_name']}",""]
+    for item in conn.execute("SELECT * FROM order_items WHERE order_id=? ORDER BY id",(order['id'],)):
+        lines.append(f"{item['quantity']}x {item['product_name']} — R$ {item['unit_price_cents']*item['quantity']/100:.2f}")
+        extras=conn.execute('SELECT option_name FROM order_item_options WHERE order_item_id=? ORDER BY id',(item['id'],)).fetchall()
+        if extras:lines.append('Adicionais: '+', '.join(r['option_name'] for r in extras))
+        if item['notes']:lines.append('Obs.: '+item['notes'])
+    lines += ["",f"Subtotal: R$ {order['subtotal_cents']/100:.2f}",f"Entrega: R$ {order['delivery_fee_cents']/100:.2f}",f"Total: R$ {order['total_cents']/100:.2f}",f"Pagamento: {payment_labels.get(order['payment_method'],'A combinar')}"]
+    if order['fulfillment_type']=='delivery':
+        lines += ['Entrega: '+order['address'],'Bairro: '+order['neighborhood'],'Referência: '+order['address_reference']]
+    else:lines.append('Retirada no local')
+    if order['change_for_cents']:lines.append(f"Troco para R$ {order['change_for_cents']/100:.2f}")
+    if order['notes']:lines.append('Observação: '+order['notes'])
+    if order['status'] in ('cancelled','rejected'):lines.append('Motivo: '+order['cancellation_reason'])
+    lines.append('Aceite do pedido não comprova recebimento do pagamento.')
+    return '\n'.join(lines)
+
+@app.get('/painel/pedidos/{order_id}/whatsapp')
+def merchant_status_whatsapp(request: Request, order_id: int):
+    u=require_user(request,'professional');c=db()
+    try:
+        o=c.execute('SELECT o.* FROM orders o JOIN professionals p ON p.id=o.professional_id WHERE o.id=? AND p.user_id=? AND p.blocked=0',(order_id,u['id'])).fetchone()
+        if not o:raise HTTPException(404,'Pedido não encontrado.')
+        link=wa_link(o['customer_phone'],order_whatsapp_message(c,o,True))
+        if not link:raise HTTPException(400,'Confira o WhatsApp do cliente antes de enviar.')
+        return RedirectResponse(link,303,headers={'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer'})
+    finally:c.close()
 
 @app.get("/pedido/{token}", response_class=HTMLResponse)
 def order_tracking(request: Request, token: str):
@@ -1314,8 +1336,12 @@ def order_tracking_status(token: str):
 def order_tracking_whatsapp(token: str):
     conn=db(); order=tracked_order(conn,token)
     if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
-    message=order_whatsapp_message(conn,order); conn.execute("UPDATE orders SET whatsapp_opened=1 WHERE id=?",(order["id"],)); conn.commit(); conn.close()
-    return RedirectResponse("/pedido/"+quote(token,safe=""),303)
+    try:
+        store=conn.execute('SELECT whatsapp FROM professionals WHERE id=?',(order['professional_id'],)).fetchone()
+        link=wa_link(store['whatsapp'],order_whatsapp_message(conn,order))
+        if not link:raise HTTPException(400,'WhatsApp da loja indisponível.')
+        return RedirectResponse(link,303,headers={'Referrer-Policy':'no-referrer'})
+    finally:conn.close()
 
 @app.get("/p/{slug}/contato")
 def public_store_contact(slug: str):
@@ -1982,44 +2008,82 @@ def pro_order_status(request: Request, order_id: int, status: str=Form(...), rea
     u=require_user(request,"professional")
     allowed={"reviewing","new","confirmed","preparing","ready","out_for_delivery","completed","cancelled","rejected"}
     if status not in allowed: raise HTTPException(400,"Status inválido")
-    conn=db(); conn.execute("BEGIN IMMEDIATE"); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
-    order=conn.execute("SELECT id,status,customer_id,tracking_token FROM orders WHERE id=? AND professional_id=?",(order_id,p["id"])).fetchone()
-    if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
-    if order["status"]=='awaiting_approval' and status not in {'cancelled','rejected'}:
-        conn.close(); raise HTTPException(409,"Aguarde a aprovação do cliente")
-    if status=='reviewing' and order["status"] not in {'new','reviewing','revision_approved'}:
-        conn.close(); raise HTTPException(409,"Este pedido já foi confirmado")
-    if order["status"] in {'new','reviewing','revision_approved'} and status not in {'reviewing','confirmed','cancelled','rejected'}:
-        conn.close(); raise HTTPException(409,"Confirme o pedido antes de iniciar o preparo")
-    if status==order["status"]:
-        conn.rollback(); conn.close(); return RedirectResponse(f"/painel?abrir_pedido={order_id}#pedido-{order_id}",303)
-    rank={"reviewing":0,"revision_approved":0,"new":0,"confirmed":1,"preparing":2,"ready":3,"out_for_delivery":4,"completed":5}
-    if order["status"] in {"completed","cancelled","rejected"} or (status in rank and rank[status]<rank.get(order["status"],0)):
-        conn.rollback(); conn.close(); return RedirectResponse(f"/painel?erro=pedido-encerrado&abrir_pedido={order_id}#pedido-{order_id}",303)
-    reason=reason.strip()[:300]
-    if status in {"cancelled","rejected"} and not reason:
-        conn.close(); return RedirectResponse(f"/painel?erro=motivo-obrigatorio&abrir_pedido={order_id}#pedido-{order_id}",303)
-    conn.execute("UPDATE orders SET status=?,cancellation_reason=?,updated_at=? WHERE id=?",(status,reason if status in {"cancelled","rejected"} else "",now_iso(),order_id))
-    conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)",(order_id,status,now_iso()))
-    if order["customer_id"] and status != order["status"]:
-        label=ORDER_STATUS_LABELS.get(status,status); message=("A loja está conferindo a disponibilidade dos seus itens. Aguarde a confirmação." if status=="reviewing" else f"Seu pedido foi atualizado para: {label}.")
-        if reason: message += f" Motivo: {reason}"
-        notification=conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(order["customer_id"],"Atualização do pedido",message,f"/pedido/{order['tracking_token']}",now_iso()))
-        nowup_alerts112.enqueue(conn,order["customer_id"],notification.lastrowid,{"title":"Atualização do pedido","body":message,"url":f"/pedido/{order['tracking_token']}","tag":f"nowup-status-{order_id}"})
-    conn.commit(); conn.close()
-    return RedirectResponse(f"/painel?ok=pedido&abrir_pedido={order_id}#pedido-{order_id}",303)
+    conn=db()
+    try:
+        conn.execute("BEGIN IMMEDIATE"); p=conn.execute("SELECT id FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
+        order=conn.execute("SELECT * FROM orders WHERE id=? AND professional_id=?",(order_id,p["id"])).fetchone()
+        if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
+        if order["status"]=='awaiting_approval' and status not in {'cancelled','rejected'}:
+            conn.close(); raise HTTPException(409,"Aguarde a aprovação do cliente")
+        if status=='reviewing' and order["status"] not in {'new','reviewing','revision_approved'}:
+            conn.close(); raise HTTPException(409,"Este pedido já foi confirmado")
+        if order["status"] in {'new','reviewing','revision_approved'} and status not in {'reviewing','confirmed','cancelled','rejected'}:
+            conn.close(); raise HTTPException(409,"Confirme o pedido antes de iniciar o preparo")
+        if status==order["status"]:
+            conn.rollback(); conn.close(); return RedirectResponse(f"/painel?abrir_pedido={order_id}#pedido-{order_id}",303)
+        rank={"reviewing":0,"revision_approved":0,"new":0,"confirmed":1,"preparing":2,"ready":3,"out_for_delivery":4,"completed":5}
+        if order["status"] in {"completed","cancelled","rejected"} or (status in rank and rank[status]<rank.get(order["status"],0)):
+            conn.rollback(); conn.close(); return RedirectResponse(f"/painel?erro=pedido-encerrado&abrir_pedido={order_id}#pedido-{order_id}",303)
+        next_status={'new':{'reviewing','confirmed'},'reviewing':{'confirmed'},'revision_approved':{'reviewing','confirmed'},'confirmed':{'preparing'},'preparing':{'ready'},'ready':{'out_for_delivery'} if order['fulfillment_type']=='delivery' else {'completed'},'out_for_delivery':{'completed'}}
+        if status not in next_status.get(order['status'],set())|{'cancelled','rejected'}:
+            conn.close();raise HTTPException(409,'Esta mudança pula etapas do pedido. Atualize e siga a próxima etapa.')
+        if status=='completed' and order['payment_method']=='on_delivery':
+            conn.close();raise HTTPException(409,'Informe a forma de pagamento efetiva antes de concluir.')
+        reason=reason.strip()[:300]
+        if status in {"cancelled","rejected"} and not reason:
+            conn.close(); return RedirectResponse(f"/painel?erro=motivo-obrigatorio&abrir_pedido={order_id}#pedido-{order_id}",303)
+        conn.execute("UPDATE orders SET status=?,cancellation_reason=?,updated_at=? WHERE id=?",(status,reason if status in {"cancelled","rejected"} else "",now_iso(),order_id))
+        conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)",(order_id,status,now_iso()))
+        if order["customer_id"] and status != order["status"]:
+            label=ORDER_STATUS_LABELS.get(status,status); message=("A loja está conferindo a disponibilidade dos seus itens. Aguarde a confirmação." if status=="reviewing" else f"Seu pedido foi atualizado para: {label}.")
+            if reason: message += f" Motivo: {reason}"
+            notification=conn.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(order["customer_id"],"Atualização do pedido",message,f"/pedido/{order['tracking_token']}",now_iso()))
+            nowup_alerts112.enqueue(conn,order["customer_id"],notification.lastrowid,{"title":"Atualização do pedido","body":message,"url":f"/pedido/{order['tracking_token']}","tag":f"nowup-status-{order_id}"})
+        conn.commit(); conn.close()
+        return RedirectResponse(f"/painel?ok=pedido&abrir_pedido={order_id}#pedido-{order_id}",303)
+    finally:conn.close()
 
 @app.post("/painel/pedidos/{order_id}/editar")
-def pro_order_edit(request: Request, order_id: int, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), notes: str=Form("")):
-    u=require_user(request,"professional"); conn=db(); conn.execute("BEGIN IMMEDIATE"); p=conn.execute("SELECT id,plan_active,offer_mode FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
-    order=conn.execute("SELECT id,status FROM orders WHERE id=? AND professional_id=?",(order_id,p["id"])).fetchone()
-    if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
-    if order["status"] in {"awaiting_approval","reviewing","revision_approved","completed","cancelled","rejected"}:
-        conn.rollback();conn.close();return RedirectResponse(f"/painel?erro=pedido-encerrado&abrir_pedido={order_id}#pedido-{order_id}",303)
-    fulfillment_type="delivery" if fulfillment_type=="delivery" else "pickup"
-    if payment_method not in {"pix","cash","credit","debit","on_delivery"}: payment_method="pix"
-    conn.execute("UPDATE orders SET customer_name=?,customer_phone=?,fulfillment_type=?,payment_method=?,address=?,notes=?,updated_at=? WHERE id=?",(customer_name.strip()[:120],customer_phone.strip()[:30],fulfillment_type,payment_method,address.strip()[:300],notes.strip()[:500],now_iso(),order_id))
-    conn.commit(); conn.close(); return RedirectResponse(f"/painel?ok=pedido-editado&abrir_pedido={order_id}#pedido-{order_id}",303)
+def pro_order_edit(request: Request, order_id: int, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: Optional[str]=Form(None), address_reference: Optional[str]=Form(None), notes: str=Form("")):
+    u=require_user(request,"professional");conn=db()
+    try:
+        conn.execute('BEGIN IMMEDIATE')
+        p=conn.execute('SELECT * FROM professionals WHERE user_id=? AND blocked=0',(u['id'],)).fetchone()
+        if not p:raise HTTPException(403,'Loja indisponível.')
+        o=conn.execute('SELECT * FROM orders WHERE id=? AND professional_id=?',(order_id,p['id'])).fetchone()
+        if not o:raise HTTPException(404,'Pedido não encontrado.')
+        if o['status'] in {'awaiting_approval','completed','cancelled','rejected'}:raise HTTPException(409,'Pedido aguardando aprovação ou encerrado.')
+        if len(customer_name.strip())<2 or not normalize_phone(customer_phone):raise HTTPException(400,'Confira nome e WhatsApp.')
+        if payment_method not in {'pix','cash','credit','debit','on_delivery'}:raise HTTPException(400,'Pagamento inválido.')
+        if fulfillment_type not in {'delivery','pickup'}:raise HTTPException(400,'Escolha entrega ou retirada.')
+        if not p['allows_delivery' if fulfillment_type=='delivery' else 'allows_pickup']:raise HTTPException(400,'Modalidade não disponível.')
+        zone=o['neighborhood'] if neighborhood is None else neighborhood.strip()[:120]
+        reference=o['address_reference'] if address_reference is None else address_reference.strip()[:220]
+        fee=0
+        if fulfillment_type=='delivery':
+            if not address.strip():raise HTTPException(400,'Informe o endereço.')
+            fee,zone=delivery_quote89(conn,p,zone)
+        else:address='';zone='';reference=''
+        subtotal=conn.execute('SELECT COALESCE(SUM(quantity*unit_price_cents),0) FROM order_items WHERE order_id=?',(order_id,)).fetchone()[0]
+        total=subtotal+fee
+        if total<=0:raise HTTPException(400,'O total deve ser maior que zero.')
+        changes=dict(customer_name=customer_name.strip()[:120],customer_phone=customer_phone.strip()[:30],fulfillment_type=fulfillment_type,payment_method=payment_method,address=address.strip()[:300],neighborhood=zone,address_reference=reference,notes=notes.strip()[:500],delivery_fee_cents=fee)
+        changed_delivery=any(changes[k]!=o[k] for k in ('fulfillment_type','address','neighborhood','delivery_fee_cents'))
+        if o['change_for_cents'] and payment_method=='cash' and o['change_for_cents']<total:raise HTTPException(400,'Revise o troco antes de aumentar o total.')
+        if changed_delivery:
+            if o['status'] not in {'new','reviewing','revision_approved'}:raise HTTPException(409,'Entrega já em andamento; alteração financeira exige revisão antes do aceite.')
+            if not o['customer_id']:raise HTTPException(409,'A alteração exige aprovação do cliente cadastrado.')
+            from nowup_review127 import initialize
+            initialize(conn)
+            items=[dict(i) for i in conn.execute('SELECT * FROM order_items WHERE order_id=?',(order_id,))]
+            conn.execute('INSERT INTO order_revisions(order_id,items_json,total_cents,message,created_at,delivery_json256) VALUES(?,?,?,?,?,?)',(order_id,json.dumps(items),total,'Alteração da entrega ou retirada. Confira endereço e novo total.',now_iso(),json.dumps(changes)))
+            conn.execute("UPDATE orders SET status='awaiting_approval',updated_at=? WHERE id=?",(now_iso(),order_id))
+            conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,'awaiting_approval',?)",(order_id,now_iso()))
+            conn.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(o['customer_id'],'Confira a alteração da entrega','A loja propôs alteração. Abra o pedido para aprovar ou recusar.','/pedido/'+o['tracking_token'],now_iso()))
+        else:
+            conn.execute('UPDATE orders SET customer_name=?,customer_phone=?,payment_method=?,address_reference=?,notes=?,change_for_cents=?,updated_at=? WHERE id=?',(changes['customer_name'],changes['customer_phone'],payment_method,reference,changes['notes'],o['change_for_cents'] if payment_method=='cash' else 0,now_iso(),order_id))
+        conn.commit();return RedirectResponse(f'/painel?ok=pedido-editado&abrir_pedido={order_id}#pedido-{order_id}',303)
+    finally:conn.close()
 
 @app.post("/painel/pedidos/{order_id}/itens/{item_id}")
 def pro_order_item_edit(request: Request, order_id: int, item_id: int, quantity: int=Form(1), notes: str=Form(""), remove: Optional[str]=Form(None)):
@@ -2920,3 +2984,7 @@ def pro_kanban228(request: Request):
         return templates.TemplateResponse("merchant_kanban228.html",{"request":request,"kanban":kanban,"status_labels":ORDER_STATUS_LABELS},headers={"Cache-Control":"private, no-store"})
     finally:
         conn.close()
+
+# V256: cash, stock reservations and immutable closed-session records.
+import nowup_finance256
+nowup_finance256.install(globals())
