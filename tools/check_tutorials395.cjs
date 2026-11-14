@@ -8,7 +8,9 @@ const reviewed=[
  'templates/order_revision.html','templates/order_public348.html',
  'static/pro198.js','static/storefront187.js','static/fashion-layout391.js',
  'static/tutorials-data395.js','static/tutorials395.js','static/tutorials395.css',
- 'nowup_ingredients320.py','nowup_storeapp257.py','nowup_review127.py'
+ 'nowup_ingredients320.py','nowup_storeapp257.py','nowup_review127.py',
+ 'templates/cash424.html','templates/checkout_menu411.html','templates/menu_orders408.html',
+ 'nowup_cash424.py','nowup_checkout_security422.py'
 ];
 const snapshot=Object.fromEntries(reviewed.map(file=>[file,crypto.createHash('sha256').update(fs.readFileSync(path.join(root,file))).digest('hex')]));
 const baseline=path.join(root,'tests/tutorials395-reviewed.json');

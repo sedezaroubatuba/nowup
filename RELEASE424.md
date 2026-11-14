@@ -10,7 +10,7 @@ Base de produção: `8219e318eb386d27f8353f004fb1bc19213932ff`, branch `codex/ca
 - Não importa receita histórica anterior à abertura. Um pedido antigo entregue durante a sessão é reconhecido pela conclusão. Pode haver mais de um turno por dia, mas apenas uma sessão simultaneamente aberta. Horários exibidos em Brasília.
 - Edição de modalidade, endereço ou bairro recalcula o frete no servidor e propõe revisão ao cliente antes do aceite. Só após aprovação altera total e modalidade. Retirada aprovada remove frete. Uma edição sem mudança de entrega preserva o frete contratado.
 - Pedido com total zero é rejeitado nos dois canais. Revisões também não podem produzir total zero. Pagamento “combinar” precisa ser definido antes de concluir, inclusive no ADM.
-- Preserva a conferência de Pix no banco antes do preparo e os fluxos já publicados de WhatsApp e estoque. Não cria um segundo sistema de estoque.
+- Inclui tutorial de caixa e orientação sobre revisão do frete. O guia não executa movimentações. Preserva a conferência de Pix no banco antes do preparo e os fluxos já publicados de WhatsApp e estoque. Não cria um segundo sistema de estoque.
 
 ## Migração e backup
 
