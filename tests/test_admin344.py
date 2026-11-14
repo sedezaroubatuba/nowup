@@ -17,6 +17,10 @@ def test_super_admin_core_buttons(env):
  assert change('stores',pid,{'plan':'cardapio'}).status_code==200
  assert change('stores',pid,{'plan':'ambos'}).status_code==200
  assert change('orders',ids['Ana <script>alert(1)</script>'],{'status':'confirmed'}).status_code==200
+ assert change('orders',ids['Ana <script>alert(1)</script>'],{'status':'preparing'}).status_code==409
+ client.cookies.set('nowup_session','merchant-test')
+ assert client.post('/painel/pedidos/'+str(ids['Ana <script>alert(1)</script>'])+'/conferir-pix',headers={'Accept':'application/json'}).status_code==200
+ client.cookies.set('nowup_session','audit-super342')
  assert change('orders',ids['Ana <script>alert(1)</script>'],{'status':'preparing'}).status_code==200
  assert change('orders',ids['Ana <script>alert(1)</script>'],{'status':'ready'}).status_code==200
  assert client.get('/admin/super/api/orders-page').status_code==200

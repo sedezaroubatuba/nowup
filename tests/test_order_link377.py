@@ -23,7 +23,8 @@ def setup_order(channel):
 
 def test_full_review_changed_price_requires_buyer_acceptance(channel,monkeypatch):
     m,client,result,order,item,owner,buyer=setup_order(channel)
-    assert 'pix' not in result and 'data-pix-payment' not in client.get(result['redirect']).text
+    assert 'pix' in result and 'data-pix-payment' in client.get(result['redirect']).text
+    with m.db() as c:assert not m.nowup_notinha401.payment_checked(c,order)
     monkeypatch.setattr(m,'current_user',lambda request:owner)
     page=client.get(result['redirect'])
     assert page.status_code==200 and 'Confirmar pedido' in page.text and 'Conversa' in page.text

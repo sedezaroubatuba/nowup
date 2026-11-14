@@ -1,0 +1,32 @@
+name: Cash sessions PostgreSQL concurrency
+on:
+  pull_request:
+    paths: ['nowup_cash424.py', 'nowup_database239.py', 'tools/check_cash424_postgres.py', '.github/workflows/cash424.yml']
+  push:
+    branches: [codex/categorias-icones-v230]
+    paths: ['nowup_cash424.py', 'nowup_database239.py', 'tools/check_cash424_postgres.py', '.github/workflows/cash424.yml']
+permissions:
+  contents: read
+jobs:
+  cash-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: cash_test
+          POSTGRES_USER: cash_test
+          POSTGRES_PASSWORD: isolated-test-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U cash_test -d cash_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements-dev.txt
+      - run: python tools/check_cash424_postgres.py
+        env:
+          NOWUP_TEST_PG_URL424: postgresql://cash_test:isolated-test-only@localhost:5432/cash_test

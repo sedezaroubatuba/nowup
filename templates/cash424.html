@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Caixa | NowUp{% endblock %}
+{% block content %}
+<main class="container cash424">
+<style>.cash424{max-width:960px;padding-bottom:32px}.cash424 .panel{margin:16px 0;padding:20px}.cash424 label{display:block;margin:12px 0}.cash424 input,.cash424 select{width:100%;max-width:440px}.cash424 p{overflow-wrap:anywhere}.cash424 h3{margin-top:24px}.cash424 b{color:#12314a}</style>
+<a class="btn soft" href="/painel">← Painel</a><h1>Caixa — {{pro.display_name}}</h1>
+<p>Abra a sessão antes de começar o turno. Vendas anteriores não são importadas automaticamente. Vendas concluídas e dinheiro disponível são valores diferentes. Pix e cartões não aumentam o dinheiro na gaveta. Horários de Brasília.</p>
+{% if not cash or cash.closed_at %}
+<section class="panel"><h2>Abrir caixa</h2>
+<form action="/painel/caixa/abrir" method="post"><input type="hidden" name="token" value="{{token}}">
+<label>Dinheiro inicial (R$)<input class="input" name="initial" inputmode="decimal" value="0" required></label><button class="btn primary">Abrir caixa</button></form>
+</section>
+{% endif %}
+{% if cash %}
+<section class="panel"><h2>Caixa #{{cash.id}} · {{'Fechado' if cash.closed_at else 'Aberto'}}</h2>
+<p>Abertura: {{cash.opened_label}} · Operador #{{cash.opened_by}}</p>
+<p>Saldo inicial: <b>R$ {{'%.2f'|format(cash.opening_cents/100)|replace('.',',')}}</b></p>
+<p>Vendas concluídas: <b>R$ {{'%.2f'|format(report.sales_cents/100)|replace('.',',')}}</b> · {{report.sales_count}} vendas</p>
+<h3>Recebimentos líquidos por forma</h3>
+{% for method,label in methods.items() %}<p>{{label}}: <b>R$ {{'%.2f'|format(report.payments[method]/100)|replace('.',',')}}</b></p>{% endfor %}
+<p>Inclui pagamentos de comandas em aberto; devoluções são descontadas dos recebimentos.</p>
+<p>Suprimentos: R$ {{'%.2f'|format(report.supply_cents/100)|replace('.',',')}} · Sangrias: R$ {{'%.2f'|format(report.withdrawal_cents/100)|replace('.',',')}}</p>
+<h3>Dinheiro esperado: R$ {{'%.2f'|format(report.expected_cents/100)|replace('.',',')}}</h3>
+{% if not cash.closed_at %}
+<h3>Sangria ou suprimento</h3>
+<form action="/painel/caixa/{{cash.id}}/movimento" method="post"><input type="hidden" name="token" value="{{token}}">
+<label>Movimento<select name="kind"><option value="withdrawal">Sangria / retirada</option><option value="supply">Suprimento / entrada</option></select></label>
+<label>Valor (R$)<input class="input" name="value" inputmode="decimal" required></label>
+<label>Motivo<input class="input" name="reason" maxlength="500" required></label><button class="btn primary">Registrar movimento</button></form>
+<h3>Registrar devolução</h3><p>Vinculada ao recebimento original, sem alterar o caixa fechado ou repor estoque automaticamente.</p><form action="/painel/caixa/{{cash.id}}/devolver" method="post"><input type="hidden" name="token" value="{{token}}"><label>Origem<select name="kind"><option value="order">Pedido NowUp</option><option value="payment">Pagamento de comanda</option></select></label><label>ID numérico do pedido ou recebimento<input class="input" name="source_id" inputmode="numeric" required></label><label>Valor (R$)<input class="input" name="value" inputmode="decimal" required></label><label>Motivo<input class="input" name="reason" maxlength="500" required></label><button class="btn primary">Registrar devolução</button></form><h3>Pendências desta sessão</h3>
+{% for item in report.pending %}<p>#{{item.id}} · {{item.label}} · R$ {{'%.2f'|format(item.total_cents/100)|replace('.',',')}}</p>{% else %}<p>Nenhum pedido ou comanda pendente.</p>{% endfor %}
+<h3>Fechar caixa</h3>
+<form action="/painel/caixa/{{cash.id}}/fechar" method="post">
+<label>Dinheiro contado (R$)<input class="input" name="counted" inputmode="decimal" required></label>
+<label>Justificativa da diferença, se houver<input class="input" name="reason" maxlength="500"></label>
+<button class="btn primary" {% if report.pending %}disabled{% endif %}>Conferir e fechar caixa</button></form>
+{% else %}
+<p>Fechado em {{cash.closed_label}} · Operador #{{cash.closed_by}}</p>
+<p>Contado: R$ {{'%.2f'|format(report.counted_cents/100)|replace('.',',')}} · Diferença: R$ {{'%.2f'|format(report.difference_cents/100)|replace('.',',')}}</p><p>{{cash.reason}}</p><p>Registro fechado e protegido.</p>
+{% endif %}
+<h3>Devoluções</h3>{% for refund in report.refunds %}<p>{{'Pedido' if refund.kind=='order' else 'Pagamento'}} #{{refund.source_id}} · {{methods[refund.method]}} · R$ {{'%.2f'|format(refund.cents/100)|replace('.',',')}} · {{refund.reason}}</p>{% endfor %}<h3>Movimentações</h3>{% for entry in report.moves %}<p>#{{entry.id}} · {{'Sangria' if entry.kind=='withdrawal' else 'Suprimento'}} · R$ {{'%.2f'|format(entry.cents/100)|replace('.',',')}} · {{entry.reason}}</p>{% endfor %}<h3>Vendas incluídas</h3>{% for sale in report.sales %}<p>{{sale.code}} · R$ {{'%.2f'|format(sale.cents/100)|replace('.',',')}}</p>{% for payment in sale.payments|default([]) %}<p>Recebimento #{{payment.id}} · {{methods[payment.method]}} · R$ {{'%.2f'|format(payment.cents/100)|replace('.',',')}}</p>{% endfor %}{% endfor %}</section>
+{% endif %}
+<section class="panel"><h2>Histórico de sessões</h2>
+{% for row in history %}<p><a href="/painel/caixa?caixa={{row.id}}">Caixa #{{row.id}} · {{row.opened_label}} · {{'Fechado' if row.closed_at else 'Aberto'}}</a></p>{% else %}<p>Nenhuma sessão registrada.</p>{% endfor %}</section>
+{% if legacy %}<p>{{legacy}} pedidos concluídos fora de sessão não foram importados para este caixa. Consulte o relatório de vendas para conciliação do histórico.</p>{% endif %}
+</main>
+{% endblock %}

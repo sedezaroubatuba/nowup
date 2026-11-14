@@ -17,6 +17,7 @@ def test_receipt_statuses_and_chat_enqueue_once_for_the_recipient(checkout,monke
         assert c.execute('SELECT COUNT(*) FROM customer_push112 WHERE user_id=?',(customer['id'],)).fetchone()[0]==1
         initial=json.loads(c.execute('SELECT payload FROM customer_push112 WHERE user_id=?',(customer['id'],)).fetchone()[0]);assert 'Aguardando aceite' in initial['body']
     monkeypatch.setattr(m,'current_user',lambda request:owner)
+    assert client.post(f"/painel/pedidos/{o['id']}/conferir-pix",headers={'Accept':'application/json'}).status_code==200
     for status in ('confirmed','preparing','ready','out_for_delivery','completed'):
         r=client.post(f"/painel/pedidos/{o['id']}/status",data={'status':status},follow_redirects=False);assert r.status_code==303,r.text
     with m.db() as c:

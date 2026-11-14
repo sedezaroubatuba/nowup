@@ -83,6 +83,8 @@ def test_order_channels_keep_identical_server_prices_and_separate_destinations(c
     m,client,slug,pid,data,product,customer=channel
     with m.db() as c:c.execute('UPDATE professionals SET plan_active=? WHERE id=?',(plan,pid))
     data['cart_json']=json.dumps([{'id':product,'quantity':2,'price':1}])
+    assert client.post('/p/'+slug+'/menu/pedido',data=data,headers={'Accept':'application/json'}).status_code==400
+    data['cart_json']=json.dumps([{'id':product,'quantity':2}])
     native=client.post('/p/'+slug+'/menu/pedido',data=data,headers={'Accept':'application/json'})
     assert native.status_code==(403 if plan=='cardapio' else 200),native.text
     data['request_key']='independent-price-parity405'

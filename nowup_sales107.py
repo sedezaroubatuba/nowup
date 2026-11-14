@@ -192,6 +192,8 @@ def mutate(request:Request,sid:int,version:int=Form(...),action:str=Form(...),pr
     check_origin(request)
     with connection() as c:
         u,p=merchant(c,request);c.execute('BEGIN IMMEDIATE');s=owned(c,p['id'],sid,True)
+        from nowup_cash424 import guard_manual
+        guard_manual(c,sid)
         if s['status']=='cancelled' or (s['status']=='completed' and action!='cancel'): raise HTTPException(409,'Esta conta já foi fechada ou cancelada.')
         if version!=s['version']: raise HTTPException(409,'A conta foi atualizada. Volte à conta e confira os valores antes de tentar novamente.')
         detail=''

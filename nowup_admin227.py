@@ -319,6 +319,7 @@ def update_order(c,a,oid,v,why):
   if target in {'cancelled','rejected'} and len(why.strip())<8:fail(400,'Justifique o cancelamento.')
   from nowup_inventory391 import order_status
   order_status(c,oid,target)
+  if target=='completed' and o['payment_method'] not in {'cash','pix','credit','debit'}:fail(409,'Informe a forma de pagamento efetiva antes de concluir.')
   c.execute('UPDATE orders SET status=?,cancellation_reason=?,updated_at=? WHERE id=?',(target,why[:300] if target in {'cancelled','rejected'} else '',stamp(),oid));c.execute('INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)',(oid,target,stamp()))
   if o['customer_id']:
    message='Seu pedido foi atualizado pela equipe NowUp: '+G['ORDER_STATUS_LABELS'].get(target,target)+'.'
