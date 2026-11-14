@@ -8,11 +8,12 @@
   const title=document.title;const testButton=root.querySelector('[data-test-order-alerts]'),disableButton=root.querySelector('[data-disable-order-alerts]');
   function running(){return enabled&&audio?.state==='running';}
   const stored=()=>{try{return localStorage.getItem('nowup-order-alerts')!=='0';}catch(_){return false;}};
-  function render(){const on=running();root.dataset.soundState=on?'active':'inactive';button.textContent=on?'✓ Campainha ativada':'🔊 ATIVAR CAMPAINHA';button.disabled=on;testButton.hidden=!on;disableButton.hidden=!enabled;status.textContent=on?'Campainha pronta. Pedidos sem resposta são cancelados após 5 minutos.':'Som não está liberado. Toque em ATIVAR CAMPAINHA e confirme que ouviu o teste.';}
+  function render(){const on=running();root.dataset.soundState=on?'active':'inactive';button.textContent=on?'✓ Campainha ativada':'🔊 ATIVAR CAMPAINHA';button.disabled=on;testButton.hidden=!on;disableButton.hidden=!enabled;status.textContent=on?'Campainha pronta. Novos pedidos tocam até o atendimento. Vibração disponível nos aparelhos compatíveis.':'Som desligado ou bloqueado. A vibração continua nos aparelhos compatíveis. Toque em ATIVAR CAMPAINHA para ouvir os pedidos.';}
   async function unlock(){try{if(!audio||audio.state==='closed'){audio=new(window.AudioContext||window.webkitAudioContext)();audio.onstatechange=()=>{render();if(running()&&pendingId){alarm();lastAlarm=Date.now();}};}await audio.resume();return audio.state==='running';}catch(_){return false;}}
   let tones=[];
   function silence(){tones.forEach(o=>{try{o.stop();}catch(_){}});tones=[];}
-  function alarm(){if(!enabled||audio?.state!=='running')return;silence();try{const start=audio.currentTime;for(let i=0;i<5;i++){[1046,784].forEach((f,j)=>{const o=audio.createOscillator(),g=audio.createGain(),t=start+i*.4+j*.18;o.type='square';o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.6,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+.16);o.connect(g).connect(audio.destination);o.start(t);o.stop(t+.18);tones.push(o);});}navigator.vibrate?.([250,100,250,100,400]);}catch(_){}}
+  function vibrate433(){try{navigator.vibrate?.([300,120,300,120,500]);}catch(_){}}
+  function alarm(){vibrate433();if(!enabled||audio?.state!=='running')return;silence();try{const start=audio.currentTime;for(let i=0;i<5;i++){[1046,784].forEach((f,j)=>{const o=audio.createOscillator(),g=audio.createGain(),t=start+i*.4+j*.18;o.type='square';o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.75,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+.16);o.connect(g).connect(audio.destination);o.start(t);o.stop(t+.18);tones.push(o);});}}catch(_){}}
   button.addEventListener('click',async()=>{enabled=await unlock();try{localStorage.setItem('nowup-order-alerts',enabled?'1':'0');}catch(_){}render();if(enabled){alarm();lastAlarm=Date.now();}check();});
   testButton.addEventListener('click',async()=>{enabled=await unlock();render();if(running()){alarm();lastAlarm=Date.now();}check();});
   disableButton.addEventListener('click',()=>{enabled=false;silence();try{localStorage.setItem('nowup-order-alerts','0');}catch(_){}render();});
@@ -34,11 +35,11 @@
       if(!response.ok)throw new Error();const data=await response.json();cursor=Math.max(cursor,Number(data.latest_id||0));
       if(data.pending_count>0&&data.pending_order&&!resolved406.has(Number(data.pending_order.id))){
         pendingId=data.pending_order.id;message.textContent=`${data.pending_count} pedido(s) aguardando aceite. ${data.pending_order.customer_name||'Cliente'} — R$ ${(data.pending_order.total_cents/100).toFixed(2).replace('.',',')}`;box.hidden=false;document.title='🔔 Pedido aguardando | NowUp';window.NowUpOrder407?.showPending(data.pending_order,data.pending_count);
-        if(enabled&&Date.now()-lastAlarm>=2200){alarm();lastAlarm=Date.now();}
+        if(Date.now()-lastAlarm>=2200){alarm();lastAlarm=Date.now();}
       }else{silence();pendingId=0;if(box.dataset.view407!=='detail')box.hidden=true;document.title=title;lastAlarm=0;}
-      render();if(pendingId&&!running())status.textContent='PEDIDO AGUARDANDO! Toque em ATIVAR CAMPAINHA para liberar o som.';
+      render();if(pendingId&&!running())status.textContent='PEDIDO AGUARDANDO! Vibração nos aparelhos compatíveis. Toque em ATIVAR CAMPAINHA para liberar o som.';
     }catch(_){status.textContent='Conexão instável. Tentando novamente sem fechar o painel.';}
     finally{clearTimeout(timer);busy=false;}
   }
-  render();restore();check();setInterval(check,2000);setInterval(()=>{if(pendingId&&enabled&&Date.now()-lastAlarm>=2200){alarm();lastAlarm=Date.now();}},200);window.addEventListener('online',check);document.addEventListener('visibilitychange',()=>{if(!document.hidden){render();check();}});
+  render();restore();check();setInterval(check,2000);setInterval(()=>{if(pendingId&&Date.now()-lastAlarm>=2200){alarm();lastAlarm=Date.now();}},200);window.addEventListener('online',check);document.addEventListener('visibilitychange',()=>{if(!document.hidden){render();check();}});
 })();

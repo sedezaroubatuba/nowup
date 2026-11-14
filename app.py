@@ -1865,10 +1865,10 @@ def pro_new_orders(request: Request, after: int=0):
     nowup_scheduling380.expire(conn);conn.commit()
     lower,upper=order_day_bounds(datetime.now(SAO_PAULO_TZ).date())
     rows=conn.execute("""SELECT id,customer_name,total_cents,created_at FROM orders
-      WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND id>? AND created_at>=? AND created_at<? ORDER BY id ASC LIMIT 10""",(p["id"],max(0,after),lower,upper)).fetchall()
+      WHERE professional_id=? AND id>? AND created_at>=? AND created_at<? ORDER BY id ASC LIMIT 10""",(p["id"],max(0,after),lower,upper)).fetchall()
     latest=conn.execute("SELECT COALESCE(MAX(id),0) FROM orders WHERE professional_id=?",(p["id"],)).fetchone()[0]
-    pending=conn.execute("SELECT COUNT(*) FROM orders WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND status IN ('new','awaiting_payment') AND (accept_after380='' OR accept_after380<=?)",(p["id"],now_iso())).fetchone()[0]
-    pending_order=conn.execute("SELECT id,order_code,customer_name,total_cents,subtotal_cents,delivery_fee_cents,payment_method,fulfillment_type,address_reference,notes,updated_at,created_at,status FROM orders WHERE professional_id=? AND COALESCE(order_origin,'legacy')<>'external' AND status IN ('new','awaiting_payment') AND (accept_after380='' OR accept_after380<=?) ORDER BY id DESC LIMIT 1",(p["id"],now_iso())).fetchone()
+    pending=conn.execute("SELECT COUNT(*) FROM orders WHERE professional_id=? AND status IN ('new','awaiting_payment') AND (accept_after380='' OR accept_after380<=?)",(p["id"],now_iso())).fetchone()[0]
+    pending_order=conn.execute("SELECT id,order_code,customer_name,total_cents,subtotal_cents,delivery_fee_cents,payment_method,fulfillment_type,address_reference,notes,updated_at,created_at,status FROM orders WHERE professional_id=? AND status IN ('new','awaiting_payment') AND (accept_after380='' OR accept_after380<=?) ORDER BY id DESC LIMIT 1",(p["id"],now_iso())).fetchone()
     pending_data=dict(pending_order) if pending_order else None
     if pending_data:
         pending_data['items']=[dict(i) for i in conn.execute('SELECT product_name,quantity,unit_price_cents,notes FROM order_items WHERE order_id=? ORDER BY id',(pending_data['id'],))]
