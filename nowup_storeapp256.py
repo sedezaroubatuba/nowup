@@ -17,7 +17,7 @@ def store(g,slug,active=True):
     if not SLUG.fullmatch(slug or ''):raise HTTPException(404,'Loja não encontrada')
     c=g['db']()
     try:
-        where=" AND p.blocked=0 AND p.admission_status='approved' AND p.plan_active IN ('cardapio','ambos','completo') AND p.is_premium=1 AND p.offer_mode IN ('menu','catalog') AND u.is_active=1" if active else ''
+        where=" AND p.blocked=0 AND p.admission_status='approved' AND p.plan_active IN ('cardapio','completo') AND p.is_premium=1 AND p.offer_mode IN ('menu','catalog') AND u.is_active=1" if active else ''
         row=c.execute('SELECT p.* FROM professionals p JOIN users u ON u.id=p.user_id WHERE p.slug=?'+where,(slug,)).fetchone()
         if not row:raise HTTPException(404,'Cardápio não disponível')
         return dict(row)
@@ -37,7 +37,7 @@ def presentation(p):
 def page_context(g,request,values):
     p=getattr(request.state,'store_app256',None)
     candidate=values.get('pro')
-    if p is None and candidate is not None and candidate['plan_active'] in ('cardapio','ambos','completo') and request.method=='GET' and request.url.path.startswith('/p/'):
+    if p is None and candidate is not None and candidate['plan_active'] in ('cardapio','completo') and request.method=='GET' and request.url.path.startswith('/p/'):
         if candidate['plan_active']=='cardapio' or request.query_params.get('loja')=='1' or request.query_params.get('origem')=='externo':
             try:p=store(g,candidate['slug'])
             except HTTPException:p=None

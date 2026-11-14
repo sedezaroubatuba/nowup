@@ -23,7 +23,7 @@ def request_store(g,request):
                 candidate=store(g,parts[2],active=False)
                 tail='/'.join(parts[3:])
                 # A cookie identifies a buyer; only the URL selects the channel.
-                if (tail in ('pedidos','sair') or tail.startswith('pedido/') or (candidate['plan_active'] in ('cardapio','ambos','completo') and (candidate['plan_active']=='cardapio' or request.query_params.get('loja')=='1'
+                if (tail in ('pedidos','sair','avisos203','sessao420','suporte') or tail.startswith(('pedido/','pedidos/','cliente/','suporte/')) or (candidate['plan_active'] in ('cardapio','completo') and (candidate['plan_active']=='cardapio' or request.query_params.get('loja')=='1'
                     or request.query_params.get('origem')=='externo'
                     or tail in ('cardapio','entrar','cadastro','recuperar-senha','redefinir-senha','verificar-email','reenviar-verificacao','aguardando','pedidos','sair','menu/whatsapp','cart-completion345') or tail.startswith('pedido/')))):
                     p=candidate
