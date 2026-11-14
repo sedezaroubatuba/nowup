@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const {JSDOM}=require('jsdom');
 function fixture(fashion=false){
  const dom=new JSDOM(`<body class="professional-area"><div class="pro-dashboard"><main>
- <section id="inicio"><a class="nu221-store-link" href="/p/demo">Ver minha loja</a></section>
+ <section id="inicio"><a href="/painel/caixa">Abrir caixa</a><a class="nu221-store-link" href="/p/demo">Ver minha loja</a></section>
  <section id="tutoriais395" data-fashion="${fashion?'1':'0'}"><input data-tutorial-search395><details data-layout-examples395><summary>Exemplos</summary></details><div data-tutorial-list395></div><p data-tutorial-empty395 hidden></p></section>
  <section id="perfil"><input name="display_name" value="Loja real"><input name="whatsapp" value="12999999999"><details><summary>Exibição</summary><section id="exibicao-produtos"><form><input name="carousel_layout235" value="large" type="radio"><input name="carousel_layout235" value="pair" type="radio"><input name="carousel_layout235" value="compact" type="radio" checked></form></section></details></section>
  <section id="adicionais"><details id="ingredientes320"><summary>Ingredientes</summary><form><input name="name" value="Bacon"><input name="price" value="5,00" required aria-describedby="price-help"><button>Salvar</button></form><button data-import-ingredients357>Importar</button></details></section>
@@ -34,4 +34,11 @@ test('search finds payments and fashion does not teach food or carousel settings
 });
 test('browser navigation and closing tutorial leave merchant edits intact',()=>{
  const f=fixture();start(f,'Primeiros passos');next(f);const name=f.d.querySelector('[name=display_name]');name.value='Loja editada';f.w.dispatchEvent(new f.w.PopStateEvent('popstate'));assert.equal(f.d.querySelector('.nu395-guide').hidden,true);assert.equal(name.value,'Loja editada');f.dom.window.close();
+});
+
+test('cash tutorial explains financial actions without opening a cash session or submitting forms',()=>{
+ const f=fixture();let submits=0;f.d.addEventListener('submit',()=>submits++);
+ start(f,'Abertura e fechamento do caixa');assert.equal(f.w.location.pathname,'/painel');assert.equal(f.w.location.hash,'#inicio');
+ assert.ok(f.d.querySelector('#inicio a[href="/painel/caixa"]').classList.contains('nu395-highlight'));
+ for(let i=0;i<4;i++)next(f);assert.equal(submits,0);assert.equal(f.w.location.pathname,'/painel');f.dom.window.close();
 });

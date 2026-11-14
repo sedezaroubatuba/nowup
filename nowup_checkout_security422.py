@@ -61,7 +61,7 @@ def initial_status(method): return WAITING if method == 'pix' else 'new'
 
 
 def check_totals(subtotal, fee, total):
-    if any(type(v) is not int or not 0 <= v <= MAX_CENTS for v in (subtotal, fee, total)) or total != subtotal + fee:
+    if any(type(v) is not int or not 0 <= v <= MAX_CENTS for v in (subtotal, fee, total)) or total != subtotal + fee or total<=0:
         raise HTTPException(409, 'Valores do pedido indisponíveis. Atualize o cardápio.')
 
 

@@ -470,7 +470,7 @@ window.NOWUP_TUTORIALS395=[
     "page": "pedidos",
     "target": "#pedidos",
     "title": "Histórico e acompanhamento",
-    "text": "No histórico, abra o pedido para conferir detalhes e ações disponíveis. Edite antes de confirmar quando necessário; cancelamentos exigem conferir o motivo e a situação."
+    "text": "No histórico, confira detalhes e ações disponíveis. Alterar entrega, retirada ou bairro antes do aceite gera uma proposta com frete recalculado pelo servidor; o cliente precisa aprovar. Pedido encerrado ou incluído em caixa fechado não pode ser editado diretamente."
    },
    {
     "page": "perfil",
@@ -504,6 +504,39 @@ window.NOWUP_TUTORIALS395=[
     "target": "#relatorios",
     "title": "Consulte os resultados",
     "text": "Confira pedidos e valores nos relatórios. Observe o período e a situação dos pedidos ao comparar resultados."
+   }
+  ]
+ },
+ {
+  "id": "caixa424",
+  "title": "Abertura e fechamento do caixa",
+  "description": "Saldo inicial, sangrias, pagamentos e conferência do turno.",
+  "food": false,
+  "nonfashion": false,
+  "steps": [
+   {
+    "page": "inicio",
+    "target": "#inicio a[href=\"/painel/caixa\"]",
+    "title": "Abra antes de começar o turno",
+    "text": "Use Abrir / fechar caixa e informe o dinheiro inicial da gaveta. Só pode haver uma sessão aberta por loja. O guia explica o caminho; não abre nem movimenta caixa por você."
+   },
+   {
+    "page": "inicio",
+    "target": "#inicio a[href=\"/painel/caixa\"]",
+    "title": "Dinheiro disponível e vendas",
+    "text": "Pix e cartões ficam separados e não aumentam o dinheiro na gaveta. Pedidos entregues entram nas vendas; cancelados ficam fora. Sangria retira dinheiro e suprimento adiciona dinheiro, sempre com motivo."
+   },
+   {
+    "page": "inicio",
+    "target": "#inicio a[href=\"/painel/caixa\"]",
+    "title": "Conferir e fechar",
+    "text": "Finalize ou cancele os pedidos e comandas pendentes. Conte o dinheiro e justifique qualquer diferença. O fechamento preserva uma fotografia dos valores; não importa vendas antigas automaticamente."
+   },
+   {
+    "page": "inicio",
+    "target": "#inicio a[href=\"/painel/caixa\"]",
+    "title": "Devolução depois do fechamento",
+    "text": "Registre a devolução em uma sessão aberta e vincule ao ID do pedido ou recebimento original. Ela desconta o recebimento da forma correta, sem alterar o caixa fechado nem repor estoque automaticamente."
    }
   ]
  }

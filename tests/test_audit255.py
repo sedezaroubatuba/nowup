@@ -20,6 +20,8 @@ def test_price_comes_from_server_and_promo_is_applied(checkout):
  m,client,url,data,pid,_=checkout
  with m.db() as c:c.execute('UPDATE products SET price_cents=1000,promo_price_cents=750 WHERE id=?',(pid,))
  data['cart_json']=json.dumps([{'id':pid,'quantity':2,'price':1,'unitPrice':1}])
+ assert client.post(url,data=data,follow_redirects=False).status_code==400
+ data['cart_json']=json.dumps([{'id':pid,'quantity':2}])
  r=client.post(url,data=data,follow_redirects=False);assert r.status_code==303,r.text
  with m.db() as c:assert c.execute('SELECT total_cents FROM orders').fetchone()[0]==1500
 

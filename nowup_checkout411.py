@@ -29,7 +29,7 @@ def install(g):
             g['ensure_column'](c,'checkout_sales411','customer_name413',"TEXT NOT NULL DEFAULT ''")
             c.execute('CREATE TABLE IF NOT EXISTS checkout_item_details413(item_id INTEGER PRIMARY KEY REFERENCES manual_items107(id) ON DELETE CASCADE,snapshot TEXT NOT NULL)')
     g['app'].router.add_event_handler('startup',startup)
-    def begin(c):c.execute('BEGIN' if getattr(c,'dialect','sqlite')=='postgres' else 'BEGIN IMMEDIATE')
+    def begin(c):c.execute('BEGIN IMMEDIATE')
     def lock(c):return ' FOR UPDATE' if getattr(c,'dialect','sqlite')=='postgres' else ''
     def mapped(c,pid,sid):
         sale=ledger.owned(c,pid,sid)

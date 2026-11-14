@@ -71,7 +71,7 @@ def test_whatsapp_checkout_accepts_only_its_own_origin(dedicated):
     assert r.json()['prepared'] and r.json()['recorded']
     with m.db() as c:
         assert c.execute('SELECT COUNT(*) FROM orders').fetchone()[0] == 1
-        assert c.execute('SELECT status FROM orders').fetchone()[0] == 'new'
+        assert c.execute('SELECT status FROM orders').fetchone()[0] == 'awaiting_payment'
     # Configuration must not redirect or replay a POST on an old link.
     assert old.post(path, data=data, follow_redirects=False).status_code == 200
 

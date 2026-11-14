@@ -2309,6 +2309,10 @@ def pro_order_status(request: Request, order_id: int, status: str=Form(...), rea
     reason=reason.strip()[:300]
     if status in {"cancelled","rejected"} and not reason:
         conn.close(); return RedirectResponse(f"/painel?erro=motivo-obrigatorio&abrir_pedido={order_id}#pedido-{order_id}",303)
+    if status=='completed':
+        payment=conn.execute('SELECT payment_method FROM orders WHERE id=?',(order_id,)).fetchone()[0]
+        if payment not in {'cash','pix','credit','debit'}:
+            conn.close();raise HTTPException(409,'Informe a forma de pagamento efetiva antes de concluir o pedido.')
     from nowup_inventory391 import order_status as inventory_status391
     try:inventory_status391(conn,order_id,status)
     except Exception:conn.rollback();conn.close();raise
@@ -2327,16 +2331,48 @@ def pro_order_status(request: Request, order_id: int, status: str=Form(...), rea
     return RedirectResponse(f"/painel?ok=pedido&abrir_pedido={order_id}#pedido-{order_id}",303)
 
 @app.post("/painel/pedidos/{order_id}/editar")
-def pro_order_edit(request: Request, order_id: int, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), notes: str=Form("")):
-    u=require_user(request,"professional"); conn=db(); conn.execute("BEGIN IMMEDIATE"); p=conn.execute("SELECT id,plan_active,offer_mode FROM professionals WHERE user_id=?",(u["id"],)).fetchone()
-    order=conn.execute("SELECT id,status FROM orders WHERE id=? AND professional_id=?",(order_id,p["id"])).fetchone()
-    if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
-    if order["status"] in {"awaiting_approval","reviewing","revision_approved","completed","cancelled","rejected","whatsapp_finalized"}:
-        conn.rollback();conn.close();return RedirectResponse(f"/painel?erro=pedido-encerrado&abrir_pedido={order_id}#pedido-{order_id}",303)
-    fulfillment_type="delivery" if fulfillment_type=="delivery" else "pickup"
-    if payment_method not in {"pix","cash","credit","debit","on_delivery"}: payment_method="pix"
-    conn.execute("UPDATE orders SET customer_name=?,customer_phone=?,fulfillment_type=?,payment_method=?,address=?,notes=?,updated_at=? WHERE id=?",(customer_name.strip()[:120],customer_phone.strip()[:30],fulfillment_type,payment_method,address.strip()[:300],notes.strip()[:500],now_iso(),order_id))
-    conn.commit(); conn.close(); return RedirectResponse(f"/painel?ok=pedido-editado&abrir_pedido={order_id}#pedido-{order_id}",303)
+def pro_order_edit(request: Request, order_id: int, customer_name: str=Form(...), customer_phone: str=Form(...), fulfillment_type: str=Form("pickup"), payment_method: str=Form("pix"), address: str=Form(""), neighborhood: Optional[str]=Form(None), address_reference: Optional[str]=Form(None), notes: str=Form("")):
+    u=require_user(request,"professional");conn=db()
+    try:
+        conn.execute('BEGIN IMMEDIATE')
+        p=conn.execute('SELECT * FROM professionals WHERE user_id=? AND blocked=0',(u['id'],)).fetchone()
+        if not p:raise HTTPException(403,'Loja indisponível.')
+        o=conn.execute('SELECT * FROM orders WHERE id=? AND professional_id=?',(order_id,p['id'])).fetchone()
+        if not o:raise HTTPException(404,'Pedido não encontrado.')
+        if o['status'] in {'awaiting_approval','completed','cancelled','rejected','whatsapp_finalized'}:raise HTTPException(409,'Pedido aguardando aprovação ou encerrado.')
+        if len(customer_name.strip())<2 or not normalize_phone(customer_phone):raise HTTPException(400,'Confira nome e WhatsApp.')
+        if payment_method not in {'pix','cash','credit','debit','on_delivery'}:raise HTTPException(400,'Pagamento inválido.')
+        if fulfillment_type not in {'delivery','pickup'}:raise HTTPException(400,'Escolha entrega ou retirada.')
+        if not p['allows_delivery' if fulfillment_type=='delivery' else 'allows_pickup']:raise HTTPException(400,'Modalidade não disponível.')
+        zone=o['neighborhood'] if neighborhood is None else neighborhood.strip()[:120]
+        reference=o['address_reference'] if address_reference is None else address_reference.strip()[:220]
+        fee=0
+        if fulfillment_type=='delivery':
+            if not address.strip():raise HTTPException(400,'Informe o endereço.')
+            fee,zone=delivery_quote89(conn,p,zone)
+        else:address='';zone='';reference=''
+        subtotal=conn.execute('SELECT COALESCE(SUM(quantity*unit_price_cents),0) FROM order_items WHERE order_id=?',(order_id,)).fetchone()[0]
+        total=subtotal+fee
+        if total<=0:raise HTTPException(400,'O total deve ser maior que zero.')
+        changes=dict(customer_name=customer_name.strip()[:120],customer_phone=customer_phone.strip()[:30],fulfillment_type=fulfillment_type,payment_method=payment_method,address=address.strip()[:300],neighborhood=zone,address_reference=reference,notes=notes.strip()[:500],delivery_fee_cents=fee)
+        changed_delivery=any(changes[k]!=o[k] for k in ('fulfillment_type','address','neighborhood'))
+        if not changed_delivery:
+            fee=o['delivery_fee_cents'];total=subtotal+fee;changes['delivery_fee_cents']=fee
+        if o['change_for_cents'] and payment_method=='cash' and o['change_for_cents']<total:raise HTTPException(400,'Revise o troco antes de aumentar o total.')
+        if changed_delivery:
+            if o['status'] not in {'new','awaiting_payment','reviewing','revision_approved'}:raise HTTPException(409,'Entrega já em andamento; alteração financeira exige revisão antes do aceite.')
+            if not o['customer_id']:raise HTTPException(409,'A alteração exige aprovação do cliente cadastrado.')
+            from nowup_review127 import initialize
+            initialize(conn)
+            items=[dict(i) for i in conn.execute('SELECT * FROM order_items WHERE order_id=?',(order_id,))]
+            conn.execute('INSERT INTO order_revisions(order_id,items_json,total_cents,message,created_at,delivery_json424) VALUES(?,?,?,?,?,?)',(order_id,json.dumps(items),total,'Alteração da entrega ou retirada. Confira endereço e novo total.',now_iso(),json.dumps(changes)))
+            conn.execute("UPDATE orders SET status='awaiting_approval',updated_at=? WHERE id=?",(now_iso(),order_id))
+            conn.execute("INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,'awaiting_approval',?)",(order_id,now_iso()))
+            conn.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(o['customer_id'],'Confira a alteração da entrega','A loja propôs alteração. Abra o pedido para aprovar ou recusar.','/pedido/'+o['tracking_token'],now_iso()))
+        else:
+            conn.execute('UPDATE orders SET customer_name=?,customer_phone=?,payment_method=?,address_reference=?,notes=?,change_for_cents=?,updated_at=? WHERE id=?',(changes['customer_name'],changes['customer_phone'],payment_method,reference,changes['notes'],o['change_for_cents'] if payment_method=='cash' else 0,now_iso(),order_id))
+        conn.commit();return RedirectResponse(f'/painel?ok=pedido-editado&abrir_pedido={order_id}#pedido-{order_id}',303)
+    finally:conn.close()
 
 @app.post("/painel/pedidos/{order_id}/itens/{item_id}")
 def pro_order_item_edit(request: Request, order_id: int, item_id: int, quantity: int=Form(1), notes: str=Form(""), remove: Optional[str]=Form(None)):
@@ -3350,3 +3386,7 @@ nowup_sessions420.install(globals())
 # Per-store manual WhatsApp status links (Cardapio only).
 import nowup_whatsapp_status421
 nowup_whatsapp_status421.install(globals())
+
+# Cash sessions preserve the current POS, inventory and manual Pix flows.
+import nowup_cash424
+nowup_cash424.install(globals())

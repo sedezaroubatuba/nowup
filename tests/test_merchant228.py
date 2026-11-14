@@ -87,5 +87,7 @@ def test_transition_preserves_approval_and_tenant_rules(env):
     assert change('Outra loja','confirmed').status_code==404
     assert change('Ana <script>alert(1)</script>','preparing').status_code==409
     assert change('Ana <script>alert(1)</script>','confirmed').status_code==303
+    assert change('Retirada','completed').status_code==409
+    assert client.post('/painel/pedidos/'+str(ids['Retirada'])+'/conferir-pix',headers={'Accept':'application/json'}).status_code==200
     assert change('Retirada','completed').status_code==303
     assert 'pedido-encerrado' in change('Retirada','preparing').headers['location']

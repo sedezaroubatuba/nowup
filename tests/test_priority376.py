@@ -82,11 +82,11 @@ def test_whatsapp_history_is_idempotent_private_and_not_a_paid_order(channel,mon
         assert c.execute('SELECT COUNT(*) FROM checkout_requests229').fetchone()[0]==1
         assert c.execute('SELECT COUNT(*) FROM push_jobs').fetchone()[0]==0
         assert c.execute('SELECT COUNT(*) FROM notifications').fetchone()[0]>=1
-        assert order['status']=='new' and order['whatsapp_opened']==0
+        assert order['status']=='awaiting_payment' and order['whatsapp_opened']==0
         assert c.execute('SELECT COUNT(*) FROM orders WHERE status=\'completed\'').fetchone()[0]==0
         owner=dict(c.execute('SELECT * FROM users WHERE id=(SELECT user_id FROM professionals WHERE id=?)',(pid,)).fetchone())
     page=client.get('/p/'+slug+'/pedidos');assert result['order_code'] in page.text
-    page=client.get(result['redirect']);assert 'Aguardando atendimento da loja' in page.text
+    page=client.get(result['redirect']);assert 'Aguardando Confirmação de Pagamento' in page.text
     assert 'Seu pedido chegou à sala de pedidos' not in page.text
     data['notes']='changed';assert client.post('/p/'+slug+'/menu/whatsapp',data=data).status_code==409
     other=dict(customer,id=customer['id']+10000);monkeypatch.setattr(m,'current_user',lambda request:other)

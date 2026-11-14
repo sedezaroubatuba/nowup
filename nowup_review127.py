@@ -9,6 +9,8 @@ EARLY={'new','awaiting_payment','reviewing','revision_approved'}
 def initialize(conn):
     conn.execute('''CREATE TABLE IF NOT EXISTS order_revisions(id INTEGER PRIMARY KEY AUTOINCREMENT,order_id INTEGER NOT NULL,items_json TEXT NOT NULL,total_cents INTEGER NOT NULL,state TEXT NOT NULL DEFAULT 'pending',message TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL)''')
     conn.execute('CREATE INDEX IF NOT EXISTS idx_revision_order ON order_revisions(order_id,id)')
+    if 'delivery_json424' not in {r['name'] for r in conn.execute('PRAGMA table_info(order_revisions)')}:
+        conn.execute("ALTER TABLE order_revisions ADD COLUMN delivery_json424 TEXT NOT NULL DEFAULT '{}'")
 
 def build_items(conn,order,keep,quantities,additions,prices=None):
     original=conn.execute('SELECT * FROM order_items WHERE order_id=? ORDER BY id',(order['id'],)).fetchall()
@@ -38,7 +40,9 @@ def build_items(conn,order,keep,quantities,additions,prices=None):
         result.append({'id':None,'product_id':p['id'],'product_name':p['name'],'quantity':int(qty),'unit_price_cents':current_price(p),'notes':''})
     if not result: raise HTTPException(400,'Sem itens disponíveis: recuse o pedido com motivo')
     if len(result)>100: raise HTTPException(400,'Limite de itens excedido')
-    return result,sum(i['quantity']*i['unit_price_cents'] for i in result)+order['delivery_fee_cents']
+    total=sum(i['quantity']*i['unit_price_cents'] for i in result)+order['delivery_fee_cents']
+    if total<=0:raise HTTPException(400,'O total deve ser maior que zero.')
+    return result,total
 
 def install(g):
     app=g['app'];db=g['db'];now=g['now_iso'];auth=g['require_user']
@@ -51,7 +55,7 @@ def install(g):
         try:
             initialize(c)
             r=c.execute('SELECT * FROM order_revisions WHERE order_id=? ORDER BY id DESC LIMIT 1',(oid,)).fetchone()
-            return dict(r)|{'items':json.loads(r['items_json'])} if r else None
+            return dict(r)|{'items':json.loads(r['items_json']),'delivery':json.loads(r['delivery_json424'])} if r else None
         finally:c.close()
     g['templates'].env.globals['order_revision']=data
     def notify(c,o,title,message,merchant=False):
@@ -102,6 +106,8 @@ def install(g):
             if not r or r['id']!=revision_id or r['state']!='pending' or o['status']!='awaiting_approval':raise HTTPException(409,'Esta proposta já foi respondida ou não está mais válida')
             if decision not in {'accept','decline','cancel'}:raise HTTPException(400,'Resposta inválida')
             if decision=='accept':
+                if r['total_cents']<=0:raise HTTPException(400,'O total deve ser maior que zero.')
+                delivery=json.loads(r['delivery_json424'])
                 items=json.loads(r['items_json']);keep=[i['id'] for i in items if i['id'] is not None]
                 for old in c.execute('SELECT id FROM order_items WHERE order_id=?',(o['id'],)).fetchall():
                     if old['id'] not in keep:
@@ -109,7 +115,11 @@ def install(g):
                 for i in items:
                     if i['id'] is not None:c.execute('UPDATE order_items SET quantity=?,unit_price_cents=? WHERE id=? AND order_id=?',(i['quantity'],i['unit_price_cents'],i['id'],o['id']))
                     else:c.execute('INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_cents,notes) VALUES(?,?,?,?,?,?)',(o['id'],i['product_id'],i['product_name'],i['quantity'],i['unit_price_cents'],i['notes']))
-                c.execute('UPDATE orders SET subtotal_cents=?,total_cents=? WHERE id=?',(r['total_cents']-o['delivery_fee_cents'],r['total_cents'],o['id']))
+                fee=delivery.get('delivery_fee_cents',o['delivery_fee_cents'])
+                if delivery:
+                    c.execute('UPDATE orders SET customer_name=?,customer_phone=?,fulfillment_type=?,payment_method=?,address=?,neighborhood=?,address_reference=?,notes=?,delivery_fee_cents=?,change_for_cents=? WHERE id=?',(delivery['customer_name'],delivery['customer_phone'],delivery['fulfillment_type'],delivery['payment_method'],delivery['address'],delivery['neighborhood'],delivery['address_reference'],delivery['notes'],fee,o['change_for_cents'] if delivery['payment_method']=='cash' else 0,o['id']))
+                if o['change_for_cents'] and delivery.get('payment_method',o['payment_method'])=='cash' and o['change_for_cents']<r['total_cents']:raise HTTPException(400,'Revise o troco antes de aprovar.')
+                c.execute('UPDATE orders SET subtotal_cents=?,total_cents=? WHERE id=?',(r['total_cents']-fee,r['total_cents'],o['id']))
                 status(c,o,'confirmed' if o['order_origin']=='external' else 'revision_approved');state='approved';msg='Cliente aprovou a alteração. Pedido confirmado; o pagamento pode ser feito pelo link.' if o['order_origin']=='external' else 'Cliente aprovou a alteração. Confira e confirme o pedido.'
             elif decision=='decline':status(c,o,'reviewing');state='declined';msg='Cliente recusou a proposta. O pedido original foi preservado; envie outra opção.'
             else:

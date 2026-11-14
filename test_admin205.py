@@ -140,7 +140,7 @@ def test_registration_fields(checkout,monkeypatch):
  # Current merchant signup requires an explicit plan; V346 covers optional
  # documents for menu-only and full evidence before showcase activation.
  page=client.get('/cadastro/profissional')
- assert page.status_code==200 and '49,90' in page.text and '99,90' in page.text
+ assert page.status_code==200 and 'name="plan"' in page.text and 'value="cardapio"' in page.text and 'value="completo"' in page.text
 
 
 def test_billing_wrapper_and_csrf(env):
