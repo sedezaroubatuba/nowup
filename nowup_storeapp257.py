@@ -200,7 +200,7 @@ def install(g):
         try:
             if len(message)>12000:raise HTTPException(400,'Pedido muito extenso para o WhatsApp. Divida os itens.')
             result={'prepared':True,'recorded':False,'mode':mode,'message':message,'total_cents':total,'receipt':receipt}
-            status376=initial_status(payment_method)
+            status376='new'
             created=datetime.now(timezone.utc).isoformat();token=secrets.token_urlsafe(24)
             cur=conn.execute("""INSERT INTO orders(professional_id,customer_id,customer_name,customer_phone,fulfillment_type,address,notes,status,total_cents,whatsapp_opened,created_at,updated_at,subtotal_cents,delivery_fee_cents,neighborhood,address_reference,change_for_cents,tracking_token)
                 VALUES(?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?)""",(p['id'],identity or None,name,customer_phone,fulfillment_type,address.strip(),notes.strip(),status376,total,created,created,subtotal,fee,area,address_reference.strip(),change,token))
@@ -219,8 +219,8 @@ def install(g):
                 from nowup_weight370 import snapshot
                 snapshot(conn,item.lastrowid,product)
                 for option in chosen:conn.execute('INSERT INTO order_item_options(order_item_id,option_id,option_name,price_cents) VALUES(?,?,?,?)',(item.lastrowid,option['id'],option['name'],option['price_cents']))
-            if mode=='panel':
-                conn.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(p['user_id'],'Novo pedido no NowUp',code+' — '+name,'/painel#pedido-'+str(oid),created))
+            if mode=='panel' or mode=='whatsapp':
+                conn.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(p['user_id'],'Novo pedido no NowUp',code+' — '+name,'/painel/cardapio/pedidos' if mode=='whatsapp' else '/painel#pedido-'+str(oid),created))
                 g['nowup_push75'].enqueue_on_connection(conn,p['user_id'],oid)
             if fulfillment_type=='delivery' and save_address:
                 conn.execute("UPDATE users SET address=?,neighborhood=?,address_reference=? WHERE id=? AND role='customer'",(address.strip(),area,address_reference.strip(),identity))
@@ -228,10 +228,13 @@ def install(g):
             result.update(recorded=True,whatsapp_only=(mode=='whatsapp'),redirect='/p/'+slug+'/pedido/'+token,order_code=code)
             result['receipt']['order_code']=code
             result['review_required']=False
-            result['whatsapp_only']=True
-            result['whatsapp_manual']=True
+            result['whatsapp_only']=False
+            result['whatsapp_manual']=False
+            result['internal_checkout432']=True
+            result['confirmed']=True
+            result['path']='/p/'+slug
             result['payment_method']=payment_method
-            result['receipt']['status']='Envie pelo WhatsApp e aguarde a confirmação da loja'
+            result['receipt']['status']='Pedido enviado — aguardando revisão e aceite da loja'
             from nowup_menu_origin355 import email_origin
             base=email_origin() or str(request.base_url).rstrip('/')
             result['order_url']=base+result['redirect']

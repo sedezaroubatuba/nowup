@@ -93,6 +93,11 @@
     shade?.addEventListener('click', closeMenu);
     document.addEventListener('keydown', event => { if (event.key === 'Escape') closeMenu(); });
 
+    dashboard.querySelectorAll('[data-share-cardapio432]').forEach(button => button.addEventListener('click', async () => {
+      const url=new URL(button.dataset.profileUrl,window.location.origin).href;
+      try{if(navigator.share){await navigator.share({title:'Cardápio da loja',text:'Confira nosso cardápio e faça seu pedido:',url});}else{await navigator.clipboard.writeText(url);button.textContent='Link do cardápio copiado';}}
+      catch(error){if(error.name!=='AbortError')await window.NowUpDialog.prompt('Copie o link do cardápio:',url);}
+    }));
     dashboard.querySelectorAll('[data-copy-profile]').forEach(button => button.addEventListener('click', async () => {
       const url = new URL(button.dataset.profileUrl, window.location.origin).href;
       try { await navigator.clipboard.writeText(url); button.textContent = '✓ Link copiado'; }

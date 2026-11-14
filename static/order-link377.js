@@ -7,7 +7,15 @@
  else if(root.dataset.customer390==='1'&&root.dataset.payment390==='pix'&&payable.has(root.dataset.currentStatus))select('pagamento377');
  root.querySelector('[data-open-conversa377]')?.addEventListener('click',()=>select('conversa377'));
  root.querySelector('[data-copy-order377]')?.addEventListener('click',async()=>{const box=root.querySelector('[data-copy-feedback377]');try{await navigator.clipboard.writeText(location.origin+root.dataset.shareUrl377);box.textContent='Link copiado. Envie ao cliente para conferir o pedido e o pagamento.';}catch(_){box.textContent='Copie o endereço desta página e envie ao cliente.';}});
- function paymentConfirmed419(){const payment=document.getElementById('pagamento377');if(payment&&!payment.querySelector('[data-pix-confirmed405]')){const notice=document.createElement('p');notice.dataset.pixConfirmed405='';notice.setAttribute('role','status');notice.style.cssText='background:#dcfce7;color:#166534;padding:20px;border-radius:14px;font-weight:700';notice.textContent='✓ Pix confirmado — recebimento conferido pela loja.';payment.replaceChildren(notice);}}
+ function paymentConfirmed419(){const payment=document.getElementById('pagamento377');if(payment&&!payment.querySelector('[data-pix-confirmed405]')){const notice=document.createElement('p');notice.dataset.pixConfirmed405='';notice.setAttribute('role','status');notice.style.cssText='background:#dcfce7;color:#166534;padding:20px;border-radius:14px;font-weight:700';notice.textContent='✅ Seu pagamento foi aprovado. Aguarde os próximos status do pedido.';payment.replaceChildren(notice);}}
+ function contact432(){
+  const customer=root.dataset.customer390==='1';let phone=(customer?root.dataset.storeWhatsapp432:root.dataset.buyerWhatsapp432)||'';phone=phone.replace(/\D/g,'');if(phone.length===10||phone.length===11)phone='55'+phone;if(!/^55\d{10,11}$/.test(phone))return;
+  let box=root.querySelector('[data-contact432]');if(!box){box=document.createElement('section');box.dataset.contact432='';box.style.cssText='padding:16px;margin:16px 0;border:1px solid #b7dfc4;border-radius:14px';root.append(box);}
+  const labels={new:'aguardando revisão da loja',confirmed:'confirmado',preparing:'em preparo',ready:'pronto',out_for_delivery:'a caminho',completed:'concluído',cancelled:'cancelado',rejected:'recusado'};
+  const message=customer?'Olá! Gostaria de falar sobre meu pedido '+root.dataset.orderCode432+'.':'Olá! Seu pedido '+root.dataset.orderCode432+' está '+(labels[root.dataset.currentStatus]||'em atualização')+'. Confira o acompanhamento no NowUp.';
+  box.replaceChildren();const a=document.createElement('a');a.className='btn primary full-btn';a.style.background='#16883f';a.target='_blank';a.rel='noopener';a.href='https://wa.me/'+phone+'?text='+encodeURIComponent(message);a.textContent=customer?'Falar com a loja pelo WhatsApp':'Avisar cliente pelo WhatsApp';box.append(a);
+ }
+ contact432();
  function offerPixMessage430(){
   const payment=document.getElementById('pagamento377');if(!payment?.querySelector('[data-pix-confirmed405]')||payment.querySelector('[data-pix-whatsapp430]')||!root.hasAttribute('data-pix-customer430'))return;
   let phone=root.dataset.pixCustomer430.replace(/\D/g,'');if(phone.length===10||phone.length===11)phone='55'+phone;if(!/^55\d{10,11}$/.test(phone))return;
@@ -36,7 +44,7 @@
     const doc=new DOMParser().parseFromString(await response.text(),'text/html');
     for(const id of ['orderLiveStatus','pedido377','pagamento377']){const old=document.getElementById(id),fresh=doc.getElementById(id);if(old&&fresh){old.replaceChildren(...fresh.childNodes);}}
     root.querySelectorAll('[data-pix-payment]').forEach(host=>{const config=host.querySelector('script[type="application/json"]');if(config&&window.NOWUP_PIX){window.NOWUP_PIX.attach(host,JSON.parse(config.textContent));}});
-    current=data.status;root.dataset.currentStatus=current;root.dataset.updated377=data.updated_at;offerPixMessage430();return;
+    current=data.status;root.dataset.currentStatus=current;root.dataset.updated377=data.updated_at;offerPixMessage430();contact432();return;
    }root.dataset.updated377=data.updated_at;
   }catch(_){}finally{clearTimeout(timeout);busy=false;schedule();}
  }

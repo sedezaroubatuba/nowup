@@ -32,12 +32,12 @@
       if(button){button.disabled=true;button.textContent='Enviando pedido…';}
       feedback.textContent='Enviando pedido…';
       let whatsappWindow390=null;
-      if(cfg.whatsappCheckout){try{whatsappWindow390=window.open('about:blank','_blank');if(whatsappWindow390){whatsappWindow390.opener=null;whatsappWindow390.document.title='Preparando pedido';whatsappWindow390.document.body.textContent='Preparando seu pedido para abrir o WhatsApp…';}}catch(_){}}
+
       const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),30000);
       try{
         const response=await fetch(checkoutForm229.action,{method:'POST',body:new FormData(checkoutForm229),headers:{Accept:'application/json',...(document.getElementById('store-app256')?{'X-Nowup-Store-App':'256'}:{})},credentials:'same-origin',signal:controller.signal});
         const json=(response.headers.get('content-type')||'').includes('application/json')?await response.json():null;
-        if(cfg.whatsappCheckout){
+        if(cfg.whatsappCheckout&&!json?.internal_checkout432){
           const validWA=/^https:\/\/wa\.me\/55[0-9]{10,11}\?text=/.test(json?.whatsapp_url||'');
           if(!response.ok||!json?.prepared||!validWA)throw new Error(typeof json?.detail==='string'?json.detail:'Não foi possível preparar o pedido. Revise os dados.');
           if(json.recorded&&localStorage.getItem(key)===snapshot){cart.clear();localStorage.removeItem(key);localStorage.removeItem(infoKey);sessionStorage.removeItem('nowup-checkout247:'+key);render();}
