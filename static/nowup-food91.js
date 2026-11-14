@@ -50,5 +50,5 @@
     if(!node&&target?.path===location.pathname&&String(target.id)===id){const title=[...document.querySelectorAll('h2,h3,h4')].find(n=>n.textContent.trim()===target.name);node=title?.closest('article')||title;}
     if(node){node.classList.add('food91-highlight');node.scrollIntoView({block:'center',behavior:reduced?'auto':'smooth'});}
   }
-  if(location.pathname==='/'){load();setInterval(()=>{if(!document.hidden)load();},300000);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-updated>60000)load();});}else if(/^\/p\/[^/]+\/menu\/?$/.test(location.pathname)){focusProduct();}
+  if(location.pathname==='/'){load();setInterval(()=>{if(!document.hidden)load();},300000);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-updated>60000)load();});}else if(/^\/p\/[^/]+\/(?:menu|cardapio)\/?$/.test(location.pathname)){focusProduct();}
 })();

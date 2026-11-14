@@ -2,7 +2,7 @@
   const root=document.querySelector('[data-native-menu]'); if(!root)return;
   const cfg=window.NOWUP_MENU||{},cart=new Map(),items=root.querySelector('[data-cart-items]'),total=root.querySelector('[data-cart-total]'),checkout=root.querySelector('[data-checkout]'),dialog=document.querySelector('[data-checkout-dialog]');
   if(!items||!total||!checkout||!dialog)return;
-  const path=location.pathname.replace(/\/menu\/?$/,'').replace(/\/$/,'');
+  const path=location.pathname.replace(/\/(?:menu|cardapio)\/?$/,'').replace(/\/$/,'');
   const customerId=Number.isSafeInteger(Number(cfg.customerId))&&Number(cfg.customerId)>0?Number(cfg.customerId):null;
   const key=cfg.whatsappCheckout?`nowup-cart:whatsapp257:u:${customerId}:${path}`:customerId?`nowup-cart:u:${customerId}:${path}`:`nowup-cart:${path}`;
   const infoKey=`nowup-cart-info:${cfg.whatsappCheckout?'whatsapp257:':''}${customerId?`u:${customerId}:`:''}${path}`;

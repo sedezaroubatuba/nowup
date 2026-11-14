@@ -3,7 +3,7 @@
  if(!document.body.classList.contains('fashion-catalog385'))return;
  const cfg=window.NOWUP_MENU||{},root=document.querySelector('[data-native-menu]');
  if(!root||cfg.demoBrowse386||!cfg.customerId||cfg.ownerView)return;
- const path=location.pathname.replace(/\/menu\/?$/,'').replace(/\/$/,'');
+ const path=location.pathname.replace(/\/(?:menu|cardapio)\/?$/,'').replace(/\/$/,'');
  const storageKey='fashion-basket391:'+cfg.customerId+':'+path;
  let basket;try{basket=localStorage.getItem(storageKey)||crypto.randomUUID();localStorage.setItem(storageKey,basket);}catch(_){basket=crypto.randomUUID();}
  const forms=[...root.querySelectorAll('form')].filter(f=>f.querySelector('[name=cart_json]'));
