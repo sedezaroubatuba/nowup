@@ -85,7 +85,7 @@
   });
   // Reuse the original sound control and listener; never announce activation before user consent.
   const alerts=document.querySelector('[data-order-alerts]');
-  if(alerts)room.querySelector('.mk228-heading').after(alerts);
+  if(alerts&&!alerts.closest('dialog'))room.querySelector('.mk228-heading').after(alerts);
   const originalClose=root.querySelector('[data-close-pro-menu].btn');if(originalClose)originalClose.textContent='✕ Fechar';
   const toggle=root.querySelector('[data-pro-menu-toggle]'),sidebar=root.querySelector('.pro-sidebar');
   let wasOpen=false;
