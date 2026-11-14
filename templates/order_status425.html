@@ -1,0 +1,13 @@
+<section class="nu401-no-print" data-order-status425 aria-label="Atendimento deste pedido" style="padding:16px;margin:16px 0;border:1px solid #ddd;border-radius:16px">
+<h2>Atualizar status do pedido</h2>
+{% set paid425=order.payment_method!='pix' or payment_checked401(order.id) %}
+{% set next425={'new':('confirmed','Confirmar pedido'),'awaiting_payment':('confirmed','Confirmar pedido'),'reviewing':('confirmed','Confirmar pedido'),'revision_approved':('confirmed','Confirmar pedido'),'confirmed':('preparing','Em preparo'),'preparing':(('out_for_delivery','Saiu para entrega') if order.fulfillment_type=='delivery' else ('completed','Entregue / retirado')),'ready':(('out_for_delivery','Saiu para entrega') if order.fulfillment_type=='delivery' else ('completed','Entregue / retirado')),'out_for_delivery':('completed','Entregue')} %}
+{% if order.status in next425 %}
+{% set target425=next425[order.status] %}
+{% if paid425 or target425[0]=='confirmed' %}
+<form action="/painel/pedidos/{{order.id}}/status" method="post" data-status-form425><input type="hidden" name="return_to" value="link"><button class="btn primary" name="status" value="{{target425[0]}}">{{target425[1]}}</button></form>
+{% else %}<p>Confirme o recebimento do Pix na conferência do pagamento antes de avançar o atendimento.</p>{% endif %}
+{% elif order.status=='awaiting_approval' %}<p>Aguarde a aprovação da alteração pelo cliente.</p>{% else %}<p>Este pedido está encerrado.</p>{% endif %}
+{% if order.status not in ['completed','cancelled','rejected','whatsapp_finalized'] %}
+<details><summary>Cancelar pedido</summary><form action="/painel/pedidos/{{order.id}}/status" method="post" data-status-form425><input type="hidden" name="return_to" value="link"><label>Motivo do cancelamento<input name="reason" required maxlength="300"></label><button class="btn soft" name="status" value="cancelled">Confirmar cancelamento</button></form></details>
+{% endif %}<p data-feedback425 role="status" aria-live="polite"></p></section>

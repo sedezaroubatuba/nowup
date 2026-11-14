@@ -4,6 +4,7 @@
 <link rel="stylesheet" href="/static/order-receipt401.css?v=407">
 <main class="nu401-receipt"><header class="nu406-heading nu401-no-print"><span class="nu406-eyebrow">SEU PEDIDO, EM CADA DETALHE</span><h1>{{'Notinha confirmada' if confirmed401 else 'Notinha de conferência'}}</h1><p>{{order.display_name}} · {{order.order_code}}</p></header>
 {% if not confirmed401 %}<p class="alert nu401-no-print">Pedido ainda não confirmado. Confira os itens e o pagamento antes do aceite.</p>{% endif %}
+{% if merchant401 %}{% include 'order_status425.html' %}{% endif %}
 {% include 'order_paper408.html' %}
 <div class="nu401-no-print">
 {% if merchant401 %}
