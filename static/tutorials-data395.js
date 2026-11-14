@@ -464,7 +464,7 @@ window.NOWUP_TUTORIALS395=[
     "page": "pedidos-ativos",
     "target": "#pedidos-ativos",
     "title": "Sala de pedidos",
-    "text": "Acompanhe os pedidos da vitrine por etapa. Confira itens, observações, entrega e total antes de aceitar."
+    "text": "Acompanhe os pedidos por etapa e troque entre Vitrine e WhatsApp pelos canais no topo. Toque na campainha ao lado do menu para ativar, testar ou desativar o som. Cadastro, percentuais e montagem guiada ficam em Configurações. O lembrete de estoque pode ser fechado no X e revisto em Configurações. Confira itens, observações, entrega e total antes de aceitar."
    },
    {
     "page": "pedidos",

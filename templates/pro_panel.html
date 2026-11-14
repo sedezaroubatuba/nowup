@@ -4,7 +4,7 @@
 {% import 'order_line347.html' as lines347 %}
 {% import "promotions285.html" as promotions285 %}
 {% import 'pairs256.html' as pairs256 %}
-{% extends 'base.html' %}{% block title %}Painel do lojista | NowUp{% endblock %}{% block body_class %}professional-area{% if pro.business_type=='fashion' %} fashion-store385{% endif %}{% endblock %}{% block content %}<link rel="stylesheet" href="/static/tutorials395.css?v=395"><script defer src="/static/tutorials-data395.js?v=424"></script><script defer src="/static/tutorials395.js?v=395"></script><link rel="stylesheet" href="/static/order-items166.css?v=166"><link rel="stylesheet" href="/static/pro-compact.css?v=67">{% set status_labels = status_labels|default({'new':'Pedido recebido','confirmed':'Pedido aceito','preparing':'Em preparo','ready':'Pronto','out_for_delivery':'Saiu para entrega','completed':'Concluído','cancelled':'Cancelado','rejected':'Recusado'}, true) %}<link rel="stylesheet" href="/static/pro-panel-navigation.css?v=60">
+{% extends 'base.html' %}{% block title %}Painel do lojista | NowUp{% endblock %}{% block body_class %}professional-area{% if pro.business_type=='fashion' %} fashion-store385{% endif %}{% endblock %}{% block content %}<link rel="stylesheet" href="/static/tutorials395.css?v=395"><script defer src="/static/tutorials-data395.js?v=427"></script><script defer src="/static/tutorials395.js?v=395"></script><link rel="stylesheet" href="/static/order-items166.css?v=166"><link rel="stylesheet" href="/static/pro-compact.css?v=67">{% set status_labels = status_labels|default({'new':'Pedido recebido','confirmed':'Pedido aceito','preparing':'Em preparo','ready':'Pronto','out_for_delivery':'Saiu para entrega','completed':'Concluído','cancelled':'Cancelado','rejected':'Recusado'}, true) %}<link rel="stylesheet" href="/static/pro-panel-navigation.css?v=60">
 <style>
 #perfil>.nu-store-config-groups>details{margin:16px 0;padding:16px;border:1px solid #e4d8f1;border-radius:14px;background:#fff}
 #perfil>.nu-store-config-groups>details>summary{font-weight:700;color:#7136bf;min-height:44px;cursor:pointer;display:flex;align-items:center}
@@ -25,7 +25,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 body.fashion-store385 :is(a[href="#lanches-refeicoes322"],a[href="#combos-loja"],a[href="#adicionais"],a[href="#produtos-peso370"],#lanches-refeicoes322,#combos-loja,#peso-loja,#adicionais){display:none!important}body.fashion-store385 [data-fashion-form385] label{min-width:0}body.fashion-store385 [data-fashion-form385] input:not([type=checkbox]),body.fashion-store385 [data-fashion-form385] select{width:100%;box-sizing:border-box}body.fashion-store385 [data-fashion-form385] textarea{width:100%;min-height:80px}body.fashion-store385 [data-fashion-form385] .full{grid-column:1/-1}</style>
 
 <div class="container dashboard pro-dashboard" data-panel-day="{{today_day}}" data-merchant228>
-<div data-onboarding416 hidden></div><script defer src="/static/onboarding-entry416.js?v=416"></script><p class="alert" role="note"><b>Antes de abrir a loja, confira o estoque e a disponibilidade dos produtos.</b> Nos pedidos com Pix, o pagamento é liberado após o aceite da loja. Se precisar cancelar um pedido pago, devolva o Pix pelo aplicativo do banco.</p><a class="btn primary" style="margin-bottom:12px" href="/painel/cardapio/pedidos">Pedidos do WhatsApp · Central do Cardápio</a><header class="v60-top"><button class="btn" type="button" data-pro-menu-toggle aria-expanded="false" aria-controls="pro-edit-menu" aria-label="Abrir menu">☰</button><div><b>{{pro.display_name}}</b><small>{{shop_status.label}}</small></div><a class="btn soft merchant-profile-link" href="/p/{{pro.slug}}" rel="noopener" aria-label="Ver meu perfil público na NowUp">↗ Ver minha loja</a><a class="btn v61-bell" href="#notificacoes" aria-label="Notificações">🔔<span class="v61-badge" data-notification-badge hidden>0</span></a></header>
+<header class="v60-top"><button class="btn" type="button" data-pro-menu-toggle aria-expanded="false" aria-controls="pro-edit-menu" aria-label="Abrir menu">☰</button><div><b>{{pro.display_name}}</b><small><a href="#horarios" data-nav198>{{shop_status.label}}</a></small></div><a class="btn soft merchant-profile-link" href="/p/{{pro.slug}}" rel="noopener" aria-label="Ver meu perfil público na NowUp">↗ Ver minha loja</a><a class="nu427-settings" href="#perfil" data-nav198 aria-label="Configurações da loja">⚙</a></header>
 <button class="v60-shade" type="button" data-close-pro-menu aria-label="Fechar menu" hidden></button>
 <aside class="sidebar pro-sidebar" id="pro-edit-menu" aria-label="Menu da loja">
 <a class="mk228-brand" href="#inicio" data-nav198><img src="/static/nowup-logo185.png?v=196" alt="NowUp Brasil"></a>
@@ -86,10 +86,11 @@ body.fashion-store385 :is(a[href="#lanches-refeicoes322"],a[href="#combos-loja"]
 {% if request.query_params.get('erro')=='motivo-obrigatorio' %}<div class="alert danger">Informe o motivo do cancelamento ou da recusa.</div>{% endif %}
 
 <section class="panel active-orders-inbox mk228-room" id="pedidos-ativos">
-<div class="mk228-heading"><div><span class="kicker">Sua operação em um só lugar</span><h2>Pedidos da Vitrine</h2><p>Pedidos feitos dentro do NowUp. Os pedidos do link próprio ficam no painel do Cardápio.</p></div><a href="#pedidos" data-nav198 class="mk228-details">Histórico por dia ↗</a></div>
+<div class="mk228-heading"><div><span class="kicker">Sua operação em um só lugar</span><h2>Pedidos</h2></div><a href="#pedidos" data-nav198 class="mk228-details">Histórico por dia ↗</a></div>
+<nav class="nu427-channels" aria-label="Canais de pedidos"><a class="is-active" href="/painel#pedidos-ativos" data-nav198 aria-current="page">Vitrine</a><a href="/painel/cardapio/pedidos">WhatsApp</a></nav>
 <div class="mk228-tools"><label><span class="sr-only">Buscar pedido ou cliente</span><input type="search" data-search-input228 placeholder="Buscar pedido ou cliente…" autocomplete="off"></label><button type="button" data-refresh228>Atualizar</button><a href="#horarios" data-nav198 class="mk228-shop-status">● {{shop_status.label}} · Alterar</a></div>
 <p class="mk228-live" data-live228 role="status" aria-live="polite">Atualização automática a cada 10 segundos.</p>
-<nav aria-label="Canais de pedidos"><a class="btn primary" href="/painel#pedidos">Pedidos da Vitrine</a> <a class="btn soft" href="/painel/cardapio/pedidos">Pedidos do WhatsApp</a></nav><div data-board228>{% include 'merchant_kanban228.html' %}</div></section>
+<div data-board228>{% include 'merchant_kanban228.html' %}</div></section>
 <section class="panel pro-welcome" id="resumo">
 <div>
 <span class="kicker">Central do profissional</span>
@@ -97,14 +98,7 @@ body.fashion-store385 :is(a[href="#lanches-refeicoes322"],a[href="#combos-loja"]
 <p>Gerencie sua vitrine e acompanhe o interesse dos clientes.</p>
 <p><span class="status-pill {% if pro.is_premium %}ok{% endif %}">{{{'cardapio':'Só cardápio/catálogo','vitrine':'Só vitrine','ambos':'Vitrine com pedidos no NowUp','completo':'Vitrine + catálogo com link e WhatsApp','none':'Aguardando plano'}.get(pro.plan_active,'Plano pendente')}}</span></p>
 <p><span class="status-pill {% if shop_status.open %}ok{% endif %}">{{shop_status.label}}</span> <small>{{shop_status.detail}}</small></p>
-<div class="completion">
-<span>
-<b>{{profile_completion}}%</b> do perfil completo</span>
-<i>
-<em style="width:{{profile_completion}}%">
-</em>
-</i>
-</div>
+
 </div>
 <div class="row">
 <a class="btn soft" href="#perfil">✏️ Editar perfil</a>
@@ -387,6 +381,16 @@ body.fashion-store385 :is(a[href="#lanches-refeicoes322"],a[href="#combos-loja"]
 
 {% if pro.featured or pro.in_slider %}{% endif %}
 <section class="panel" id="perfil">
+<details class="nu427-config" id="som-ajuda427"><summary>Som, avisos e orientações</summary><button class="btn soft" type="button" data-open-sound427>Opções da campainha</button><button class="btn soft" type="button" data-open-stock427>Rever lembrete de estoque</button><a class="btn v61-bell" href="#notificacoes" aria-label="Notificações">🔔<span class="v61-badge" data-notification-badge hidden>0</span></a><p>Confira o estoque e a disponibilidade antes de abrir a loja. O QR Code Pix aparece ao finalizar o pedido; confirme o recebimento no banco antes de iniciar o preparo. Se cancelar um pedido pago, devolva o valor pelo aplicativo do banco.</p><p>Pedidos da Vitrine e do link do Cardápio têm filas separadas. Os totais incluem pedidos em andamento, excluem cancelados e recusados e podem conter pedidos abertos de outros dias.</p></details>
+<details class="nu427-config" id="cadastro-ajuda427"><summary>Cadastro da loja e montagem guiada</summary><div class="completion">
+<span>
+<b>{{profile_completion}}%</b> do perfil completo</span>
+<i>
+<em style="width:{{profile_completion}}%">
+</em>
+</i>
+</div><div data-onboarding416 hidden></div><script defer src="/static/onboarding-entry416.js?v=427"></script><a href="/painel/primeiros-passos">Abrir montagem guiada</a></details>
+
 <div class="section-title">
 <div>
 <span class="kicker">Todas as configurações da loja</span>
@@ -554,7 +558,7 @@ body.fashion-store385 :is(a[href="#lanches-refeicoes322"],a[href="#combos-loja"]
 </div>
 <a class="btn whatsapp" href="{{support_link}}" target="_blank" rel="noopener">Falar com a NowUp</a>
 </section>{% endif %}
-</main>
+</main><dialog class="nu427-dialog nu427-stock-dialog" id="stock-reminder427" data-merchant427="{{pro.user_id}}" aria-labelledby="stock-title427"><header><span class="nu427-stock-icon" aria-hidden="true">▣</span><button type="button" data-close427 aria-label="Fechar lembrete de estoque">×</button></header><h2 id="stock-title427">Antes de começar</h2><p>Confira o estoque e a disponibilidade dos produtos antes de abrir a loja.</p><p>Mantenha o cardápio atualizado para evitar cancelamentos.</p><small>Você pode rever este lembrete em Configurações.</small></dialog>
 </div>
 <script src="/static/order-chat.js?v=61"></script><script src="/static/pro-panel-menu.js?v=361"></script>
 
@@ -565,7 +569,7 @@ body.fashion-store385 :is(a[href="#lanches-refeicoes322"],a[href="#combos-loja"]
 <link rel="manifest" href="/static/nowup-lojista.webmanifest"><script src="/static/pro-push75.js?v=112" defer></script>
 <link rel="stylesheet" href="/static/order-review127.css?v=379"><script src="/static/order-review127.js?v=379" defer></script><link rel="stylesheet" href="/static/custom196.css?v=424"><script type="application/json" id="ingredient-catalog320">{{ingredient_catalog320|default([])|tojson}}</script><script type="application/json" id="included-catalog195">{{included_catalog195|tojson}}</script><script type="application/json" id="pair-catalog328">{{pair_catalog328|tojson}}</script><script type="application/json" id="combo-catalog298">{{combo_catalog298|tojson}}</script><script defer src="/static/combo-prices303.js?v=304"></script><script defer src="/static/combo-editor301.js?v=410"></script><script defer src="/static/custom196.js?v=424"></script><link rel="stylesheet" href="/static/pro198.css?v=198"><script defer src="/static/pro198.js?v=376"></script>
 <nav class="nu198-bottom" aria-label="Navegação do lojista"><a href="#inicio" data-nav198><span aria-hidden="true">⌂</span>Início</a><a href="#produtos-loja" data-nav198><span aria-hidden="true">▦</span>Produtos</a><a href="#combos-loja" data-nav198><span aria-hidden="true">🍻</span>Combos</a><a href="#pedidos-ativos" data-nav198><span aria-hidden="true">▤</span>Pedidos</a><a href="#perfil" data-nav198><span aria-hidden="true">⌂</span>Minha loja</a></nav>
-<link rel="stylesheet" href="/static/compact200.css?v=324"><script defer src="/static/meal-groups324.js?v=365"></script><script defer src="/static/compact200.js?v=410"></script><script defer src="/static/notification-status200.js?v=404"></script><link rel="stylesheet" href="/static/pro221.css?v=221"><link rel="stylesheet" href="/static/merchant228.css?v=228"><script defer src="/static/merchant228.js?v=406"></script><link rel="stylesheet" href="/static/merchant-feedback270.css?v=270"><script defer src="/static/merchant-feedback270.js?v=270"></script>
+<link rel="stylesheet" href="/static/compact200.css?v=324"><script defer src="/static/meal-groups324.js?v=365"></script><script defer src="/static/compact200.js?v=410"></script><script defer src="/static/notification-status200.js?v=404"></script><link rel="stylesheet" href="/static/pro221.css?v=221"><link rel="stylesheet" href="/static/merchant228.css?v=228"><script defer src="/static/merchant228.js?v=427-406"></script><link rel="stylesheet" href="/static/merchant-feedback270.css?v=270"><script defer src="/static/merchant-feedback270.js?v=270"></script>
 <link rel="stylesheet" href="/static/promotions285.css?v=285"><script defer src="/static/promotions285.js?v=285"></script>
 <link rel="stylesheet" href="/static/ingredient-gallery357.css?v=357"><script defer src="/static/ingredient-gallery357.js?v=363"></script>
 <link rel="stylesheet" href="/static/product-editor410.css?v=410"><script src="/static/product-editor410.js?v=411" defer></script>

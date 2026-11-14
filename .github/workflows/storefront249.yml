@@ -12,6 +12,8 @@ on:
       - 'static/store-app256.js'
       - 'tests/storeapp256.browser.cjs'
       - 'tests/storeapp257.browser.cjs'
+      - 'tests/panel-clean427.browser.cjs'
+      - 'static/panel-clean427.*'
       - 'static/menu88.js'
       - 'static/images258.js'
       - 'static/storefront187.js'
@@ -37,6 +39,8 @@ on:
       - 'static/store-app256.js'
       - 'tests/storeapp256.browser.cjs'
       - 'tests/storeapp257.browser.cjs'
+      - 'tests/panel-clean427.browser.cjs'
+      - 'static/panel-clean427.*'
       - 'static/menu88.js'
       - 'static/images258.js'
       - 'static/storefront187.js'
@@ -70,7 +74,7 @@ jobs:
       - run: node --check static/storefront232.js
       - run: npm test
       - name: Desktop scroll and mobile slideshow controls
-        run: node --test tests/storefront248.browser.cjs tests/upload-preview250.browser.cjs tests/storeapp256.browser.cjs tests/storeapp257.browser.cjs tests/images258.browser.cjs tests/opening260.browser.cjs
+        run: node --test tests/storefront248.browser.cjs tests/upload-preview250.browser.cjs tests/storeapp256.browser.cjs tests/storeapp257.browser.cjs tests/images258.browser.cjs tests/opening260.browser.cjs tests/panel-clean427.browser.cjs
 
       - name: Combo showcase and category separation
         run: node --test tests/storefront275.browser.cjs tests/combos284.browser.cjs tests/home292.browser.cjs

@@ -1,5 +1,5 @@
 {
-  "templates/pro_panel.html": "d696ef0945f4f32de04a685cc1577bd9b5d7b8d91c9ed5605d9824b4b5bfa65f",
+  "templates/pro_panel.html": "c47e9a614ba7a042c084c9077d0793d4bf4e9ad8458e1f8ab97b54fa92652a06",
   "templates/tutorials395.html": "ec9bc21e9bfe2404de0dc7545d0f48ff7a8e8938f168b3a16a6af50012acee4a",
   "templates/ingredients320.html": "fe707e67ad75db1bacd07d5bc651c38ed4003b4513655df73a07a0f69b663951",
   "templates/meals322.html": "2ba61d778ad9c9212adad6fb638a65ee3f0397daf0c6bb38bbbe258a8b916283",
@@ -13,7 +13,7 @@
   "static/pro198.js": "d45b8503e971c895968f75a9eeb2a6a0b59929801430fa492fb44d3ed11f33d7",
   "static/storefront187.js": "192cd622d118536d051d72139cbdcc95eebe7ac2eb764463be351538b1889cf7",
   "static/fashion-layout391.js": "33e51e5b7922119530096ef3f99829b21bcefa5aef1cbb83c8a5c302949b545c",
-  "static/tutorials-data395.js": "1c3e3687a27b4b24ccc6e8db08bf69285468ccca3a280d417aeb89f47de12cf7",
+  "static/tutorials-data395.js": "3d76285bd17ea5d2c5ec6f237e19cd2d86ef6bde748315c3a0144eb8103462af",
   "static/tutorials395.js": "cb67bfd2314e06130ef70d13e518036f8b1f4b430744741e293bcd2d98abf7da",
   "static/tutorials395.css": "1263edffdc064413ddf628738837f2b14ed44e0b3d28c0a0873221ef35b4b94f",
   "nowup_ingredients320.py": "03a33ee1290da1245b72d437ca9c60c4ae7c35226859c8ba03dde8adbddcd24a",
@@ -31,5 +31,8 @@
   "nowup_storeaccounts345.py": "752f6cab3d4ca8540f6fc7c8568908cc514b8effb8e9c404a62ce693d47dc373",
   "nowup_storeapp256.py": "7ac110e941decbff258f2c207dd111879e9759f934a98acf6d89e164d044dbec",
   "nowup_menu_origin355.py": "6272dd4d51bf5a42d167d0a972612dad1e3a56b87d138cba65a389a27043110c",
-  "static/menu88.js": "ff41d0871b8379220948bae507a5ea3575009af4ff76581ee4b425a26f21b0e0"
+  "static/menu88.js": "ff41d0871b8379220948bae507a5ea3575009af4ff76581ee4b425a26f21b0e0",
+  "static/panel-clean427.js": "00837b3baaec5dfb14a55942a7880cf5b8f7f826147312a89909e6919ad69732",
+  "static/panel-clean427.css": "5d54c767aab1b611678ae869091e38401c42016d422fa22ce53736dc5caf4b96",
+  "static/onboarding-entry416.js": "f2d9e9ce2d8722c0b5cb23f8c83e23d711d7079f4022a134efa6294b7502211c"
 }
