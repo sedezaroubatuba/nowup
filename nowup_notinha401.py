@@ -93,7 +93,10 @@ def install(g):
             o=c.execute('SELECT o.* FROM orders o JOIN professionals p ON p.id=o.professional_id WHERE o.id=? AND p.user_id=?'+(' FOR UPDATE OF o' if getattr(c,'dialect','sqlite')=='postgres' else ''),(order_id,u['id'])).fetchone()
             if not o:raise HTTPException(404,'Pedido não encontrado')
             if o['payment_method']!='pix' or o['status'] not in (CONFIRMED|{'new','awaiting_payment'}):raise HTTPException(409,'Confirme um pedido Pix antes de registrar o recebimento')
-            if o['status']=='awaiting_payment':
+            if o['order_origin']=='external' and o['status'] in ('new','awaiting_payment','confirmed'):
+                c.execute('UPDATE orders SET status=? WHERE id=?',('preparing',order_id))
+                c.execute('INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)',(order_id,'preparing',g['now_iso']()))
+            elif o['status']=='awaiting_payment':
                 c.execute('UPDATE orders SET status=? WHERE id=?',('new',order_id))
                 c.execute('INSERT INTO order_status_history(order_id,status,created_at) VALUES(?,?,?)',(order_id,'new',g['now_iso']()))
             c.execute('INSERT INTO order_payment_checks401(order_id,checked_by,amount_cents,checked_at) VALUES(?,?,?,?) ON CONFLICT(order_id) DO UPDATE SET checked_by=excluded.checked_by,amount_cents=excluded.amount_cents,checked_at=excluded.checked_at',(order_id,u['id'],o['total_cents'],g['now_iso']()))
