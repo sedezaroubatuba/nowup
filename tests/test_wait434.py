@@ -75,3 +75,9 @@ def test_scheduled_order_countdown_starts_when_store_can_accept(channel):
     state=client.get(result['redirect']+'/espera434').json()
     assert datetime.fromisoformat(state['deadline'])==future+timedelta(seconds=60)
     assert not state['eligible']
+
+
+def test_handoff_origin_guard_supports_render_tls_termination():
+    from starlette.requests import Request
+    from nowup_sales107 import check_origin
+    check_origin(Request({'type':'http','method':'POST','scheme':'http','server':('nowup.example',80),'path':'/pedido/token/espera434','headers':[(b'host',b'nowup.example'),(b'origin',b'https://nowup.example')],'query_string':b''}))

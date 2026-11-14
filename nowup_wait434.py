@@ -68,9 +68,10 @@ def install(g):
             return response(c, order)
 
     def handoff(request: Request, token: str, slug: str=''):
-        origin = request.headers.get('origin', '').rstrip('/')
-        if not origin or origin != str(request.base_url).rstrip('/'):
+        if not request.headers.get('origin'):
             raise HTTPException(403, 'Origem inválida.')
+        from nowup_sales107 import check_origin
+        check_origin(request)
         with g['db']() as c:
             c.execute('BEGIN IMMEDIATE')
             order, user = owned(request, c, token, slug)
