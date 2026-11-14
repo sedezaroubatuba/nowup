@@ -22,9 +22,10 @@ def request_store(g,request):
             try:
                 candidate=store(g,parts[2],active=False)
                 tail='/'.join(parts[3:])
-                if (tail in ('pedidos','sair') or tail.startswith('pedido/') or (candidate['plan_active'] in ('cardapio','completo') and (candidate['plan_active']=='cardapio' or request.query_params.get('loja')=='1'
-                    or request.query_params.get('origem')=='externo' or request.cookies.get(cookie_name(candidate))
-                    or tail in ('entrar','cadastro','recuperar-senha','redefinir-senha','verificar-email','reenviar-verificacao','aguardando','pedidos','sair','menu/whatsapp','cart-completion345') or tail.startswith('pedido/')))):
+                # A cookie identifies a buyer; only the URL selects the channel.
+                if (tail in ('pedidos','sair','avisos203','sessao420','suporte') or tail.startswith(('pedido/','pedidos/','cliente/','suporte/')) or (candidate['plan_active'] in ('cardapio','completo') and (candidate['plan_active']=='cardapio' or request.query_params.get('loja')=='1'
+                    or request.query_params.get('origem')=='externo'
+                    or tail in ('cardapio','entrar','cadastro','recuperar-senha','redefinir-senha','verificar-email','reenviar-verificacao','aguardando','pedidos','sair','menu/whatsapp','cart-completion345') or tail.startswith('pedido/')))):
                     p=candidate
             except HTTPException: pass
     request.state.scope_store345=p
@@ -46,9 +47,15 @@ def session_response(g,request,p,uid):
     token=cookies['nowup_session'].value
     with g['db']() as c:
         c.execute('UPDATE sessions SET store_id345=? WHERE token=?',(p['id'],token));c.commit()
-    response.raw_headers=[(k,v) for k,v in response.raw_headers if k.lower()!=b'set-cookie']
+    response.raw_headers[:]=[(k,v) for k,v in response.raw_headers if k.lower()!=b'set-cookie']
     response.set_cookie(cookie_name(p),token,max_age=g['SESSION_DAYS']*86400,httponly=True,
         secure=request.url.scheme=='https' or g['os'].getenv('NOWUP_HTTPS')=='1',samesite='lax',path=cookie_path(p).rstrip('/'))
+    pending=request.cookies.get('nowup_customer_order426','')
+    if pending and len(pending)<=120:
+        with g['db']() as c:
+            owned=c.execute('SELECT id FROM orders WHERE tracking_token=? AND customer_id=? AND professional_id=?',(pending,uid,p['id'])).fetchone()
+        if owned:response.headers['location']=cookie_path(p)+'pedido/'+pending
+    response.delete_cookie('nowup_customer_order426',path=cookie_path(p).rstrip('/'))
     response.headers.update(HEADERS)
     return response
 
@@ -81,7 +88,12 @@ def install(g):
         user=g['current_user'](request)
         if user and user['role']=='customer' and user.get('customer_store345')==p['id']:
             return RedirectResponse(presentation(p)['menu'],303,headers=HEADERS)
-        return view(request,slug,'login.html')
+        response=view(request,slug,'login.html')
+        pending=request.query_params.get('pedido','')
+        import re
+        if re.fullmatch(r'[A-Za-z0-9_-]{1,120}',pending):
+            response.set_cookie('nowup_customer_order426',pending,max_age=1800,httponly=True,secure=request.url.scheme=='https' or g['os'].getenv('NOWUP_HTTPS')=='1',samesite='lax',path=cookie_path(p).rstrip('/'))
+        return response
 
     @app.post('/p/{slug}/entrar')
     def login(request:Request,slug:str,email:str=Form(...),password:str=Form(...)):

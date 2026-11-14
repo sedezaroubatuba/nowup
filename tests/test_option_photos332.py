@@ -18,6 +18,8 @@ def test_photos_render_in_store_and_menu_without_placeholder(env):
     from bs4 import BeautifulSoup
     m,client,_,store_id,_=env
     with m.db() as c:
+        # Photo coverage uses a currently supported standalone-menu plan.
+        c.execute("UPDATE professionals SET plan_active='completo' WHERE id=?",(store_id,))
         c.execute('INSERT INTO shared_extras155(professional_id,name,price_cents,available) VALUES(?,?,500,1)',(store_id,'Bacon foto 332'))
         eid=c.execute('SELECT id FROM shared_extras155 WHERE professional_id=? AND name=?',(store_id,'Bacon foto 332')).fetchone()[0]
         c.execute('INSERT INTO ingredients320(professional_id,name,image_filename,price_cents,extra_id325) VALUES(?,?,?,500,?)',(store_id,'Bacon foto 332','bacon332.jpg',eid))

@@ -476,7 +476,7 @@ window.NOWUP_TUTORIALS395=[
     "page": "perfil",
     "target": "#perfil",
     "title": "Pedidos pelo WhatsApp",
-    "text": "No cardápio independente, o cliente precisa tocar em Enviar no WhatsApp. A mensagem leva o link de acompanhamento e atendimento; esses pedidos ficam registrados nos relatórios e podem seguir pelo link, sem entrar na fila interna. Confira o destino em Link da loja, WhatsApp e redes sociais."
+    "text": "O cardápio independente usa o endereço exclusivo /cardapio, separado da Vitrine. O cliente precisa tocar em Enviar no WhatsApp. Ao voltar, ele continua na loja e pode retomar o pedido em andamento. Se precisar entrar novamente, usa a conta de cliente da loja e retorna ao próprio pedido. A mensagem leva o link de acompanhamento e atendimento; esses pedidos ficam registrados nos relatórios e podem seguir pelo link, sem entrar na fila interna. Confira o destino em Link da loja, WhatsApp e redes sociais."
    }
   ]
  },

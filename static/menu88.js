@@ -2,7 +2,7 @@
   const root=document.querySelector('[data-native-menu]'); if(!root)return;
   const cfg=window.NOWUP_MENU||{},cart=new Map(),items=root.querySelector('[data-cart-items]'),total=root.querySelector('[data-cart-total]'),checkout=root.querySelector('[data-checkout]'),dialog=document.querySelector('[data-checkout-dialog]');
   if(!items||!total||!checkout||!dialog)return;
-  const path=location.pathname.replace(/\/menu\/?$/,'').replace(/\/$/,'');
+  const path=location.pathname.replace(/\/(?:menu|cardapio)\/?$/,'').replace(/\/$/,'');
   const customerId=Number.isSafeInteger(Number(cfg.customerId))&&Number(cfg.customerId)>0?Number(cfg.customerId):null;
   const key=cfg.whatsappCheckout?`nowup-cart:whatsapp257:u:${customerId}:${path}`:customerId?`nowup-cart:u:${customerId}:${path}`:`nowup-cart:${path}`;
   const infoKey=`nowup-cart-info:${cfg.whatsappCheckout?'whatsapp257:':''}${customerId?`u:${customerId}:`:''}${path}`;
@@ -45,13 +45,13 @@
           feedback.textContent='Pedido '+json.order_code+' enviado. '+(json.pix?'O Pix já está disponível.':json.payment_method==='pix'?'Solicite os dados Pix à loja.':'Pagamento na entrega ou retirada.');
           const old=checkoutForm229.querySelector('[data-whatsapp-ready257]');if(old){old.receiptCleanup?.();old.remove();}
           const ready=document.createElement('div');ready.dataset.whatsappReady257='';
-          if(validWA){const link=document.createElement('a');link.className='btn primary full-btn';link.href=json.whatsapp_url;link.textContent='Abrir WhatsApp e enviar pedido';link.rel='noopener';link.target='_blank';ready.append(link);}
+          if(validWA){const link=document.createElement('a');link.className='btn primary full-btn';link.href=json.whatsapp_url;link.textContent='Abrir WhatsApp e enviar pedido';link.rel='noopener';link.target='_blank';link.addEventListener('click',()=>{if(validTrack)location.assign(json.redirect);});ready.append(link);}
           if(validTrack){const tracking=document.createElement('a');tracking.className='btn soft full-btn';tracking.href=json.redirect;tracking.textContent='Acompanhar pedido e pagar';ready.append(tracking);}
           if(json.pix&&window.NOWUP_PIX){const host=document.createElement('div');host.setAttribute('data-order-chat-proof377','');window.NOWUP_PIX.attach(host,json.pix);ready.append(host);}
           const note=document.createElement('p');note.textContent='No WhatsApp, toque em Enviar. A loja receberá seu pedido para conferir e atender. '+(json.pix?'Você já pode pagar com o Pix deste pedido.':json.payment_method==='pix'?'Combine os dados do Pix com a loja.':'Acerte o pagamento na entrega ou retirada.');ready.append(note);
           checkoutForm229.append(ready);
           ready.scrollIntoView({block:'start',behavior:'smooth'});
-          if(whatsappWindow390&&!whatsappWindow390.closed){whatsappWindow390.location.replace(json.whatsapp_url);whatsappWindow390=null;if(validTrack)location.assign(json.redirect);}
+          if(whatsappWindow390&&!whatsappWindow390.closed){if(validTrack)location.assign(json.redirect);whatsappWindow390.location.replace(json.whatsapp_url);whatsappWindow390=null;}
           return;
         }
         if(!response.ok||!json?.confirmed||json.path!==path||!((String(json.redirect||'').startsWith(path+'/pedido/')&&/^[A-Za-z0-9_-]+$/.test(String(json.redirect||'').slice((path+'/pedido/').length)))||/^\/pedido\/[A-Za-z0-9_-]+$/.test(json.redirect||'')))throw new Error(typeof json?.detail==='string'?json.detail:'Envio não confirmado. Confira Meus pedidos antes de tentar novamente.');

@@ -4,7 +4,7 @@
  if(!root)return;
  const userId=root.dataset.cartUserId;
  if(!/^[1-9]\d*$/.test(userId))return;
- const prefix=`nowup-cart:u:${userId}:`,valid=/^(\/p\/[a-zA-Z0-9_-]+)(?:\/menu)?$/;
+ const prefix=`nowup-cart:u:${userId}:`,valid=/^(\/p\/[a-zA-Z0-9_-]+)(?:\/(?:menu|cardapio))?$/;
  const money=c=>(c/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
  function readCarts(storage){
   const grouped=new Map();
@@ -28,7 +28,7 @@
  }
  function render(){
   let carts=[];try{carts=readCarts(localStorage);}catch(_){}
-  const current=location.pathname.replace(/\/menu\/?$/,'').replace(/\/$/,'');carts=carts.filter(c=>c.path!==current);
+  const current=location.pathname.replace(/\/(?:menu|cardapio)\/?$/,'').replace(/\/$/,'');carts=carts.filter(c=>c.path!==current);
   root.replaceChildren();root.hidden=!carts.length;if(!carts.length)return;
   const heading=document.createElement('strong');heading.textContent='🛒 Você tem um pedido em andamento';root.append(heading);
   for(const c of carts){const link=document.createElement('a');link.href=c.path+'#nu83-cart';link.className='nu88-cart-link';link.setAttribute('aria-label','Continuar pedido em '+c.name);

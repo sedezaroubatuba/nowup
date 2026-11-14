@@ -1,5 +1,5 @@
 (()=>{'use strict';
-const match=location.pathname.match(/^\/p\/([^/]+)(?:\/menu)?\/?$/);if(!match)return;
+const match=location.pathname.match(/^\/p\/([^/]+)(?:\/(?:menu|cardapio))?\/?$/);if(!match)return;
 async function share(){
  const node=document.getElementById('store-app256');let cfg=null;try{cfg=JSON.parse(node?.textContent||'null')}catch(_){}
  const url=new URL(cfg?.menu||('/p/'+match[1]+'/menu'),location.origin).href;

@@ -218,8 +218,8 @@ def install(g):
                 conn.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(p['user_id'],'Novo pedido no NowUp',code+' — '+name,'/painel#pedido-'+str(oid),created))
                 g['nowup_push75'].enqueue_on_connection(conn,p['user_id'],oid)
             if identity:
-                received=conn.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(identity,'Pedido enviado à loja',code+' enviado. Aguardando aceite da loja.','/pedido/'+token,created))
-                g['nowup_alerts112'].enqueue(conn,identity,received.lastrowid,{'title':'Pedido enviado à loja','body':code+' enviado. Aguardando aceite da loja.','url':'/pedido/'+token,'tag':'nowup-recebido-'+str(oid)})
+                received=conn.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(identity,'Pedido enviado à loja',code+' enviado. Aguardando aceite da loja.','/p/'+slug+'/pedido/'+token,created))
+                g['nowup_alerts112'].enqueue(conn,identity,received.lastrowid,{'title':'Pedido enviado à loja','body':code+' enviado. Aguardando aceite da loja.','url':'/p/'+slug+'/pedido/'+token,'tag':'nowup-recebido-'+str(oid)})
             if fulfillment_type=='delivery' and save_address:
                 conn.execute("UPDATE users SET address=?,neighborhood=?,address_reference=? WHERE id=? AND role='customer'",(address.strip(),area,address_reference.strip(),identity))
             remember_checkout(conn,identity,p['id'],key,digest,oid,created)
@@ -233,7 +233,7 @@ def install(g):
             base=email_origin() or str(request.base_url).rstrip('/')
             result['order_url']=base+result['redirect']
             management_base=g['os'].getenv('NOWUP_PUBLIC_ORIGIN','').strip().rstrip('/') or g['os'].getenv('NOWUP_BASE_URL','').strip().rstrip('/') or str(request.base_url).rstrip('/')
-            result['merchant_url']=management_base+'/pedido/'+token+'?lojista=1'
+            result['merchant_url']=management_base+'/p/'+slug+'/pedido/'+token+'?lojista=1'
             from zoneinfo import ZoneInfo
             hour=datetime.now(ZoneInfo('America/Sao_Paulo')).hour
             greeting='bom dia' if 5<=hour<12 else 'boa tarde' if hour<18 else 'boa noite'
@@ -242,7 +242,7 @@ def install(g):
             for field,value in {'saudacao':greeting,'pedido':code,'loja':p['display_name'],'total':money(total)}.items():
                 template=template.replace('{'+field+'}',value)
             if scheduled380:template+='\nHorário solicitado para hoje: '+datetime.fromisoformat(scheduled380).astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%H:%M')+' (aguardando confirmação)'
-            result['message']=template+'\nPedido '+code+' — revisão pelo lojista:\n'+result['merchant_url']
+            result['message']=template+'\nPedido '+code+' — revisão pelo lojista:\n'+result['merchant_url']+'\nCliente — acompanhar pedido e pagamento:\n'+result['order_url']
             if fashion385:
                 result['message']='Olá! Quero confirmar a disponibilidade e separar estas peças para retirada ou entrega.\n\n'+message+'\nPagamento a combinar pelo WhatsApp.'
             result['receipt']['order_url']=result['order_url']
