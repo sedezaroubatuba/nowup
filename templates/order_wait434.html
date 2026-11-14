@@ -3,7 +3,7 @@
 <strong data-title434>{{'Aguardando aceite da loja' if review_customer else 'Tempo para aceitar o pedido'}}</strong>
 <div class="nu434-clock" data-clock434 aria-label="Tempo restante">…</div>
 <p data-message434>{{'Se a loja não aceitar em 1 minuto, você poderá continuar pelo WhatsApp.' if review_customer else 'Após esse tempo, o cliente poderá continuar pelo WhatsApp.'}}</p>
-{% if review_customer %}<button type="button" class="btn primary full-btn" data-handoff434 hidden>Continuar pelo WhatsApp</button><a class="btn primary full-btn" data-whatsapp434 target="_blank" rel="noopener" hidden>Abrir WhatsApp</a>{% endif %}
+{% if review_customer %}<button type="button" class="btn primary full-btn" data-handoff434 hidden>Enviar pedido para o WhatsApp do lojista</button><a class="btn primary full-btn" data-whatsapp434 target="_blank" rel="noopener" hidden>Abrir WhatsApp</a>{% endif %}
 <p data-feedback434 role="status"></p>
 </section>
 {% endif %}

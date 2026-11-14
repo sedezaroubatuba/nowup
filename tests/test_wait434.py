@@ -46,7 +46,12 @@ def test_countdown_handoff_same_order_and_blocks_merchant(channel,monkeypatch):
     page=client.get(result['redirect'])
     assert 'data-pix-payment' not in page.text
     assert 'Pagamento bloqueado no NowUp' in page.text
+    assert client.get('/pedidos/'+str(o['id'])+'/conversa').json()['closed']
+    assert client.post('/pedidos/'+str(o['id'])+'/conversa',data={'message':'teste'}).status_code==409
+    assert client.post('/pedidos/'+str(o['id'])+'/comprovante206',files={'file':('pix.pdf',b'test','application/pdf')},data={'request_id':'handoff-test'}).status_code==409
+    assert page.status_code==200 and item['product_name'] in page.text
     monkeypatch.setattr(m,'current_user',lambda r:owner)
+    assert client.post('/pedidos/'+str(o['id'])+'/conversa',data={'message':'teste loja'}).status_code==409
     assert client.post('/painel/pedidos/'+str(o['id'])+'/status',data={'status':'confirmed'},headers={'Accept':'application/json'}).status_code==409
     assert client.post('/painel/pedidos/'+str(o['id'])+'/conferir-pix').status_code==409
     assert client.post('/painel/pedidos/'+str(o['id'])+'/revisao',data={'keep':str(item['id']),'qty_'+str(item['id']):'1','price_'+str(item['id']):'3.00'}).status_code==409

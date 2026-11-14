@@ -3106,7 +3106,7 @@ def order_chat_read(request: Request, order_id: int, after: int=0):
             filename=item.pop('filename');mime=item.pop('content_type');size=item.pop('size_bytes')
             if rid:item['attachment']={'id':rid,'filename':filename,'content_type':mime,'size_bytes':size}
             messages.append(item)
-        return JSONResponse({'messages':messages,'role':u['role'],'status':order['status'],'closed':order['status'] in {'completed','cancelled','rejected'}},headers={'Cache-Control':'private, no-store'})
+        return JSONResponse({'messages':messages,'role':u['role'],'status':order['status'],'closed':order['status'] in {'completed','cancelled','rejected','whatsapp_finalized'}},headers={'Cache-Control':'private, no-store'})
     finally:conn.close()
 
 @app.post("/pedidos/{order_id}/conversa")
@@ -3119,6 +3119,12 @@ def order_chat_send(request: Request, order_id: int, message: str=Form(...)):
         conn.close(); raise HTTPException(400,"Este pedido foi encerrado")
     try:
         conn.execute('BEGIN IMMEDIATE')
+        lock=' FOR UPDATE' if getattr(conn,'dialect','sqlite')=='postgres' else ''
+        live=conn.execute('SELECT status FROM orders WHERE id=?'+lock,(order_id,)).fetchone()
+        if not live or live['status']=='whatsapp_finalized':
+            raise HTTPException(409,'Atendimento pelo WhatsApp. O pedido e a conversa ficam disponíveis apenas para consulta no NowUp.')
+        if live['status'] in {'completed','cancelled','rejected'}:
+            raise HTTPException(409,'Este pedido foi encerrado')
         cutoff=(datetime.now(timezone.utc)-timedelta(minutes=1)).isoformat()
         count=conn.execute('SELECT COUNT(*) FROM order_messages WHERE order_id=? AND sender_role=? AND created_at>=?',(order_id,u['role'],cutoff)).fetchone()[0]
         if count>=20:raise HTTPException(429,'Aguarde um minuto antes de enviar mais mensagens.',headers={'Retry-After':'60'})
