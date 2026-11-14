@@ -118,6 +118,11 @@ def money(cents):
 
 
 def immediate_payment398(g,conn,result,token):
+    # New WhatsApp handoffs close payment and communication in the conversation.
+    # Historical tracked orders retain their original behavior.
+    if result.get('whatsapp_manual'):
+        result.pop('pix',None);result['receipt'].pop('pix',None)
+        return result
     # Never replay a cached QR after an edit, cancellation or changed store key.
     order=g['tracked_order'](conn,token)
     paid=bool(order and g['nowup_notinha401'].payment_checked(conn,order))
@@ -217,18 +222,16 @@ def install(g):
             if mode=='panel':
                 conn.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(p['user_id'],'Novo pedido no NowUp',code+' — '+name,'/painel#pedido-'+str(oid),created))
                 g['nowup_push75'].enqueue_on_connection(conn,p['user_id'],oid)
-            if identity:
-                received=conn.execute('INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)',(identity,'Pedido enviado à loja',code+' enviado. Aguardando aceite da loja.','/p/'+slug+'/pedido/'+token,created))
-                g['nowup_alerts112'].enqueue(conn,identity,received.lastrowid,{'title':'Pedido enviado à loja','body':code+' enviado. Aguardando aceite da loja.','url':'/p/'+slug+'/pedido/'+token,'tag':'nowup-recebido-'+str(oid)})
             if fulfillment_type=='delivery' and save_address:
                 conn.execute("UPDATE users SET address=?,neighborhood=?,address_reference=? WHERE id=? AND role='customer'",(address.strip(),area,address_reference.strip(),identity))
             remember_checkout(conn,identity,p['id'],key,digest,oid,created)
             result.update(recorded=True,whatsapp_only=(mode=='whatsapp'),redirect='/p/'+slug+'/pedido/'+token,order_code=code)
             result['receipt']['order_code']=code
             result['review_required']=False
-            result['whatsapp_only']=False
+            result['whatsapp_only']=True
+            result['whatsapp_manual']=True
             result['payment_method']=payment_method
-            result['receipt']['status']='Aguardando Confirmação de Pagamento' if payment_method=='pix' else 'Pedido enviado — pagamento na entrega ou retirada'
+            result['receipt']['status']='Envie pelo WhatsApp e aguarde a confirmação da loja'
             from nowup_menu_origin355 import email_origin
             base=email_origin() or str(request.base_url).rstrip('/')
             result['order_url']=base+result['redirect']
@@ -242,7 +245,9 @@ def install(g):
             for field,value in {'saudacao':greeting,'pedido':code,'loja':p['display_name'],'total':money(total)}.items():
                 template=template.replace('{'+field+'}',value)
             if scheduled380:template+='\nHorário solicitado para hoje: '+datetime.fromisoformat(scheduled380).astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%H:%M')+' (aguardando confirmação)'
-            result['message']=template+'\nPedido '+code+' — revisão pelo lojista:\n'+result['merchant_url']+'\nCliente — acompanhar pedido e pagamento:\n'+result['order_url']
+            payment_note='Aguardo o Pix da loja pelo WhatsApp. Enviarei o comprovante nesta conversa.' if payment_method=='pix' else 'Pagamento a combinar com a loja pelo WhatsApp.'
+            result['message']=template+'\n\nPedido '+code+'\n'+message+'\n\n'+payment_note+'\nConfirmação e avisos nesta conversa.\n\nÁrea do lojista — revisão do pedido:\n'+result['merchant_url']
+            if len(result['message'])>12000:raise HTTPException(400,'Pedido muito extenso para o WhatsApp. Divida os itens.')
             if fashion385:
                 result['message']='Olá! Quero confirmar a disponibilidade e separar estas peças para retirada ou entrega.\n\n'+message+'\nPagamento a combinar pelo WhatsApp.'
             result['receipt']['order_url']=result['order_url']

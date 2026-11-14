@@ -39,19 +39,16 @@
         const json=(response.headers.get('content-type')||'').includes('application/json')?await response.json():null;
         if(cfg.whatsappCheckout){
           const validWA=/^https:\/\/wa\.me\/55[0-9]{10,11}\?text=/.test(json?.whatsapp_url||'');
-          const validTrack=typeof json?.redirect==='string'&&json.redirect.startsWith(path+'/pedido/')&&/^[A-Za-z0-9_-]+$/.test(json.redirect.slice((path+'/pedido/').length));
-          if(!response.ok||!json?.prepared||(!json.recorded&&!validWA)||(json.recorded&&!validTrack)||!validWA)throw new Error(typeof json?.detail==='string'?json.detail:'Não foi possível preparar o pedido. Revise os dados.');
+          if(!response.ok||!json?.prepared||!validWA)throw new Error(typeof json?.detail==='string'?json.detail:'Não foi possível preparar o pedido. Revise os dados.');
           if(json.recorded&&localStorage.getItem(key)===snapshot){cart.clear();localStorage.removeItem(key);localStorage.removeItem(infoKey);sessionStorage.removeItem('nowup-checkout247:'+key);render();}
-          feedback.textContent='Pedido '+json.order_code+' enviado. '+(json.pix?'O Pix já está disponível.':json.payment_method==='pix'?'Solicite os dados Pix à loja.':'Pagamento na entrega ou retirada.');
+          feedback.textContent='Pedido '+json.order_code+' preparado. Toque em Enviar no WhatsApp para a loja receber.';
           const old=checkoutForm229.querySelector('[data-whatsapp-ready257]');if(old){old.receiptCleanup?.();old.remove();}
           const ready=document.createElement('div');ready.dataset.whatsappReady257='';
-          if(validWA){const link=document.createElement('a');link.className='btn primary full-btn';link.href=json.whatsapp_url;link.textContent='Abrir WhatsApp e enviar pedido';link.rel='noopener';link.target='_blank';link.addEventListener('click',()=>{if(validTrack)location.assign(json.redirect);});ready.append(link);}
-          if(validTrack){const tracking=document.createElement('a');tracking.className='btn soft full-btn';tracking.href=json.redirect;tracking.textContent='Acompanhar pedido e pagar';ready.append(tracking);}
-          if(json.pix&&window.NOWUP_PIX){const host=document.createElement('div');host.setAttribute('data-order-chat-proof377','');window.NOWUP_PIX.attach(host,json.pix);ready.append(host);}
-          const note=document.createElement('p');note.textContent='No WhatsApp, toque em Enviar. A loja receberá seu pedido para conferir e atender. '+(json.pix?'Você já pode pagar com o Pix deste pedido.':json.payment_method==='pix'?'Combine os dados do Pix com a loja.':'Acerte o pagamento na entrega ou retirada.');ready.append(note);
+          if(validWA){const link=document.createElement('a');link.className='btn primary full-btn';link.href=json.whatsapp_url;link.textContent='Abrir WhatsApp e enviar pedido';link.rel='noopener';link.target='_blank';ready.append(link);}
+          const note=document.createElement('p');note.textContent='No WhatsApp, toque em Enviar. A loja confere e confirma seu pedido por lá. '+(json.payment_method==='pix'?'Aguarde a loja enviar o Pix e mande o comprovante na mesma conversa.':'Combine o pagamento com a loja na mesma conversa.')+' Você não precisa voltar ao link.';ready.append(note);
           checkoutForm229.append(ready);
           ready.scrollIntoView({block:'start',behavior:'smooth'});
-          if(whatsappWindow390&&!whatsappWindow390.closed){if(validTrack)location.assign(json.redirect);whatsappWindow390.location.replace(json.whatsapp_url);whatsappWindow390=null;}
+          if(whatsappWindow390&&!whatsappWindow390.closed){whatsappWindow390.location.replace(json.whatsapp_url);whatsappWindow390=null;}
           return;
         }
         if(!response.ok||!json?.confirmed||json.path!==path||!((String(json.redirect||'').startsWith(path+'/pedido/')&&/^[A-Za-z0-9_-]+$/.test(String(json.redirect||'').slice((path+'/pedido/').length)))||/^\/pedido\/[A-Za-z0-9_-]+$/.test(json.redirect||'')))throw new Error(typeof json?.detail==='string'?json.detail:'Envio não confirmado. Confira Meus pedidos antes de tentar novamente.');
