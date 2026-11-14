@@ -11,6 +11,23 @@
     const status=document.createElement('p');status.setAttribute('role','status');
     const button=document.createElement('button');button.type='button';button.className='btn primary full-btn';button.textContent='Copiar código Pix';
     button.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(pix.payload);status.textContent='Código Pix copiado.';}catch(_){value.focus();value.select();status.textContent='Selecione e copie o código acima para colar no seu banco.';}});section.append(button,status);
+    if(host.hasAttribute('data-merchant-pix-share429')){
+      const share=document.createElement('button');share.type='button';share.className='btn primary full-btn';share.textContent='Compartilhar Pix pelo WhatsApp';share.dataset.sharePix429='';
+      const caption='Pagamento do pedido'+(host.dataset.orderCode429?' '+host.dataset.orderCode429:'')+'\nValor: '+pix.amount+'\nRecebedor: '+pix.receiver+'\n\nPix Copia e Cola:\n'+pix.payload+'\n\nDepois de pagar, envie o comprovante nesta conversa.';
+      let file=null;
+      try{const bytes=Uint8Array.from(atob(pix.qr_image.split(',')[1]),c=>c.charCodeAt(0));file=new File([bytes],'pix-qr-code.png',{type:'image/png'});}catch(_){}
+      share.addEventListener('click',async()=>{
+        let supported=false;try{supported=!!file&&!!navigator.share&&!!navigator.canShare&&navigator.canShare({files:[file],text:caption});}catch(_){}
+        if(!supported){status.textContent='Este navegador não compartilha imagem e texto juntos. Baixe o QR Code e use Copiar código Pix para enviar na conversa.';return;}
+        share.disabled=true;
+        try{await navigator.share({files:[file],text:caption,title:'Pix do pedido'});status.textContent='Compartilhamento aberto. Confira no WhatsApp se a imagem e o código foram incluídos e enviados ao cliente.';}
+        catch(error){if(error.name!=='AbortError')status.textContent='Não foi possível compartilhar. Baixe o QR Code e copie o código Pix para enviar pelo WhatsApp.';}
+        finally{share.disabled=false;}
+      });
+      const download=document.createElement('a');download.href=pix.qr_image;download.download='pix-qr-code.png';download.className='btn soft full-btn';download.textContent='Baixar QR Code';
+      const help=document.createElement('p');help.textContent='Compartilhe o QR Code com o valor e o Pix Copia e Cola. Escolha WhatsApp e a conversa do cliente; confira a legenda antes de enviar.';
+      section.append(share,download,help);
+    }
     const note=document.createElement('p');note.textContent='Confira o favorecido no aplicativo do banco. '+pix.confirmation;section.append(note);
     if(host.hasAttribute('data-order-chat-proof377')){host.append(section);return;}
     const proofBox=document.createElement('div');proofBox.style.cssText='margin-top:18px;padding-top:16px;border-top:1px solid #dfd0ed';
