@@ -242,9 +242,11 @@ def install(g):
             result['merchant_url']=management_base+'/p/'+slug+'/pedido/'+token+'?lojista=1'
             from zoneinfo import ZoneInfo
             hour=datetime.now(ZoneInfo('America/Sao_Paulo')).hour
-            greeting='bom dia' if 5<=hour<12 else 'boa tarde' if hour<18 else 'boa noite'
+            greeting='bom dia' if 5<=hour<12 else 'boa tarde' if 12<=hour<18 else 'boa noite'
             saved_message=conn.execute('SELECT message FROM store_order_settings377 WHERE professional_id=?',(p['id'],)).fetchone()
             template=(saved_message['message'] if saved_message else '') or 'Olá, {saudacao}! Fiz o pedido {pedido} pelo NowUp. Pode conferir os itens e atender, por favor?'
+            from nowup_wait434 import dynamic_greeting
+            template=dynamic_greeting(template)
             for field,value in {'saudacao':greeting,'pedido':code,'loja':p['display_name'],'total':money(total)}.items():
                 template=template.replace('{'+field+'}',value)
             if scheduled380:template+='\nHorário solicitado para hoje: '+datetime.fromisoformat(scheduled380).astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%H:%M')+' (aguardando confirmação)'

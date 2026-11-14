@@ -1,0 +1,9 @@
+{% if order.status in ['new','whatsapp_finalized'] and order.tracking_token %}
+<section class="nu434-wait nu401-no-print" data-wait434 data-order-id434="{{order.id}}" data-endpoint434="{{wait_endpoint434(order) if review_customer else '/painel/pedidos/' ~ order.id ~ '/espera434'}}" data-deadline434="{{wait_deadline434(order)}}" data-status434="{{order.status}}" data-customer434="{{1 if review_customer else 0}}" aria-label="Tempo de espera pelo aceite">
+<strong data-title434>{{'Aguardando aceite da loja' if review_customer else 'Tempo para aceitar o pedido'}}</strong>
+<div class="nu434-clock" data-clock434 aria-label="Tempo restante">…</div>
+<p data-message434>{{'Se a loja não aceitar em 1 minuto, você poderá continuar pelo WhatsApp.' if review_customer else 'Após esse tempo, o cliente poderá continuar pelo WhatsApp.'}}</p>
+{% if review_customer %}<button type="button" class="btn primary full-btn" data-handoff434 hidden>Continuar pelo WhatsApp</button><a class="btn primary full-btn" data-whatsapp434 target="_blank" rel="noopener" hidden>Abrir WhatsApp</a>{% endif %}
+<p data-feedback434 role="status"></p>
+</section>
+{% endif %}

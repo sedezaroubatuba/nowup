@@ -9,6 +9,7 @@
  root.querySelector('[data-copy-order377]')?.addEventListener('click',async()=>{const box=root.querySelector('[data-copy-feedback377]');try{await navigator.clipboard.writeText(location.origin+root.dataset.shareUrl377);box.textContent='Link copiado. Envie ao cliente para conferir o pedido e o pagamento.';}catch(_){box.textContent='Copie o endereço desta página e envie ao cliente.';}});
  function paymentConfirmed419(){const payment=document.getElementById('pagamento377');if(payment&&!payment.querySelector('[data-pix-confirmed405]')){const notice=document.createElement('p');notice.dataset.pixConfirmed405='';notice.setAttribute('role','status');notice.style.cssText='background:#dcfce7;color:#166534;padding:20px;border-radius:14px;font-weight:700';notice.textContent='✅ Seu pagamento foi aprovado. Aguarde os próximos status do pedido.';payment.replaceChildren(notice);}}
  function contact432(){
+  if(['new','whatsapp_finalized'].includes(root.dataset.currentStatus)){root.querySelector('[data-contact432]')?.remove();return;}
   const customer=root.dataset.customer390==='1';let phone=(customer?root.dataset.storeWhatsapp432:root.dataset.buyerWhatsapp432)||'';phone=phone.replace(/\D/g,'');if(phone.length===10||phone.length===11)phone='55'+phone;if(!/^55\d{10,11}$/.test(phone))return;
   let box=root.querySelector('[data-contact432]');if(!box){box=document.createElement('section');box.dataset.contact432='';box.style.cssText='padding:16px;margin:16px 0;border:1px solid #b7dfc4;border-radius:14px';root.append(box);}
   const labels={new:'aguardando revisão da loja',confirmed:'confirmado',preparing:'em preparo',ready:'pronto',out_for_delivery:'a caminho',completed:'concluído',cancelled:'cancelado',rejected:'recusado'};
@@ -42,7 +43,7 @@
     const response=await fetch(location.pathname,{credentials:'same-origin',cache:'no-store',signal:controller.signal});
     if(!response.ok)return;
     const doc=new DOMParser().parseFromString(await response.text(),'text/html');
-    for(const id of ['orderLiveStatus','pedido377','pagamento377']){const old=document.getElementById(id),fresh=doc.getElementById(id);if(old&&fresh){old.replaceChildren(...fresh.childNodes);}}
+    for(const id of ['orderHero434','pedido377','pagamento377']){const old=document.getElementById(id),fresh=doc.getElementById(id);if(old&&fresh){old.replaceChildren(...fresh.childNodes);}}
     root.querySelectorAll('[data-pix-payment]').forEach(host=>{const config=host.querySelector('script[type="application/json"]');if(config&&window.NOWUP_PIX){window.NOWUP_PIX.attach(host,JSON.parse(config.textContent));}});
     current=data.status;root.dataset.currentStatus=current;root.dataset.updated377=data.updated_at;offerPixMessage430();contact432();return;
    }root.dataset.updated377=data.updated_at;

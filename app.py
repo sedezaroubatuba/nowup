@@ -2299,6 +2299,8 @@ def pro_order_status(request: Request, order_id: int, status: str=Form(...), rea
     nowup_scheduling380.expire(conn,order_id=order_id);conn.commit();conn.execute("BEGIN IMMEDIATE")
     order=conn.execute("SELECT id,status,customer_id,tracking_token FROM orders WHERE id=? AND professional_id=?"+(" FOR UPDATE" if getattr(conn,"dialect","sqlite")=="postgres" else ""),(order_id,p["id"])).fetchone()
     if not order: conn.close(); raise HTTPException(404,"Pedido não encontrado")
+    if order["status"]=='whatsapp_finalized':
+        conn.close(); raise HTTPException(409,"Este pedido será finalizado pelo WhatsApp. Aceite bloqueado no NowUp.")
     if order["status"]=='awaiting_approval' and status not in {'cancelled','rejected'}:
         conn.close(); raise HTTPException(409,"Aguarde a aprovação do cliente")
     if status=='reviewing' and order["status"] not in {'new','awaiting_payment','reviewing','revision_approved'}:
@@ -3397,3 +3399,7 @@ nowup_whatsapp_status421.install(globals())
 # Cash sessions preserve the current POS, inventory and manual Pix flows.
 import nowup_cash424
 nowup_cash424.install(globals())
+
+# Customer-selected WhatsApp fallback after a server-timed minute.
+import nowup_wait434
+nowup_wait434.install(globals())
