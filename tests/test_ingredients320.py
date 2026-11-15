@@ -123,3 +123,19 @@ def test_required_price_on_create_edit_and_zero(env):
     fields=panel.select('#ingredientes320 input[name=price]')
     assert fields and all(field.has_attr('required') for field in fields)
     assert not panel.select('#ingredientes320 input[name=photo][required]')
+
+
+def test_inline_paid_extra_requires_price_and_returns_store_owned_choice(env):
+    m,client,_,store_id,_=env
+    endpoint='/painel/cardapio/ingredientes320'
+    for price in ['', '0', '-1', 'NaN']:
+        response=client.post(endpoint,data={'name':'Extra inline QA','price':price,'inline_paid442':'1'})
+        assert response.status_code==400
+    response=client.post(endpoint,data={'name':'Extra inline QA','price':'4,50','inline_paid442':'1'})
+    assert response.status_code==200
+    extra=response.json()
+    assert extra['price_cents']==450 and extra['image_filename']==''
+    with m.db() as c:
+        row=c.execute('SELECT * FROM shared_extras155 WHERE id=?',(extra['id'],)).fetchone()
+        assert row['professional_id']==store_id and row['price_cents']==450
+    assert client.post(endpoint,data={'name':'Extra inline QA','price':'5','inline_paid442':'1'}).status_code==409

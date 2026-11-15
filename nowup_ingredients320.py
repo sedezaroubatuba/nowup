@@ -1,7 +1,7 @@
 """Reusable ingredient names and optional photos scoped to one merchant."""
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from fastapi import Request, Form, File, UploadFile, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 
 
 def initialize(conn):
@@ -72,7 +72,7 @@ def option_photos332(conn, store_id, options):
 
 def install(g):
     @g['app'].post('/painel/cardapio/ingredientes320')
-    def save(request:Request,name:str=Form(...),ingredient_id:int=Form(0),photo:UploadFile=File(None),price:str=Form("")):
+    def save(request:Request,name:str=Form(...),ingredient_id:int=Form(0),photo:UploadFile=File(None),price:str=Form(""),inline_paid442:str=Form("")):
         user=g['require_user'](request,'professional');conn=g['db']()
         try:
             store=g['require_premium_catalog'](conn,user['id']);name=name.strip()
@@ -85,6 +85,7 @@ def install(g):
                 archived=conn.execute('SELECT * FROM ingredients320 WHERE professional_id=? AND lower(name)=lower(?) AND deleted327=1',(store['id'],name)).fetchone()
                 if archived:current=archived;ingredient_id=archived['id']
             duplicate=conn.execute('SELECT id FROM ingredients320 WHERE professional_id=? AND lower(name)=lower(?) AND id!=?',(store['id'],name,ingredient_id)).fetchone()
+            if duplicate and inline_paid442=='1':raise HTTPException(409,'Já existe um item com esse nome. Selecione o adicional cadastrado.')
             if duplicate:return RedirectResponse('/painel?erro=ingrediente-duplicado#ingredientes320',303)
             if not price.strip():raise HTTPException(400,'Informe o preço do item. Use 0,00 se ele não tiver cobrança como adicional.')
             try:
@@ -94,6 +95,7 @@ def install(g):
                 if not amount.is_finite() or amount<0:raise InvalidOperation
                 cents=int((amount*100).quantize(Decimal('1'),rounding=ROUND_HALF_UP))
             except (InvalidOperation,ValueError,OverflowError):raise HTTPException(400,'Informe um preço válido, igual ou maior que zero.')
+            if inline_paid442=='1' and cents<=0:raise HTTPException(400,'Informe um preço maior que zero para o adicional pago.')
             extra_id=current['extra_id325'] if current else 0
             if cents is not None:
                 if not extra_id:
@@ -108,6 +110,7 @@ def install(g):
             else:conn.execute('INSERT INTO ingredients320(professional_id,name,image_filename,price_cents,extra_id325) VALUES(?,?,?,?,?)',(store['id'],name,image,cents,extra_id))
             if extra_id:g['sync_shared155'](conn,store['id'])
             conn.commit()
+            if inline_paid442=='1':return JSONResponse({'id':extra_id,'name':name,'price_cents':cents,'image_filename':image},headers={'Cache-Control':'private, no-store'})
         finally:conn.close()
         return g['catalog_return328'](request,'/painel?ok=ingrediente#ingredientes320')
 
