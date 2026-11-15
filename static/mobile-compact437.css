@@ -49,3 +49,25 @@
  html body .nu437-form [data-editor192]>h3{font-size:16px!important;margin:4px 0!important}
  html body .nu437-form [data-editor192] p{font-size:13px!important;line-height:1.4!important;margin:4px 0!important}
 }
+/* V438: keep basic registration open; only advanced options are folded. */
+@media(max-width:700px){
+ html body.professional-area .pro-dashboard form.nu438-basic{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px 12px!important;width:100%!important;max-width:none!important;padding:10px!important}
+ html body .nu438-basic>.nu438-wide,html body .nu438-basic>.nu437-photo,html body .nu438-basic>.nu437-fold,html body .nu438-basic>.nu437-save{grid-column:1/-1!important}
+ html body .nu438-basic>.nu438-half{grid-column:auto!important;width:100%!important}
+ html body .nu438-basic>label{display:grid!important;align-content:start;gap:4px!important;font-size:13px!important}
+ html body .nu438-basic>label.check{display:flex!important;align-items:center;gap:6px!important;min-height:44px}
+ html body .nu438-basic>.nu437-photo{padding:8px!important;order:initial!important}
+ html body .nu438-basic .nu437-photo img{max-height:90px!important}
+ html body .nu438-basic .nu437-photo label{display:flex!important;align-items:center;flex-wrap:wrap;gap:6px!important}
+ html body .nu438-basic .nu437-photo input{flex:1 1 160px}
+ html body .nu438-basic .nu437-body{display:block!important;padding:10px!important}
+ html body .nu438-basic .nu437-body> *{margin-bottom:10px!important}
+ html body .nu438-basic .nu437-body .nu192-editor{display:block!important}
+ html body .nu438-basic .nu437-body .nu192-editor>h3{font-size:15px!important;margin:8px 0!important}
+ html body .nu438-basic .nu437-body .nu301-combo-item>.nu437-fold>summary{font-size:14px!important;padding:11px!important}
+ html body .nu438-basic .nu437-body .nu301-combo-item .nu437-body{display:grid!important;grid-template-columns:minmax(0,1fr);gap:8px}
+ html body .nu438-basic .nu437-body .nu301-combo-item :is(label,input,button){max-width:100%!important;box-sizing:border-box}
+ html body .nu438-basic [name=description]{height:64px!important;min-height:64px!important}
+ html body .nu438-basic .nu437-save{margin:0 -10px -10px!important;padding:10px!important}
+ html body.professional-area .pro-dashboard .product-admin-card[open]{padding:8px!important}
+}
