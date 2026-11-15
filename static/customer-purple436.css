@@ -48,3 +48,10 @@ html body .storeapp-actions256 :is(a.btn,button):focus-visible{
 /* Retain a disabled indication while keeping labels readable. */
 html body.public-menu-area dialog.checkout-dialog button:disabled{opacity:.6!important;cursor:not-allowed}
 @media print{html body .nu347-tracking .order-hero .order-live-status{background:#fff!important;color:#000!important}html body .nu347-tracking .order-hero .order-live-status *{color:#000!important}}
+/* V440: outrank legacy menu form selectors, not only the dialog border. */
+html body.public-menu-area .native-menu dialog.checkout-dialog[data-checkout-dialog] form[data-order-form] :is(h2,label,p,small,span,b,strong){color:#32134f!important;text-shadow:none!important}
+html body.public-menu-area .native-menu dialog.checkout-dialog[data-checkout-dialog] form[data-order-form] :is(input,textarea,select){background:#fff!important;color:#32134f!important;border:1px solid #7134bc!important;box-shadow:none!important}
+html body.public-menu-area .native-menu dialog.checkout-dialog[data-checkout-dialog] form[data-order-form] :is(input,textarea,select):focus-visible{outline:3px solid #7134bc!important;outline-offset:2px;box-shadow:0 0 0 5px #eee4fa!important}
+html body.public-menu-area .native-menu dialog.checkout-dialog[data-checkout-dialog] form[data-order-form] :is(button.btn,button.btn span,button.btn strong){color:#fff!important;background:#7134bc!important;border-color:#7134bc!important}
+html body.public-menu-area .native-menu dialog.checkout-dialog[data-checkout-dialog] form[data-order-form] .cart-total :is(span,b,strong){color:#32134f!important}
+html body.public-menu-area .native-menu .nu83-cart-dock button[data-cart-summary],html body.public-menu-area .native-menu .nu83-cart-dock button[data-cart-summary] :is(span,strong){color:#fff!important;background:#7134bc!important;opacity:1!important}
