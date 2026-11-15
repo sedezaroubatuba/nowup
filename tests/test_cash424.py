@@ -60,6 +60,8 @@ def test_cash_math_duplicate_movements_and_freeze(env):
 
 def test_pending_cancelled_and_zero(env):
     m,c,*_=env;sid=open_cash(env);o=order(env)
+    page=c.get('/painel/caixa')
+    assert page.status_code==200 and 'R$ 3,00' in page.text
     assert c.post(f'/painel/caixa/{sid}/fechar',data={'counted':'100'},follow_redirects=False).status_code==409
     assert c.post(f"/painel/pedidos/{o['id']}/status",data={'status':'cancelled','reason':'Teste'},follow_redirects=False).status_code==303
     with m.db() as db:
@@ -184,3 +186,13 @@ def test_unknown_payment_cannot_be_completed(env):
     response=c.post(f"/painel/pedidos/{o['id']}/status",data={'status':'completed'},headers={'Accept':'application/json'})
     assert response.status_code==409
     with m.db() as db:assert db.execute('SELECT status FROM orders WHERE id=?',(o['id'],)).fetchone()[0]=='ready'
+
+
+def test_cash_page_with_open_manual_account(env):
+    m,c,*_=env
+    open_cash(env)
+    assert c.post('/painel/vendas-manuais/abrir',data={'label':'Conta pendente QA','channel':'presential','token':'cash441-manual-account'},follow_redirects=False).status_code==303
+    with m.db() as db:mid=db.execute('SELECT MAX(id) FROM manual_sales107').fetchone()[0]
+    assert c.post(f'/painel/vendas-manuais/{mid}/alterar',data={'action':'item','version':0,'product_id':env[4],'quantity':2},follow_redirects=False).status_code==303
+    page=c.get('/painel/caixa')
+    assert page.status_code==200 and 'Conta pendente QA' in page.text and 'R$ 6,00' in page.text

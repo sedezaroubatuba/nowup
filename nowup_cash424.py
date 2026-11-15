@@ -65,8 +65,8 @@ def summary(c,s):
     for refund in refunds:payments[refund['method']]-=refund['cents']
     moves=[dict(r) for r in c.execute('SELECT * FROM cash_moves424 WHERE session_id=? ORDER BY id',(s['id'],))]
     supply=sum(r['cents'] for r in moves if r['kind']=='supply');withdraw=sum(r['cents'] for r in moves if r['kind']=='withdrawal')
-    pending=[dict(r) for r in c.execute("SELECT id,order_code label FROM orders WHERE professional_id=? AND status NOT IN ('completed','cancelled','rejected','whatsapp_finalized')",(pid,))]
-    pending += [dict(r) for r in c.execute("SELECT -id id,label FROM manual_sales107 WHERE professional_id=? AND status='open'",(pid,))]
+    pending=[dict(r) for r in c.execute("SELECT id,order_code label,total_cents FROM orders WHERE professional_id=? AND status NOT IN ('completed','cancelled','rejected','whatsapp_finalized')",(pid,))]
+    pending += [dict(r) for r in c.execute("SELECT -id id,label,total_cents FROM manual_sales107 WHERE professional_id=? AND status='open'",(pid,))]
     return dict(payments=payments,sales=sales,sales_count=len(sales),sales_cents=sum(r['cents'] for r in sales),
         moves=moves,refunds=refunds,supply_cents=supply,withdrawal_cents=withdraw,expected_cents=s['opening_cents']+payments['cash']+supply-withdraw,pending=pending)
 
