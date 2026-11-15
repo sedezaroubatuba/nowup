@@ -23,7 +23,7 @@ def setup_order(channel):
 
 def test_full_review_changed_price_requires_buyer_acceptance(channel,monkeypatch):
     m,client,result,order,item,owner,buyer=setup_order(channel)
-    assert 'pix' in result and 'data-pix-payment' in client.get(result['redirect']).text
+    assert 'pix' not in result and 'data-pix-payment' not in client.get(result['redirect']).text
     with m.db() as c:assert not m.nowup_notinha401.payment_checked(c,order)
     monkeypatch.setattr(m,'current_user',lambda request:owner)
     page=client.get(result['redirect'])
@@ -93,5 +93,5 @@ def test_private_order_details_skip_intro_and_do_not_overlay_actions(channel,mon
     page=client.get('/pedido/'+order['tracking_token'])
     assert page.status_code==200
     assert 'id="nowup-opening260"' not in page.text
-    assert 'id="order-detail-alerts381"' in page.text
+    assert 'id="nowup-order407"' in page.text
     assert 'Confirmar pedido' in page.text

@@ -36,16 +36,17 @@ def make_order(checkout,method='pix',channel='internal'):
 @pytest.mark.parametrize('channel',['internal','external'])
 def test_pix_is_waiting_in_database_and_values_and_payload_are_server_owned(checkout,channel):
     m,client,o,owner,customer=make_order(checkout,channel=channel)
-    assert o['status']=='awaiting_payment' and o['subtotal_cents']==300 and o['total_cents']==300
+    expected='awaiting_payment' if channel=='internal' else 'new'
+    assert o['status']==expected and o['subtotal_cents']==300 and o['total_cents']==300
     with m.db() as c:
         item=c.execute('SELECT unit_price_cents FROM order_items WHERE order_id=?',(o['id'],)).fetchone()
         assert item[0]==300
-        assert c.execute('SELECT status FROM order_status_history WHERE order_id=?',(o['id'],)).fetchone()[0]=='awaiting_payment'
+        assert c.execute('SELECT status FROM order_status_history WHERE order_id=?',(o['id'],)).fetchone()[0]==expected
         store=c.execute('SELECT * FROM professionals WHERE id=?',(o['professional_id'],)).fetchone()
         pix=m.pix_payment(store,o['total_cents'],'NU'+str(o['id']))
     assert '54043.00' in pix['payload'] and 'key' not in pix
     page=client.get('/pedido/'+o['tracking_token']);assert page.status_code==200
-    assert 'data-pix-payment' in page.text
+    assert ('data-pix-payment' in page.text)==(channel=='internal')
     assert 'Chave Pix: <strong>' not in page.text
 
 @pytest.mark.parametrize('target',['preparing','ready','out_for_delivery','completed'])

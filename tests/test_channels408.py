@@ -10,7 +10,7 @@ def test_cardapio_and_vitrine_are_disjoint_with_same_owner_session(env):
     menu=client.get('/painel/cardapio/pedidos')
     assert menu.status_code==200 and 'EXCLUSIVE-CARDAPIO408' in menu.text
     assert 'Finalizado hoje' not in menu.text and 'Outra loja' not in menu.text
-    assert not BeautifulSoup(menu.text,'html.parser').select('[data-order-alerts]')
+    assert BeautifulSoup(menu.text,'html.parser').select('[data-order-alerts]')
     fragment=client.get('/painel/cardapio/pedidos?fragment=1')
     assert fragment.status_code==200 and 'EXCLUSIVE-CARDAPIO408' in fragment.text
     assert '<html' not in fragment.text

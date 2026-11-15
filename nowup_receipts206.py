@@ -48,6 +48,7 @@ async def upload(request:Request,order_id:int,file:UploadFile=File(...),request_
     c,u,order=G['authorized_order_chat'](request,order_id)
     try:
         if u['role']!='customer':raise HTTPException(403,'Somente o cliente pode enviar comprovante')
+        if order['status']=='whatsapp_finalized':raise HTTPException(409,'Envie o comprovante pelo WhatsApp. Pedido apenas para consulta no NowUp.')
         if order['status'] in CLOSED:raise HTTPException(409,'O pedido foi encerrado')
     finally:c.close()
     raw=await file.read(LIMIT+1)
@@ -62,7 +63,9 @@ async def upload(request:Request,order_id:int,file:UploadFile=File(...),request_
     c,u,order=G['authorized_order_chat'](request,order_id)
     try:
         c.execute('BEGIN IMMEDIATE')
-        live=c.execute('SELECT status FROM orders WHERE id=?',(order_id,)).fetchone()
+        lock=' FOR UPDATE' if getattr(c,'dialect','sqlite')=='postgres' else ''
+        live=c.execute('SELECT status FROM orders WHERE id=?'+lock,(order_id,)).fetchone()
+        if live and live['status']=='whatsapp_finalized':raise HTTPException(409,'Envie o comprovante pelo WhatsApp. Pedido apenas para consulta no NowUp.')
         if not live or live['status'] in CLOSED:raise HTTPException(409,'O pedido foi encerrado')
         old=c.execute('SELECT id,order_id FROM order_receipts206 WHERE request_id=?',(request_id,)).fetchone()
         if old:

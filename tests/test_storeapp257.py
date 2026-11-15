@@ -34,8 +34,8 @@ def test_channels_identity_totals_and_idempotency(channel,mode):
             assert order['customer_id']==customer['id'] and order['customer_name']=='Maria da conta'
             assert order['customer_phone']=='12988887777' and order['order_origin']=='external'
             assert c.execute('SELECT COUNT(*) FROM orders').fetchone()[0]==1
-            assert c.execute("SELECT COUNT(*) FROM notifications WHERE title='Novo pedido no NowUp'").fetchone()[0]==0
-            assert order['status']=='awaiting_payment'
+            assert c.execute("SELECT COUNT(*) FROM notifications WHERE title='Novo pedido no NowUp'").fetchone()[0]==1
+            assert order['status']=='new'
         assert client.get(result['redirect']).status_code==200
         data['notes']='alterado';assert client.post(endpoint,data=data).status_code==409
 

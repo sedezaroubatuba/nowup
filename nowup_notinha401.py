@@ -20,7 +20,7 @@ def payment_checked(c,o):
     return bool(r and r['amount_cents']==o['total_cents'] and o['payment_method']=='pix')
 
 def receipt(c,o,labels):
-    paid=payment_checked(c,o) and o['status'] not in {'cancelled','rejected'}
+    paid=payment_checked(c,o) and o['status'] not in {'cancelled','rejected','whatsapp_finalized'}
     lines=[o['display_name'], 'PEDIDO '+str(o['order_code'] or o['id']),
            'Situação: '+labels.get(o['status'],o['status']), '',
            'Cliente: '+o['customer_name'], 'Telefone: '+o['customer_phone'],
@@ -48,7 +48,9 @@ def receipt(c,o,labels):
         elif i.get('notes'):lines.append('  Observações: '+i['notes'])
     lines+=['','Subtotal: '+money(o['subtotal_cents']),'Entrega: '+money(o['delivery_fee_cents']),
             'TOTAL: '+money(o['total_cents']),'Forma de pagamento: '+PAYMENTS.get(o['payment_method'],'Combinar com a loja')]
-    if o['payment_method']=='pix':
+    if o['status']=='whatsapp_finalized':
+        lines.append('Atendimento e pagamento manuais pelo WhatsApp. NowUp apenas para consulta.')
+    elif o['payment_method']=='pix':
         lines.append('Pix recebido e conferido pelo lojista. Nada a cobrar na entrega.' if paid else 'Recebimento do Pix a conferir pelo lojista.')
     elif o['payment_method'] in ('credit','debit'):
         lines+=['Pagamento na entrega ou retirada.', 'LEVAR MAQUININHA' if o['fulfillment_type']=='delivery' else 'Preparar maquininha na retirada.']
