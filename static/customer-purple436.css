@@ -1,0 +1,50 @@
+/* Customer checkout and tracking: NowUp purple, with readable white actions. */
+html body.public-menu-area dialog.checkout-dialog{
+  border:2px solid #7134bc!important;border-radius:20px!important;
+  background:#fff!important;color:#32134f!important;
+}
+html body.public-menu-area dialog.checkout-dialog :is(h2,p,small,label,span,b,strong){color:#32134f!important}
+html body.public-menu-area dialog.checkout-dialog :is(input,textarea,select){
+  background:#fff!important;color:#32134f!important;border:1px solid #7134bc!important;color-scheme:light!important;
+}
+html body.public-menu-area dialog.checkout-dialog :is(input,textarea)::placeholder{color:#706078!important;opacity:1}
+html body.public-menu-area dialog.checkout-dialog :is(input,textarea,select):focus-visible{
+  outline:3px solid #7134bc!important;outline-offset:2px;box-shadow:0 0 0 5px #eee4fa!important;
+}
+html body.public-menu-area dialog.checkout-dialog :is(button,.btn),
+html body .nu347-tracking .nu377-tabs button,
+html body .storeapp-actions256 :is(a.btn,button),
+html body.store-app256>p.panel>a.btn.primary,
+html body.public-menu-area .nu83-cart-dock [data-cart-summary]{
+  background:#7134bc!important;background-image:none!important;color:#fff!important;
+  border:1px solid #7134bc!important;text-shadow:none!important;
+}
+html body.public-menu-area dialog.checkout-dialog :is(button,.btn) :is(span,strong,b),
+html body.public-menu-area .nu83-cart-dock [data-cart-summary] :is(span,strong,b),
+html body .nu347-tracking .nu377-tabs button *,
+html body .storeapp-actions256 :is(a.btn,button) *{color:#fff!important;opacity:1!important}
+html body.public-menu-area dialog.checkout-dialog .dialog-close{
+  background:#fff!important;color:#7134bc!important;border-color:transparent!important;
+}
+html body.public-menu-area dialog.checkout-dialog .cart-total,
+html body.public-menu-area dialog.checkout-dialog .cart-total :is(b,strong,span){
+  color:#32134f!important;background:#fff!important;font-weight:800!important;
+}
+html body .nu347-tracking .order-hero{
+  background:#f7f2fb!important;border:1px solid #cbb1e4!important;
+}
+html body .nu347-tracking .order-hero .order-live-status{
+  background:#7134bc!important;color:#fff!important;border:1px solid #7134bc!important;
+}
+html body .nu347-tracking .order-hero .order-live-status :is(p,span,b,strong,small){color:#fff!important;opacity:1!important}
+html body .nu347-tracking .nu377-tabs button[aria-selected=true]{
+  background:#50188c!important;border-color:#50188c!important;
+  box-shadow:0 0 0 2px #d8c1ed!important;
+}
+html body .nu347-tracking .nu377-tabs button:focus-visible,
+html body .storeapp-actions256 :is(a.btn,button):focus-visible{
+  outline:3px solid #32134f!important;outline-offset:3px;
+}
+/* Retain a disabled indication while keeping labels readable. */
+html body.public-menu-area dialog.checkout-dialog button:disabled{opacity:.6!important;cursor:not-allowed}
+@media print{html body .nu347-tracking .order-hero .order-live-status{background:#fff!important;color:#000!important}html body .nu347-tracking .order-hero .order-live-status *{color:#000!important}}
