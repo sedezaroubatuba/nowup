@@ -192,11 +192,18 @@ def snapshot(c,a):
  result['_meta']={'revision':c.execute('SELECT revision FROM adm227_state WHERE id=1').fetchone()[0],'actor':{k:a[k] for k in ('id','name','email','super','permissions')},'live':True,'unsupported':['gateway','whatsapp_api','push_campaign','automatic_billing_block','public_coupons','referrals_credit','theme_scheduler','assisted_login','kyc_provider','background_jobs'],'fetchedAt':stamp(),'orderPagination255':{'nextBefore':page255['nextBefore'],'pageSize':200}}
  return result
 
+@router.get('/admin/super/entrar')
+def super_login_page(request:Request):
+ u=G['current_user'](request)
+ if u and u['role']=='admin':
+  return RedirectResponse('/admin/super',303)
+ return G['templates'].TemplateResponse(request=request,name='admin_login.html',context={'request':request})
+
 @router.get('/admin/super')
 def page(request:Request):
  with connection() as c:
   try:auth(request,c)
-  except HTTPException:return RedirectResponse('/admin/super/equipe/entrar',303)
+  except HTTPException:return RedirectResponse('/admin/super/entrar',303)
  return FileResponse(Path(__file__).parent/'static'/'adm227'/'index.html',headers={'Cache-Control':'private, no-store'})
 @router.get('/admin/super/api/state')
 def state(request:Request):
@@ -552,7 +559,7 @@ def activate(request:Request,token:str=Form(...),password:str=Form(...)):
  return RedirectResponse('/admin/super/equipe/entrar?ativado=1',303)
 @router.get('/admin/super/equipe/entrar')
 def team_entry(request:Request):
- return form_page('Entrar na equipe NowUp','<form method="post"><label>E-mail<input name="email" type="email" autocomplete="username" required></label><label>Senha<input name="password" type="password" autocomplete="current-password" required></label><button>Receber código por e-mail</button></form><a href="/entrar?tipo=admin">Sou Super ADM</a><p>O código de confirmação exige o envio de e-mail configurado no servidor.</p>')
+ return form_page('Entrar na equipe NowUp','<form method="post"><label>E-mail<input name="email" type="email" autocomplete="username" required></label><label>Senha<input name="password" type="password" autocomplete="current-password" required></label><button>Receber código por e-mail</button></form><a href="/admin/super/entrar">Sou Super ADM</a><p>O código de confirmação exige o envio de e-mail configurado no servidor.</p>')
 @router.post('/admin/super/equipe/entrar')
 def team_login(request:Request,email:str=Form(...),password:str=Form(...)):
  from nowup_auth247 import check
