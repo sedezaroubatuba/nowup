@@ -29,7 +29,8 @@ def test_merchant_link_uses_owner_session_even_with_customer_cookie(setup345):
     assert soup.select_one('form[action="/painel/pedidos/'+str(oid)+'/status"] button[name="status"][value="confirmed"]')
     assert 'data-pix-payment' not in merchant.text
     assert merchant.headers['referrer-policy']=='same-origin'
-    assert not soup.select('[data-order-alerts], [data-more-substitute], [data-substitute]')
+    assert soup.select('[data-order-alerts]')  # Global merchant alerts stay active on the order page.
+    assert not soup.select('[data-more-substitute], [data-substitute]')
     assert soup.select_one('.nu379-fields [name=qty_'+str(item)+']')
     assert soup.select_one('textarea[name=message]')
     buyer_page=client.get('/p/'+store['slug']+'/pedido/'+token)

@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {storeFields,contractFields} from '../src/adminForms446.mjs';
+import {changes} from '../src/server227.mjs';
+test('store form strips day fields and only sends canonical schedule',()=>{const f={name:'Loja',owner:'Ana',phone:'12999999999',document:'',city:'Ubatuba',neighborhood:'Centro',address:'Rua',prep:'30',radius:'5',day0:'18:00-02:00',day6:'fechado'};const next=storeFields(f);assert.equal(next.prep,30);assert.equal(next.hoursByDay[0],'18:00-02:00');assert.ok(!Object.keys(next).some(k=>/^day/.test(k)));const delta=changes({stores:[{id:1,name:'Antiga'}]},{stores:[{id:1,...next}]});assert.equal(delta[0].value.day0,undefined);});
+test('contract form ignores unsupported coupon and uses server-defined plan price',()=>{const fields=contractFields({plan:'cardapio',due:'2026-12-15',trialUntil:'',method:'Pix',billingCoupon:'',price:1},[{id:'cardapio',price:4990}]);assert.equal(fields.price,4990);assert.ok(!('billingCoupon' in fields));assert.throws(()=>contractFields({plan:'inventado'},[]));});

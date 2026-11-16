@@ -45,6 +45,8 @@ def env(tmp_path,monkeypatch):
  templates=Jinja2Templates(directory=str(ROOT/'templates'))
  import app as active_app
  templates.env.globals.update(active_app.templates.env.globals)
+ # This standalone central fixture does not install the channel extension.
+ templates.env.globals['requested_category408']=lambda pid:None
  templates.env.filters.update(active_app.templates.env.filters)
  def context(r,**kw):return dict({'request':r,'user':auth(r),'settings':{},'categories':[],'banners':[],'business_slides':[]},**kw)
  monkeypatch.setattr(m,'G',dict(m.G))

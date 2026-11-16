@@ -44,6 +44,8 @@ def initialize():
         CREATE INDEX IF NOT EXISTS users205_region ON users(role,city,state,neighborhood);
         CREATE INDEX IF NOT EXISTS orders205_customer ON orders(customer_id,status);
         CREATE INDEX IF NOT EXISTS orders205_professional ON orders(professional_id,status);''')
+        from nowup_admin446 import initialize as initialize446
+        initialize446(c)
         c.commit()
     finally:c.close()
 def audit(c,u,action,target):c.execute('INSERT INTO admin_changes205(admin_id,action,target,created_at) VALUES(?,?,?,?)',(u['id'],action,str(target),stamp()))
@@ -221,12 +223,18 @@ def toggle(request:Request,uid:int,active:int=Form(...),reason:str=Form(...)):
 def ticket(c,tid,uid=None):
     t=c.execute('SELECT t.*,u.name,u.role FROM support205 t JOIN users u ON u.id=t.user_id WHERE t.id=?'+(' AND t.user_id=?' if uid else ''),(tid,uid) if uid else (tid,)).fetchone()
     if not t:raise HTTPException(404,'Chamado não encontrado')
-    d=dict(t);d['messages']=[dict(r) for r in c.execute('SELECT m.*,u.name,u.role FROM support_messages205 m JOIN users u ON u.id=m.sender_id WHERE ticket_id=? ORDER BY m.id',(tid,))];return d
+    from nowup_admin446 import messages
+    d=dict(t);d['messages']=messages(c,tid);return d
 
 def notify(c,uid,body,tid):
-    u=c.execute('SELECT is_active FROM users WHERE id=?',(uid,)).fetchone()
-    cur=c.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(uid,'Mensagem da equipe NowUp',body[:180],'/suporte?chamado='+str(tid),stamp()))
-    if u and u['is_active'] and G.get('nowup_alerts112'):G['nowup_alerts112'].enqueue(c,uid,cur.lastrowid,{'title':'Equipe NowUp','body':body[:180],'url':'/suporte?chamado='+str(tid),'tag':'suporte-'+str(tid)})
+    u=c.execute('SELECT * FROM users WHERE id=?',(uid,)).fetchone()
+    link='/suporte?chamado='+str(tid)
+    scoped=dict(u).get('customer_store345',0) if u else 0
+    if scoped:
+        store=c.execute('SELECT slug FROM professionals WHERE id=?',(scoped,)).fetchone()
+        if store:link='/p/'+store['slug']+link
+    cur=c.execute("INSERT INTO notifications(user_id,title,message,link,created_at) VALUES(?,?,?,?,?)",(uid,'Mensagem da equipe NowUp',body[:180],link,stamp()))
+    if u and u['is_active'] and G.get('nowup_alerts112'):G['nowup_alerts112'].enqueue(c,uid,cur.lastrowid,{'title':'Equipe NowUp','body':body[:180],'url':link,'tag':'suporte-'+str(tid)})
 
 @router.post('/admin/central/contas/{uid}/mensagem')
 def message(request:Request,uid:int,subject:str=Form(...),body:str=Form(...)):

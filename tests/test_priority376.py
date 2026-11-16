@@ -73,20 +73,20 @@ def test_contact_routes_limit_and_xlsx_authorization(checkout,monkeypatch):
 def test_whatsapp_history_is_idempotent_private_and_not_a_paid_order(channel,monkeypatch):
     m,client,slug,pid,data,product,customer=channel
     result=client.post('/p/'+slug+'/menu/whatsapp',data=data).json()
-    # Current flow releases Pix on checkout; it no longer requires prior review.
+    # Current Cardapio flow waits for merchant acceptance before releasing Pix.
     assert result['recorded'] and not result['review_required'] and not result['whatsapp_only'] and result['order_code'].startswith('NU-')
     assert client.post('/p/'+slug+'/menu/whatsapp',data=data).json()==result
     with m.db() as c:
         order=dict(c.execute('SELECT * FROM orders').fetchone())
         assert c.execute('SELECT COUNT(*) FROM orders').fetchone()[0]==1
         assert c.execute('SELECT COUNT(*) FROM checkout_requests229').fetchone()[0]==1
-        assert c.execute('SELECT COUNT(*) FROM push_jobs').fetchone()[0]==0
+        assert c.execute('SELECT COUNT(*) FROM push_jobs').fetchone()[0]==1
         assert c.execute('SELECT COUNT(*) FROM notifications').fetchone()[0]>=1
-        assert order['status']=='awaiting_payment' and order['whatsapp_opened']==0
+        assert order['status']=='new' and order['whatsapp_opened']==0
         assert c.execute('SELECT COUNT(*) FROM orders WHERE status=\'completed\'').fetchone()[0]==0
         owner=dict(c.execute('SELECT * FROM users WHERE id=(SELECT user_id FROM professionals WHERE id=?)',(pid,)).fetchone())
     page=client.get('/p/'+slug+'/pedidos');assert result['order_code'] in page.text
-    page=client.get(result['redirect']);assert 'Aguardando Confirmação de Pagamento' in page.text
+    page=client.get(result['redirect']);assert 'data-pix-payment' not in page.text and 'data-wait434' in page.text
     assert 'Seu pedido chegou à sala de pedidos' not in page.text
     data['notes']='changed';assert client.post('/p/'+slug+'/menu/whatsapp',data=data).status_code==409
     other=dict(customer,id=customer['id']+10000);monkeypatch.setattr(m,'current_user',lambda request:other)
@@ -112,7 +112,7 @@ def test_whatsapp_order_limit_rejects_excess_and_allows_retry(channel):
     assert client.post('/p/'+slug+'/menu/whatsapp',data=data).json()==first
 
 
-def test_whatsapp_link_order_stays_out_of_queue_and_preserves_report(channel,monkeypatch):
+def test_cardapio_order_uses_own_queue_and_preserves_report(channel,monkeypatch):
     m,client,slug,pid,data,*_=channel
     result=client.post('/p/'+slug+'/menu/whatsapp',data=data).json()
     with m.db() as c:
@@ -125,7 +125,10 @@ def test_whatsapp_link_order_stays_out_of_queue_and_preserves_report(channel,mon
         owner=dict(c.execute('SELECT * FROM users WHERE id=(SELECT user_id FROM professionals WHERE id=?)',(pid,)).fetchone())
     monkeypatch.setattr(m,'current_user',lambda request:owner)
     alerts=client.get('/painel/pedidos/novos').json()
-    assert alerts['orders']==[] and alerts['pending_count']==0 and alerts['pending_order'] is None
+    assert alerts['pending_count']==1 and alerts['pending_order']['order_code']==result['order_code']
+    with m.db() as c:
+        own=m.nowup_merchant228.board(c,pid,*m.order_day_bounds(day),m.SAO_PAULO_TZ,channel='cardapio')
+        assert own['active']==1
     import nowup_sales107
     monkeypatch.setattr(nowup_sales107,'_db',m.db)
     nowup_sales107.initialize()

@@ -109,20 +109,20 @@ def test_store_forms_keep_brand_and_scope(setup345):
     assert r.status_code==303 and r.headers['location']=='/'
 
 
-def test_exclusive_store_exposes_merchant_entry_without_mixing_accounts(setup345):
+def test_exclusive_customer_store_keeps_merchant_entry_separate(setup345):
     from bs4 import BeautifulSoup
     main,(a,b),_=setup345
     client=TestClient(main.app,headers={'Origin':'http://testserver'},follow_redirects=False)
     for tail in ('menu?loja=1','entrar?tipo=cliente'):
         page=client.get('/p/'+a['slug']+'/'+tail)
         soup=BeautifulSoup(page.text,'html.parser')
-        assert soup.select_one('.storeapp-actions256 a[href="/entrar?tipo=profissional"]')
+        assert not soup.select_one('.storeapp-actions256 a[href="/entrar?tipo=profissional"]')
         assert '/static/store-session345.js?v=420' in page.text
     login=BeautifulSoup(page.text,'html.parser')
     form=login.select_one('#nowup-login-form349')
     assert form['action']=='/p/'+a['slug']+'/entrar?tipo=cliente'
     assert form.select_one('[name="tipo"]')['value']=='cliente'
-    assert login.select_one('.storeapp-merchant405 a')['href']=='/entrar?tipo=profissional'
+    assert not login.select_one('.storeapp-merchant405 a')
     merchant_page=client.get('/entrar?tipo=profissional')
     merchant_form=BeautifulSoup(merchant_page.text,'html.parser').select_one('#nowup-login-form349')
     assert merchant_form['action']=='/entrar'
@@ -150,9 +150,9 @@ def test_exclusive_store_exposes_merchant_entry_without_mixing_accounts(setup345
     for p in (a,b):
         page=client.get('/p/'+p['slug']+'/entrar')
         soup=BeautifulSoup(page.text,'html.parser')
-        assert soup.select_one('.storeapp-actions256 a[href="/painel"]')
-        assert soup.select_one('.storeapp-merchant405 a')['href']=='/painel'
-        assert 'data-enable-order-alerts' not in page.text
+        assert not soup.select_one('.storeapp-actions256 a[href="/painel"]')  # Shared customer links never expose merchant navigation.
+        assert not soup.select_one('.storeapp-merchant405 a')
+        assert 'data-enable-order-alerts' in page.text  # The saved owner session keeps global alerts on every screen.
     # Global merchant alerts continue to exist in the authenticated panel.
     assert 'data-enable-order-alerts' in client.get('/painel').text
 

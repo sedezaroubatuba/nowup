@@ -19,7 +19,11 @@ MODULES={'dashboard','stores','finance','orders','customers','products','marketi
 KINDS={'plans':'finance','payments':'finance','billingCoupons':'finance','couriers':'logistics','deliveryRules':'logistics','coupons':'marketing','campaigns':'marketing','referrals':'marketing','themes':'themes','tickets':'support','staff':'staff','leads':'stores','storemeta':'stores','productCategories':'products','productmeta':'products','customermeta':'customers'}
 FINALS={'completed','cancelled','rejected','whatsapp_finalized'}
 
-def configure(g):G.update(g)
+def configure(g):
+ G.update(g)
+ if not getattr(router,'installed446',False) and G.get('app'):
+  import sys,nowup_admin446
+  nowup_admin446.install(sys.modules[__name__]);router.installed446=True
 def stamp():return datetime.now(timezone.utc).isoformat()
 def tokenhash(v):return hashlib.sha256(v.encode()).hexdigest()
 def fail(status,msg):raise HTTPException(status,msg)
@@ -46,6 +50,8 @@ CREATE INDEX IF NOT EXISTS adm227_audit_date ON adm227_audit(created_at,id);''')
   c.execute('CREATE INDEX IF NOT EXISTS order_items_order255 ON order_items(order_id,id)')
   c.execute('CREATE INDEX IF NOT EXISTS orders_store_date255 ON orders(professional_id,created_at,id)')
   c.execute('CREATE INDEX IF NOT EXISTS adm227_entities_kind255 ON adm227_entities(kind,id)')
+  from nowup_admin446 import initialize as initialize446
+  initialize446(c)
   c.commit()
 def rows(c,kind):return [json.loads(r[0]) for r in c.execute('SELECT data FROM adm227_entities WHERE kind=? ORDER BY id',(kind,))]
 def get(c,kind,oid):
@@ -148,7 +154,7 @@ def snapshot(c,a):
  for p in raw_stores:
   m=sm.get(p['id'],{})
   if p.get('business_type')=='fashion' and p.get('plan_requested')=='cardapio':m={'plan':'cardapio','price':4990,**m}
-  st={'id':p['id'],'name':p['display_name'],'city':p['city'],'neighborhood':p['neighborhood'],'category':'','approval':p['admission_status'],'online':bool(p['is_active'] and not p['blocked'] and p['admission_status']=='approved' and G['shop_status'](p)['open']),'paused':p['business_status']!='open','blocked':bool(p['blocked'] or not p['is_active']),'demo':bool(p['is_demo']),'featured':bool(p['featured']),'plan':m.get('plan','legacy'),'price':m.get('price',0),'due':p['billing_due_date'],'trialUntil':m.get('trialUntil',''),'cancelledAt':m.get('cancelledAt',''),'subscribedAt':m.get('subscribedAt',p['created_at'][:10]),'method':m.get('method','Pix'),'menu':[],'stage':m.get('stage',{'approved':'Aprovados','pending':'Em Análise','rejected':'Reprovados'}.get(p['admission_status'],'Em Análise')),'prep':p['prep_minutes'],'rating':0,'hoursByDay':m.get('hoursByDay',['']*7),'resources':m.get('resources',[]),'kyc':m.get('kyc',{}),'documents':{},'radius':m.get('radius',0)}
+  st={'id':p['id'],'name':p['display_name'],'city':p['city'],'neighborhood':p['neighborhood'],'category':'','approval':p['admission_status'],'online':bool(p['is_active'] and not p['blocked'] and p['admission_status']=='approved' and G['shop_status'](p)['open']),'paused':p['business_status']!='open','blocked':bool(p['blocked'] or not p['is_active']),'demo':bool(p['is_demo']),'featured':bool(p['featured']),'plan':m.get('plan','legacy'),'price':m.get('price',0),'due':p['billing_due_date'],'trialUntil':m.get('trialUntil',''),'cancelledAt':m.get('cancelledAt',''),'subscribedAt':m.get('subscribedAt',p['created_at'][:10]),'method':m.get('method','Pix'),'menu':[],'stage':m.get('stage',{'approved':'Aprovados','pending':'Em Análise','rejected':'Reprovados'}.get(p['admission_status'],'Em Análise')),'prep':p['prep_minutes'],'rating':0,'hoursByDay':__import__('nowup_admin446').hours(p,G['DAYS']),'resources':m.get('resources',[]),'kyc':m.get('kyc',{}),'documents':{},'radius':m.get('radius',0)}
   if need('stores'):
    st.update(owner=p['owner'],email=p['email'],phone=p['whatsapp'],document=p['document'],address=p['address'],hours=p['opening_hours'],photo='/uploads/'+p['avatar_filename'] if p['avatar_filename'] else '',slug=p['slug'],publicUrl='/p/'+p['slug'])
   else:st.update(owner='',email='',phone='',document='',address='',hours='',photo='')
@@ -184,12 +190,12 @@ def snapshot(c,a):
  if super_:
   for s in c.execute('SELECT * FROM adm227_access ORDER BY id DESC LIMIT 2000'):access.append({'id':s['id'],'employee':int(s['actor_id'].split(':')[1]) if s['actor_id'].startswith('staff:') else -int(s['actor_id'].split(':')[1]),'name':s['name'],'start':s['start'],'end':s['end'],'lastActivity':s['last_activity'],'state':s['state'],'device':'Sessão registrada no servidor'})
  logs=[{'id':r['id'],'actor':r['actor'],'action':r['action'],'date':r['created_at']} for r in c.execute('SELECT * FROM adm227_audit ORDER BY id DESC LIMIT 5000')] if need('system') or super_ else []
- result={'version':1,'operationsVersion':2,'profile':{'name':a['name'],'email':a['email'],'phone':'','cpf':'','photo':''},'plans':plans if need('finance','dashboard','stores') else [],'stores':stores,'orders':orders,'customers':customers,'products':products,'categories':categories,'banners':banners,'settings':config,'sessions':access,'logs':logs,'staff':staff,'errors':[],'integrations':{'payments':'Não conectado','whatsapp':False,'push':False},'reports':[]}
+ result={'version':1,'operationsVersion':2,'profile':{'name':a['name'],'email':a['email'],'phone':'','cpf':'','photo':''},'plans':plans if need('finance','dashboard','stores') else [],'stores':stores,'orders':orders,'customers':customers,'products':products,'categories':categories,'banners':banners,'settings':config,'sessions':access,'logs':logs,'staff':staff,'errors':[],'integrations':{'payments':'Não conectado','whatsapp':False,'push':False},'reports':[dict(x) for x in c.execute('SELECT id,professional_id,reason,status,created_at FROM reports ORDER BY id DESC LIMIT 100')] if need('support') else []}
  for kind,module in KINDS.items():
   if kind in ('leads','storemeta','productmeta','customermeta','staff'):continue
   if kind not in result:result[kind]=rows(c,kind) if module in permissions else []
  result['productCategories']=[x['name'] for x in rows(c,'productCategories')] if need('products') else []
- result['_meta']={'revision':c.execute('SELECT revision FROM adm227_state WHERE id=1').fetchone()[0],'actor':{k:a[k] for k in ('id','name','email','super','permissions')},'live':True,'unsupported':['gateway','whatsapp_api','push_campaign','automatic_billing_block','public_coupons','referrals_credit','theme_scheduler','assisted_login','kyc_provider','background_jobs'],'fetchedAt':stamp(),'orderPagination255':{'nextBefore':page255['nextBefore'],'pageSize':200}}
+ result['_meta']={'revision':c.execute('SELECT revision FROM adm227_state WHERE id=1').fetchone()[0],'actor':{k:a[k] for k in ('id','name','email','super','permissions')},'live':True,'unsupported':['gateway','whatsapp_api','push_campaign','automatic_billing_block','public_coupons','referrals_credit','theme_scheduler','assisted_login','kyc_provider','background_jobs'],'fetchedAt':stamp(),'orderPagination255':{'nextBefore':page255['nextBefore'],'pageSize':200},'supportCounts':__import__('nowup_admin446').support_counts(c) if need('support') else {}}
  return result
 
 @router.get('/admin/super/entrar')
@@ -301,7 +307,9 @@ def update_store(c,a,oid,v,why):
   if v['method'] not in ('Pix','Cartão'):fail(400,'Forma de pagamento inválida.')
   m['method']=v['method']
  if 'hoursByDay' in v:
-  if not isinstance(v['hoursByDay'],list) or len(v['hoursByDay'])!=7:fail(400,'Informe os sete dias da semana.')
+  from nowup_admin446 import schedule
+  config=schedule(v['hoursByDay'],G['DAYS'])
+  columns['business_hours']=json.dumps(config,ensure_ascii=False)
   m['hoursByDay']=[clean(s,40) for s in v['hoursByDay']]
  if 'kyc' in v:fail(400,'KYC real ainda não está configurado; não marque documentos como verificados por esta tela.')
  if 'category' in v:

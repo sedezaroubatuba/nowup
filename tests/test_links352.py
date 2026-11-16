@@ -101,7 +101,7 @@ def test_order_channels_keep_identical_server_prices_and_separate_destinations(c
             'cardapio':[('external',600)],'ambos':[('nowup',600)],
             'completo':[('nowup',600),('external',600)]}[plan]
         assert c.execute('SELECT price_cents FROM products WHERE id=?',(product,)).fetchone()[0]==300
-        assert c.execute("SELECT COUNT(*) FROM notifications WHERE title='Novo pedido no NowUp'").fetchone()[0]==(0 if plan=='cardapio' else 1)
+        assert c.execute("SELECT COUNT(*) FROM notifications WHERE title='Novo pedido no NowUp'").fetchone()[0]==(2 if plan=='completo' else 1)
 
 
 def test_requested_upgrade_is_targeted_and_does_not_rewrite_payments(shop,monkeypatch):

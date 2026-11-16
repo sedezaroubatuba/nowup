@@ -27,9 +27,9 @@ def test_pix_is_available_while_awaiting_payment_and_other_methods_have_no_qr(ch
     r=client.post(endpoint,data=data,headers={'Accept':'application/json'});assert r.status_code==200,r.text
     result=r.json();page=client.get(result['redirect']);assert page.status_code==200
     node=BeautifulSoup(page.text,'html.parser').select_one('[data-pix-payment] script')
-    with m.db() as c:assert c.execute('SELECT status FROM orders').fetchone()[0]==('awaiting_payment' if method=='pix' else 'new')
-    assert bool(node)==(method=='pix')
-    assert ('pix' in result)==(method=='pix' and external)
+    with m.db() as c:assert c.execute('SELECT status FROM orders').fetchone()[0]==('awaiting_payment' if method=='pix' and not external else 'new')
+    assert bool(node)==(method=='pix' and not external)
+    assert 'pix' not in result
     with m.db() as c:c.execute("UPDATE orders SET status='confirmed'")
     page=client.get(result['redirect'])
     node=BeautifulSoup(page.text,'html.parser').select_one('[data-pix-payment] script')
@@ -48,7 +48,8 @@ def test_pix_is_available_while_awaiting_payment_and_other_methods_have_no_qr(ch
 def test_cancelled_pix_has_refund_guidance_and_retry_cannot_replay_qr(channel):
     m,client,slug,pid,data,product,buyer=pix_store(channel)
     endpoint='/p/'+slug+'/menu/whatsapp'
-    first=client.post(endpoint,data=data).json();assert first.get('pix')
+    first=client.post(endpoint,data=data).json();assert 'pix' not in first
+    assert 'data-pix-payment' not in client.get(first['redirect']).text
     with m.db() as c:c.execute("UPDATE orders SET status='confirmed'")
     assert client.post(endpoint,data=data).json().get('pix')
     with m.db() as c:c.execute("UPDATE orders SET status='cancelled'")
@@ -129,7 +130,7 @@ def test_missing_pix_settings_does_not_claim_qr_is_available(channel):
     response=client.post('/p/'+slug+'/menu/whatsapp',data=data)
     assert response.status_code==200
     result=response.json();assert 'pix' not in result
-    assert 'Aguardando Confirmação de Pagamento' in result['receipt']['status']
+    assert 'aguardando revisão e aceite' in result['receipt']['status']
     with m.db() as c:c.execute("UPDATE orders SET status='confirmed'")
     result=client.post('/p/'+slug+'/menu/whatsapp',data=data).json()
     assert result['receipt']['status']=='Aguardando Confirmação de Pagamento — solicite os dados Pix à loja'
