@@ -5,7 +5,7 @@
     const button = document.createElement('button');
     button.textContent = 'Instalar NowUp ADM';
     button.type = 'button';
-    button.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;border:1px solid #ab82ed;border-radius:12px;background:#53258c;color:white;padding:12px 16px;font:600 14px system-ui;cursor:pointer';
+    button.style.cssText = 'position:fixed;bottom:20px;right:20px;width:auto;max-width:calc(100vw - 40px);margin:0;z-index:9999;border:1px solid #ab82ed;border-radius:12px;background:#53258c;color:white;padding:12px 16px;font:600 14px system-ui;cursor:pointer';
     button.hidden = standalone();
     document.body.append(button);
     addEventListener('beforeinstallprompt', event => { event.preventDefault(); prompt = event; button.hidden = standalone(); });
