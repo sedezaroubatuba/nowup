@@ -1452,7 +1452,11 @@ def create_session_response(uid:int, dest:str, is_admin:bool=False):
     return resp
 
 @app.get("/entrar", response_class=HTMLResponse)
-def login_page(request: Request): return templates.TemplateResponse("login.html", context(request))
+def login_page(request: Request):
+    if request.query_params.get('tipo') == 'admin':
+        from urllib.parse import urlencode
+        return RedirectResponse('/admin/super/entrar?' + urlencode({'erro': request.query_params.get('erro', '')}), 303)
+    return templates.TemplateResponse("login.html", context(request))
 
 @app.get("/recuperar-senha", response_class=HTMLResponse)
 def forgot_password_page(request: Request):
