@@ -256,6 +256,12 @@ def public_business_scope():
     return "p.plan_active IN ('vitrine','ambos') AND EXISTS(SELECT 1 FROM professional_categories scope_pc JOIN categories scope_c ON scope_c.id=scope_pc.category_id WHERE scope_pc.professional_id=p.id AND scope_c.active=1)"
 
 def context(request: Request, **kwargs):
+    # Public storefronts must never render a merchant/admin identity as a shopper.
+    # The server-side session remains intact for /painel and protected APIs.
+    signed_in = current_user(request)
+    public_store_view = bool(re.fullmatch(r"/p/[^/]+(?:/menu)?/?", request.url.path))
+    storefront_user = signed_in if not public_store_view or not signed_in or signed_in["role"] == "customer" else None
+    store_staff_preview = bool(public_store_view and signed_in and signed_in["role"] != "customer")
     conn = db()
     cats = conn.execute("SELECT * FROM categories WHERE active=1 ORDER BY sort_order,name").fetchall()
     banners = conn.execute("SELECT * FROM banners WHERE active=1 AND image_filename!='' ORDER BY sort_order,id LIMIT 3").fetchall()
@@ -269,7 +275,8 @@ def context(request: Request, **kwargs):
     conn.close()
     return {
         "request": request,
-        "user": current_user(request),
+        "user": storefront_user,
+        "store_staff_preview": store_staff_preview,
         "categories": cats,
         "banners": banners,
         "business_slides": business_slides,
@@ -1326,8 +1333,14 @@ def whatsapp_click(slug: str):
     return public_store_contact(slug)
 
 @app.get("/p/{slug}/cardapio")
-def menu_click(slug: str):
-    return RedirectResponse("/p/"+quote(slug,safe="") + "/menu",303)
+def menu_click(request: Request, slug: str):
+    # The shared URL is a customer-facing entry. A saved customer login goes
+    # straight to the menu; everyone else is offered customer login/signup.
+    destination = "/p/" + quote(slug, safe="") + "/menu"
+    signed_in = current_user(request)
+    if signed_in and signed_in["role"] == "customer":
+        return RedirectResponse(destination, 303)
+    return RedirectResponse(destination + "?conta=1", 303)
 
 @app.get("/p/{slug}/link")
 def external_click(slug: str):
