@@ -1338,9 +1338,12 @@ def menu_click(request: Request, slug: str):
     # straight to the menu; everyone else is offered customer login/signup.
     destination = "/p/" + quote(slug, safe="") + "/menu"
     signed_in = current_user(request)
-    if signed_in and signed_in["role"] == "customer":
-        return RedirectResponse(destination, 303)
-    return RedirectResponse(destination + "?conta=1", 303)
+    params = []
+    if request.query_params.get("origem") == "externo":
+        params.append("origem=externo")
+    if not signed_in or signed_in["role"] != "customer":
+        params.append("conta=1")
+    return RedirectResponse(destination + ("?" + "&".join(params) if params else ""), 303)
 
 @app.get("/p/{slug}/link")
 def external_click(slug: str):
@@ -1398,9 +1401,9 @@ def signup_pro_page(request: Request):
 def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Form(...), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), doc_type: str=Form(...), document: str=Form(...), business_type: str=Form("professional"), offer_mode: str=Form("services"), plan: str=Form(...), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[]), address: str=Form(""), state: str=Form("")):
     if not all(v.strip() for v in (name,address,neighborhood,city)) or state not in nowup_admin205.UFS:
         return RedirectResponse("/cadastro/profissional?erro=endereco",303)
-    if plan not in ('cardapio','vitrine','ambos'):
+    if plan != 'cardapio':
         return RedirectResponse('/cadastro/profissional?erro=plano',303)
-    if (plan=='vitrine' and offer_mode!='services') or (plan!='vitrine' and offer_mode not in ('menu','catalog')):
+    if offer_mode not in ('menu','catalog'):
         return RedirectResponse('/cadastro/profissional?erro=plano',303)
     normalized_email=normalize_email(email)
     admin_email=os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
@@ -1470,6 +1473,11 @@ def login_page(request: Request):
         from urllib.parse import urlencode
         return RedirectResponse('/admin/super/entrar?' + urlencode({'erro': request.query_params.get('erro', '')}), 303)
     return templates.TemplateResponse("login.html", context(request))
+
+@app.get("/lojista/entrar")
+def merchant_login_entry():
+    """Stable merchant-only entry, separate from public store sharing."""
+    return RedirectResponse("/entrar?tipo=profissional", 303)
 
 @app.get("/recuperar-senha", response_class=HTMLResponse)
 def forgot_password_page(request: Request):
@@ -1664,7 +1672,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
 @app.post('/painel/plano')
 def request_store_plan(request: Request, plan: str=Form(...), offer_mode: str=Form('services')):
     user=require_user(request,'professional')
-    if plan not in ('cardapio','vitrine','ambos') or (plan=='vitrine' and offer_mode!='services') or (plan!='vitrine' and offer_mode not in ('menu','catalog')):
+    if plan != 'cardapio' or offer_mode not in ('menu','catalog'):
         return RedirectResponse('/painel?erro=plano#plano',303)
     conn=db()
     conn.execute('UPDATE professionals SET plan_requested=?,plan_requested_offer=? WHERE user_id=?',(plan,offer_mode,user['id']))
