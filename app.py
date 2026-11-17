@@ -260,7 +260,10 @@ def context(request: Request, **kwargs):
     # The server-side session remains intact for /painel and protected APIs.
     signed_in = current_user(request)
     public_store_view = bool(re.fullmatch(r"/p/[^/]+(?:/menu)?/?", request.url.path))
-    storefront_user = signed_in if not public_store_view or not signed_in or signed_in["role"] == "customer" else None
+    customer_auth_view = (request.url.path == "/cadastro/cliente" or
+                          (request.url.path == "/entrar" and request.query_params.get("tipo") == "cliente"))
+    customer_only_view = public_store_view or customer_auth_view
+    storefront_user = signed_in if not customer_only_view or not signed_in or signed_in["role"] == "customer" else None
     store_staff_preview = bool(public_store_view and signed_in and signed_in["role"] != "customer")
     conn = db()
     cats = conn.execute("SELECT * FROM categories WHERE active=1 ORDER BY sort_order,name").fetchall()
@@ -1475,8 +1478,11 @@ def login_page(request: Request):
     return templates.TemplateResponse("login.html", context(request))
 
 @app.get("/lojista/entrar")
-def merchant_login_entry():
-    """Stable merchant-only entry, separate from public store sharing."""
+def merchant_login_entry(request: Request):
+    """Stable merchant entry; preserve an already authenticated merchant login."""
+    signed_in = current_user(request)
+    if signed_in and signed_in["role"] == "professional":
+        return RedirectResponse("/painel", 303)
     return RedirectResponse("/entrar?tipo=profissional", 303)
 
 @app.get("/recuperar-senha", response_class=HTMLResponse)
