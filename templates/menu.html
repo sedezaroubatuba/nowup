@@ -1,4 +1,15 @@
-{% extends 'base.html' %}{% block title %}{{pro.display_name}} | NowUp{% endblock %}{% block body_class %}public-profile-area public-menu-area{% endblock %}{% block content %}<script id="nowup-store-banners216">(() => {
+{% extends 'base.html' %}{% block title %}{{pro.display_name}} | NowUp{% endblock %}{% block body_class %}public-profile-area public-menu-area{% endblock %}{% block content %}
+{% if request.query_params.get('conta') == '1' and not user %}
+<section class="nowup-customer-entry" aria-label="Acesso ao cardápio de cliente" style="max-width:850px;margin:12px auto;padding:16px;border:1px solid #d9c7f1;border-radius:14px;background:#f6f0ff;color:#2d164e;box-sizing:border-box">
+  <strong style="display:block;margin-bottom:6px">Bem-vindo ao cardápio da {{ pro.display_name }}!</strong>
+  <p style="margin:0 0 12px;font-size:14px">Para fazer pedidos, entre na sua conta de cliente ou cadastre-se. Você pode conhecer os produtos antes de entrar.</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a href="/cadastro/cliente" style="display:inline-block;padding:11px 15px;background:#6b24b7;color:white;border-radius:10px;text-decoration:none;font-weight:700">Criar conta de cliente</a>
+    <a href="/entrar?tipo=cliente" style="display:inline-block;padding:11px 15px;background:white;color:#59219a;border:1px solid #c5a2e2;border-radius:10px;text-decoration:none;font-weight:700">Já sou cliente</a>
+  </div>
+</section>
+{% endif %}
+<script id="nowup-store-banners216">(() => {
  'use strict';
  async function start(){
   const match=location.pathname.match(/^\/p\/([^/]+)(?:\/menu)?\/?$/);if(!match)return;
@@ -168,7 +179,7 @@ html body.public-profile-area .nu85-note textarea{height:66px!important;min-heig
 </form>
 </dialog>
 <footer class="nu83-cart-dock" hidden><button type="button" data-cart-summary><span>🛒 <span data-cart-count>0 itens</span></span><strong>Ver carrinho · <span data-dock-total>R$ 0,00</span></strong></button></footer></section>
-<script>window.NOWUP_MENU={{ {'deliveryFee':pro.delivery_fee_cents,'minimumOrder':pro.minimum_order_cents,'open':shop_status.open,'ownerView':(user and user.id==pro.user_id) or false,'storeName':pro.display_name,'customerId':user.id if user and user.role=='customer' else none}|tojson }};</script>
+<script>window.NOWUP_MENU={{ {'deliveryFee':pro.delivery_fee_cents,'minimumOrder':pro.minimum_order_cents,'open':shop_status.open,'ownerView':store_staff_preview or false,'storeName':pro.display_name,'customerId':user.id if user and user.role=='customer' else none}|tojson }};</script>
 <link rel="stylesheet" href="/static/cart144.css?v=144"><script src="/static/menu88.js?v=255">
 </script>
 <script src="/static/cart144.js?v=144" defer></script><script src="/static/customer-address.js?v=69" defer></script><link rel="stylesheet" href="/static/menu-swipe.css?v=145">

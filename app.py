@@ -256,6 +256,15 @@ def public_business_scope():
     return "p.plan_active IN ('vitrine','ambos') AND EXISTS(SELECT 1 FROM professional_categories scope_pc JOIN categories scope_c ON scope_c.id=scope_pc.category_id WHERE scope_pc.professional_id=p.id AND scope_c.active=1)"
 
 def context(request: Request, **kwargs):
+    # Public storefronts must never render a merchant/admin identity as a shopper.
+    # The server-side session remains intact for /painel and protected APIs.
+    signed_in = current_user(request)
+    public_store_view = bool(re.fullmatch(r"/p/[^/]+(?:/menu)?/?", request.url.path))
+    customer_auth_view = (request.url.path == "/cadastro/cliente" or
+                          (request.url.path == "/entrar" and request.query_params.get("tipo") == "cliente"))
+    customer_only_view = public_store_view or customer_auth_view
+    storefront_user = signed_in if not customer_only_view or not signed_in or signed_in["role"] == "customer" else None
+    store_staff_preview = bool(public_store_view and signed_in and signed_in["role"] != "customer")
     conn = db()
     cats = conn.execute("SELECT * FROM categories WHERE active=1 ORDER BY sort_order,name").fetchall()
     banners = conn.execute("SELECT * FROM banners WHERE active=1 AND image_filename!='' ORDER BY sort_order,id LIMIT 3").fetchall()
@@ -269,7 +278,8 @@ def context(request: Request, **kwargs):
     conn.close()
     return {
         "request": request,
-        "user": current_user(request),
+        "user": storefront_user,
+        "store_staff_preview": store_staff_preview,
         "categories": cats,
         "banners": banners,
         "business_slides": business_slides,
@@ -1326,8 +1336,17 @@ def whatsapp_click(slug: str):
     return public_store_contact(slug)
 
 @app.get("/p/{slug}/cardapio")
-def menu_click(slug: str):
-    return RedirectResponse("/p/"+quote(slug,safe="") + "/menu",303)
+def menu_click(request: Request, slug: str):
+    # The shared URL is a customer-facing entry. A saved customer login goes
+    # straight to the menu; everyone else is offered customer login/signup.
+    destination = "/p/" + quote(slug, safe="") + "/menu"
+    signed_in = current_user(request)
+    params = []
+    if request.query_params.get("origem") == "externo":
+        params.append("origem=externo")
+    if not signed_in or signed_in["role"] != "customer":
+        params.append("conta=1")
+    return RedirectResponse(destination + ("?" + "&".join(params) if params else ""), 303)
 
 @app.get("/p/{slug}/link")
 def external_click(slug: str):
@@ -1385,9 +1404,9 @@ def signup_pro_page(request: Request):
 def signup_professional(name: str=Form(...), email: str=Form(...), phone: str=Form(...), password: str=Form(...), password_confirm: str=Form(...), accept_terms: Optional[str]=Form(None), doc_type: str=Form(...), document: str=Form(...), business_type: str=Form("professional"), offer_mode: str=Form("services"), plan: str=Form(...), city: str=Form(...), neighborhood: str=Form(""), cep: str=Form(""), description: str=Form(""), services: str=Form(""), category_ids: list[int]=Form(default=[]), address: str=Form(""), state: str=Form("")):
     if not all(v.strip() for v in (name,address,neighborhood,city)) or state not in nowup_admin205.UFS:
         return RedirectResponse("/cadastro/profissional?erro=endereco",303)
-    if plan not in ('cardapio','vitrine','ambos'):
+    if plan != 'cardapio':
         return RedirectResponse('/cadastro/profissional?erro=plano',303)
-    if (plan=='vitrine' and offer_mode!='services') or (plan!='vitrine' and offer_mode not in ('menu','catalog')):
+    if offer_mode not in ('menu','catalog'):
         return RedirectResponse('/cadastro/profissional?erro=plano',303)
     normalized_email=normalize_email(email)
     admin_email=os.getenv("NOWUP_ADMIN_EMAIL", "admin@nowup.local").strip().lower()
@@ -1457,6 +1476,14 @@ def login_page(request: Request):
         from urllib.parse import urlencode
         return RedirectResponse('/admin/super/entrar?' + urlencode({'erro': request.query_params.get('erro', '')}), 303)
     return templates.TemplateResponse("login.html", context(request))
+
+@app.get("/lojista/entrar")
+def merchant_login_entry(request: Request):
+    """Stable merchant entry; preserve an already authenticated merchant login."""
+    signed_in = current_user(request)
+    if signed_in and signed_in["role"] == "professional":
+        return RedirectResponse("/painel", 303)
+    return RedirectResponse("/entrar?tipo=profissional", 303)
 
 @app.get("/recuperar-senha", response_class=HTMLResponse)
 def forgot_password_page(request: Request):
@@ -1651,7 +1678,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
 @app.post('/painel/plano')
 def request_store_plan(request: Request, plan: str=Form(...), offer_mode: str=Form('services')):
     user=require_user(request,'professional')
-    if plan not in ('cardapio','vitrine','ambos') or (plan=='vitrine' and offer_mode!='services') or (plan!='vitrine' and offer_mode not in ('menu','catalog')):
+    if plan != 'cardapio' or offer_mode not in ('menu','catalog'):
         return RedirectResponse('/painel?erro=plano#plano',303)
     conn=db()
     conn.execute('UPDATE professionals SET plan_requested=?,plan_requested_offer=? WHERE user_id=?',(plan,offer_mode,user['id']))
