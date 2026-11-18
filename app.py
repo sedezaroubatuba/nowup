@@ -48,6 +48,8 @@ from nowup_hardening308 import protect_access_logs348
 protect_access_logs348()
 
 app = FastAPI(title="NowUp", version="1.0.0", docs_url=None, redoc_url=None, openapi_url=None)
+from nowup_seo447 import install as install_seo447
+install_seo447(app)
 app.add_middleware(RequestLimit308)
 from nowup_feedback270 import install as install_feedback270
 install_feedback270(app)

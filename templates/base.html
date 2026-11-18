@@ -4,6 +4,15 @@
 <link rel="stylesheet" href="/static/navigation-instant98.css?v=98">
 <script src="/static/navigation-instant98.js?v=98"></script><meta name="color-scheme" content="only light"><meta name="supported-color-schemes" content="light"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{% if store_app256 %}{{store_app256.name}}{% else %}{% block title %}{{settings.seo_title or settings.brand_name or 'NowUp'}}{% endblock %}{% endif %}</title><meta name="description" content="{% block meta_description %}{{settings.seo_description or 'Encontre profissionais e empresas perto de você.'}}{% endblock %}"><meta name="keywords" content="{{settings.seo_keywords or ''}}">
+{% if request is defined and request.url.path == '/' %}
+<link rel="canonical" href="https://nowupbrasil.com/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="NowUp Brasil">
+<meta property="og:title" content="NowUp Brasil | Cardápio Digital, Vitrine e Gestão de Pedidos">
+<meta property="og:description" content="NowUp Brasil: cardápio digital para lojas e negócios, pedidos online e vitrine de estabelecimentos. Conheça a plataforma.">
+<meta property="og:url" content="https://nowupbrasil.com/">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"NowUp Brasil","alternateName":"NowUp","url":"https://nowupbrasil.com/","inLanguage":"pt-BR","description":"Cardápio digital, vitrine de estabelecimentos e gestão de pedidos para negócios."}</script>
+{% endif %}
 <link rel="icon" href="/static/nowup-icon100.png?v=196" type="image/png"><link rel="apple-touch-icon" href="/static/nowup-pwa-180.png?v=196"><link rel="stylesheet" href="/static/style.css"><link rel="stylesheet" href="/static/redesign.css"><link rel="stylesheet" href="/static/slides.css"><link rel="stylesheet" href="/static/panels.css?v=18"><link rel="stylesheet" href="/static/social-blue.css?v=5"><link rel="stylesheet" href="/static/v19-home.css?v=19"><link rel="stylesheet" href="/static/v21-finish.css?v=340">
 <link rel="stylesheet" href="/static/v34-white-colorful.css?v=1"><link rel="stylesheet" href="/static/v50-directory.css?v=53"><link rel="stylesheet" href="/static/v52-white-food.css?v=54"><style>
 html body>.cookie{z-index:1100!important}
