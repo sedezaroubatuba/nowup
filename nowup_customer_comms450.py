@@ -320,7 +320,7 @@ def install(g):
         body += '<label>Agendar envio (opcional)</label><input type="datetime-local" name="scheduled">'
         body += '<p class="muted">Mensagens e promoções somente para clientes que autorizaram. Limite: até 3 comunicados em 24 horas; espaçamento mínimo de 30 minutos.</p>'
         body += '<button type="submit">Enviar ou agendar comunicado</button></form></section>'
-        body += '<section class="panel"><h2>Prévia para o cliente</h2><div class="preview"><b id="com450-preview-title">Título da comunicação</b><p id="com450-preview-body">Sua mensagem aparecerá aqui.</p><img id="com450-preview-img" hidden alt="Prévia da arte"></div>'
+        body += '<section class="panel"><h2>Prévia para o cliente</h2><div class="preview"><b id="com450-preview-title">Título da comunicação</b><p id="com450-preview-body">Sua mensagem aparecerá aqui.</p><img id="com450-preview-img" hidden alt="Prévia da arte"><div id="com450-preview-products" class="cards" aria-live="polite"></div></div>'
         body += '<p class="muted">O banner e os produtos aparecerão na página de novidades. O sistema pode exibir uma imagem junto ao push se o aparelho permitir.</p><a class="btn btn-alt" href="/p/'+esc(p["slug"])+'/comunicados">Ver comunicados da loja</a>'
         body += '<h2>Histórico</h2>' + history_html + '</section></div></div>'
         body += r"""<script>
@@ -328,6 +328,16 @@ def install(g):
  const f=document.getElementById('com450-form');
  const preview=()=>{document.getElementById('com450-preview-title').textContent=f.elements.title.value||'Título da comunicação';document.getElementById('com450-preview-body').textContent=f.elements.body.value||'Sua mensagem aparecerá aqui.'};
  f.elements.title.addEventListener('input',preview);f.elements.body.addEventListener('input',preview);
+ const refreshSelected=()=>{
+   const box=document.getElementById('com450-preview-products');box.replaceChildren();
+   for(const check of f.querySelectorAll('input[name="product_ids"]:checked')){
+     const entry=check.closest('.product');if(!entry)continue;
+     const card=document.createElement('article'),image=entry.querySelector('img');
+     if(image)card.appendChild(image.cloneNode(true));
+     const name=document.createElement('p');name.textContent=entry.querySelector('label')?.textContent.trim()||'Produto';card.appendChild(name);box.appendChild(card);
+   }
+ };
+ f.querySelectorAll('input[name="product_ids"]').forEach(input=>input.addEventListener('change',refreshSelected));
  document.getElementById('com450-search').addEventListener('input',e=>{const term=e.target.value.toLocaleLowerCase('pt-BR');document.querySelectorAll('#com450-products .product').forEach(n=>{n.hidden=!n.textContent.toLocaleLowerCase('pt-BR').includes(term)});});
  f.elements.banner.addEventListener('change',e=>{const file=e.target.files[0],img=document.getElementById('com450-preview-img');if(!file){img.hidden=true;return}if(file.size>2097152){alert('Imagem maior que 2 MB.');e.target.value='';img.hidden=true;return}img.src=URL.createObjectURL(file);img.hidden=false;});
  f.addEventListener('submit',e=>{const chosen=f.querySelectorAll('input[name=product_ids]:checked');if(chosen.length>12){e.preventDefault();alert('Selecione no máximo 12 produtos.')}else if(!confirm('Confirma este comunicado para os clientes inscritos?'))e.preventDefault()});
