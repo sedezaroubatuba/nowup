@@ -3413,3 +3413,7 @@ nowup_cash424.install(globals())
 # Customer-selected WhatsApp fallback after a server-timed minute.
 import nowup_wait434
 nowup_wait434.install(globals())
+
+# V450: comunicações por loja; consentimento independente e Web Push.
+import nowup_customer_comms450
+nowup_customer_comms450.install(globals())
