@@ -14,7 +14,7 @@ self.addEventListener('push', event => {
   let data = {}; try { const value=event.data.json();if(value&&typeof value==='object'&&!Array.isArray(value))data=value; } catch (_) {}
   event.waitUntil(self.registration.showNotification(data.title || STORE_NAME, {
     body: data.body || 'Confira seus pedidos nesta loja.',
-    icon: STORE_SCOPE + 'app-icon/192.png', badge:'/static/nowup-push-badge375.svg', tag:String(data.tag||('nowup-'+(data.eventId||'aviso'))), renotify:false, data: {url: data.url}
+    icon: STORE_SCOPE + 'app-icon/192.png', ...(typeof data.image === 'string' && /^\/uploads\/[a-zA-Z0-9_.-]+$/.test(data.image) ? {image:data.image} : {}), badge:'/static/nowup-push-badge375.svg', tag:String(data.tag||('nowup-'+(data.eventId||'aviso'))), renotify:false, data: {url: data.url}
   }));
 });
 self.addEventListener('notificationclick', event => {
