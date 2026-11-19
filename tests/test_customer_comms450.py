@@ -98,5 +98,48 @@ class CommunicationTests(unittest.TestCase):
         self.assertFalse(self.alerts.items)
 
 
+    def test_push_optout_drops_previously_queued_notification(self):
+        from unittest.mock import patch
+        import nowup_alerts112 as alerts
+        with self.connect() as db:
+            db.execute("INSERT INTO merchant_comms450_consent VALUES(10,1,0,'v450','2026-11-19')")
+            db.execute("""INSERT INTO merchant_comms450
+                (professional_id,kind,title,body,created_at,scheduled_at,state)
+                VALUES(1,'promocao','Oferta','Promoção',?,?, 'sent')""",
+                (comm.now(),comm.now()))
+        alerts.configure(self.connect, lambda *args: None)
+        alerts.initialize()
+        with self.connect() as db:
+            alerts.enqueue(db,10,101,{'title':'Oferta','body':'Promoção','tag':'nowup-com450-1'})
+        with patch.object(alerts.push,'send',return_value=True) as sender:
+            self.assertTrue(alerts.process())
+            sender.assert_not_called()
+        with self.connect() as db:
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM customer_push112').fetchone()[0],0)
+
+    def test_push_uses_only_this_store_device(self):
+        from unittest.mock import patch
+        import nowup_alerts112 as alerts
+        with self.connect() as db:
+            db.execute("""CREATE TABLE push_subscriptions(
+               endpoint TEXT PRIMARY KEY,user_id INTEGER,session_hash TEXT,subscription TEXT)""")
+            db.execute("INSERT INTO push_subscriptions VALUES('device-store',10,'s','{}')")
+            db.execute("INSERT INTO push_subscriptions VALUES('device-other',10,'s','{}')")
+            db.execute("INSERT INTO merchant_comms450_devices VALUES(10,1,'device-store','2026-11-19')")
+            db.execute("INSERT INTO merchant_comms450_consent VALUES(10,1,1,'v450','2026-11-19')")
+            db.execute("""INSERT INTO merchant_comms450
+                (professional_id,kind,title,body,created_at,scheduled_at,state)
+                VALUES(1,'promocao','Oferta','Promoção',?,?, 'sent')""",
+                (comm.now(),comm.now()))
+        alerts.configure(self.connect, lambda *args: None)
+        alerts.initialize()
+        with self.connect() as db:
+            alerts.enqueue(db,10,102,{'title':'Oferta','body':'Promoção','tag':'nowup-com450-1'})
+        with patch.object(alerts.push,'send',return_value=True) as sender:
+            self.assertTrue(alerts.process())
+            self.assertEqual(sender.call_count,1)
+            self.assertEqual(sender.call_args.args[0]['endpoint'],'device-store')
+
+
 if __name__ == "__main__":
     unittest.main()
