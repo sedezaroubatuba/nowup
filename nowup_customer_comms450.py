@@ -55,6 +55,11 @@ def setup():
             professional_id INTEGER NOT NULL REFERENCES professionals(id) ON DELETE CASCADE,
             allowed INTEGER NOT NULL, version TEXT NOT NULL, updated_at TEXT NOT NULL,
             PRIMARY KEY(user_id,professional_id));
+        CREATE TABLE IF NOT EXISTS merchant_comms450_devices(
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            professional_id INTEGER NOT NULL REFERENCES professionals(id) ON DELETE CASCADE,
+            endpoint TEXT NOT NULL, created_at TEXT NOT NULL,
+            PRIMARY KEY(user_id,professional_id,endpoint));
         CREATE TABLE IF NOT EXISTS merchant_comms450_deliveries(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             campaign_id INTEGER NOT NULL REFERENCES merchant_comms450(id) ON DELETE CASCADE,
@@ -414,7 +419,7 @@ def install(g):
             body += '<p>Para receber novidades, entre como cliente desta loja e autorize as notificações.</p><a class="btn" href="/p/'+esc(p["slug"])+'/entrar">Entrar como cliente</a>'
         body += '</section><section class="panel"><h2>Comunicados da loja</h2>'+posts+'</section></main>'
         if has_access:
-            body += """<script>
+            body += r"""<script>
 (() => {
  const root=location.pathname.replace(/\/$/,''),msg=document.getElementById('com450-status'),on=document.getElementById('com450-subscribe'),off=document.getElementById('com450-unsubscribe');
  const key=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-s.length%4)%4)),c=>c.charCodeAt(0));
@@ -458,6 +463,9 @@ def install(g):
                 raise HTTPException(400,"Máximo de 10 aparelhos por conta.")
             c.execute("INSERT OR REPLACE INTO push_subscriptions VALUES(?,?,?,?)",
                       (data["endpoint"],u["id"],session,json.dumps(data)))
+            c.execute("""INSERT INTO merchant_comms450_devices(user_id,professional_id,endpoint,created_at)
+                VALUES(?,?,?,?) ON CONFLICT(user_id,professional_id,endpoint)
+                DO UPDATE SET created_at=excluded.created_at""",(u["id"],p["id"],data["endpoint"],now()))
             c.execute("""INSERT INTO merchant_comms450_consent VALUES(?,?,?,?,?)
                 ON CONFLICT(user_id,professional_id) DO UPDATE SET
                   allowed=excluded.allowed,version=excluded.version,updated_at=excluded.updated_at""",
@@ -478,6 +486,8 @@ def install(g):
             c.execute("""INSERT INTO merchant_comms450_consent VALUES(?,?,?,?,?)
                 ON CONFLICT(user_id,professional_id) DO UPDATE SET allowed=0,updated_at=excluded.updated_at""",
                 (u["id"],p["id"],0,"v450",now()))
+            c.execute("DELETE FROM merchant_comms450_devices WHERE user_id=? AND professional_id=?",
+                      (u["id"],p["id"]))
             c.commit()
         finally:
             c.close()
