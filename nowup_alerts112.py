@@ -79,6 +79,7 @@ def process():
         # Promoções de lojistas exigem consentimento específico, revalidado antes do Push.
         payload=json.loads(job['payload'])
         tag=str(payload.get('tag',''))
+        campaign_store=None
         if tag.startswith('nowup-com450-'):
             import re
             match=re.fullmatch(r'nowup-com450-(\d+)-evento-(\d+)',tag)
@@ -93,7 +94,15 @@ def process():
             if not permitted:
                 c.execute('DELETE FROM customer_push112 WHERE id=?',(job['id'],))
                 return True
-        rows=c.execute('SELECT * FROM push_subscriptions WHERE user_id=?',(job['user_id'],)).fetchall()
+            campaign_store=c.execute('SELECT professional_id FROM merchant_comms450 WHERE id=?',
+                                     (int(match.group(1)),)).fetchone()[0]
+        if campaign_store is None:
+            rows=c.execute('SELECT * FROM push_subscriptions WHERE user_id=?',(job['user_id'],)).fetchall()
+        else:
+            rows=c.execute('''SELECT s.* FROM push_subscriptions s
+                JOIN merchant_comms450_devices d ON d.endpoint=s.endpoint AND d.user_id=s.user_id
+                WHERE s.user_id=? AND d.professional_id=?''',
+                (job['user_id'],campaign_store)).fetchall()
     success=True
     for row in rows:
         with connection() as c:
