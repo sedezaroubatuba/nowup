@@ -318,7 +318,7 @@ def install(g):
         body += '<section class="panel"><h2>Prévia para o cliente</h2><div class="preview"><b id="com450-preview-title">Título da comunicação</b><p id="com450-preview-body">Sua mensagem aparecerá aqui.</p><img id="com450-preview-img" hidden alt="Prévia da arte"></div>'
         body += '<p class="muted">O banner e os produtos aparecerão na página de novidades. O sistema pode exibir uma imagem junto ao push se o aparelho permitir.</p><a class="btn btn-alt" href="/p/'+esc(p["slug"])+'/comunicados">Ver comunicados da loja</a>'
         body += '<h2>Histórico</h2>' + history_html + '</section></div></div>'
-        body += """<script>
+        body += r"""<script>
 (() => {
  const f=document.getElementById('com450-form');
  const preview=()=>{document.getElementById('com450-preview-title').textContent=f.elements.title.value||'Título da comunicação';document.getElementById('com450-preview-body').textContent=f.elements.body.value||'Sua mensagem aparecerá aqui.'};
@@ -423,7 +423,8 @@ def install(g):
  if(!window.isSecureContext||!('serviceWorker' in navigator)||!('PushManager' in window))throw new Error('Use um navegador compatível com push. No iPhone, abra o ícone da Tela de Início.');
  if(await Notification.requestPermission()!=='granted')throw new Error('Permita notificações nas configurações do aparelho.');
  const cfg=await api(root+'/push-chave');
- const reg=await navigator.serviceWorker.register('/nowup-push-sw.js',{scope:'/'});
+ const storeRoot=root.slice(0,-'/comunicados'.length)+'/';
+ const reg=await navigator.serviceWorker.register(storeRoot+'service-worker355.js',{scope:storeRoot});
  await navigator.serviceWorker.ready;
  let sub=await reg.pushManager.getSubscription();if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:key(cfg.publicKey)});
  await api(root+'/assinar',sub.toJSON());msg.textContent='Novidades desta loja ativadas!';on.hidden=true;off.hidden=false;
