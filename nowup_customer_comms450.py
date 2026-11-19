@@ -223,6 +223,10 @@ def worker_once():
                            "tag":"nowup-com450-" + str(item["id"])}
                 if item["image_filename"]:
                     payload["image"] = "/uploads/" + item["image_filename"]
+                else:
+                    selection = visible_products(c, p, json.loads(item["product_ids"])[:1])
+                    if selection and selection[0]["image_filename"]:
+                        payload["image"] = "/uploads/" + selection[0]["image_filename"]
                 G["nowup_alerts112"].enqueue(c, r["user_id"], notice.lastrowid, payload)
                 c.execute("UPDATE merchant_comms450_deliveries SET state='sent',notified_at=? WHERE id=?",
                           (now(),r["id"]))
@@ -296,8 +300,8 @@ def install(g):
             ' <small>R$ ' + ("%0.2f"%(g["current_price"](x)/100)).replace(".",",") + '</small></label></div>'
             for x in products)
         history_html = "".join('<article><span class="pill">' + esc(row["kind"]) + '</span> <b>' +
-             esc(row["title"]) + '</b><p class="muted">' + esc(row["created_at"][:16]) +
-             " · " + esc(row["state"]) + " · " + str(row["sent"]) + " destinatário(s) notificados</p></article>"
+             esc(row["title"]) + '</b><p class="muted">' + esc(datetime.fromisoformat(row["created_at"]).astimezone(TZ).strftime("%d/%m/%Y %H:%M")) +
+             " · " + esc(row["state"]) + " · " + str(row["sent"]) + " cliente(s) com aviso registrado; o push pode ainda estar na fila</p></article>"
              for row in history) or "<p>Nenhum comunicado enviado ainda.</p>"
         body = '<a href="/painel">← Voltar ao painel</a></header><div class="wrap"><h1>📣 Comunicação com clientes</h1><p class="muted">Configurações do Cardápio Digital · ' + esc(p["display_name"]) + '</p>'
         body += '<div class="grid"><section class="panel"><h2>Novo comunicado</h2><p class="pill">' + str(total) + ' clientes inscritos</p>'
