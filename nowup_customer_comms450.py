@@ -410,7 +410,7 @@ def install(g):
         posts="".join('<article><span class="pill">'+esc(r["kind"])+'</span><h2><a href="/p/'+esc(p["slug"])+'/comunicados/'+str(r["id"])+'">'+esc(r["title"])+'</a></h2><p>'+esc(r["body"])+'</p>'+
             ('<img class="thumb" src="/uploads/'+esc(r["image_filename"])+'" alt="Arte do comunicado">' if r["image_filename"] else "")+'</article>'
             for r in records) or "<p>Esta loja ainda não publicou comunicados.</p>"
-        body='<a href="/p/'+esc(p["slug"])+'">← Ver cardápio</a></header><main class="wrap"><h1>🔔 Avisos e novidades · '+esc(p["display_name"])+'</h1><section class="panel"><h2>Receber avisos deste cardápio</h2>'
+        body='<a href="/p/'+esc(p["slug"])+'/cardapio">← Ver cardápio</a></header><main class="wrap"><h1>🔔 Avisos e novidades · '+esc(p["display_name"])+'</h1><section class="panel"><h2>Receber avisos deste cardápio</h2>'
         if has_access:
             body += ('<p class="pill">Você autorizou mensagens promocionais.</p>' if optin else '<p>Você pode permitir notificações de promoções e comunicados deste estabelecimento. Os avisos de pedidos são independentes.</p>')
             body += '<button type="button" id="com450-subscribe" '+('hidden' if optin else '')+'>🔔 Autorizar novidades neste aparelho</button> '
@@ -508,7 +508,7 @@ def install(g):
             products=visible_products(c,p,ids)
         finally:
             c.close()
-        cards="".join('<article><img src="'+("/uploads/"+esc(x["image_filename"]) if x["image_filename"] else "/static/nowup-logo185.png")+'" alt=""><h2>'+esc(x["name"])+'</h2><b>R$ '+("%0.2f"%(g["current_price"](x)/100)).replace(".",",")+'</b><p><a class="btn" href="/p/'+esc(p["slug"])+'#produto-'+str(x["id"])+'">Ver no cardápio</a></p></article>' for x in products)
+        cards="".join('<article><img src="'+("/uploads/"+esc(x["image_filename"]) if x["image_filename"] else "/static/nowup-logo185.png")+'" alt=""><h2>'+esc(x["name"])+'</h2><b>R$ '+("%0.2f"%(g["current_price"](x)/100)).replace(".",",")+'</b><p><a class="btn" href="/p/'+esc(p["slug"])+'/cardapio#produto-'+str(x["id"])+'">Ver no cardápio</a></p></article>' for x in products)
         body='<a href="/p/'+esc(p["slug"])+'/comunicados">← Outros comunicados</a></header><main class="wrap"><section class="panel"><span class="pill">'+esc(r["kind"])+'</span><h1>'+esc(r["title"])+'</h1><p>'+esc(r["body"])+'</p>'
         if r["image_filename"]:
             body+='<img style="max-width:100%;max-height:360px;object-fit:contain;border-radius:14px" src="/uploads/'+esc(r["image_filename"])+'" alt="Banner da loja">'
@@ -516,5 +516,5 @@ def install(g):
             body+='<h2>Produtos selecionados</h2><div class="cards">'+cards+'</div>'
         if r["link"]:
             body+='<p><a class="btn" href="'+esc(r["link"])+'" rel="nofollow noopener noreferrer" target="_blank">Abrir link da loja</a></p>'
-        body+='<p><a class="btn btn-alt" href="/p/'+esc(p["slug"])+'">Abrir cardápio completo</a></p></section></main>'
+        body+='<p><a class="btn btn-alt" href="/p/'+esc(p["slug"])+'/cardapio">Abrir cardápio completo</a></p></section></main>'
         return HTMLResponse(document(r["title"],body))
