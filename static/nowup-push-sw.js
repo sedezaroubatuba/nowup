@@ -3,12 +3,12 @@ self.addEventListener('push',event=>{
   let data={};try{const value=event.data.json();if(value&&typeof value==='object'&&!Array.isArray(value))data=value}catch(_){}
   let title=typeof data.title==='string'?data.title.slice(0,120):'NowUp';
   if(!/nowup/i.test(title))title='NowUp · '+title;
-  event.waitUntil(self.registration.showNotification(title,{body:typeof data.body==='string'?data.body.slice(0,600):'Abra o NowUp para conferir.',tag:String(data.tag||('nowup-'+(data.eventId||'aviso'))),renotify:false,icon:'/static/nowup-notice-logo374.png',badge:'/static/nowup-push-badge375.svg',vibrate:[250,100,250],data:{url:data.url||'/app'}}));
+  event.waitUntil(self.registration.showNotification(title,{body:typeof data.body==='string'?data.body.slice(0,600):'Abra o NowUp para conferir.',tag:String(data.tag||('nowup-'+(data.eventId||'aviso'))),renotify:false,...(typeof data.image==='string'&&/^\/uploads\/[a-zA-Z0-9_.-]+$/.test(data.image)?{image:data.image}:{}),icon:'/static/nowup-notice-logo374.png',badge:'/static/nowup-push-badge375.svg',vibrate:[250,100,250],data:{url:data.url||'/app'}}));
 });
 self.addEventListener('notificationclick',event=>{
   event.notification.close();let url;
   try{url=new URL(event.notification.data?.url||'/app',self.location.origin)}catch(_){url=new URL('/app',self.location.origin)}
-  const valid=url.origin===self.location.origin&&!url.username&&!url.password&&(url.pathname==='/app'||url.pathname==='/painel'||url.pathname==='/cliente'||url.pathname==='/suporte'||/^\/pedido\/[A-Za-z0-9_-]+$/.test(url.pathname)||/^\/p\/[A-Za-z0-9_-]+\/(pedido\/[A-Za-z0-9_-]+|pedidos|suporte)$/.test(url.pathname));
+  const valid=url.origin===self.location.origin&&!url.username&&!url.password&&(url.pathname==='/app'||url.pathname==='/painel'||url.pathname==='/cliente'||url.pathname==='/suporte'||/^\/pedido\/[A-Za-z0-9_-]+$/.test(url.pathname)||/^\/p\/[A-Za-z0-9_-]+\/(pedido\/[A-Za-z0-9_-]+|pedidos|suporte|comunicados(?:\/[0-9]+)?)$/.test(url.pathname));
   if(!valid)url=new URL('/app',self.location.origin);
   event.waitUntil((async()=>{if(clients.matchAll){const windows=await clients.matchAll({type:'window',includeUncontrolled:true});for(const client of windows){try{const current=new URL(client.url);const scope=path=>(/^\/p\/([^/]+)\//.exec(path)||[])[1]||'';if(current.origin===url.origin&&scope(current.pathname)===scope(url.pathname)&&client.navigate&&client.focus){const moved=await client.navigate(url.href);if(moved)return await client.focus()}}catch(_){}}}return clients.openWindow(url.href)})());
 });

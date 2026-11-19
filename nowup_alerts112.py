@@ -70,20 +70,54 @@ def test(request:Request):
 def process():
     now=time.time()
     with connection() as c:
-        c.execute('BEGIN IMMEDIATE');c.execute('DELETE FROM customer_push112 WHERE created<? OR attempts>=6',(now-3600,));c.execute('DELETE FROM push_deliveries375 WHERE event_id NOT IN (SELECT event_id FROM customer_push112)')
+        c.execute('BEGIN IMMEDIATE')
+        c.execute('DELETE FROM customer_push112 WHERE created<? OR attempts>=6',(now-3600,))
+        c.execute('DELETE FROM push_deliveries375 WHERE event_id NOT IN (SELECT event_id FROM customer_push112)')
         job=c.execute('SELECT * FROM customer_push112 WHERE next_try<=? ORDER BY id LIMIT 1',(now,)).fetchone()
         if not job:return False
         c.execute('UPDATE customer_push112 SET next_try=?,attempts=attempts+1 WHERE id=?',(now+60,job['id']))
-        rows=c.execute('SELECT * FROM push_subscriptions WHERE user_id=?',(job['user_id'],)).fetchall()
+        # Promoções de lojistas exigem consentimento específico, revalidado antes do Push.
+        payload=json.loads(job['payload'])
+        tag=str(payload.get('tag',''))
+        campaign_store=None
+        if tag.startswith('nowup-com450-'):
+            import re
+            match=re.fullmatch(r'nowup-com450-(\d+)-evento-(\d+)',tag)
+            permitted=bool(match and int(match.group(2))==job['event_id'] and c.execute('''
+                SELECT 1 FROM merchant_comms450 m
+                JOIN merchant_comms450_consent pref ON pref.professional_id=m.professional_id
+                JOIN users u ON u.id=pref.user_id
+                WHERE m.id=? AND pref.user_id=? AND pref.allowed=1 AND pref.version='v450'
+                  AND u.customer_store345=m.professional_id AND u.role='customer'
+                  AND u.is_active=1 AND u.email_verified=1''',
+                (int(match.group(1)),job['user_id'])).fetchone())
+            if not permitted:
+                c.execute('DELETE FROM customer_push112 WHERE id=?',(job['id'],))
+                return True
+            campaign_store=c.execute('SELECT professional_id FROM merchant_comms450 WHERE id=?',
+                                     (int(match.group(1)),)).fetchone()[0]
+        if campaign_store is None:
+            rows=c.execute('SELECT * FROM push_subscriptions WHERE user_id=?',(job['user_id'],)).fetchall()
+        else:
+            rows=c.execute('''SELECT s.* FROM push_subscriptions s
+                JOIN merchant_comms450_devices d ON d.endpoint=s.endpoint AND d.user_id=s.user_id
+                WHERE s.user_id=? AND d.professional_id=?''',
+                (job['user_id'],campaign_store)).fetchall()
     success=True
     for row in rows:
         with connection() as c:
-            if c.execute('SELECT 1 FROM push_deliveries375 WHERE event_id=? AND endpoint=?',(job['event_id'],row['endpoint'])).fetchone():continue
-        sent=push.send(row,json.loads(job['payload']));success=sent and success
+            if c.execute('SELECT 1 FROM push_deliveries375 WHERE event_id=? AND endpoint=?',
+                         (job['event_id'],row['endpoint'])).fetchone():
+                continue
+        sent=push.send(row,payload)
+        success=sent and success
         if sent:
-            with connection() as c:c.execute('INSERT OR IGNORE INTO push_deliveries375(event_id,endpoint) VALUES(?,?)',(job['event_id'],row['endpoint']))
+            with connection() as c:
+                c.execute('INSERT OR IGNORE INTO push_deliveries375(event_id,endpoint) VALUES(?,?)',
+                          (job['event_id'],row['endpoint']))
     if success:
-        with connection() as c:c.execute('DELETE FROM customer_push112 WHERE id=?',(job['id'],))
+        with connection() as c:
+            c.execute('DELETE FROM customer_push112 WHERE id=?',(job['id'],))
     return True
 
 def run():

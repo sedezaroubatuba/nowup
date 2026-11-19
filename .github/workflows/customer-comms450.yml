@@ -1,0 +1,56 @@
+name: Cardápio customer communication V450
+on:
+  pull_request:
+    paths:
+      - 'nowup_customer_comms450.py'
+      - 'nowup_alerts112.py'
+      - 'static/nowup-push-sw.js'
+      - 'tests/test_customer_comms450.py'
+      - '.github/workflows/customer-comms450.yml'
+  push:
+    branches:
+      - 'feature/comunicacao-clientes-cardapio-v450'
+jobs:
+  isolated:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install focused dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements.txt pytest
+      - name: Check Python and Service Worker syntax
+        run: |
+          python -m py_compile nowup_customer_comms450.py nowup_alerts112.py tests/test_customer_comms450.py
+          node --check static/nowup-push-sw.js
+      - name: Validate FastAPI route registration
+        env:
+          NOWUP_DB_ENGINE: sqlite
+          NOWUP_DB: /tmp/nowup-ci450.sqlite3
+          NOWUP_ADMIN_EMAIL: ci450@example.invalid
+          NOWUP_ADMIN_PASSWORD: test-credential-never-deployed
+        run: |
+          python - <<'PY'
+          import app
+          paths={getattr(route,'path','') for route in app.app.routes}
+          required={
+              '/painel/comunicacao-clientes',
+              '/painel/comunicacao-clientes/enviar',
+              '/p/{slug}/comunicados',
+              '/p/{slug}/comunicados/{campaign_id}',
+              '/p/{slug}/comunicados/assinar',
+              '/p/{slug}/comunicados/cancelar',
+          }
+          missing=required-paths
+          assert not missing, f'Rotas não registradas: {sorted(missing)}'
+          print('Rotas de comunicados registradas no FastAPI')
+          PY
+      - name: Test merchant isolation, consent and campaigns
+        env:
+          NOWUP_DB_ENGINE: sqlite
+        run: python -m pytest -q tests/test_customer_comms450.py
