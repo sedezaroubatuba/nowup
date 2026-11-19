@@ -124,38 +124,3 @@ def start():
     global _thread
     initialize();_stop.clear();_thread=threading.Thread(target=run,daemon=True);_thread.start()
 def stop():_stop.set()
-,tag)
-            permitted=bool(match and c.execute('''SELECT 1 FROM merchant_comms450 m
-              JOIN merchant_comms450_consent pref ON pref.professional_id=m.professional_id
-              JOIN users u ON u.id=pref.user_id
-              WHERE m.id=? AND pref.user_id=? AND pref.allowed=1 AND pref.version='v450'
-              AND u.customer_store345=m.professional_id AND u.is_active=1 AND u.email_verified=1''',
-              (int(match.group(1)),job['user_id'])).fetchone())
-            if not permitted:
-                c.execute('DELETE FROM customer_push112 WHERE id=?',(job['id'],))
-                return True
-        rows=c.execute('SELECT * FROM push_subscriptions WHERE user_id=?',(job['user_id'],)).fetchall()
-    success=True
-    for row in rows:
-        with connection() as c:
-            if c.execute('SELECT 1 FROM push_deliveries375 WHERE event_id=? AND endpoint=?',(job['event_id'],row['endpoint'])).fetchone():continue
-        sent=push.send(row,json.loads(job['payload']));success=sent and success
-        if sent:
-            with connection() as c:c.execute('INSERT OR IGNORE INTO push_deliveries375(event_id,endpoint) VALUES(?,?)',(job['event_id'],row['endpoint']))
-    if success:
-        with connection() as c:c.execute('DELETE FROM customer_push112 WHERE id=?',(job['id'],))
-    return True
-
-def run():
-    while not _stop.is_set():
-        try:
-            for _ in range(10):
-                if _stop.is_set():break
-                if not process():break
-        except Exception:logging.warning('NowUp: aviso de status aguardando nova tentativa.')
-        _stop.wait(3)
-
-def start():
-    global _thread
-    initialize();_stop.clear();_thread=threading.Thread(target=run,daemon=True);_thread.start()
-def stop():_stop.set()
