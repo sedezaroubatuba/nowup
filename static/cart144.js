@@ -20,6 +20,12 @@
   const dockText=dock.querySelector('strong');if(dockText&&dockText.firstChild?.nodeType===3)dockText.firstChild.textContent='Ver carrinho · ';
   const buy=document.createElement('button');buy.type='button';buy.className='nu144-continue';buy.textContent='Continuar comprando';buy.dataset.continueBuying144='';
   cart.querySelector('[data-checkout]')?.before(buy);
+  if(items.nextElementSibling){
+    const actions=document.createElement('div');
+    actions.className='nowup-cart-actions';
+    items.after(actions);
+    while(actions.nextElementSibling)actions.append(actions.nextElementSibling);
+  }
   const desktopButton=document.createElement('button');
   desktopButton.type='button';
   desktopButton.className='nowup-desktop-cart';
