@@ -1055,9 +1055,9 @@ def attach_cart_assets144(response):
         return response
     assets=[]
     if '/static/cart144.css' not in body:
-        assets.append('<link rel="stylesheet" href="/static/cart144.css?v=144">')
+        assets.append('<link rel="stylesheet" href="/static/cart144.css?v=301">')
     if '/static/cart144.js' not in body:
-        assets.append('<script src="/static/cart144.js?v=144" defer></script>')
+        assets.append('<script src="/static/cart144.js?v=301" defer></script>')
     if '/static/categories142.js' not in body:
         assets.append('<script src="/static/categories142.js?v=145" defer></script>')
     body=re.sub(r'(/static/(?:categories142\.js|menu-swipe\.(?:js|css)))(?:\?v=[^"\s<]*)?',r'\1?v=145',body)

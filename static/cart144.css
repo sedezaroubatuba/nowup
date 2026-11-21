@@ -33,3 +33,119 @@ html body .nu83-cart-dock button *{color:#fff!important}.nu143-has-cart .native-
 body:has(.nu143-cart-dialog[open]){overflow:hidden}
 
 html body .nu143-cart-dialog .nu144-continue{display:block!important;width:100%!important;min-height:48px!important;margin:10px 0!important;padding:12px!important;border:1px solid #7036c6!important;border-radius:14px!important;background:#fff!important;color:#7036c6!important;font-size:16px!important;font-weight:700!important;cursor:pointer}
+
+.nowup-desktop-cart { display: none; }
+
+@media (min-width: 901px) {
+  html body.public-profile-area [data-native-menu] > .container {
+    width: min(calc(100% - 48px), 1440px) !important;
+    max-width: 1440px !important;
+    margin-inline: auto !important;
+  }
+
+  html body.public-profile-area [data-native-menu] :is(.nu187-intro, .nu190-showcase, .nu191-category-view, .menu-layout) {
+    max-width: 1440px !important;
+    margin-inline: auto !important;
+  }
+
+  html body.public-profile-area [data-native-menu] .nu-menu-sticky .nu83-catalog-heading {
+    width: min(100%, 1440px) !important;
+    margin-inline: auto !important;
+  }
+
+  html body.public-profile-area [data-native-menu] .nu83-catalog-heading :is(.nu187-back, .nu168-trigger) {
+    flex-basis: 52px !important;
+    min-width: 52px !important;
+    min-height: 52px !important;
+    font-size: 23px !important;
+  }
+
+  html body.public-profile-area dialog.nu168-categories nav button {
+    min-height: 52px;
+    font-size: 17px;
+  }
+
+  html body.public-profile-area [data-native-menu] .nu83-catalog-heading .nowup-desktop-cart:not([hidden]) {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    min-height: 48px;
+    padding: 0 18px;
+    border: 1px solid #5923a4;
+    border-radius: 12px;
+    background: #5923a4;
+    color: #fff;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  html body.public-profile-area [data-native-menu]:has(.nowup-desktop-cart:not([hidden])) .nu83-cart-dock {
+    display: none !important;
+  }
+
+  html body.public-profile-area [data-native-menu] .nu143-cart-dialog {
+    inset: 0 0 0 auto !important;
+    width: min(100%, 480px) !important;
+    max-width: none !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 20px 0 0 20px;
+    box-shadow: -12px 0 48px #172b4530;
+    filter: none !important;
+  }
+
+  html body.public-profile-area .nu143-cart-dialog::backdrop {
+    background: #19243a59;
+    backdrop-filter: none;
+  }
+
+  html body.public-profile-area [data-native-menu] .nu143-cart-dialog .panel {
+    padding: 0 22px 22px !important;
+  }
+
+  html body.public-profile-area [data-native-menu] .nu143-cart-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    margin: 0 0 16px;
+    padding: 16px 0 12px;
+    border-bottom: 1px solid #e2e8ec;
+    background: #fff;
+  }
+
+  html body.public-profile-area [data-native-menu] .nu143-cart-dialog .cart-item {
+    font-size: 16px;
+    line-height: 1.4;
+  }
+
+  html body.public-profile-area [data-native-menu] .nu143-cart-dialog .cart-item small,
+  html body.public-profile-area [data-native-menu] .nu143-cart-dialog .cart-quantity .cart-remove {
+    font-size: 14px;
+  }
+
+  html body.public-profile-area [data-native-menu] :is(.menu-category-nav button, .nu190-indicator > button:not(.nu190-dot), .nu143-cart-header button, .nu143-cart-dialog .cart-quantity button, .nu143-cart-dialog .cart-quantity input) {
+    min-width: 48px !important;
+    min-height: 48px !important;
+  }
+
+  html body.public-profile-area [data-native-menu] :is(.menu-category-nav button, .nu190-category header button, .nu201-open, .nu190-add) {
+    min-height: 46px !important;
+    font-size: 15px !important;
+  }
+
+  html body.public-profile-area [data-native-menu] :is(.nu190-card h3, .menu-product-info h3) {
+    font-size: 16px !important;
+    line-height: 1.35;
+  }
+
+  html body.public-profile-area [data-native-menu] :is(.nowup-desktop-cart, .nu143-cart-dialog button):focus-visible {
+    outline: 3px solid #7848c2;
+    outline-offset: 3px;
+  }
+}

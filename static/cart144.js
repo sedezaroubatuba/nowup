@@ -20,6 +20,14 @@
   const dockText=dock.querySelector('strong');if(dockText&&dockText.firstChild?.nodeType===3)dockText.firstChild.textContent='Ver carrinho · ';
   const buy=document.createElement('button');buy.type='button';buy.className='nu144-continue';buy.textContent='Continuar comprando';buy.dataset.continueBuying144='';
   cart.querySelector('[data-checkout]')?.before(buy);
+  const desktopButton=document.createElement('button');
+  desktopButton.type='button';
+  desktopButton.className='nowup-desktop-cart';
+  desktopButton.setAttribute('aria-haspopup','dialog');
+  desktopButton.hidden=true;
+  desktopButton.textContent='Carrinho · 0 itens';
+  root.querySelector('.nu83-catalog-heading')?.append(desktopButton);
+  const desktopCount=dock.querySelector('[data-cart-count]');
   let savedScroll=0;
   const closeCart=()=>{cart.close();window.scrollTo({top:savedScroll,behavior:'instant'});};
   buy.addEventListener('click',closeCart);
@@ -52,6 +60,8 @@
     });
     const hasItems=!!items.querySelector('.cart-item');
     dock.hidden=!hasItems;
+    desktopButton.hidden=false;
+    desktopButton.textContent='Carrinho · '+(desktopCount?.textContent || '0 itens');
     document.body.classList.toggle('nu143-has-cart',hasItems);
     const subtotal=cents(root.querySelector('[data-dock-total]')?.textContent);
     const grand=cents(checkout?.querySelector('[data-dialog-total]')?.textContent);
@@ -62,10 +72,14 @@
   new MutationObserver(schedule).observe(items,{childList:true,subtree:true});
   const nativeTotal=checkout?.querySelector('[data-dialog-total]');
   if(nativeTotal)new MutationObserver(schedule).observe(nativeTotal,{childList:true,characterData:true,subtree:true});
+  function openCart(){
+    refresh();
+    if(!cart.open){savedScroll=window.scrollY;cart.showModal();}
+  }
+  desktopButton.addEventListener('click',openCart);
   document.addEventListener('click',event=>{
     if(!dock.contains(event.target)||!event.target.closest('[data-cart-summary]'))return;
-    event.preventDefault();event.stopImmediatePropagation();refresh();
-    if(!cart.open){savedScroll=window.scrollY;cart.showModal();}
+    event.preventDefault();event.stopImmediatePropagation();openCart();
   },true);
   cart.querySelector('[data-cart-close143]')?.addEventListener('click',closeCart);
   cart.addEventListener('click',event=>{
