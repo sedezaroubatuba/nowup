@@ -1,0 +1,57 @@
+/* NowUp v260: compact groups without repeated catalog photographs */
+.nu-group260{display:block!important;min-width:0;width:100%;box-sizing:border-box;overflow:hidden}
+.nu-group260 > summary{list-style:none;cursor:pointer}
+.nu-group260 > summary::-webkit-details-marker{display:none}
+.nu-group260-cover{display:grid!important;grid-template-columns:minmax(88px,38%) minmax(0,1fr);align-items:center;gap:12px;padding:12px;min-height:145px}
+.nu-group260-cover>img,.nu-group260-placeholder{display:block;width:100%;height:140px;object-fit:contain;border-radius:12px;background:#f6f0fb}
+.nu-group260-placeholder{display:grid;place-items:center;color:#7132bf;font-size:38px}
+.nu-group260-cover .menu-product-info{min-width:0}
+.nu-group260-cover h3{margin:5px 0;font-size:clamp(16px,3.8vw,19px);overflow-wrap:anywhere}
+.nu-group260-open{display:block;margin-top:9px;color:#7132bf;font-size:13px}
+.nu-group260[open] .nu-group260-open{color:#4c2583}
+.nu-group260-items{display:grid;gap:0;border-top:1px solid #e8e1f0;padding:4px 12px 12px}
+.nu-group260-row{display:flex;align-items:flex-start;gap:10px;padding:13px 0;border-bottom:1px solid #eee8f2;min-width:0;box-sizing:border-box}
+.nu-group260-row[hidden]{display:none!important}
+.nu-group260-row:last-child{border-bottom:0}
+.nu-group260-row>img{width:54px;height:54px;object-fit:contain;flex:none;border-radius:10px}
+.nu-group260-row-main{flex:1;min-width:0;display:grid;gap:7px}
+.nu-group260-row h4{font-size:15px;line-height:1.35;margin:0;overflow-wrap:anywhere}
+.nu-group260-row strong{font-size:16px}
+.nu-group260-row strong del{font-size:12px;color:#888;margin-right:5px;font-weight:400}
+.nu-group260-soldout{color:#777}
+.nu-group260-row .product-buy{display:flex;gap:9px;justify-content:flex-start;align-items:end;flex-wrap:wrap;margin:0}
+.nu-group260-row .product-buy label{font-size:12px}
+.nu-group260-row .product-buy input{width:68px;max-width:100%;min-height:38px}
+.nu-group260-row [data-add]{min-height:39px;min-width:110px}
+.nu-group260-row [data-add]:disabled{background:#dedbe2!important;color:#666!important}
+.nu-group260-row .product-options{display:grid;gap:6px}
+@media(max-width:420px){.nu-group260-cover{grid-template-columns:100px minmax(0,1fr)}.nu-group260-cover>img{height:116px}.nu-group260-row .product-buy{gap:6px}}
+
+/* Merchant editor */
+.nu-groups260-admin{margin:22px 0;padding:18px;border:1px solid #e7def3;border-radius:16px;background:#fff}
+.nu-groups260-admin h2{margin:0 0 9px}
+.nu-group260-create,.nu-group260-editor{border:1px solid #ded6ec;border-radius:12px;margin:12px 0;background:#fff;overflow:hidden}
+.nu-group260-create>summary{margin:10px;list-style:none;cursor:pointer}
+.nu-group260-create>form{padding:12px}
+.nu-group260-editor>summary{cursor:pointer;list-style:none}
+.nu-group260-editor-heading{display:flex;gap:12px;align-items:center;padding:12px}
+.nu-group260-editor-heading img,.nu-group260-editor-heading>span:first-child{width:55px;height:55px;border-radius:12px;object-fit:contain;background:#f7f4fb}
+.nu-group260-editor-heading>span:nth-child(2){flex:1;min-width:0;display:grid;gap:4px}
+.nu-group260-editor-heading small,.nu-group260-member-title small{color:#6f6c78;font-size:12px;display:block}
+.nu-group260-editor-body{padding:15px;border-top:1px solid #eee}
+.nu-group260-editor-body>details{margin:12px 0;padding:12px;border:1px solid #ece6f3;border-radius:10px}
+.nu-group260-editor-body details>summary{cursor:pointer;font-weight:600}
+.nu-group260-editor-body .product-form{margin:12px 0}
+.nu-group260-member-list{display:grid;gap:10px}
+.nu-group260-member{padding:12px;border:1px solid #eee6f2;border-radius:11px}
+.nu-group260-member-title{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap}
+.nu-group260-member>details{margin:8px 0}
+.nu-group260-member-title form{margin:0}
+.nu-group260-toggle{white-space:nowrap}
+.nu-group260-on{color:#177945!important;background:#eaf8ef!important}
+.nu-group260-promo{background:#fbf8ff}
+.nu-group260-promo-actions{display:flex;gap:10px;flex-wrap:wrap}
+.nu-group260-promo-actions button{border:1px solid #b59adf;border-radius:10px;padding:8px 12px;background:white;cursor:pointer;color:#5d328d}
+.nu-group260-checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px 12px;margin:12px 0}
+.nu-group260-checks label{display:flex;gap:7px;align-items:center}
+.nu-group260-checks small{color:#666;margin-left:auto}
