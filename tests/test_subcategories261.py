@@ -14,6 +14,7 @@ def env(tmp_path_factory):
     m.UPLOAD_DIR=Path(directory/"uploads")
     m.UPLOAD_DIR.mkdir(parents=True,exist_ok=True)
     m.init_db()
+    m.nowup_sales107.initialize()
     with m.db() as conn:
         stores=conn.execute("SELECT id,user_id,slug FROM professionals ORDER BY id LIMIT 2").fetchall()
         assert len(stores)>=2
