@@ -24,3 +24,14 @@
 .nu261-home-pills button{min-height:36px;padding:7px 11px}
 .nu261-sub-label{display:inline-block;margin:3px 0;color:#76549a;font-size:12px;font-weight:600}
 @media(max-width:480px){.nu-subcats261-manager{padding:10px 0}.nu261-pills{flex-wrap:nowrap;scrollbar-width:none}.nu261-pills button{flex:none}}
+/* Only show the category/filter the shopper actively opens. */
+.nu261-filter-wrap{margin:10px 0 8px}
+.nu261-filter-trigger{min-height:42px;display:inline-flex;align-items:center;gap:6px;border:1px solid #d9c6ee;border-radius:12px;background:#f5effc;color:#59308c;font:inherit;font-size:14px;font-weight:700;padding:9px 14px;cursor:pointer}
+.nu261-filter-trigger[aria-expanded="true"]{background:#7132bf;color:#fff}
+.nu261-filter-wrap .nu261-pills{margin:8px 0 0;padding:4px 0 7px}
+.nu261-filter-wrap[hidden],.nu261-filter-wrap .nu261-pills[hidden],
+.nu-subcats261-manager [hidden],.nu-subcats261-add[hidden]{display:none!important}
+.nu-subcats261-selector{display:block;max-width:430px;margin:12px 0}
+.nu-subcats261-controls{display:flex;align-items:center;gap:8px;margin:12px 0}
+.nu-subcats261-manager .nu-subcats261-existing{margin:12px 0;padding:10px;border:1px solid #eee7f5;border-radius:10px}
+.nu-subcats261-manager .nu-subcats261-existing>summary{cursor:pointer}
