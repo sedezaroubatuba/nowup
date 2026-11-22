@@ -190,7 +190,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </label>
 <label>Categoria<select name="category" required>{% for category in product_categories if category.active %}<option value="{{category.name}}">{{category.name}}</option>{% else %}<option value="Geral">Geral</option>{% endfor %}</select>
 </label>
-<label>Subcategoria (opcional)<select class="input" name="subcategory_id261" data-subcat-picker261 data-selected261="0"><option value="0">Sem subcategoria</option>{% for sc in subcategories261 if sc.active %}<option value="{{sc.id}}" data-parent261="{{sc.category_name}}">{{sc.name}}</option>{% endfor %}</select></label>
+<label data-subcat-field261 hidden>Subcategoria (opcional)<select class="input" name="subcategory_id261" data-subcat-picker261 data-selected261="0"><option value="0">Sem subcategoria</option>{% for sc in subcategories261 if sc.active %}<option value="{{sc.id}}" data-parent261="{{sc.category_name}}">{{sc.name}}</option>{% endfor %}</select></label>
 <label>Preço<input class="input" name="price" inputmode="decimal" placeholder="Ex.: 29,90" required>
 </label>
 <label>Preço promocional<input class="input" name="promo_price" inputmode="decimal" placeholder="Opcional"></label>
@@ -224,7 +224,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </label>
 <label>Categoria<select name="category" required>{% for category in product_categories if category.active %}<option value="{{category.name}}" {% if category.name==product.category %}selected{% endif %}>{{category.name}}</option>{% endfor %}</select>
 </label>
-<label>Subcategoria (opcional)<select class="input" name="subcategory_id261" data-subcat-picker261 data-selected261="{{product.subcategory_id261}}"><option value="0">Sem subcategoria</option>{% for sc in subcategories261 if sc.active %}<option value="{{sc.id}}" data-parent261="{{sc.category_name}}">{{sc.name}}</option>{% endfor %}</select></label>
+<label data-subcat-field261 hidden>Subcategoria (opcional)<select class="input" name="subcategory_id261" data-subcat-picker261 data-selected261="{{product.subcategory_id261}}"><option value="0">Sem subcategoria</option>{% for sc in subcategories261 if sc.active %}<option value="{{sc.id}}" data-parent261="{{sc.category_name}}">{{sc.name}}</option>{% endfor %}</select></label>
 <label>Preço<input class="input" name="price" value="{{'%.2f'|format(product.price_cents/100)|replace('.',',')}}" required>
 </label>
 <label>Preço promocional<input class="input" name="promo_price" value="{% if product.promo_price_cents %}{{'%.2f'|format(product.promo_price_cents/100)|replace('.',',')}}{% endif %}" placeholder="Opcional"></label>
