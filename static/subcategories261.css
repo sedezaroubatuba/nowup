@@ -1,0 +1,26 @@
+/* v261: parent-category group management and customer subcategory navigation */
+.nu-subcats261-manager{margin-top:16px;border-top:1px solid #e5dcef;padding:14px 3px}
+.nu-subcats261-manager h3{margin:0 0 6px}
+.nu-subcats261-category{border:1px solid #e6def2;border-radius:12px;margin:10px 0;padding:10px;background:#fff}
+.nu-subcats261-category>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;list-style:none;min-height:40px}
+.nu-subcats261-category>summary small{font-size:12px;color:#777}
+.nu-subcats261-add{display:flex;gap:9px;align-items:end;flex-wrap:wrap;margin:15px 0}
+.nu-subcats261-add label{flex:1;min-width:160px}
+.nu-subcats261-row{border-top:1px solid #eee7f5;padding:10px 0}
+.nu-subcats261-row form:first-child{display:flex;align-items:end;gap:10px;flex-wrap:wrap}
+.nu-subcats261-row form:first-child label:first-child{flex:1;min-width:140px}
+.nu-subcats261-row input[type=number]{max-width:90px}
+.nu-subcats261-row form:last-child{margin-top:8px}
+.nu-subcats261-bulk{padding:12px;margin:10px 0;border-radius:10px;background:#f8f5fb}
+.nu-subcats261-bulk>summary{cursor:pointer}
+.nu-subcats261-bulk form{display:grid;gap:10px;margin:10px 0}
+.nu-subcats261-bulk .nu-subcats261-actions{display:flex;gap:8px}
+.nu-subcats261-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;max-height:280px;overflow:auto;padding:9px;background:#fff;border-radius:10px}
+.nu-subcats261-choices label{display:flex;gap:7px;align-items:flex-start}
+.nu261-pills{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin:10px 0 14px;overflow:auto}
+.nu261-pills button{border:1px solid #d9c6ee;border-radius:999px;background:#fff;color:#65309c;font-size:13px;font-weight:650;padding:9px 14px;min-height:39px;cursor:pointer}
+.nu261-pills button.nu261-active,.nu261-pills button[aria-pressed="true"]{background:#7132bf;color:white;border-color:#7132bf}
+.nu261-home-pills{margin:4px 0 8px}
+.nu261-home-pills button{min-height:36px;padding:7px 11px}
+.nu261-sub-label{display:inline-block;margin:3px 0;color:#76549a;font-size:12px;font-weight:600}
+@media(max-width:480px){.nu-subcats261-manager{padding:10px 0}.nu261-pills{flex-wrap:nowrap;scrollbar-width:none}.nu261-pills button{flex:none}}
