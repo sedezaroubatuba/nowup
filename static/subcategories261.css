@@ -35,3 +35,5 @@
 .nu-subcats261-controls{display:flex;align-items:center;gap:8px;margin:12px 0}
 .nu-subcats261-manager .nu-subcats261-existing{margin:12px 0;padding:10px;border:1px solid #eee7f5;border-radius:10px}
 .nu-subcats261-manager .nu-subcats261-existing>summary{cursor:pointer}
+
+[data-subcat-field261][hidden]{display:none!important}
