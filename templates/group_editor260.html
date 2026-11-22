@@ -45,6 +45,7 @@
             <form action="/painel/cardapio/agrupadores/{{head.id}}/itens/{{item.id}}" method="post" enctype="multipart/form-data" class="product-form">
               <label>Nome<input class="input" name="name" value="{{item.name}}" maxlength="140" required></label>
               <label>Preço<input class="input" name="price" value="{{'%.2f'|format(item.price_cents/100)|replace('.',',')}}" required></label>
+              <label>Preço promocional individual (opcional)<input class="input" name="promo_price" value="{% if item.promo_price_cents %}{{'%.2f'|format(item.promo_price_cents/100)|replace('.',',')}}{% endif %}" placeholder="Deixe vazio para retirar"></label>
               <label>Foto individual (opcional)<input class="input" type="file" name="photo" accept="image/*"></label>
               <label class="check"><input name="available" type="checkbox" value="1" {% if item.available %}checked{% endif %}> Disponível</label>
               <button class="btn primary">Salvar item</button>
