@@ -56,7 +56,9 @@ def panel_groups(rows):
             members[product["group_parent_id260"]].append(product)
         elif not product["is_group_header260"] and not product["group_parent_id260"]:
             existing.append(product)
-    return [{"header": head, "items": sorted(members[head["id"]], key=lambda x: (x["sort_order"], x["id"]))}
+    return [{"header": head,
+             "items": sorted(members[head["id"]], key=lambda x: (x["sort_order"], x["id"])),
+             "promo_item": next((item for item in members[head["id"]] if item["promo_price_cents"] > 0), None)}
             for head in groups], existing
 
 
