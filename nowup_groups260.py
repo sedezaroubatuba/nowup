@@ -1,5 +1,6 @@
 """NowUp v260: product groups use real product IDs for stock, sales and checkout."""
-from datetime import date
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 from fastapi import Form, File, UploadFile, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
@@ -18,7 +19,7 @@ def effective_promo_cents(product, today=None):
     normal = int(product["price_cents"] or 0)
     if not 0 < value < normal:
         return 0
-    today = today or date.today().isoformat()
+    today = today or datetime.now(ZoneInfo("America/Sao_Paulo")).date().isoformat()
     return value if ((not product["promo_start260"] or product["promo_start260"] <= today)
                      and (not product["promo_end260"] or product["promo_end260"] >= today)) else 0
 
