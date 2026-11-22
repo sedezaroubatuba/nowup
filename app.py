@@ -2,6 +2,7 @@ from __future__ import annotations
 import nowup_categories230
 import nowup_included195
 import nowup_groups260
+import nowup_subcategories261
 from nowup_custom192 import parse_config, save_config, charge_options, validate_customization
 import html
 import os, re, io, hmac, hashlib, secrets, sqlite3, unicodedata, json
@@ -667,6 +668,7 @@ def init_db():
     ensure_column(conn, "products", "featured", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "products", "max_quantity", "INTEGER NOT NULL DEFAULT 99")
     nowup_groups260.migrate(conn, ensure_column)
+    nowup_subcategories261.migrate(conn, ensure_column)
     conn.execute("CREATE TABLE IF NOT EXISTS checkout_requests229(customer_id INTEGER NOT NULL,professional_id INTEGER NOT NULL,request_key TEXT NOT NULL,payload_hash TEXT NOT NULL,order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,created_at TEXT NOT NULL,PRIMARY KEY(customer_id,professional_id,request_key))")
     defaults = {
       "brand_name": "NowUp",
@@ -1094,7 +1096,7 @@ def profile(request: Request, slug: str):
     reviews=conn.execute("SELECT r.*,u.name FROM reviews r JOIN users u ON u.id=r.customer_id WHERE r.professional_id=? ORDER BY r.id DESC",(p["id"],)).fetchall()
     cats=conn.execute("SELECT c.* FROM categories c JOIN professional_categories pc ON pc.category_id=c.id WHERE pc.professional_id=?",(p["id"],)).fetchall()
     product_count=conn.execute("SELECT COUNT(*) FROM products WHERE professional_id=? AND available=1",(p["id"],)).fetchone()[0] if p["is_premium"] and p["offer_mode"] in ("menu","catalog") else 0
-    products=[]; menu_categories=[]; product_options={}; grouped_products260={}
+    products=[]; menu_categories=[]; product_options={}; grouped_products260={}; subcategories261=[]
     if p["is_premium"] and p["offer_mode"] in ("menu","catalog"):
         products=conn.execute("""SELECT pr.* FROM products pr
           WHERE pr.professional_id=?
@@ -1102,6 +1104,7 @@ def profile(request: Request, slug: str):
             OR EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) AND pc.active=1))
           ORDER BY COALESCE((SELECT pc.sort_order FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) LIMIT 1),999999),pr.category,pr.sort_order,pr.id DESC""",(p["id"],)).fetchall()
         products, grouped_products260 = nowup_groups260.public_catalog(products,datetime.now(SAO_PAULO_TZ).date().isoformat())
+        subcategories261 = nowup_subcategories261.public_rows(conn,p['id'])
         menu_categories=[]
         for product in products:
             category=(product["category"] or "Geral").strip() or "Geral"
@@ -1119,7 +1122,7 @@ def profile(request: Request, slug: str):
     has_contact=(pub["contact_target"]=="external" and bool(pub["external_url"])) or (pub["contact_target"]!="external" and bool(re.sub(r"\D","",pub["whatsapp"] or "")))
     pub["contact_link"]=""
     status=shop_status(p)
-    return attach_cart_assets144(templates.TemplateResponse("profile.html", context(request, pro=pub, products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, grouped_products260=grouped_products260, photos=photos, posts=posts, reviews=reviews, pro_categories=cats, product_count=product_count, shop_status=status, hours_lines=business_hours_lines(p), can_review=can_review)))
+    return attach_cart_assets144(templates.TemplateResponse("profile.html", context(request, pro=pub, products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, grouped_products260=grouped_products260, subcategories261=subcategories261, photos=photos, posts=posts, reviews=reviews, pro_categories=cats, product_count=product_count, shop_status=status, hours_lines=business_hours_lines(p), can_review=can_review)))
 
 @app.get("/p/{slug}/menu", response_class=HTMLResponse)
 def native_menu(request: Request, slug: str):
@@ -1133,6 +1136,7 @@ def native_menu(request: Request, slug: str):
         OR EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) AND pc.active=1))
       ORDER BY COALESCE((SELECT pc.sort_order FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) LIMIT 1),999999),pr.category,pr.sort_order,pr.id DESC""",(p["id"],)).fetchall()
     products, grouped_products260 = nowup_groups260.public_catalog(products,datetime.now(SAO_PAULO_TZ).date().isoformat())
+    subcategories261 = nowup_subcategories261.public_rows(conn,p['id'])
     menu_categories=[]
     for product in products:
         category=(product["category"] or "Geral").strip() or "Geral"
@@ -1145,7 +1149,7 @@ def native_menu(request: Request, slug: str):
     conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"menu_click",now_iso())); conn.commit()
     product_groups,delivery_zones=menu_rules89(conn,p["id"]); conn.close()
     status=shop_status(p)
-    return attach_cart_assets144(attach_food_assets(templates.TemplateResponse("menu.html", context(request, pro=p, products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, grouped_products260=grouped_products260, shop_status=status))))
+    return attach_cart_assets144(attach_food_assets(templates.TemplateResponse("menu.html", context(request, pro=p, products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, grouped_products260=grouped_products260, subcategories261=subcategories261, shop_status=status))))
 
 def options_single158(conn, product_id, raw_options):
     if not isinstance(raw_options,list):raise HTTPException(400,"Adicionais inválidos.")
@@ -1588,6 +1592,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
         for index,name in enumerate(existing,1):
             conn.execute("INSERT OR IGNORE INTO product_categories(professional_id,name,sort_order,active,created_at) VALUES(?,?,?,?,?)",(p["id"],name,index,1,now_iso()))
         conn.commit(); product_categories=conn.execute("SELECT * FROM product_categories WHERE professional_id=? ORDER BY sort_order,id",(p["id"],)).fetchall()
+    subcategories261 = nowup_subcategories261.rows(conn,p['id'])
     selected={r[0] for r in conn.execute("SELECT category_id FROM professional_categories WHERE professional_id=?",(p["id"],)).fetchall()}
     today=datetime.now(SAO_PAULO_TZ).date()
     try:
@@ -1685,7 +1690,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     kanban=nowup_merchant228.board(conn,p["id"],lower228,upper228,SAO_PAULO_TZ)
     conn.close()
     status=shop_status(p); business_hours=parse_business_hours(p["business_hours"])
-    return templates.TemplateResponse("pro_panel.html", context(request, kanban=kanban, manual=nowup_sales107.panel_data(request,conta), included_catalog195=included_catalog195, shared_extras=shared_extras, shared_selected=shared_selected, pro=p, photos=photos, posts=posts, products=products, grouped260=grouped260, ungrouped260=ungrouped260, product_groups=product_groups, delivery_zones=delivery_zones, merchant_overview=merchant_overview, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, today_orders=today_orders, day_order_summary=day_order_summary, order_day=order_day.isoformat(), today_day=today.isoformat(), order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
+    return templates.TemplateResponse("pro_panel.html", context(request, kanban=kanban, manual=nowup_sales107.panel_data(request,conta), included_catalog195=included_catalog195, shared_extras=shared_extras, shared_selected=shared_selected, pro=p, photos=photos, posts=posts, products=products, grouped260=grouped260, ungrouped260=ungrouped260, subcategories261=subcategories261, product_groups=product_groups, delivery_zones=delivery_zones, merchant_overview=merchant_overview, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, today_orders=today_orders, day_order_summary=day_order_summary, order_day=order_day.isoformat(), today_day=today.isoformat(), order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
 
 @app.post('/painel/plano')
 def request_store_plan(request: Request, plan: str=Form(...), offer_mode: str=Form('services')):
@@ -1772,6 +1777,7 @@ def pro_menu_category_delete(request: Request, category_id: int):
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); row=conn.execute("SELECT * FROM product_categories WHERE id=? AND professional_id=?",(category_id,p["id"])).fetchone()
     if row:
         conn.execute("UPDATE products SET category='Geral',updated_at=? WHERE professional_id=? AND lower(category)=lower(?)",(now_iso(),p["id"],row["name"]))
+        conn.execute("UPDATE products SET subcategory_id261=0 WHERE professional_id=? AND subcategory_id261 IN (SELECT id FROM product_subcategories261 WHERE category_id=? AND professional_id=?)",(p['id'],category_id,p['id']))
         conn.execute("DELETE FROM product_categories WHERE id=?",(category_id,)); conn.execute("INSERT OR IGNORE INTO product_categories(professional_id,name,sort_order,active,created_at) VALUES(?,?,?,?,?)",(p["id"],"Geral",999,1,now_iso())); conn.commit()
     conn.close(); return RedirectResponse("/painel?ok=categoria-excluida#cardapio",303)
 
@@ -1881,7 +1887,7 @@ def configure_personalization153(conn, product_id, enabled, max_choices):
     conn.execute("UPDATE product_options SET group_id=? WHERE product_id=? AND group_id=0",(gid,product_id))
 
 @app.post("/painel/cardapio/produtos")
-def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None)):
+def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), subcategory_id261: int=Form(0), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None)):
     custom192=parse_config(customization192) if customization192 else None
     if custom192 and custom192["free_count"]>max_choices:raise HTTPException(400,"A quantidade grátis não pode superar o máximo de adicionais.")
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); fn=""
@@ -1890,15 +1896,16 @@ def pro_product_add(request: Request, name: str=Form(...), description: str=Form
         except HTTPException:conn.close();raise
     if photo and photo.filename: fn=save_image(photo)
     if personalizable and not 1<=max_choices<=20:conn.close();raise HTTPException(400,"Escolha de 1 a 20 adicionais.")
+    chosen_subcat261=nowup_subcategories261.valid_selection(conn,p['id'],category,subcategory_id261)
     created=now_iso(); cur=conn.execute("INSERT INTO products(professional_id,name,description,category,price_cents,image_filename,available,created_at,updated_at,promo_price_cents,featured,max_quantity) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",(p["id"],name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,created,created,price_to_cents(promo_price) if promo_price.strip() else 0,1 if featured else 0,max(1,min(99,max_quantity))))
-    conn.execute("UPDATE products SET sold_cold=? WHERE id=?",(1 if sold_cold else 0,cur.lastrowid))
+    conn.execute("UPDATE products SET sold_cold=?,subcategory_id261=? WHERE id=?",(1 if sold_cold else 0,chosen_subcat261,cur.lastrowid))
     if extras_mode=="legacy":configure_personalization153(conn,cur.lastrowid,bool(personalizable),max_choices)
     else:configure_shared155(conn,p["id"],cur.lastrowid,extras_mode,extra_ids,max_choices)
     if custom192 is not None:save_config(conn,cur.lastrowid,custom192)
     conn.commit(); conn.close(); return RedirectResponse("/painel?ok=produto#novo-produto",303)
 
 @app.post("/painel/cardapio/produtos/{product_id}")
-def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None)):
+def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), subcategory_id261: int=Form(0), price: str=Form(...), promo_price: str=Form(""), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None)):
     custom192=parse_config(customization192) if customization192 else None
     if custom192 and custom192["free_count"]>max_choices:raise HTTPException(400,"A quantidade grátis não pode superar o máximo de adicionais.")
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); product=conn.execute("SELECT * FROM products WHERE id=? AND professional_id=?",(product_id,p["id"])).fetchone()
@@ -1907,6 +1914,7 @@ def pro_product_edit(request: Request, product_id: int, name: str=Form(...), des
         except HTTPException:conn.close();raise
     if not product: conn.close(); raise HTTPException(404)
     if personalizable and not 1<=max_choices<=20:conn.close();raise HTTPException(400,"Escolha de 1 a 20 adicionais.")
+    chosen_subcat261=nowup_subcategories261.valid_selection(conn,p['id'],category,subcategory_id261)
     fn=product["image_filename"]
     if photo and photo.filename:
         new_fn=save_image(photo)
@@ -1915,7 +1923,7 @@ def pro_product_edit(request: Request, product_id: int, name: str=Form(...), des
             except OSError: pass
         fn=new_fn
     conn.execute("UPDATE products SET name=?,description=?,category=?,price_cents=?,image_filename=?,available=?,updated_at=?,promo_price_cents=?,featured=?,max_quantity=? WHERE id=?",(name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,now_iso(),price_to_cents(promo_price) if promo_price.strip() else 0,1 if featured else 0,max(1,min(99,max_quantity)),product_id)); configure_personalization153(conn,product_id,bool(personalizable),max_choices) if extras_mode=="legacy" else configure_shared155(conn,p["id"],product_id,extras_mode,extra_ids,max_choices)
-    conn.execute("UPDATE products SET sold_cold=? WHERE id=? AND professional_id=?",(1 if sold_cold else 0,product_id,p["id"]))
+    conn.execute("UPDATE products SET sold_cold=?,subcategory_id261=? WHERE id=? AND professional_id=?",(1 if sold_cold else 0,chosen_subcat261,product_id,p["id"]))
     if custom192 is not None:save_config(conn,product_id,custom192)
     conn.commit(); conn.close()
     return RedirectResponse("/painel?ok=produto#cardapio",303)
@@ -2968,3 +2976,6 @@ def pro_kanban228(request: Request):
 
 # Register after authentication, product routes and pricing helpers are defined.
 nowup_groups260.register(app, db, require_user, require_premium_catalog, save_image, price_to_cents, now_iso)
+
+# V261: category > subcategory navigation and optional product assignment.
+nowup_subcategories261.register(app, db, require_user, require_premium_catalog, now_iso)
