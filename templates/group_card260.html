@@ -1,0 +1,57 @@
+{% set items260 = grouped_products260.get(product.id, []) %}
+<details class="menu-product nu-group260" data-product data-group260="1"
+         data-category="{{product.category|lower}}" data-name="{{product.name}}"
+         data-id="{{product.id}}" data-dish="0" data-price="0" data-max="99">
+  <summary class="nu-group260-cover">
+    {% if product.image_filename %}
+      <img loading="lazy" decoding="async" src="/uploads/{{product.image_filename}}"
+           onerror="this.onerror=null;this.src='/static/product-placeholder.svg'" alt="{{product.name}}">
+    {% else %}<span class="nu-group260-placeholder">▦</span>{% endif %}
+    <div class="menu-product-info">
+      <small>{{product.category}}</small>
+      <h3>{{product.name}}</h3>
+      {% if product.description %}<p>{{product.description}}</p>{% endif %}
+      <b class="nu-group260-open">Ver {{items260|length}} sabores / opções ›</b>
+    </div>
+  </summary>
+  <div class="nu-group260-items">
+    {% for item in items260 %}
+    <article class="nu-group260-row" data-product data-id="{{item.id}}" data-category="{{item.category|lower}}"
+             data-name="{{item.name}}" data-price="{{item.promo_price_cents if item.promo_price_cents>0 else item.price_cents}}"
+             data-max="{{item.max_quantity}}" data-cold="{{1 if item.sold_cold else 0}}"
+             data-custom192="{{item.customization192}}" data-dish="{{1 if item.is_dish else 0}}">
+      {% if item.image_filename %}<img loading="lazy" decoding="async" src="/uploads/{{item.image_filename}}" alt="{{item.name}}" onerror="this.onerror=null;this.src='/static/product-placeholder.svg'">{% endif %}
+      <div class="nu-group260-row-main">
+        <h4>{{item.name}}</h4>
+        {% if item.promo_price_cents>0 %}
+          <strong><del>R$ {{'%.2f'|format(item.price_cents/100)|replace('.',',')}}</del> R$ {{'%.2f'|format(item.promo_price_cents/100)|replace('.',',')}}</strong>
+        {% else %}
+          <strong>R$ {{'%.2f'|format(item.price_cents/100)|replace('.',',')}}</strong>
+        {% endif %}
+        {% if not item.available %}<small class="nu-group260-soldout">Indisponível</small>{% endif %}
+        {% if product_options.get(item.id) %}
+          <div class="product-options">{% for group in product_groups.get(item.id, []) %}<span hidden data-dish-group="{{group.id}}" data-min="{{group.min_choices}}" data-max="{{group.max_choices}}" data-group-name="{{group.name}}"></span>{% endfor %}
+            <small>Adicionais e opções</small>
+            {% for option in product_options.get(item.id, []) %}
+              <label><input type="checkbox" data-product-option data-option-group="{{option.group_id or 0}}"
+                            data-option-name="{{option.name}}" data-option-price="{{option.price_cents}}" value="{{option.id}}"
+                            {% if not item.available %}disabled{% endif %}> {{option.name}}
+                {% if option.price_cents %}+ R$ {{'%.2f'|format(option.price_cents/100)|replace('.',',')}}{% endif %}
+              </label>
+            {% endfor %}
+          </div>
+        {% endif %}
+        <div class="product-buy">
+          <label>Qtd.<input class="product-quantity-input" type="number" min="1" max="{{item.max_quantity}}" value="1"
+                            data-product-quantity inputmode="numeric" aria-label="Quantidade de {{item.name}}"
+                            {% if not item.available or not shop_status.open or (user and user.id==pro.user_id) %}disabled{% endif %}></label>
+          <button class="btn primary" type="button" data-add
+                  {% if not item.available or not shop_status.open or (user and user.id==pro.user_id) %}disabled{% endif %}>
+                  {{'Indisponível' if not item.available else ('Adicionar' if shop_status.open else 'Fechado')}}
+          </button>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</details>
