@@ -178,9 +178,11 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <form action="/painel/cardapio/categorias/{{category.id}}/excluir" method="post" data-confirm-delete><button class="btn danger tiny">Excluir</button></form>
 </div>{% endfor %}</div>
 <p class="muted">Numere de 1 a {{product_categories|length}} sem repetir posições e salve todas de uma vez.</p><button type="button" class="btn primary" data-save-order142>Salvar ordem</button><p data-order-status142 role="status" aria-live="polite"></p>
+{% include "subcategory_editor261.html" %}
 </details>
 {% include "included195.html" %}
 <link rel="stylesheet" href="/static/groups260.css?v=260"><script src="/static/groups260.js?v=260" defer></script>
+<link rel="stylesheet" href="/static/subcategories261.css?v=261"><script src="/static/subcategories261.js?v=261" defer></script>
 <details class="product-create" id="novo-produto">
 <summary class="btn primary" role="button">＋ Adicionar produto</summary>
 <form action="/painel/cardapio/produtos" method="post" enctype="multipart/form-data" class="product-form">
@@ -188,6 +190,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </label>
 <label>Categoria<select name="category" required>{% for category in product_categories if category.active %}<option value="{{category.name}}">{{category.name}}</option>{% else %}<option value="Geral">Geral</option>{% endfor %}</select>
 </label>
+<label>Subcategoria (opcional)<select class="input" name="subcategory_id261" data-subcat-picker261 data-selected261="0"><option value="0">Sem subcategoria</option>{% for sc in subcategories261 if sc.active %}<option value="{{sc.id}}" data-parent261="{{sc.category_name}}">{{sc.name}}</option>{% endfor %}</select></label>
 <label>Preço<input class="input" name="price" inputmode="decimal" placeholder="Ex.: 29,90" required>
 </label>
 <label>Preço promocional<input class="input" name="promo_price" inputmode="decimal" placeholder="Opcional"></label>
@@ -211,7 +214,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <div class="product-admin-grid" id="produtos-loja" data-pro-products>{% for product in products if not product.is_group_header260 and not product.group_parent_id260 %}<details class="product-admin-card" data-pro-product data-category="{{product.category}}" data-featured="{{1 if product.featured else 0}}">
 <summary>{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" onerror="this.onerror=null;this.src='/static/product-placeholder.svg'" alt="">{% else %}<span class="product-placeholder">🍽</span>{% endif %}<div>
 <b>{{product.name}}</b><small>Código: {{product.id}}</small>
-<small>{{product.category}} · R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</small>
+<small>{{product.category}}{% for sc in subcategories261 if sc.id==product.subcategory_id261 %} › {{sc.name}}{% endfor %} · R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</small>
 </div>
 <span class="status-pill {% if product.available %}ok{% endif %}">{% if product.available %}Disponível{% else %}Indisponível{% endif %}</span>
 </summary>
@@ -221,6 +224,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 </label>
 <label>Categoria<select name="category" required>{% for category in product_categories if category.active %}<option value="{{category.name}}" {% if category.name==product.category %}selected{% endif %}>{{category.name}}</option>{% endfor %}</select>
 </label>
+<label>Subcategoria (opcional)<select class="input" name="subcategory_id261" data-subcat-picker261 data-selected261="{{product.subcategory_id261}}"><option value="0">Sem subcategoria</option>{% for sc in subcategories261 if sc.active %}<option value="{{sc.id}}" data-parent261="{{sc.category_name}}">{{sc.name}}</option>{% endfor %}</select></label>
 <label>Preço<input class="input" name="price" value="{{'%.2f'|format(product.price_cents/100)|replace('.',',')}}" required>
 </label>
 <label>Preço promocional<input class="input" name="promo_price" value="{% if product.promo_price_cents %}{{'%.2f'|format(product.promo_price_cents/100)|replace('.',',')}}{% endif %}" placeholder="Opcional"></label>
