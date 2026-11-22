@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  const sticky=root.querySelector('.nu-menu-sticky')||heading.parentElement;
  const anchor=document.createComment('store190');layout.before(anchor);anchor.before(intro);
  const showcase=make('div','nu190-showcase');layout.before(showcase);
- const originals=Array.from(layout.querySelectorAll('[data-product]')),sections=new Map(),refreshers=[],cartRefreshers=[];
+ const originals=Array.from(layout.querySelectorAll('.menu-products > [data-product]')),sections=new Map(),refreshers=[],cartRefreshers=[];
  const back=make('button','nu187-back','←');back.type='button';heading.prepend(back);
  let homeScroll=0,selectedCategory=null;
  const categoryView=make('section','nu191-category-view');categoryView.hidden=true;layout.before(categoryView);
@@ -54,7 +54,15 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(image){const photo=make('img');photo.src=image.currentSrc||image.getAttribute('src');photo.alt='';photo.loading='lazy';photo.addEventListener('error',()=>{photo.src='/static/product-placeholder.svg';},{once:true});item.append(photo);}
   else item.append(make('div','nu190-no-image','🍽'));
   if(card.dataset.cold==='1'){const ice=make('span','nu201-ice','❄');ice.title='Vendido gelado';ice.setAttribute('aria-label','Vendido gelado');item.append(ice);}
-  const content=make('div','nu190-card-content');content.append(make('h3','',card.dataset.name||'Produto'),make('strong','',money(Number(card.dataset.price)||0)));
+  const content=make('div','nu190-card-content');content.append(make('h3','',card.dataset.name||'Produto'));
+   if(card.dataset.group260==='1'){
+     content.append(make('small','nu260-group-hint','Sabores, aromas e opções'));
+     const open=make('button','nu201-open nu260-open','Ver opções');
+     open.type='button';
+     open.addEventListener('click',()=>{showProducts();card.open=true;card.scrollIntoView({block:'center',behavior:'smooth'});});
+     content.append(open);item.append(content);return item;
+   }
+   content.append(make('strong','',money(Number(card.dataset.price)||0)));
   const toggle=make('button','nu201-open','Adicionar');toggle.type='button';toggle.setAttribute('aria-label','Adicionar '+card.dataset.name);toggle.setAttribute('aria-expanded','false');
   const panel=make('div','nu201-panel');panel.hidden=true;
   const controls=make('div','nu190-amount'),minus=make('button','','−'),plus=make('button','','+'),amount=make('input');minus.type=plus.type='button';
@@ -93,7 +101,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  function filterCategory(){
   if(!selectedCategory)return;
   const entry=categoryCache.get(selectedCategory),query=search.value.trim();let count=0;
-  entry.cards.forEach(({source,node})=>{const text=(source.dataset.name||'')+' '+(source.querySelector('.menu-product-info p')?.textContent||'');const match=window.NowUpSearch179?window.NowUpSearch179.matches(text,query):text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(query.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase());node.hidden=!match;if(match)count++;});
+  entry.cards.forEach(({source,node})=>{const text=(source.dataset.name||'')+' '+source.textContent;const match=window.NowUpSearch179?window.NowUpSearch179.matches(text,query):text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(query.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase());node.hidden=!match;if(match)count++;});
   categoryCount.textContent=count+' '+(count===1?'produto':'produtos');categoryEmpty.hidden=count>0;
  }
  function showCategory(key){

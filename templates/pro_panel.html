@@ -180,6 +180,7 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <p class="muted">Numere de 1 a {{product_categories|length}} sem repetir posições e salve todas de uma vez.</p><button type="button" class="btn primary" data-save-order142>Salvar ordem</button><p data-order-status142 role="status" aria-live="polite"></p>
 </details>
 {% include "included195.html" %}
+<link rel="stylesheet" href="/static/groups260.css?v=260"><script src="/static/groups260.js?v=260" defer></script>
 <details class="product-create" id="novo-produto">
 <summary class="btn primary" role="button">＋ Adicionar produto</summary>
 <form action="/painel/cardapio/produtos" method="post" enctype="multipart/form-data" class="product-form">
@@ -205,8 +206,9 @@ body.professional-area .pro-dashboard .v60-top .merchant-profile-link{white-spac
 <button class="btn primary">Salvar e cadastrar próximo</button>
 </form>
 </details>
+{% include "group_editor260.html" %}
 <nav class="menu-category-nav pro-product-filters" aria-label="Filtrar produtos do painel"><button type="button" class="active" data-pro-category="all">Todos</button><button type="button" data-pro-category="promocoes">Promoções</button>{% for category in product_categories %}<button type="button" data-pro-category="{{category.name}}">{{category.name}}</button>{% endfor %}</nav>
-<div class="product-admin-grid" id="produtos-loja" data-pro-products>{% for product in products %}<details class="product-admin-card" data-pro-product data-category="{{product.category}}" data-featured="{{1 if product.featured else 0}}">
+<div class="product-admin-grid" id="produtos-loja" data-pro-products>{% for product in products if not product.is_group_header260 and not product.group_parent_id260 %}<details class="product-admin-card" data-pro-product data-category="{{product.category}}" data-featured="{{1 if product.featured else 0}}">
 <summary>{% if product.image_filename %}<img src="/uploads/{{product.image_filename}}" onerror="this.onerror=null;this.src='/static/product-placeholder.svg'" alt="">{% else %}<span class="product-placeholder">🍽</span>{% endif %}<div>
 <b>{{product.name}}</b><small>Código: {{product.id}}</small>
 <small>{{product.category}} · R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}</small>
