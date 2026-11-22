@@ -6,6 +6,7 @@
     <form action="/painel/cardapio/agrupadores" method="post" enctype="multipart/form-data" class="product-form">
       <label>Nome do agrupador<input class="input" name="name" maxlength="140" placeholder="Ex.: Essências Ziggy — Sabores" required></label>
       <label>Categoria<select name="category" required>{% for cat in product_categories if cat.active %}<option value="{{cat.name}}">{{cat.name}}</option>{% else %}<option value="Geral">Geral</option>{% endfor %}</select></label>
+      <label data-subcat-field261 hidden>Subcategoria (opcional)<select class="input" name="subcategory_id261" data-subcat-picker261 data-selected261="0"><option value="0">Sem subcategoria</option>{% for sc in subcategories261 if sc.active %}<option value="{{sc.id}}" data-parent261="{{sc.category_name}}">{{sc.name}}</option>{% endfor %}</select></label>
       <label class="full">Descrição (opcional)<textarea name="description" maxlength="600" placeholder="Escolha o aroma na lista de sabores"></textarea></label>
       <label>Foto principal<input class="input" type="file" name="photo" accept="image/*"></label>
       <button class="btn primary">Criar agrupador</button>
@@ -23,6 +24,7 @@
         <form action="/painel/cardapio/agrupadores/{{head.id}}" method="post" enctype="multipart/form-data" class="product-form">
           <label>Nome<input class="input" name="name" value="{{head.name}}" required maxlength="140"></label>
           <label>Categoria<select name="category" required>{% for cat in product_categories if cat.active %}<option value="{{cat.name}}" {% if cat.name==head.category %}selected{% endif %}>{{cat.name}}</option>{% endfor %}</select></label>
+      <label data-subcat-field261 hidden>Subcategoria (opcional)<select class="input" name="subcategory_id261" data-subcat-picker261 data-selected261="{{head.subcategory_id261}}"><option value="0">Sem subcategoria</option>{% for sc in subcategories261 if sc.active %}<option value="{{sc.id}}" data-parent261="{{sc.category_name}}">{{sc.name}}</option>{% endfor %}</select></label>
           <label class="full">Descrição<textarea name="description" maxlength="600">{{head.description}}</textarea></label>
           <label>Trocar foto principal<input class="input" name="photo" type="file" accept="image/*"></label>
           <label class="check"><input name="available" type="checkbox" value="1" {% if head.available %}checked{% endif %}> Agrupador visível no cardápio</label>
