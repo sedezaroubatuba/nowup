@@ -1,4 +1,5 @@
 """NowUp v260: product groups use real product IDs for stock, sales and checkout."""
+import nowup_subcategories261
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 from fastapi import Form, File, UploadFile, HTTPException, Request
@@ -101,7 +102,7 @@ def register(app, db, require_user, require_premium_catalog, save_image, price_t
 
     @app.post("/painel/cardapio/agrupadores")
     def group_create260(request: Request, name: str = Form(...), category: str = Form(...),
-                        description: str = Form(""), photo: UploadFile | None = File(None)):
+                        subcategory_id261: int = Form(0), description: str = Form(""), photo: UploadFile | None = File(None)):
         user = require_user(request, "professional")
         conn = db()
         try:
@@ -110,14 +111,16 @@ def register(app, db, require_user, require_premium_catalog, save_image, price_t
             if not clean:
                 raise HTTPException(400, "Informe o nome do agrupador.")
             cat = _valid_category(conn, pro["id"], category)
+            subcat = nowup_subcategories261.valid_selection(conn, pro["id"], cat, subcategory_id261)
             fn = save_image(photo) if photo and photo.filename else ""
             created = now_iso()
-            conn.execute(
+            cur = conn.execute(
                 """INSERT INTO products(professional_id,name,description,category,price_cents,image_filename,
                    available,created_at,updated_at,is_group_header260)
                    VALUES(?,?,?,?,0,?,1,?,?,1)""",
                 (pro["id"], clean, description.strip()[:600], cat, fn, created, created),
             )
+            conn.execute("UPDATE products SET subcategory_id261=? WHERE id=?", (subcat, cur.lastrowid))
             conn.commit()
         finally:
             conn.close()
@@ -125,7 +128,7 @@ def register(app, db, require_user, require_premium_catalog, save_image, price_t
 
     @app.post("/painel/cardapio/agrupadores/{group_id}")
     def group_edit260(request: Request, group_id: int, name: str = Form(...),
-                      category: str = Form(...), description: str = Form(""),
+                      category: str = Form(...), subcategory_id261: int = Form(0), description: str = Form(""),
                       available: str | None = Form(None), photo: UploadFile | None = File(None)):
         user = require_user(request, "professional")
         conn = db()
@@ -136,11 +139,12 @@ def register(app, db, require_user, require_premium_catalog, save_image, price_t
             if not clean:
                 raise HTTPException(400, "Informe o nome do agrupador.")
             cat = _valid_category(conn, pro["id"], category)
+            subcat = nowup_subcategories261.valid_selection(conn, pro["id"], cat, subcategory_id261)
             fn = save_image(photo) if photo and photo.filename else old["image_filename"]
             conn.execute(
-                """UPDATE products SET name=?,description=?,category=?,image_filename=?,available=?,updated_at=?
+                """UPDATE products SET name=?,description=?,category=?,subcategory_id261=?,image_filename=?,available=?,updated_at=?
                    WHERE id=? AND professional_id=?""",
-                (clean, description.strip()[:600], cat, fn, 1 if available else 0,
+                (clean, description.strip()[:600], cat, subcat, fn, 1 if available else 0,
                  now_iso(), group_id, pro["id"]),
             )
             conn.execute("UPDATE products SET category=?,updated_at=? WHERE group_parent_id260=? AND professional_id=?",
@@ -233,7 +237,7 @@ def register(app, db, require_user, require_premium_catalog, save_image, price_t
             pro = require_premium_catalog(conn, user["id"])
             head = _group(conn, pro["id"], group_id)
             changed = conn.execute(
-                """UPDATE products SET group_parent_id260=?,category=?,updated_at=?
+                """UPDATE products SET group_parent_id260=?,category=?,subcategory_id261=0,updated_at=?
                    WHERE id=? AND professional_id=? AND group_parent_id260=0 AND is_group_header260=0""",
                 (group_id, head["category"], now_iso(), item_id, pro["id"]),
             ).rowcount

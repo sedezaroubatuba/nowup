@@ -1,6 +1,6 @@
 {% set items260 = grouped_products260.get(product.id, []) %}
 <details class="menu-product nu-group260" data-product data-group260="1"
-         data-category="{{product.category|lower}}" data-name="{{product.name}}"
+         data-category="{{product.category|lower}}" data-subcategory261="{{product.subcategory_id261}}" data-name="{{product.name}}"
          data-id="{{product.id}}" data-dish="0" data-price="0" data-max="99">
   <summary class="nu-group260-cover">
     {% if product.image_filename %}
