@@ -70,7 +70,6 @@ def test_create_items_and_single_public_group(env):
     assert 'data-id="' + str(children[0]["id"]) + '"' in response.text
     assert response.text.count('Ver 3 sabores') == 1
     assert 'groups260.css' in response.text
-    return group, children
 
 
 def test_availability_promotion_dates_and_order_pricing(env):
@@ -120,16 +119,17 @@ def test_no_cross_store_mutation_and_group_removal_preserves_products(env):
             "SELECT id FROM products WHERE professional_id=? AND is_group_header260=1 ORDER BY id DESC LIMIT 1",
             (stores[0]["id"],),
         ).fetchone()
-    client.cookies.set("nowup_session", "group-test-1")
-    assert client.post(
+    # Use a separate browser so session-renewal cookies cannot shadow the test identity.
+    other_client = TestClient(m.app, headers={"Origin": "http://testserver"})
+    other_client.cookies.set("nowup_session", "group-test-1")
+    assert other_client.post(
         f"/painel/cardapio/agrupadores/{group['id']}/promocao",
         data={"promo_price": "1,00"}, follow_redirects=False,
     ).status_code == 404
-    assert client.post(
+    assert other_client.post(
         f"/painel/cardapio/agrupadores/{group['id']}/excluir",
         follow_redirects=False,
     ).status_code == 404
-    client.cookies.set("nowup_session", "group-test-0")
     assert client.post(
         f"/painel/cardapio/agrupadores/{group['id']}/excluir",
         follow_redirects=False,
