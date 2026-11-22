@@ -1226,7 +1226,10 @@ def native_menu_order(request: Request, slug: str, customer_name: str=Form(...),
             if product:
                 if product["is_group_header260"]:
                     conn.close(); raise HTTPException(400,"Selecione um sabor dentro do agrupador.")
-                if product["group_parent_id260"] and not conn.execute("SELECT 1 FROM products WHERE id=? AND professional_id=? AND is_group_header260=1 AND available=1",(product["group_parent_id260"],p["id"])).fetchone():
+                if product["group_parent_id260"] and not conn.execute("""SELECT 1 FROM products grp WHERE grp.id=? AND grp.professional_id=?
+                    AND grp.is_group_header260=1 AND grp.available=1
+                    AND NOT EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=grp.professional_id
+                      AND lower(pc.name)=lower(grp.category) AND pc.active=0)""",(product["group_parent_id260"],p["id"])).fetchone():
                     conn.close(); raise HTTPException(400,"Este agrupador está indisponível.")
                 quantities255[pid]=quantities255.get(pid,0)+qty
                 if quantities255[pid]>min(99,max(1,product["max_quantity"] or 99)):
