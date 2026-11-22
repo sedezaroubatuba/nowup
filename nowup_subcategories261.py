@@ -120,6 +120,37 @@ def register(app, db, require_user, require_premium_catalog, now_iso):
             conn.close()
         return _go()
 
+    @app.post("/painel/cardapio/subcategorias261/organizar")
+    def bulk_assign261(request: Request, category_id: int = Form(...),
+                       subcategory_id: int = Form(0), product_ids: list[int] = Form([])):
+        user = require_user(request, "professional")
+        conn = db()
+        try:
+            pro = require_premium_catalog(conn, user["id"])
+            category = category_for_owner(conn, pro["id"], category_id, active=True)
+            sc_id = valid_selection(conn, pro["id"], category["name"], subcategory_id)
+            ids = sorted(set(product_ids))
+            if len(ids) > 1000:
+                raise HTTPException(400, "Organize até mil produtos por vez.")
+            if ids:
+                placeholders = ",".join("?" for _ in ids)
+                current = conn.execute(
+                    f"""SELECT id FROM products WHERE id IN ({placeholders}) AND professional_id=?
+                        AND lower(category)=lower(?) AND group_parent_id260=0""",
+                    (*ids, pro["id"], category["name"]),
+                ).fetchall()
+                if len(current) != len(ids):
+                    raise HTTPException(400, "A seleção contém produto de outra categoria, loja ou um item interno.")
+                conn.execute(
+                    f"""UPDATE products SET subcategory_id261=?,updated_at=?
+                        WHERE professional_id=? AND id IN ({placeholders})""",
+                    (sc_id, now_iso(), pro["id"], *ids),
+                )
+                conn.commit()
+        finally:
+            conn.close()
+        return _go()
+
     @app.post("/painel/cardapio/subcategorias261/{subcategory_id}")
     def edit261(request: Request, subcategory_id: int, name: str = Form(...),
                 active: str | None = Form(None), sort_order: int = Form(100)):
@@ -162,33 +193,3 @@ def register(app, db, require_user, require_premium_catalog, now_iso):
             conn.close()
         return _go()
 
-    @app.post("/painel/cardapio/subcategorias261/organizar")
-    def bulk_assign261(request: Request, category_id: int = Form(...),
-                       subcategory_id: int = Form(0), product_ids: list[int] = Form([])):
-        user = require_user(request, "professional")
-        conn = db()
-        try:
-            pro = require_premium_catalog(conn, user["id"])
-            category = category_for_owner(conn, pro["id"], category_id, active=True)
-            sc_id = valid_selection(conn, pro["id"], category["name"], subcategory_id)
-            ids = sorted(set(product_ids))
-            if len(ids) > 1000:
-                raise HTTPException(400, "Organize até mil produtos por vez.")
-            if ids:
-                placeholders = ",".join("?" for _ in ids)
-                current = conn.execute(
-                    f"""SELECT id FROM products WHERE id IN ({placeholders}) AND professional_id=?
-                        AND lower(category)=lower(?) AND group_parent_id260=0""",
-                    (*ids, pro["id"], category["name"]),
-                ).fetchall()
-                if len(current) != len(ids):
-                    raise HTTPException(400, "A seleção contém produto de outra categoria, loja ou um item interno.")
-                conn.execute(
-                    f"""UPDATE products SET subcategory_id261=?,updated_at=?
-                        WHERE professional_id=? AND id IN ({placeholders})""",
-                    (sc_id, now_iso(), pro["id"], *ids),
-                )
-                conn.commit()
-        finally:
-            conn.close()
-        return _go()
