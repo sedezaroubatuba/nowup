@@ -23,7 +23,10 @@ document.addEventListener('DOMContentLoaded',()=>{
  const showcase=make('div','nu190-showcase');layout.before(showcase);
  const originals=Array.from(layout.querySelectorAll('.menu-products > [data-product]')),sections=new Map(),refreshers=[],cartRefreshers=[];
  const back=make('button','nu187-back','←');back.type='button';heading.prepend(back);
- let homeScroll=0,selectedCategory=null;
+ let homeScroll=0,selectedCategory=null,selectedSubcategory261='';
+  const subcats261=[...root.querySelectorAll('[data-scid261]')].map(el=>({
+    id:el.dataset.scid261,parent:el.dataset.parent261,name:el.dataset.name261
+  }));
  const categoryView=make('section','nu191-category-view');categoryView.hidden=true;layout.before(categoryView);
  const categoryTitle=make('h2'),categoryCount=make('p','nu191-count'),categoryEmpty=make('p','nu191-empty','Nenhum produto encontrado nesta categoria.');categoryEmpty.hidden=true;
  const categoryHeader=make('header','nu219-category-header'),less=make('button','nu219-less','Ver menos ⌃');
@@ -31,7 +34,50 @@ document.addEventListener('DOMContentLoaded',()=>{
  categoryHeader.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap';
  categoryTitle.style.margin='0';less.style.cssText='border:1px solid #e6dcf2;background:#f5effc;color:#7132bf;border-radius:10px;padding:10px 14px;min-height:44px;font:inherit;font-size:14px;font-weight:700;cursor:pointer';
  less.addEventListener('click',()=>{const key=selectedCategory;showHome();const section=sections.get(key);if(section){section.scrollIntoView({block:'start',behavior:'auto'});section.querySelector('header button')?.focus({preventScroll:true});}});
- categoryHeader.append(categoryTitle,less);categoryView.append(categoryHeader,categoryCount,categoryEmpty);const categoryCache=new Map();
+ categoryHeader.append(categoryTitle,less);
+  const subcatFilterWrap261=make('div','nu261-filter-wrap');
+  const subcatFilterBtn261=make('button','nu261-filter-trigger','Filtrar categoria ▾');
+  subcatFilterBtn261.type='button';subcatFilterBtn261.setAttribute('aria-expanded','false');
+  const subcatFilterList261=make('div','nu261-pills');subcatFilterList261.hidden=true;
+  subcatFilterWrap261.append(subcatFilterBtn261,subcatFilterList261);
+  subcatFilterBtn261.addEventListener('click',()=>{
+    subcatFilterList261.hidden=!subcatFilterList261.hidden;
+    subcatFilterBtn261.setAttribute('aria-expanded',String(!subcatFilterList261.hidden));
+  });
+  categoryView.append(categoryHeader,subcatFilterWrap261,categoryCount,categoryEmpty);
+  const categoryCache=new Map();
+  function prepareSubcategoryFilter261(key){
+    selectedSubcategory261='';
+    const choices=subcats261.filter(sc=>sc.parent===key);
+    subcatFilterWrap261.hidden=!choices.length;
+    subcatFilterList261.hidden=true;
+    subcatFilterBtn261.setAttribute('aria-expanded','false');
+    subcatFilterBtn261.textContent='Filtrar categoria ▾';
+    subcatFilterList261.replaceChildren();
+    if(!choices.length)return;
+    const all=make('button','nu261-active','Todos os produtos');all.type='button';
+    all.setAttribute('aria-pressed','true');
+    const elements=[all];
+    choices.forEach(sc=>{
+      const btn=make('button','',sc.name);btn.type='button';
+      btn.dataset.subFilter261=sc.id;btn.setAttribute('aria-pressed','false');
+      elements.push(btn);
+    });
+    elements.forEach(btn=>btn.addEventListener('click',()=>{
+      selectedSubcategory261=btn.dataset.subFilter261||'';
+      elements.forEach(el=>{
+        const active=el===btn;
+        el.classList.toggle('nu261-active',active);
+        el.setAttribute('aria-pressed',String(active));
+      });
+      subcatFilterBtn261.textContent=selectedSubcategory261
+        ? ('Filtrar categoria: '+btn.textContent+' ▾'):'Filtrar categoria ▾';
+      subcatFilterList261.hidden=true;
+      subcatFilterBtn261.setAttribute('aria-expanded','false');
+      filterCategory();
+    }));
+    subcatFilterList261.append(...elements);
+  }
  const money=cents=>(cents/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
  const resize=()=>window.dispatchEvent(new Event('resize'));
  function showProducts(focus=false){
@@ -101,13 +147,13 @@ document.addEventListener('DOMContentLoaded',()=>{
  function filterCategory(){
   if(!selectedCategory)return;
   const entry=categoryCache.get(selectedCategory),query=search.value.trim();let count=0;
-  entry.cards.forEach(({source,node})=>{const text=(source.dataset.name||'')+' '+source.textContent;const match=window.NowUpSearch179?window.NowUpSearch179.matches(text,query):text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(query.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase());node.hidden=!match;if(match)count++;});
+  entry.cards.forEach(({source,node})=>{const text=(source.dataset.name||'')+' '+source.textContent;const searchMatch=window.NowUpSearch179?window.NowUpSearch179.matches(text,query):text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(query.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase());const match=searchMatch&&(!selectedSubcategory261||source.dataset.subcategory261===selectedSubcategory261);node.hidden=!match;if(match)count++;});
   categoryCount.textContent=count+' '+(count===1?'produto':'produtos');categoryEmpty.hidden=count>0;
  }
  function showCategory(key){
   const group=groups.get(key);if(!group)return;
   if(body.classList.contains('nu187-store-home'))homeScroll=window.scrollY;
-  selectedCategory=key;buttons.forEach(b=>{const active=b.dataset.categoryFilter===key;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});body.classList.remove('nu187-store-home');body.classList.add('nu191-category');
+  selectedCategory=key;prepareSubcategoryFilter261(key);buttons.forEach(b=>{const active=b.dataset.categoryFilter===key;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});body.classList.remove('nu187-store-home');body.classList.add('nu191-category');
   intro.hidden=true;showcase.hidden=true;categoryView.hidden=false;back.setAttribute('aria-label','Voltar à página da loja');
   if(nav)sticky.append(nav);
   if(!categoryCache.has(key)){
@@ -120,7 +166,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  root.addEventListener('input',event=>{if(event.target===search&&selectedCategory){event.stopImmediatePropagation();filterCategory();}},true);
  root.addEventListener('search',event=>{if(event.target===search&&selectedCategory){event.stopImmediatePropagation();filterCategory();}},true);
  if(!originals.length)showcase.append(make('p','nu190-empty','Esta loja ainda não publicou produtos.'));
- root.addEventListener('click',event=>{if(!body.classList.contains('nu187-store-home')&&!selectedCategory)return;const button=event.target.closest('[data-category-filter]');if(!button)return;event.preventDefault();event.stopImmediatePropagation();buttons.forEach(b=>{const active=b===button;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});if(selectedCategory){if(button.dataset.categoryFilter==='all')showHome();else showCategory(button.dataset.categoryFilter);return;}(sections.get(button.dataset.categoryFilter)||showcase).scrollIntoView({block:'start',behavior:'auto'});},true);
+ root.addEventListener('click',event=>{if(!body.classList.contains('nu187-store-home')&&!selectedCategory)return;const button=event.target.closest('[data-category-filter]');if(!button)return;event.preventDefault();event.stopImmediatePropagation();buttons.forEach(b=>{const active=b===button;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});if(selectedCategory){if(button.dataset.categoryFilter==='all')showHome();else showCategory(button.dataset.categoryFilter);return;}if(button.dataset.categoryFilter==='all')showHome();else showCategory(button.dataset.categoryFilter);},true);
  // Focus alone does not switch views: explicit top-search interaction does.
  search.addEventListener('click',()=>{if(body.classList.contains('nu187-store-home'))showProducts(true);});
  search.addEventListener('keydown',event=>{if(body.classList.contains('nu187-store-home')&&(event.key==='Enter'||event.key.length===1))showProducts();});
