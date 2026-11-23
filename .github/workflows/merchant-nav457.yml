@@ -1,0 +1,37 @@
+name: V457 - barra fixa do lojista
+on:
+  push:
+    branches: [codex/rodape-lojista-fixo-v457]
+  pull_request:
+    branches: [codex/categorias-icones-v230]
+permissions:
+  contents: read
+jobs:
+  merchant-navigation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NOWUP_DB_ENGINE: sqlite
+      NOWUP_ADMIN_EMAIL: merchant457@example.invalid
+      NOWUP_ADMIN_PASSWORD: isolated-nav-457-password
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: |
+          python -m pip install -r requirements-dev.txt
+          npm ci
+      - name: Check source and templates
+        run: |
+          python -m py_compile app.py
+          node --check static/merchant-bottom457.js
+      - name: Validate merchant and customer navigation
+        run: python -m pytest -q tests/test_merchant_nav457.py tests/test_all_products455.py --disable-warnings
+      - name: Validate active navigation state
+        run: node --test tests/merchant-nav457.test.cjs
