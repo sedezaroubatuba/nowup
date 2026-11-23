@@ -2,6 +2,7 @@
    These selectors deliberately outrank the generic two-column catalog rules. */
 html body.public-profile-area [data-native-menu] .menu-products > details.menu-product.nu-group260[data-group260="1"] {
   display: block !important;
+  grid-column: 1 / -1 !important;
   grid-template-columns: minmax(0,1fr) !important;
   width: 100% !important;
   min-width: 0 !important;
