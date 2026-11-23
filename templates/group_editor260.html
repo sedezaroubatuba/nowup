@@ -1,0 +1,105 @@
+<section id="agrupadores260" class="nu-groups260-admin" aria-label="Cadastro de produtos agrupadores">
+  <div class="section-title"><div><span class="kicker">Produtos por sabores, modelos ou aromas</span><h2>Produtos agrupadores</h2></div></div>
+  <p class="muted">Um único cartão com foto na categoria escolhida. Dentro dele, cada item tem seu próprio preço, disponibilidade, histórico de vendas, sem precisar de foto individual.</p>
+  <details class="nu-group260-create">
+    <summary class="btn primary">＋ Criar produto agrupador (capa)</summary>
+    <form action="/painel/cardapio/agrupadores" method="post" enctype="multipart/form-data" class="product-form">
+      <label>Nome do agrupador<input class="input" name="name" maxlength="140" placeholder="Ex.: Essências Ziggy — Sabores" required></label>
+      <label>Categoria<select name="category" required>{% for cat in product_categories if cat.active %}<option value="{{cat.name}}">{{cat.name}}</option>{% else %}<option value="Geral">Geral</option>{% endfor %}</select></label>
+      <label data-subcat-field261 hidden>Subcategoria (opcional)<select class="input" name="subcategory_id261" data-subcat-picker261 data-selected261="0"><option value="0">Sem subcategoria</option>{% for sc in subcategories261 if sc.active %}<option value="{{sc.id}}" data-parent261="{{sc.category_name}}">{{sc.name}}</option>{% endfor %}</select></label>
+      <label class="full">Descrição (opcional)<textarea name="description" maxlength="600" placeholder="Escolha o aroma na lista de sabores"></textarea></label>
+      <label>Foto da capa (única foto do grupo)<input class="input" type="file" name="photo" accept="image/*" required></label>
+      <p class="muted full">Após salvar a capa, clique em <strong>+ Adicionar produto</strong>. A categoria será herdada automaticamente.</p>
+      <button class="btn primary" type="submit">Criar capa e escolher produtos</button>
+    </form>
+  </details>
+  {% for group in grouped260 %}
+  {% set head = group.header %}
+  <details class="nu-group260-editor" id="grupo260-{{head.id}}" {% if request.query_params.get("grupo260") == head.id|string %}open{% endif %}>
+    <summary class="nu-group260-editor-heading">
+      {% if head.image_filename %}<img src="/uploads/{{head.image_filename}}" alt="" onerror="this.onerror=null;this.src='/static/product-placeholder.svg'">{% else %}<span>▦</span>{% endif %}
+      <span><b>{{head.name}}</b><small>{{head.category}} · {{group['items']|length}} itens · {{'Ativo' if head.available else 'Oculto'}}</small></span><span>Gerenciar ›</span>
+    </summary>
+    <div class="nu-group260-editor-body">
+      <details><summary>Editar foto, categoria e nome principal</summary>
+        <form action="/painel/cardapio/agrupadores/{{head.id}}" method="post" enctype="multipart/form-data" class="product-form">
+          <label>Nome<input class="input" name="name" value="{{head.name}}" required maxlength="140"></label>
+          <label>Categoria<select name="category" required>{% for cat in product_categories if cat.active %}<option value="{{cat.name}}" {% if cat.name==head.category %}selected{% endif %}>{{cat.name}}</option>{% endfor %}</select></label>
+      <label data-subcat-field261 hidden>Subcategoria (opcional)<select class="input" name="subcategory_id261" data-subcat-picker261 data-selected261="{{head.subcategory_id261}}"><option value="0">Sem subcategoria</option>{% for sc in subcategories261 if sc.active %}<option value="{{sc.id}}" data-parent261="{{sc.category_name}}">{{sc.name}}</option>{% endfor %}</select></label>
+          <label class="full">Descrição<textarea name="description" maxlength="600">{{head.description}}</textarea></label>
+          <label>Trocar foto principal<input class="input" name="photo" type="file" accept="image/*"></label>
+          <label class="check"><input name="available" type="checkbox" value="1" {% if head.available %}checked{% endif %}> Agrupador visível no cardápio</label>
+          <button class="btn primary">Salvar agrupador</button>
+        </form>
+      </details>
+      <h3>Produtos deste agrupador</h3><p class="muted">Categoria: <b>{{head.category}}</b>. Cada produto é vendido individualmente.</p>
+      <p class="muted">O funcionário pode marcar cada sabor como disponível ou indisponível sem abrir a edição completa.</p>
+      <div class="nu-group260-member-list">
+        {% for item in group['items'] %}
+        <div class="nu-group260-member">
+          <div class="nu-group260-member-title">
+            {% if item.image_filename %}<img class="nu260-mini-photo" src="/uploads/{{item.image_filename}}" alt="Foto de {{item.name}}">{% elif head.image_filename %}<img class="nu260-mini-photo" src="/uploads/{{head.image_filename}}" alt="Foto da capa">{% endif %}
+            <span><b>{{item.name}}</b><small>R$ {{'%.2f'|format(item.price_cents/100)|replace('.',',')}}{% if item.promo_price_cents>0 %} · Promo cadastrada: R$ {{'%.2f'|format(item.promo_price_cents/100)|replace('.',',')}}{% endif %}</small></span>
+            <form action="/painel/cardapio/agrupadores/{{head.id}}/itens/{{item.id}}/disponibilidade" method="post">
+              <input name="available" type="hidden" value="{{0 if item.available else 1}}">
+              <button type="submit" class="btn soft nu-group260-toggle {% if item.available %}nu-group260-on{% endif %}" aria-label="Alterar disponibilidade de {{item.name}}">{{'● Disponível' if item.available else '○ Indisponível'}}</button>
+            </form>
+          </div>
+          <details><summary>Editar este item</summary>
+            <form action="/painel/cardapio/agrupadores/{{head.id}}/itens/{{item.id}}" method="post" enctype="multipart/form-data" class="product-form">
+              <label>Nome<input class="input" name="name" value="{{item.name}}" maxlength="140" required></label>
+              <label>Preço<input class="input" name="price" value="{{'%.2f'|format(item.price_cents/100)|replace('.',',')}}" required></label>
+              <label>Preço promocional individual (opcional)<input class="input" name="promo_price" value="{% if item.promo_price_cents %}{{'%.2f'|format(item.promo_price_cents/100)|replace('.',',')}}{% endif %}" placeholder="Deixe vazio para retirar"></label>
+              <label>Foto individual (opcional)<input class="input" name="photo" type="file" accept="image/*"><small>Sem foto própria, o produto usa a imagem da capa.</small></label>
+              {% if item.image_filename %}<label class="check"><input type="checkbox" name="use_cover_photo" value="1"> Remover foto individual e voltar a usar a foto da capa</label>{% endif %}
+              
+              <label class="check"><input name="available" type="checkbox" value="1" {% if item.available %}checked{% endif %}> Disponível</label>
+              <button class="btn primary">Salvar item</button>
+            </form>
+          </details>
+          <form action="/painel/cardapio/agrupadores/{{head.id}}/itens/{{item.id}}/desvincular" method="post"><button class="btn soft tiny" type="submit">Retirar do grupo (preservar produto)</button></form>
+        </div>
+        {% else %}<p class="muted">Cadastre os sabores ou vincule produtos existentes abaixo.</p>{% endfor %}
+      </div>
+      <details class="nu-group260-add"><summary class="btn soft">＋ Adicionar produto (nome, preço e foto opcional)</summary>
+        <form action="/painel/cardapio/agrupadores/{{head.id}}/itens" method="post" enctype="multipart/form-data" class="product-form">
+          <label>Nome<input class="input" name="name" placeholder="Ex.: Morango 50 g" maxlength="140" required></label>
+          <label>Preço<input class="input" name="price" placeholder="12,00" required></label>
+          <label>Foto do produto (opcional)<input class="input" name="photo" type="file" accept="image/*"><small>Sem foto própria, o item usa a foto da capa.</small></label>
+          
+          <label class="check"><input type="checkbox" name="available" value="1" checked> Disponível</label>
+          <button class="btn primary">Adicionar item</button>
+        </form>
+      </details>
+      {% if ungrouped260 %}
+      <details><summary>Vincular um produto já cadastrado</summary>
+        <form action="/painel/cardapio/agrupadores/{{head.id}}/vincular" method="post" class="product-form">
+          <label>Produto existente<select name="item_id" required>{% for existing in ungrouped260 %}<option value="{{existing.id}}">{{existing.name}} — {{existing.category}}</option>{% endfor %}</select></label>
+          <button class="btn primary">Adicionar ao agrupador sem apagar histórico</button>
+        </form>
+      </details>
+      {% endif %}
+      <details class="nu-group260-promo"><summary><b>🏷 Promoção somente dos sabores selecionados</b></summary>
+        <form action="/painel/cardapio/agrupadores/{{head.id}}/promocao" method="post">
+          <p class="muted">Selecione todos e desmarque os sabores de fora. Somente os marcados receberão o preço informado. Se desmarcar todos, a promoção será encerrada.</p>
+          <div class="nu-group260-promo-actions"><button type="button" data-select-all260>Selecionar todos</button><button type="button" data-unselect-all260>Desmarcar todos</button></div>
+          <div class="nu-group260-checks">
+            {% for item in group['items'] %}
+            <label class="check"><input type="checkbox" name="item_ids" value="{{item.id}}" {% if item.promo_price_cents>0 %}checked{% endif %}>
+              {{item.name}} <small>R$ {{'%.2f'|format(item.price_cents/100)|replace('.',',')}}</small>
+            </label>
+            {% endfor %}
+          </div>
+          <div class="product-form">
+            <label>Preço promocional (R$)<input class="input" name="promo_price" inputmode="decimal" value="{% if group.promo_item %}{{'%.2f'|format(group.promo_item.promo_price_cents/100)|replace('.',',')}}{% endif %}" placeholder="10,00"></label>
+            <label>Começa em (opcional)<input class="input" name="promo_start" type="date" value="{{group.promo_item.promo_start260 if group.promo_item else ''}}"></label>
+            <label>Termina em (opcional)<input class="input" name="promo_end" type="date" value="{{group.promo_item.promo_end260 if group.promo_item else ''}}"></label>
+            <button class="btn primary">Salvar promoção dos selecionados</button>
+          </div>
+        </form>
+      </details>
+      <form action="/painel/cardapio/agrupadores/{{head.id}}/excluir" method="post" data-confirm-delete><button class="btn danger tiny">Excluir apenas o agrupador (preservar os itens)</button></form>
+    </div>
+  </details>
+  {% else %}<p class="muted">Nenhum agrupador cadastrado. Crie um para reunir sabores sob uma foto principal.</p>{% endfor %}
+</section>

@@ -8,6 +8,7 @@ import nowup_neighborhoods267
 from nowup_combos303 import attach_prices, current_price, combo_kind
 import nowup_categories230
 import nowup_subcategories448
+import nowup_groups260
 import nowup_ingredients320
 import nowup_included195
 from nowup_custom192 import parse_config, save_config, charge_options, validate_customization, bind_combo_products
@@ -742,6 +743,7 @@ def init_db():
     ensure_column(conn, "products", "featured", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "products", "max_quantity", "INTEGER NOT NULL DEFAULT 99")
     __import__("nowup_subcategories448").migrate(conn, ensure_column)
+    __import__("nowup_groups260").migrate(conn, ensure_column)
     conn.execute("CREATE TABLE IF NOT EXISTS checkout_requests229(customer_id INTEGER NOT NULL,professional_id INTEGER NOT NULL,request_key TEXT NOT NULL,payload_hash TEXT NOT NULL,order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,created_at TEXT NOT NULL,PRIMARY KEY(customer_id,professional_id,request_key))")
     ensure_column(conn,'products','fashion_photos385',"TEXT NOT NULL DEFAULT '[]'")
     ensure_column(conn,'products','fashion_details387',"TEXT NOT NULL DEFAULT '{}'")
@@ -1209,7 +1211,7 @@ def profile(request: Request, slug: str):
     reviews=conn.execute("SELECT r.*,u.name FROM reviews r JOIN users u ON u.id=r.customer_id WHERE r.professional_id=? ORDER BY r.id DESC",(p["id"],)).fetchall()
     cats=conn.execute("SELECT c.* FROM categories c JOIN professional_categories pc ON pc.category_id=c.id WHERE pc.professional_id=?",(p["id"],)).fetchall()
     product_count=conn.execute("SELECT COUNT(*) FROM products WHERE professional_id=? AND available=1",(p["id"],)).fetchone()[0] if p["is_premium"] and p["offer_mode"] in ("menu","catalog") else 0
-    products=[]; menu_categories=[]; product_options={}; subcategories261=[]
+    products=[]; menu_categories=[]; product_options={}; subcategories261=[]; grouped_products260={}
     if p["is_premium"] and p["offer_mode"] in ("menu","catalog"):
         products=conn.execute("""SELECT pr.* FROM products pr
           WHERE pr.professional_id=?
@@ -1217,6 +1219,7 @@ def profile(request: Request, slug: str):
             OR EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) AND pc.active=1))
           ORDER BY COALESCE((SELECT pc.sort_order FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) LIMIT 1),999999),pr.category,pr.sort_order,pr.id DESC""",(p["id"],)).fetchall()
         products=attach_prices(conn,p["id"],products)
+        products, grouped_products260=nowup_groups260.public_catalog(products)
         subcategories261=nowup_subcategories448.public_rows(conn,p["id"])
         menu_categories=[]
         for product in products:
@@ -1235,7 +1238,7 @@ def profile(request: Request, slug: str):
     has_contact=(pub["contact_target"]=="external" and bool(pub["external_url"])) or (pub["contact_target"]!="external" and bool(re.sub(r"\D","",pub["whatsapp"] or "")))
     pub["contact_link"]=""
     status=shop_status(p)
-    return attach_cart_assets144(templates.TemplateResponse("profile.html", context(request, pro=pub, products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, subcategories261=subcategories261, photos=photos, posts=posts, reviews=reviews, pro_categories=cats, product_count=product_count, shop_status=status, hours_lines=business_hours_lines(p), can_review=can_review)))
+    return attach_cart_assets144(templates.TemplateResponse("profile.html", context(request, pro=pub, products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, grouped_products260=grouped_products260, subcategories261=subcategories261, photos=photos, posts=posts, reviews=reviews, pro_categories=cats, product_count=product_count, shop_status=status, hours_lines=business_hours_lines(p), can_review=can_review)))
 
 @app.get("/p/{slug}/menu", response_class=HTMLResponse)
 def native_menu(request: Request, slug: str):
@@ -1249,6 +1252,7 @@ def native_menu(request: Request, slug: str):
         OR EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) AND pc.active=1))
       ORDER BY COALESCE((SELECT pc.sort_order FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) LIMIT 1),999999),pr.category,pr.sort_order,pr.id DESC""",(p["id"],)).fetchall()
     products=attach_prices(conn,p["id"],products)
+    products, grouped_products260=nowup_groups260.public_catalog(products)
     subcategories261=nowup_subcategories448.public_rows(conn,p["id"])
     menu_categories=[]
     for product in products:
@@ -1262,7 +1266,7 @@ def native_menu(request: Request, slug: str):
     conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"menu_click",now_iso())); conn.commit()
     product_groups,delivery_zones=menu_rules89(conn,p["id"]); conn.close()
     status=shop_status(p)
-    return attach_cart_assets144(attach_food_assets(templates.TemplateResponse("menu.html", context(request, pro=nowup_links352.public_links(p), products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, subcategories261=subcategories261, shop_status=status))))
+    return attach_cart_assets144(attach_food_assets(templates.TemplateResponse("menu.html", context(request, pro=nowup_links352.public_links(p), products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, grouped_products260=grouped_products260, subcategories261=subcategories261, shop_status=status))))
 
 def options_single158(conn, product_id, raw_options):
     if not isinstance(raw_options,list):raise HTTPException(400,"Adicionais inválidos.")
@@ -1725,6 +1729,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     photos=conn.execute("SELECT * FROM photos WHERE professional_id=? ORDER BY is_cover DESC,id DESC",(p["id"],)).fetchall()
     posts=conn.execute("SELECT * FROM posts WHERE professional_id=? ORDER BY id DESC LIMIT 20",(p["id"],)).fetchall()
     products=conn.execute("SELECT * FROM products WHERE professional_id=? ORDER BY category,sort_order,id DESC",(p["id"],)).fetchall()
+    grouped260,ungrouped260=nowup_groups260.panel_groups(products)
     meal_ids322=set();ingredient_counts365={}
     for row in products:
         try:
@@ -1733,7 +1738,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
             if not row['is_combo256'] and (cfg322.get('is_meal317') or cfg322.get('ingredients')):meal_ids322.add(row['id'])
         except HTTPException:
             pass
-    combo_catalog298=[{"id":row["id"],"name":row["name"],"available":bool(row["available"]),"image_filename":row["image_filename"],"unit_price_cents":current_price(row),"is_meal365":row["id"] in meal_ids322,"ingredient_count365":ingredient_counts365.get(row["id"],0)} for row in products if not row["is_combo256"] and not row["sold_by_weight370"] and row["category"].casefold()!="combos"]
+    combo_catalog298=[{"id":row["id"],"name":row["name"],"available":bool(row["available"]),"image_filename":row["image_filename"],"unit_price_cents":current_price(row),"is_meal365":row["id"] in meal_ids322,"ingredient_count365":ingredient_counts365.get(row["id"],0)} for row in products if not row["is_combo256"] and not row["sold_by_weight370"] and row["category"].casefold()!="combos" and not row["is_group_header260"] and not row["group_parent_id260"]]
     product_options={}
     for row in conn.execute("""SELECT po.* FROM product_options po JOIN products pr ON pr.id=po.product_id
       WHERE pr.professional_id=? ORDER BY po.sort_order,po.id""",(p["id"],)).fetchall():
@@ -1847,7 +1852,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     kanban=nowup_merchant228.board(conn,p["id"],lower228,upper228,SAO_PAULO_TZ)
     conn.close()
     status=shop_status(p); business_hours=parse_business_hours(p["business_hours"])
-    return templates.TemplateResponse("pro_panel.html", context(request, kanban=kanban, manual=nowup_sales107.panel_data(request,conta), combo_catalog298=combo_catalog298, pair_catalog328=[{"id":row["id"],"name":row["name"]} for row in products], meal_ids322=meal_ids322, ingredient_catalog320=ingredient_catalog320, included_catalog195=included_catalog195, shared_extras=shared_extras, shared_selected=shared_selected, pro=p, photos=photos, posts=posts, products=products, product_groups=product_groups, delivery_zones=delivery_zones, merchant_overview=merchant_overview, product_options=product_options, product_categories=product_categories, subcategories261=subcategories261, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, today_orders=today_orders, day_order_summary=day_order_summary, order_day=order_day.isoformat(), today_day=today.isoformat(), order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
+    return templates.TemplateResponse("pro_panel.html", context(request, kanban=kanban, manual=nowup_sales107.panel_data(request,conta), combo_catalog298=combo_catalog298, pair_catalog328=[{"id":row["id"],"name":row["name"]} for row in products if not row["is_group_header260"] and not row["group_parent_id260"]], meal_ids322=meal_ids322, ingredient_catalog320=ingredient_catalog320, included_catalog195=included_catalog195, shared_extras=shared_extras, shared_selected=shared_selected, pro=p, photos=photos, posts=posts, products=products, grouped260=grouped260, ungrouped260=ungrouped260, product_groups=product_groups, delivery_zones=delivery_zones, merchant_overview=merchant_overview, product_options=product_options, product_categories=product_categories, subcategories261=subcategories261, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, today_orders=today_orders, day_order_summary=day_order_summary, order_day=order_day.isoformat(), today_day=today.isoformat(), order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
 
 @app.post('/painel/plano')
 def request_store_plan(request: Request, plan: str=Form(...), offer_mode: str=Form('services'), category_id: int=Form(0)):
@@ -3424,3 +3429,6 @@ nowup_wait434.install(globals())
 
 # V448: optional subcategories on the existing production code path.
 nowup_subcategories448.register(app, db, require_user, require_premium_catalog, now_iso)
+
+# V451: isolated group/variant forms on the live cardapio.
+nowup_groups260.register(app,db,require_user,require_premium_catalog,save_image,price_to_cents,now_iso)

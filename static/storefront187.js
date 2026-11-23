@@ -34,7 +34,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  const sticky=root.querySelector('.nu-menu-sticky')||heading.parentElement;
  const anchor=document.createComment('store190');layout.before(anchor);anchor.before(intro);
  const showcase=make('div','nu190-showcase');layout.before(showcase);
- const originals=Array.from(layout.querySelectorAll('[data-product]')),sections=new Map(),refreshers=[],cartRefreshers=[];
+ const catalogItems=layout.querySelector('.menu-products')||layout;const originals=Array.from(catalogItems.children).filter(el=>el.matches('[data-product]')),sections=new Map(),refreshers=[],cartRefreshers=[];
  originals.forEach(card=>{if(card.dataset.comboLocal303!=='1'&&(card.dataset.combo256==='1'||card.dataset.category==='combos')){card.dataset.category='combos';const label=card.querySelector('.menu-product-info small');if(label)label.textContent='Combos';}});
  const back=make('button','nu187-back','←');back.type='button';heading.prepend(back);
  let homeScroll=0,selectedCategory=null,selectedSubcategory261='';
@@ -108,6 +108,26 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   refreshers.forEach(fn=>fn());cartRefreshers.forEach(fn=>fn());resize();window.scrollTo({top:homeScroll,behavior:'instant'});
  }
  function compact(card,offer=false){
+  // A cover represents several real products; never add one automatically.
+  if(card.dataset.group260==='1'){
+    const panel=make('article','nu190-card nu201-card nu260-showcase');
+    const image=card.querySelector('.nu-group260-cover img');
+    if(image){const photo=make('img');photo.src=image.getAttribute('src')||image.currentSrc;photo.alt='';photo.loading='lazy';panel.append(photo);}
+    else panel.append(make('div','nu190-no-image','▦'));
+    const content=make('div','nu190-card-content');
+    content.append(make('h3','',card.dataset.name||'Produto'),make('strong','', 'A partir de '+money(Number(card.dataset.price)||0)));
+    content.append(make('small','nu260-variant-count',card.querySelectorAll('.nu-group260-row').length+' sabores ou opções'));
+    const choose=make('button','nu201-open','Escolher sabor');choose.type='button';
+    choose.setAttribute('aria-label','Escolher variação de '+(card.dataset.name||'Produto'));
+    choose.addEventListener('click',()=>{
+      showProducts(false);
+      card.open=true;
+      requestAnimationFrame(()=>card.scrollIntoView({block:'center',behavior:'smooth'}));
+    });
+    content.append(choose);panel.append(content);
+    panel.addEventListener('click',event=>{if(!event.target.closest('button,a,input'))choose.click();});
+    return panel;
+  }
   const item=make('article','nu190-card nu201-card'),image=card.querySelector('.nu163-media img, img');
   if(image){const photo=make('img');photo.decoding='async';if(image.dataset.src258){photo.src='/static/product-placeholder.svg';photo.dataset.src258=image.dataset.src258;}else{photo.src=image.getAttribute('src')||image.currentSrc;}photo.alt='';photo.loading='lazy';photo.addEventListener('error',()=>{photo.src='/static/product-placeholder.svg';},{once:true});item.append(photo);}
   else item.append(make('div','nu190-no-image','🍽'));
