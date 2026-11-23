@@ -66,3 +66,7 @@
 .nu260-variant-row [data-remove-variant451]{min-height:44px}
 @media(max-width:560px){.nu260-variant-row{grid-template-columns:minmax(0,1fr) minmax(0,0.75fr);}.nu260-variant-row [data-remove-variant451]{grid-column:1/-1;justify-self:end}.nu260-variants-builder{padding:10px}}
 .nu260-showcase .nu260-variant-count{display:block;color:#6839ac;font-size:12px;font-weight:700;margin-top:5px}
+
+/* Respect category and text search filtering on grouped covers. */
+.nu-group260[hidden]{display:none!important}
+.nu260-mini-photo{width:48px;height:48px;flex:none;border-radius:9px;object-fit:contain;background:#f7f3fb;border:1px solid #ede3f8}
