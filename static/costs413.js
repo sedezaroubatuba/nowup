@@ -23,6 +23,7 @@
     input.placeholder='Se vazio, usar margem ilustrativa de 20%';
     if(id && config.costs?.[id]!==undefined)input.value=(config.costs[id]/100).toFixed(2).replace('.',',');
     label.append(input);
+    const present=document.createElement('input');present.type='hidden';present.name='cost_present456';present.value='1';form.append(present);
     const info=document.createElement('small');info.className='nu456-margin-info';
     label.append(info);
     (form.querySelector('.nu410-basic')||form).append(label);
