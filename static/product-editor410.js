@@ -26,6 +26,8 @@
    barcode.placeholder='Sem código? Use o código interno do NowUp';
    barcode.value=form.closest('[data-barcode456]')?.dataset.barcode456||'';
    barcodeLabel.append(barcode);
+   const present=el('input');present.type='hidden';present.name='barcode_present456';present.value='1';
+   form.append(present);
    basic.append(barcodeLabel);
   }
   const extrasHint=el('p','Os adicionais e o limite são exclusivos deste produto. Escolha “Sem adicionais” para não permitir nenhum.','nu410-help');
