@@ -1,0 +1,41 @@
+name: V456 — cadastro visual e margens opcionais
+on:
+  push:
+    branches: [codex/cadastro-visual-unificado-v456]
+  pull_request:
+    branches: [codex/categorias-icones-v230]
+permissions:
+  contents: read
+jobs:
+  full-catalog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      NOWUP_DB_ENGINE: sqlite
+      NOWUP_ADMIN_EMAIL: v456-test@example.invalid
+      NOWUP_ADMIN_PASSWORD: isolated-v456-password
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: |
+          python -m pip install -r requirements-dev.txt
+          npm ci
+      - name: Validate syntax
+        run: |
+          python -m py_compile app.py nowup_costs413.py nowup_allproducts455.py
+          node --check static/product-editor410.js
+          node --check static/costs413.js
+          node --check static/all-products455.js
+      - name: Verify optional costs, barcode, product edits, ownership and history
+        run: |
+          python -m pytest -q tests/test_cadastro_unificado456.py tests/test_all_products455.py tests/test_catalog328.py tests/test_product_editor410.py tests/test_groups451.py --disable-warnings
+      - name: Keep older product editor working
+        run: |
+          node --test tests/product-editor410.test.cjs tests/product-next423.test.cjs tests/product-return454.test.cjs
