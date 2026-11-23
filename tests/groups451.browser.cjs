@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {chromium}=require('playwright');
 const file=name=>fs.readFileSync(path.join(__dirname,'..',name),'utf8');
-const html='<!doctype html><html><body><main data-native-menu>'
+const html='<!doctype html><html><head><meta charset="utf-8"></head><body><main data-native-menu>'
 +'<details open data-product data-group260="1" data-id="10" data-name="Balas Fini" data-price="550"><summary>Balas Fini</summary>'
 +'<article data-product data-id="11" data-name="Balas Fini — Morango" data-price="550" data-max="99" data-category="doces" data-group-photo260="/uploads/capa-fini.jpg">'
 +'<label><input type="number" data-product-quantity value="1"></label><button data-add>Adicionar Morango</button></article>'
