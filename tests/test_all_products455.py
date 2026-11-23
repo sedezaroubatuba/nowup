@@ -31,7 +31,7 @@ def test_page_is_ten_alphabetical_items_with_owner_guard(env):
     assert response.headers["cache-control"] == "private, no-store"
     assert response.text.count('class="nu455-item"') == 10
     assert "Bebida 00" in response.text and "Bebida 09" in response.text
-    assert "Bebida 10" not in response.text
+    assert f'id="produto-{ids[10]}"' not in response.text  # Global Leve Junto picker still contains all names.
     assert "PRIVATE OTHER STORE" not in response.text
     next_page = client.get("/painel/todos-produtos?q=Bebida&category=Cervejas&page=2")
     assert next_page.status_code == 200 and "Bebida 10" in next_page.text
