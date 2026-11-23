@@ -1,4 +1,4 @@
-"""Optional cost control. Missing costs use an explicit 50% estimate when enabled."""
+"""Optional cost control. Missing costs use a clearly marked illustrative 20% margin; actual values are never fabricated."""
 from decimal import Decimal,InvalidOperation
 from fastapi import Request,Form,HTTPException
 from fastapi.responses import RedirectResponse,JSONResponse
@@ -27,9 +27,9 @@ def effective_cost(c,pid,product_id):
     row=c.execute('SELECT p.*,pc.cost_cents FROM products p LEFT JOIN product_costs413 pc ON pc.product_id=p.id AND pc.professional_id=p.professional_id WHERE p.id=? AND p.professional_id=?',(product_id,pid)).fetchone()
     if not row:raise HTTPException(404,'Produto não encontrado.')
     setting=c.execute('SELECT enabled FROM cost_settings413 WHERE professional_id=?',(pid,)).fetchone()
-    if not setting or not setting['enabled']:return dict(cents=None,estimated=False)
+    # Legacy activation no longer gates costs: explicit entries are always usable.
     from nowup_combos303 import current_price
-    return dict(cents=row['cost_cents'] if row['cost_cents'] is not None else (current_price(row)+1)//2,estimated=row['cost_cents'] is None)
+    return dict(cents=row['cost_cents'] if row['cost_cents'] is not None else (current_price(row)*80+50)//100,estimated=row['cost_cents'] is None)
 
 
 def prepare(c,pid,raw):
@@ -37,9 +37,8 @@ def prepare(c,pid,raw):
     c.execute('BEGIN IMMEDIATE')
     if getattr(c,'dialect','sqlite')=='postgres':c.execute('SELECT id FROM professionals WHERE id=? FOR UPDATE',(pid,)).fetchone()
     row=c.execute('SELECT enabled FROM cost_settings413 WHERE professional_id=?',(pid,)).fetchone()
-    active=bool(row and row['enabled'])
     if raw=='__keep413':return None
-    return (cents(raw) if str(raw).strip() else -1) if active else None
+    return cents(raw) if str(raw).strip() else -1
 
 
 def save(c,pid,product_id,value):
@@ -61,7 +60,7 @@ def install(g):
     def config(request:Request):
         with ledger.connection() as c:
             u,p=ledger.merchant(c,request);data=status(c,p['id'])
-            data['costs']={str(r['product_id']):r['cost_cents'] for r in c.execute('SELECT product_id,cost_cents FROM product_costs413 WHERE professional_id=?',(p['id'],))} if data['enabled'] else {}
+            data['costs']={str(r['product_id']):r['cost_cents'] for r in c.execute('SELECT product_id,cost_cents FROM product_costs413 WHERE professional_id=?',(p['id'],))} 
         return JSONResponse(data,headers={'Cache-Control':'private, no-store'})
     @g['app'].get('/painel/custos')
     def page(request:Request,page:int=1):
@@ -70,7 +69,7 @@ def install(g):
             u,p=ledger.merchant(c,request);data=status(c,p['id'])
             products=c.execute('SELECT p.id,p.name,p.sold_by_weight370,p.price_cents,p.promo_price_cents,pc.cost_cents FROM products p LEFT JOIN product_costs413 pc ON pc.product_id=p.id AND pc.professional_id=p.professional_id WHERE p.professional_id=? ORDER BY p.id LIMIT 100 OFFSET ?',(p['id'],(page-1)*100)).fetchall()
             from nowup_combos303 import current_price
-            products=[dict(r,estimate_cents=(current_price(r)+1)//2) for r in products]
+            products=[dict(r,estimate_cents=(current_price(r)*80+50)//100) for r in products]
         return g['templates'].TemplateResponse('costs413.html',g['context'](request,pro=p,costs413=data,cost_products413=products,cost_page413=page,cardapio_panel408=True),headers={'Cache-Control':'private, no-store'})
     @g['app'].post('/painel/custos/salvar')
     async def batch(request:Request):
