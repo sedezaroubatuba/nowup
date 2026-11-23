@@ -1,0 +1,39 @@
+name: V448 Subcategorias - validação antes de publicar
+
+on:
+  push:
+    branches:
+      - feature/subcategorias-v448-producao
+  pull_request:
+    branches:
+      - codex/categorias-icones-v230
+
+permissions:
+  contents: read
+
+jobs:
+  subcategories448:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - name: Dependências
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+      - name: Verificar Python e JavaScript
+        run: |
+          python -m py_compile app.py nowup_subcategories448.py
+          node --check static/storefront187.js
+          node --check static/subcategories261.js
+      - name: Testar subcategorias e não regressão
+        env:
+          NOWUP_DB_ENGINE: sqlite
+          NOWUP_ADMIN_EMAIL: audit448@example.invalid
+          NOWUP_ADMIN_PASSWORD: isolated-audit-v448-password
+        run: |
+          python -m pytest -q tests/test_subcategories448.py tests/test_categories230.py tests/test_checkout247.py --disable-warnings
