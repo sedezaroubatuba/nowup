@@ -1,0 +1,106 @@
+{# V449: cada categoria abre suas próprias subcategorias, sem seletor duplicado. #}
+{% set selected449 = request.query_params.get('categoria449','') == category.id|string %}
+{% set count449 = subcategories261|selectattr('category_id','equalto',category.id)|list|length %}
+<div class="category-admin-row nu449-category-row">
+  <details class="nu449-category-details" id="categoria-{{category.id}}" {% if selected449 %}open{% endif %}>
+    <summary class="nu449-category-header" aria-label="Abrir categoria {{category.name}} e suas subcategorias">
+      <span class="nu449-category-ident">
+        <strong class="nu449-category-name">{{category.name}}</strong>
+        <span class="nu449-category-meta">{{count449}} {{'subcategoria' if count449==1 else 'subcategorias'}}{% if not category.active %} · Oculta da loja{% endif %}</span>
+      </span>
+      <span class="nu449-category-chevron" aria-hidden="true">⌄</span>
+    </summary>
+    <div class="nu449-category-body" data-subcats-sector261="{{category.id}}">
+      <div class="nu449-category-actions">
+        {% if category.active %}
+        <button type="button" class="btn primary nu449-add-button" data-subcats-add-toggle261 aria-expanded="false" aria-controls="nu449-new-subcat-{{category.id}}">＋ Adicionar subcategoria</button>
+        {% else %}
+        <p class="muted">Ative esta categoria para adicionar subcategorias.</p>
+        {% endif %}
+      </div>
+      {% if category.active %}
+      <form id="nu449-new-subcat-{{category.id}}" action="/painel/cardapio/subcategorias261" method="post" class="nu-subcats261-add nu449-subcat-form" data-subcats-add-form261 hidden>
+        <input type="hidden" name="category_id" value="{{category.id}}">
+        <label>Nome da nova subcategoria
+          <input class="input" name="name" maxlength="80" required placeholder="Ex.: Sedas, Tabacos, Piteiras">
+        </label>
+        <button class="btn primary" type="submit">Salvar subcategoria</button>
+      </form>
+      {% endif %}
+      {% if count449 %}
+      <div class="nu449-subcat-list" aria-label="Subcategorias de {{category.name}}">
+        {% for sc in subcategories261 if sc.category_id==category.id %}
+        <div class="nu-subcats261-row nu449-subcat-row">
+          <form action="/painel/cardapio/subcategorias261/{{sc.id}}" method="post">
+            <label>Subcategoria<input class="input" name="name" value="{{sc.name}}" maxlength="80" required></label>
+            <label class="nu449-sort">Ordem<input class="input" type="number" name="sort_order" min="1" max="9999" value="{{sc.sort_order}}"></label>
+            <label class="check"><input type="checkbox" name="active" value="1" {% if sc.active %}checked{% endif %}> Visível</label>
+            <button class="btn soft tiny" type="submit">Salvar</button>
+          </form>
+          <form action="/painel/cardapio/subcategorias261/{{sc.id}}/excluir" method="post" data-confirm-delete>
+            <button class="btn danger tiny" type="submit">Excluir subcategoria</button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="nu449-subcat-empty">Nenhuma subcategoria criada nesta categoria.</p>
+      {% endif %}
+      <details class="nu-subcats261-bulk nu449-bulk">
+        <summary>Organizar produtos desta categoria</summary>
+        <form action="/painel/cardapio/subcategorias261/organizar" method="post" data-bulk261>
+          <input type="hidden" name="category_id" value="{{category.id}}">
+          <label>Mover produtos selecionados para
+            <select name="subcategory_id" class="input" required>
+              <option value="0">Sem subcategoria (direto em {{category.name}})</option>
+              {% for sc in subcategories261 if sc.category_id==category.id and sc.active %}
+              <option value="{{sc.id}}">{{sc.name}}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <div class="nu-subcats261-actions">
+            <button type="button" class="btn soft tiny" data-all261>Selecionar todos</button>
+            <button type="button" class="btn soft tiny" data-none261>Desmarcar</button>
+          </div>
+          <div class="nu-subcats261-choices">
+            {% for product in products if product.category|lower == category.name|lower %}
+            <label class="check">
+              <input type="checkbox" name="product_ids" value="{{product.id}}">
+              <span>{{product.name}}
+                {% for sc in subcategories261 if sc.id==product.subcategory_id261 %}<small>({{sc.name}})</small>{% endfor %}
+              </span>
+            </label>
+            {% else %}<p class="muted">Nenhum produto desta categoria.</p>{% endfor %}
+          </div>
+          <button type="submit" class="btn primary">Salvar organização</button>
+        </form>
+      </details>
+      <details class="nu449-edit-category">
+        <summary>Editar nome, ícone e visibilidade da categoria</summary>
+        <form action="/painel/cardapio/categorias/{{category.id}}" method="post" class="nu449-category-edit-form">
+          <label>Nome da categoria<input class="input" name="name" value="{{category.name}}" required maxlength="80"></label>
+          {% set chosen230=category.icon_key %}
+          <label class="nu230-picker-field">Ícone
+            <select name="icon_key" data-icon-picker230>
+              <option value="auto">Automático pelo nome</option>
+              {% for item in category_catalog230 %}
+              <option value="{{item.key}}"{% if chosen230|default('auto')==item.key %} selected{% endif %}>{{item.label}}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="check"><input type="checkbox" name="active" value="1" {% if category.active %}checked{% endif %}> Pública</label>
+          <button class="btn primary" type="submit">Salvar categoria</button>
+        </form>
+        <div class="nu449-secondary-actions">
+          <label class="nu-position142">Posição
+            <input class="input" type="number" min="1" max="{{product_categories|length}}" value="{{loop.index}}" data-category-position142="{{category.id}}" aria-label="Posição de {{category.name}}">
+          </label>
+          <form action="/painel/cardapio/categorias/{{category.id}}/excluir" method="post" data-confirm-delete>
+            <button type="submit" class="btn danger tiny">Excluir categoria</button>
+          </form>
+        </div>
+      </details>
+      {# A posição também precisa ficar visível para o botão global "Salvar ordem". #}
+    </div>
+  </details>
+</div>
