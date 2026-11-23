@@ -30,12 +30,13 @@ async function runWithWidth(width){
  await page.setContent(html);await page.addScriptTag({content:file('static/groups452.js')});
  return {browser,page};
 }
-for(const width of [360,390,768]){
+for(const width of [360,390,768,1024]){
  test('grouped product accordion preview 2 aligns rows at '+width+'px',async()=>{
   const {browser,page}=await runWithWidth(width);
   try{
    const group=page.locator('.nu-group260'),rows=page.locator('.nu-group260-row'),show=page.locator('.nu452-show-more');
    assert.equal(await group.evaluate(el=>getComputedStyle(el).display),'block','group must not be a two-column product grid');
+   if(width>=800){const groupBox=await group.boundingBox();const menuBox=await page.locator('.menu-products').boundingBox();assert.ok(groupBox.width>=menuBox.width-2,'desktop group spans catalog columns');}
    assert.equal(await rows.count(),7);
    assert.equal(await rows.filter({visible:true}).count(),4,'only four initial flavors');
    assert.equal(await show.isVisible(),true);
