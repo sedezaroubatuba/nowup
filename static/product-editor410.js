@@ -11,11 +11,23 @@
   if(host?._editor321&&!form.dataset.compact200)return;
   form.dataset.editor410='1';form.classList.add('nu410-form');const kind=kindOf(form),name=kinds.find(k=>k[0]===kind)[1];
   const original=[...form.children],heading=el('header',null,'nu410-header'),isEdit=/\/produtos\/\d+$/.test(new URL(form.action,location.href).pathname);
-  heading.append(el('span','CADASTRO DE PRODUTOS','nu410-eyebrow'),el('h2',isEdit?'Editar '+name.toLowerCase():'Novo '+name.toLowerCase()),el('p','Preencha os dados e configure as opções deste produto.'));
-  if(isEdit)heading.append(el('p','Código interno: '+new URL(form.action,location.href).pathname.split('/').pop(),'nu410-help'));
+  heading.append(el('span','CADASTRO DE PRODUTOS','nu410-eyebrow'),el('h2',isEdit?'Editar '+name.toLowerCase():'Novo '+name.toLowerCase()),el('p','Mesmo cadastro completo, com visual renovado. Configurações avançadas permanecem disponíveis.'));
+  if(isEdit){
+   const nativeId=new URL(form.action,location.href).pathname.split('/').pop();
+   heading.append(el('p','Código interno NowUp: '+nativeId+' · gerado automaticamente','nu410-help'));
+  }else heading.append(el('p','Código interno NowUp: será gerado automaticamente ao salvar','nu410-help'));
   if(!isEdit){const nav=el('nav',null,'nu410-types');nav.setAttribute('aria-label','Tipo de produto');kinds.forEach(([key,label,id])=>{const a=el('a',label,key===kind?'is-active':'');a.href='#'+id;a.dataset.nav198='';if(key===kind)a.setAttribute('aria-current','page');nav.append(a);});heading.append(nav);}
   const grid=el('div',null,'nu410-grid'),basic=el('section',null,'nu410-basic'),options=el('section',null,'nu410-options'),footer=el('div',null,'nu410-actions');
   basic.append(el('h3',kind==='combo'?'Dados do combo':kind==='weight'?'Cadastro por quilo':'Dados do produto'));options.append(el('h3',kind==='combo'?'Monte o combo':'Opções deste produto'));
+  // Reuse the native product ID. Barcode is an optional second identifier.
+  if(!form.querySelector('[name=barcode456]')){
+   const barcodeLabel=el('label','Código de barras (opcional)','nu456-barcode'),barcode=el('input');
+   barcode.name='barcode456';barcode.inputMode='numeric';barcode.maxLength=64;
+   barcode.placeholder='Sem código? Use o código interno do NowUp';
+   barcode.value=form.closest('[data-barcode456]')?.dataset.barcode456||'';
+   barcodeLabel.append(barcode);
+   basic.append(barcodeLabel);
+  }
   const extrasHint=el('p','Os adicionais e o limite são exclusivos deste produto. Escolha “Sem adicionais” para não permitir nenhum.','nu410-help');
   const advanced=fold('Mais configurações'),paid=fold('Adicionais pagos'),promotion=fold('Promoção'),related=fold('Leve junto');
   for(const node of original){
@@ -44,7 +56,7 @@
   const previewTitle=el('h3','Prévia do cliente'),photo=el('img'),productName=el('h4'),description=el('p'),price=el('strong',null,'nu410-price'),detail=el('p',null,'nu410-preview-note');photo.alt='Foto do produto';photo.hidden=true;preview.append(previewTitle,photo,productName,description,price,detail,el('p','Prévia visual. Os adicionais e escolhas são conferidos no cardápio.','nu410-help'));
   const previewButton=el('button','Ver prévia','btn soft');previewButton.type='button';previewButton.setAttribute('aria-expanded','false');
   previewButton.onclick=()=>{preview.hidden=!preview.hidden;previewButton.setAttribute('aria-expanded',String(!preview.hidden));update();if(!preview.hidden)preview.scrollIntoView?.({block:'nearest'});};footer.prepend(previewButton);
-  const submit=footer.querySelector('button:not([type=button])');if(submit)submit.classList.add('nu410-save');
+  const submit=footer.querySelector('button:not([type=button])');if(submit){submit.classList.add('nu410-save');submit.textContent=isEdit?'✓ Salvar alterações':'✓ Salvar produto';}
   let imageURL='';const upload=form.querySelector('[name=photo]');const oldPhoto=upload?.dataset.preview250;if(oldPhoto){photo.src=oldPhoto;photo.hidden=false;}
   upload?.addEventListener('change',()=>{if(imageURL)URL.revokeObjectURL(imageURL);if(upload.files?.[0]){imageURL=URL.createObjectURL(upload.files[0]);photo.src=imageURL;photo.hidden=false;}});
   function update(){productName.textContent=form.querySelector('[name=name]')?.value||'Nome do produto';description.textContent=form.querySelector('[name=description]')?.value||'';const raw=form.querySelector('[name=price]')?.value||'0',value=Number(raw.includes(',')?raw.replace(/\./g,'').replace(',','.'):raw);price.textContent=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number.isFinite(value)?value:0)+(kind==='weight'?' / kg':'');detail.textContent=kind==='weight'?'O cliente escolhe quilos + gramas. Total estimado conforme o peso.':kind==='combo'?'Os itens obrigatórios entram automaticamente. O cliente escolhe somente nos grupos configurados.':'';}
