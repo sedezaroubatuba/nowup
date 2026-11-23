@@ -117,3 +117,8 @@ body.nu455-products-page {background:#faf8fe!important;color:#251639}
  .nu455-history{padding:9px}
 }
 @media(max-width:360px){.nu455-name{font-size:11px}.nu455-price{font-size:11px}.nu455-status{font-size:8.5px}.nu455-header .nu455-create{display:none}}
+
+/* V456: gross result is shown as an estimate whenever a registered cost is missing. */
+.nu455-gross{display:flex;flex-direction:column;gap:3px;padding:9px 12px;border-radius:9px;background:#f5edfc;border:1px solid #dec7ed;color:#531b7a;font-size:13px}
+.nu455-gross small{font-size:11px;color:#766082;font-weight:500}
+.nu455-report-row span small{display:block;font-size:10px;color:#7d6a8a;margin-top:4px}

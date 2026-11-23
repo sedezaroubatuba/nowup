@@ -7,13 +7,18 @@
   let catalog = [];
   try { catalog = JSON.parse(document.getElementById("nu455-product-names")?.textContent || "[]"); } catch (_) {}
   const byId = new Map(catalog.map(p => [String(p.id), p.name]));
-  root.querySelectorAll(".nu455-item").forEach(row => {
-    row.addEventListener("toggle", () => {
-      if (!row.open) return;
-      root.querySelectorAll(".nu455-item[open]").forEach(other => { if (other !== row) other.open = false; });
-    });
-  });
-  root.querySelectorAll("[data-category455]").forEach(select => {
+  const list = root.querySelector(".nu455-list");
+  // Keep the item count compact but continue down naturally: fetch 10 more
+  // when the bottom sentinel approaches. Pagination links remain as fallback.
+  root.addEventListener("toggle", event => {
+    const row=event.target;
+    if (!row.matches?.(".nu455-item") || !row.open)return;
+    root.querySelectorAll(".nu455-item[open]").forEach(other=>{if(other!==row)other.open=false;});
+  }, true);
+  function initSubcategories(scope) {
+   scope.querySelectorAll("[data-category455]").forEach(select => {
+    if(select.dataset.initialized456)return;
+    select.dataset.initialized456="1";
     const form = select.closest("form");
     const sub = form?.querySelector("[data-subcategory455]");
     if (!sub) return;
@@ -31,7 +36,9 @@
     }
     select.addEventListener("change", sync);
     sync();
-  });
+   });
+  }
+  initSubcategories(root);
   function buildPicker(host) {
     const self = String(host.dataset.self);
     const chosen = host.querySelector("[data-selected455]");
@@ -90,7 +97,49 @@
     search.addEventListener("input", redrawResults);
     redrawChips();
   }
-  root.querySelectorAll("[data-related455]").forEach(buildPicker);
+  function initPickers(scope){
+    scope.querySelectorAll("[data-related455]").forEach(host=>{
+      if(host.dataset.initialized456)return;
+      host.dataset.initialized456="1";buildPicker(host);
+    });
+  }
+  initPickers(root);
+  const nav=root.querySelector(".nu455-pagination");
+  const nextLink=()=>nav?.querySelector('a[href*="page="]:last-of-type');
+  const sentinel=document.createElement("div");
+  sentinel.className="nu456-load-sentinel";
+  sentinel.setAttribute("role","status");
+  sentinel.setAttribute("aria-live","polite");
+  if(nav&&list&&window.IntersectionObserver){
+    nav.after(sentinel);nav.classList.add("nu456-auto-pagination");
+    let loading=false;
+    const observer=new IntersectionObserver(async entries=>{
+      if(!entries.some(e=>e.isIntersecting)||loading)return;
+      const link=nav.querySelector('a[href*="page="]');
+      const links=[...nav.querySelectorAll('a[href*="page="]')];
+      const href=links.find(a=>a.textContent.includes("Próxima"))?.href;
+      if(!href){sentinel.textContent="Fim dos produtos.";observer.disconnect();return;}
+      loading=true;sentinel.textContent="Carregando mais produtos…";
+      try{
+        const res=await fetch(href,{credentials:"same-origin",cache:"no-store",headers:{"Accept":"text/html"}});
+        if(!res.ok)throw Error("Falha ao carregar.");
+        const doc=new DOMParser().parseFromString(await res.text(),"text/html");
+        const newRows=[...doc.querySelectorAll(".nu455-list > .nu455-item")];
+        if(!newRows.length){observer.disconnect();sentinel.textContent="Fim dos produtos.";return;}
+        newRows.forEach(row=>list.append(document.importNode(row,true)));
+        initSubcategories(list);initPickers(list);
+        const newNav=doc.querySelector(".nu455-pagination");
+        if(newNav)nav.replaceChildren(...[...newNav.childNodes].map(n=>document.importNode(n,true)));
+        if(![...nav.querySelectorAll("a")].some(a=>a.textContent.includes("Próxima"))){
+          sentinel.textContent="Todos os produtos carregados.";observer.disconnect();
+        }else sentinel.textContent="";
+      }catch(error){
+        sentinel.textContent="Não foi possível carregar mais. Use o botão de próxima página.";
+        nav.classList.remove("nu456-auto-pagination");observer.disconnect();
+      }finally{loading=false;}
+    },{rootMargin:"450px 0px"});
+    observer.observe(sentinel);
+  }
   root.querySelectorAll(".nu455-filters select").forEach(select =>
     select.addEventListener("change", () => select.form.requestSubmit())
   );
