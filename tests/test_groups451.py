@@ -147,3 +147,25 @@ def test_edit_individual_photo_remains_optional(env):
         assert current["image_filename"]==""
     html=client.get(f"/p/{stores[0]['slug']}/menu").text
     assert f'data-group-photo260="/uploads/{parent["image_filename"]}"' in html
+
+
+def test_grouped_editor_quick_create_before_collapsed_items():
+    """V453: new product is above the optional compact list on narrow screens."""
+    source = (Path(__file__).resolve().parents[1] / "templates" / "group_editor260.html").read_text()
+    assert source.index('class="nu-group260-add"') < source.index('class="nu-group260-members"')
+    assert 'Ver produtos ({{group[\'items\']|length}})' in source
+    assert 'Cadastrar novo produto' in source
+    assert '<details class="nu-group260-members"' in source
+    assert 'id="grupo260-{{head.id}}"' in source
+
+
+def test_grouped_editor_redirect_maintains_registration_position():
+    """V453: after saving, return to the correct group with the add form open."""
+    from nowup_groups260 import _redirect
+    result = _redirect(123, add_item=True)
+    assert result.status_code == 303
+    assert result.headers['location'] == (
+        '/painel?ok=agrupador&grupo260=123&novo260=1#grupo260-123'
+    )
+    result = _redirect(123, view_members=True)
+    assert result.headers['location'].endswith('&itens260=1#grupo260-123')
