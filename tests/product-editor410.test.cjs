@@ -18,7 +18,7 @@ test('all four real forms retain their controls, serialize and show preview afte
  w.eval(fs.readFileSync('static/product-editor410.js','utf8'));await tick(w);
  forms.forEach((f,i)=>{assert.equal(f.dataset.editor410,'1');
   // V456 adds an optional barcode but preserves every original field and value.
-  const previous=serialized(f).filter(([key])=>key!=='barcode456');
+  const previous=serialized(f).filter(([key])=>!['barcode456','barcode_present456'].includes(key));
   assert.deepEqual(previous,before[i]);
   assert.equal(f.querySelectorAll('.nu410-header').length,1);
   assert(f.querySelector('[name=barcode456]'));
