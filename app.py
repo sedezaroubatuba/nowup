@@ -741,7 +741,7 @@ def init_db():
     ensure_column(conn, "products", "promo_price_cents", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "products", "featured", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "products", "max_quantity", "INTEGER NOT NULL DEFAULT 99")
-    nowup_subcategories448.migrate(conn, ensure_column)
+    __import__("nowup_subcategories448").migrate(conn, ensure_column)
     conn.execute("CREATE TABLE IF NOT EXISTS checkout_requests229(customer_id INTEGER NOT NULL,professional_id INTEGER NOT NULL,request_key TEXT NOT NULL,payload_hash TEXT NOT NULL,order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,created_at TEXT NOT NULL,PRIMARY KEY(customer_id,professional_id,request_key))")
     ensure_column(conn,'products','fashion_photos385',"TEXT NOT NULL DEFAULT '[]'")
     ensure_column(conn,'products','fashion_details387',"TEXT NOT NULL DEFAULT '{}'")
