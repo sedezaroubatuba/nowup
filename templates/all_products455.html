@@ -168,6 +168,10 @@
               <div><small>Unidades em pedidos cancelados</small><strong>{{product.stats455.cancelled}}</strong></div>
               <div><small>Dias com venda</small><strong>{% if product.is_group_header260 %}—{% else %}{{product.stats455.days}}{% endif %}</strong></div>
             </div>
+            <p class="nu455-gross" role="note"><b>Resultado bruto calculado: R$ {{'%.2f'|format(product.stats455.gross_cents455/100)|replace('.',',')}}</b>
+              {% if product.stats455.profit_estimate455 %}<small>Estimativa com margem de 20% (custo não informado). Não é lucro real.</small>
+              {% else %}<small>Calculado com o custo unitário cadastrado atualmente; não considera outras despesas.</small>{% endif %}
+            </p>
             <p class="nu455-muted">{% if product.inventory455 is not none %}Estoque controlado: {{product.inventory455}} un.{% else %}Estoque numérico não controlado neste cadastro.{% endif %}
             {% if product.is_group_header260 %} Esta capa reúne as vendas dos itens do agrupador.{% elif product.group_parent_id260 %} Este é um item individual do agrupador "{{product.group_name455}}".{% endif %}</p>
             <details class="nu455-audit"><summary>Histórico de edições nesta nova área</summary>
@@ -200,7 +204,7 @@
     <section id="vendas-categoria455" class="nu455-report"><h2>Vendas por categoria</h2>
       <p class="nu455-muted">Somente vendas concluídas no período selecionado; inclui vendas manuais registradas no NowUp.</p>
       {% for name,stats in category_ranking455 %}
-        <div class="nu455-report-row"><span>{{name}}</span><b>R$ {{'%.2f'|format(stats.revenue/100)|replace('.',',')}}</b><small>{{stats.sold}} un.</small></div>
+        <div class="nu455-report-row"><span>{{name}}<small>Resultado com custo cadastrado: R$ {{'%.2f'|format(stats.gross_recorded455/100)|replace('.',',')}} · Parcela estimada (20%): R$ {{'%.2f'|format(stats.gross_estimated455/100)|replace('.',',')}}</small></span><b>R$ {{'%.2f'|format(stats.revenue/100)|replace('.',',')}}</b><small>{{stats.sold}} un.</small></div>
       {% else %}<p>Nenhuma venda concluída registrada no período.</p>{% endfor %}
     </section>
     <section id="ranking455" class="nu455-report"><h2>Ranking de produtos</h2>
