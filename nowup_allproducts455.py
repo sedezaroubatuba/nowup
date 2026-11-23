@@ -226,7 +226,7 @@ def install(ns):
             category_ranking = sorted(category_totals.items(), key=lambda row: -row[1]["revenue"])
             return templates.TemplateResponse("all_products455.html", context(
                 request, pro=pro, products455=page_products, all_names455=[
-                    {"id": p["id"], "name": p["name"]} for p in products if not p["is_group_header260"]],
+                    {"id": p["id"], "name": p["name"], "category": p["category"], "price": p["price_cents"], "parent": p["group_parent_id260"]} for p in products if not p["is_group_header260"]],
                 categories455=categories, subcategories455=subcategories,
                 page455=page, pages455=pages, count455=len(visible), total455=len(products),
                 q455=q[:140], category455=category, status455=status, period455=period, open455=open,
