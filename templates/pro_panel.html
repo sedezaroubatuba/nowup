@@ -161,10 +161,12 @@ body.fashion-store385 :is(a[href="#lanches-refeicoes322"],a[href="#combos-loja"]
 <form action="/painel/cardapio/categorias/{{category.id}}/excluir" method="post" data-confirm-delete><button class="btn danger tiny">Excluir</button></form>
 </div>{% endfor %}</div>
 <p class="muted">Numere de 1 a {{product_categories|length}} sem repetir posições e salve todas de uma vez.</p><button type="button" class="btn primary" data-save-order142>Salvar ordem</button><p data-order-status142 role="status" aria-live="polite"></p>
+{% include "subcategory_editor261.html" %}
 </details>
 
 
 
+<link rel="stylesheet" href="/static/subcategories261.css?v=448"><script src="/static/subcategories261.js?v=448" defer></script>
 <details class="product-create" id="novo-produto" {% if request.query_params.get("ok")=="produto" %}open{% endif %}>
 {% if request.query_params.get("ok")=="produto" %}<p role="status">Produto cadastrado! Cadastre o próximo produto abaixo.</p>{% endif %}
 <summary class="btn primary" role="button">＋ Adicionar produto</summary>
@@ -175,6 +177,7 @@ body.fashion-store385 :is(a[href="#lanches-refeicoes322"],a[href="#combos-loja"]
 </label>
 <label>Categoria<select name="category" required><option value="Geral" selected>Geral</option><option value="Combos">Combos — aba geral do app</option>{% for category in product_categories if category.active and category.name|lower != 'combos' %}<option value="{{category.name}}">{{category.name}}</option>{% endfor %}</select>
 </label>
+<label data-subcat-field261 hidden>Subcategoria (opcional)<select class="input" name="subcategory_id261" data-subcat-picker261 data-selected261="0"><option value="0">Sem subcategoria</option>{% for sc in subcategories261 if sc.active %}<option value="{{sc.id}}" data-parent261="{{sc.category_name}}">{{sc.name}}</option>{% endfor %}</select></label>
 <label>Preço normal (R$)<input class="input" name="price" inputmode="decimal" placeholder="Ex.: 29,90" required>
 </label>
 {{pairs256.fields(products)}}
