@@ -14,11 +14,14 @@
     grid.append(empty);
     const search=dashboard.querySelector('[data-pro-search]');
     let activeButton=buttons.find(button=>button.classList.contains('active'))||buttons[0];
+    const allButton=buttons.find(button=>button.dataset.proCategory==='all')||buttons[0];
     search?.addEventListener('input',()=>filter(activeButton));
     function filter(button) {
       activeButton=button;
       const query=normalize(search?.value);
-      const selected = normalize(button.dataset.proCategory);
+      // A typed search runs across the entire merchant catalog, even if a tab
+      // such as Tabacaria was selected earlier. Clearing restores the tab.
+      const selected = query ? 'all' : normalize(button.dataset.proCategory);
       let visibleCount = 0;
       grid.querySelectorAll('[data-pro-product]').forEach(card => {
         const categoryMatch = selected === 'all' || (selected === 'combos' ? card.dataset.combo === '1' || normalize(card.dataset.category) === 'combos' : selected === 'promocoes' ? card.dataset.featured === '1' : normalize(card.dataset.category) === selected);
@@ -28,7 +31,7 @@
         if (visible) visibleCount++;
       });
       buttons.forEach(item => {
-        const active = item === button;
+        const active = item === (query ? allButton : button);
         item.classList.toggle('active', active);
         item.setAttribute('aria-pressed', String(active));
       });
@@ -41,6 +44,7 @@
       if (!button || !nav.contains(button)) return;
       event.preventDefault();
       event.stopImmediatePropagation();
+      if(search?.value)search.value='';
       filter(button);
     }, true);
     if (buttons.length) filter(buttons.find(button => button.classList.contains('active')) || buttons[0]);
