@@ -143,6 +143,20 @@
                 <small>Até 20 combinações cadastradas; o cliente vê no máximo 5 sugestões e decide se adiciona.</small>
               </div>
               {% endif %}
+              {% if product.is_combo256 or product.sold_by_weight370 or product.group_parent_id260 or product.is_group_header260 %}
+              <div class="nu455-wide nu455-inherited">
+                {% if product.group_parent_id260 or product.is_group_header260 %}
+                  A montagem e o vínculo de sabores continuam disponíveis no editor de agrupadores.
+                  <a href="/painel#agrupadores260">Abrir edição avançada de agrupadores</a>
+                {% elif product.sold_by_weight370 %}
+                  Configurações de pesagem continuam no cadastro atual.
+                  <a href="/painel#produtos-peso370">Abrir produtos por peso</a>
+                {% else %}
+                  Os ingredientes e itens obrigatórios do combo permanecem no editor atual.
+                  <a href="/painel#combos-loja">Abrir montagem do combo</a>
+                {% endif %}
+              </div>
+              {% endif %}
               <button class="nu455-primary nu455-wide" type="submit">✓ Salvar alterações e seguir</button>
             </form>
           </div>
