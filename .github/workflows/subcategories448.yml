@@ -36,7 +36,7 @@ jobs:
           NOWUP_ADMIN_EMAIL: audit448@example.invalid
           NOWUP_ADMIN_PASSWORD: isolated-audit-v448-password
         run: |
-          python -m pytest -q tests/test_subcategories448.py tests/test_categories230.py tests/test_checkout247.py --disable-warnings
+          python -m pytest -q tests/test_subcategories448.py tests/test_categories230.py tests/test_checkout247.py test_admin205.py --disable-warnings
 
       - name: Instalar Node para revisar tutoriais
         uses: actions/setup-node@v4
