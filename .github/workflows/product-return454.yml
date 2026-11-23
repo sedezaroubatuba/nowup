@@ -1,0 +1,30 @@
+name: V454 - manter aba e proximo produto ao salvar
+
+on:
+  push:
+    branches:
+      - codex/retorno-edicao-categoria-20261123
+  pull_request:
+    branches:
+      - codex/categorias-icones-v230
+
+permissions:
+  contents: read
+
+jobs:
+  product-return:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Validar sintaxe JavaScript
+        run: |
+          node --check static/pro-next138.js
+          node --check static/pro-panel-menu.js
+      - name: Testar retorno de edicao, categoria e proximo produto
+        run: node --test tests/product-next423.test.cjs tests/product-return454.test.cjs
