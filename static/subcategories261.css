@@ -93,3 +93,8 @@ html body.professional-area #categorias-loja .nu449-category-list{display:block!
   html body.professional-area #categorias-loja .nu449-add-button{width:100%!important}
   html body.professional-area #categorias-loja .nu449-subcat-form>label{flex-basis:100%!important}
 }
+
+/* Preserve native collapsed details even with the dashboard's display overrides. */
+html body.professional-area #categorias-loja .nu449-category-details:not([open])>.nu449-category-body,
+html body.professional-area #categorias-loja .nu449-edit-category:not([open])>:not(summary),
+html body.professional-area #categorias-loja .nu449-bulk:not([open])>:not(summary){display:none!important}
