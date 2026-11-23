@@ -55,3 +55,18 @@
 .nu-group260-checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px 12px;margin:12px 0}
 .nu-group260-checks label{display:flex;gap:7px;align-items:center}
 .nu-group260-checks small{color:#666;margin-left:auto}
+
+/* Compact group editor: quick add at top, members hidden until requested. */
+.nu-group260-add{background:#f9f6ff;border-color:#d7c7ee!important}
+.nu-group260-add>summary{font-weight:700;line-height:1.4;list-style:none;cursor:pointer}
+.nu-group260-add>summary::-webkit-details-marker,.nu-group260-members>summary::-webkit-details-marker{display:none}
+.nu-group260-members{border:1px solid #e5def0;border-radius:10px;margin:12px 0;overflow:hidden}
+.nu-group260-members-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;cursor:pointer;list-style:none;font-weight:700;color:#4d267e}
+.nu-group260-members-summary small{color:#777;font-size:12px;font-weight:400;text-align:right}
+.nu-group260-members[open]>.nu-group260-members-summary{border-bottom:1px solid #eee7f5}
+.nu-group260-members-body{padding:12px}
+.nu-group260-members-body h3{margin:0 0 8px}
+.nu-group260-member{padding:10px}
+.nu-group260-member-title>span{min-width:0;flex:1}
+.nu-group260-member-title b{overflow-wrap:anywhere}
+@media(max-width:520px){.nu-group260-members-summary{align-items:flex-start;flex-direction:column;gap:3px}.nu-group260-members-summary small{text-align:left}.nu-group260-member-title{gap:8px}.nu-group260-toggle{min-height:36px}}
