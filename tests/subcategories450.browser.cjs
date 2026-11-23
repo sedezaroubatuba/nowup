@@ -14,14 +14,14 @@ const fixture='<html><head><meta name="viewport" content="width=device-width,ini
 +'<label>Nome da subcategoria<input class="input" name="name" placeholder="Ex.: Sedas, Tabacos, Piteiras" required></label>'
 +'<button type="submit" class="btn primary">Salvar subcategoria</button></form>'
 +'</details></div></div></details></div></div></details>'
-+'<section id="produtos-loja"><input type="search" data-pro-search placeholder="Pesquisar produto">'
++'<div id="produtos-loja"><input type="search" data-pro-search placeholder="Pesquisar produto">'
 +'<nav class="pro-product-filters"><button type="button" data-pro-category="all" class="active">Todos</button>'
 +'<button type="button" data-pro-category="Tabacaria">Tabacaria</button>'
 +'<button type="button" data-pro-category="Bebidas">Bebidas</button></nav>'
 +'<div class="product-admin-grid" data-pro-products>'
 +'<details data-pro-product data-name="Seda RAW" data-product-id="12" data-category="Tabacaria" data-featured="0"><summary><b>Seda RAW</b></summary></details>'
 +'<details data-pro-product data-name="Heineken Long Neck" data-product-id="17" data-category="Bebidas" data-featured="0"><summary><b>Heineken Long Neck</b></summary></details>'
-+'</div></section></main></body></html>';
++'</div></div></main></body></html>';
 async function launch(width=390){
  const browser=await chromium.launch({headless:true,...(process.env.NOWUP_CHROME_EXECUTABLE?{executablePath:process.env.NOWUP_CHROME_EXECUTABLE}:{})});
  const page=await browser.newPage({viewport:{width,height:844}});
