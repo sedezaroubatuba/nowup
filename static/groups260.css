@@ -70,3 +70,19 @@
 /* Respect category and text search filtering on grouped covers. */
 .nu-group260[hidden]{display:none!important}
 .nu260-mini-photo{width:48px;height:48px;flex:none;border-radius:9px;object-fit:contain;background:#f7f3fb;border:1px solid #ede3f8}
+
+/* V453: cadastro à mão; lista de produtos recolhida para evitar rolagem longa. */
+.nu-group260-add{background:#faf7ff;border:1px solid #d8c7ec!important}
+.nu-group260-add>summary,.nu-group260-members>summary{list-style:none;cursor:pointer}
+.nu-group260-add>summary::-webkit-details-marker,.nu-group260-members>summary::-webkit-details-marker{display:none}
+.nu-group260-add>summary{font-weight:700}
+.nu-group260-members{border:1px solid #e3daef;border-radius:11px;margin:12px 0;overflow:hidden;background:white}
+.nu-group260-members-summary{padding:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;color:#582e8c;font-weight:700}
+.nu-group260-members-summary small{font-size:12px;color:#70687a;font-weight:400}
+.nu-group260-members[open]>.nu-group260-members-summary{border-bottom:1px solid #eee7f5}
+.nu-group260-members-body{padding:12px}
+.nu-group260-members-body h3{margin:0 0 9px}
+.nu-group260-member{padding:10px}
+.nu-group260-member-title>span{min-width:0;flex:1}
+.nu-group260-member-title b{overflow-wrap:anywhere}
+@media(max-width:520px){.nu-group260-members-summary{align-items:flex-start;flex-direction:column;gap:4px}.nu-group260-member-title{gap:8px}.nu-group260-toggle{min-height:38px}}
