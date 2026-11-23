@@ -37,3 +37,59 @@
 .nu-subcats261-manager .nu-subcats261-existing>summary{cursor:pointer}
 
 [data-subcat-field261][hidden]{display:none!important}
+
+/* V449: category names are always visible, large and high-contrast. */
+html body.professional-area #categorias-loja .category-admin-row.nu449-category-row{
+  display:block!important;grid-template-columns:none!important;grid-column:1/-1!important;
+  width:100%!important;min-width:0!important;padding:0!important;margin:10px 0!important;
+  border:1px solid #d8c7e7!important;border-radius:14px!important;background:#fff!important;
+  opacity:1!important;filter:none!important;box-sizing:border-box!important;overflow:visible!important
+}
+html body.professional-area #categorias-loja .nu449-category-details{display:block!important;width:100%!important;min-width:0!important}
+html body.professional-area #categorias-loja .nu449-category-header{
+  display:flex!important;align-items:center!important;justify-content:space-between!important;gap:14px!important;
+  list-style:none!important;cursor:pointer!important;min-height:66px!important;
+  background:#f5f0fb!important;padding:13px 16px!important;border-radius:13px!important;
+  color:#26153b!important;opacity:1!important;visibility:visible!important;
+}
+html body.professional-area #categorias-loja .nu449-category-header::-webkit-details-marker{display:none!important}
+html body.professional-area #categorias-loja .nu449-category-name{
+  display:block!important;color:#241338!important;-webkit-text-fill-color:#241338!important;
+  opacity:1!important;filter:none!important;font-size:17px!important;font-weight:800!important;
+  line-height:1.3!important;white-space:normal!important;overflow-wrap:anywhere!important
+}
+html body.professional-area #categorias-loja .nu449-category-meta{
+  display:block!important;color:#5c5370!important;-webkit-text-fill-color:#5c5370!important;
+  opacity:1!important;font-size:12px!important;font-weight:600!important;margin-top:3px!important
+}
+html body.professional-area #categorias-loja .nu449-category-chevron{font-size:23px!important;font-weight:800!important;color:#7030b4!important;line-height:1!important}
+html body.professional-area #categorias-loja .nu449-category-details[open]>.nu449-category-header .nu449-category-chevron{transform:rotate(180deg)}
+html body.professional-area #categorias-loja .nu449-category-body{padding:14px 15px 18px!important;display:grid!important;gap:12px!important;background:#fff!important;border-radius:0 0 14px 14px!important}
+html body.professional-area #categorias-loja .nu449-category-actions{display:flex!important;flex-wrap:wrap!important;gap:8px!important}
+html body.professional-area #categorias-loja .nu449-add-button{min-height:46px!important;font-size:14px!important;font-weight:750!important}
+html body.professional-area #categorias-loja .nu449-subcat-form{display:flex!important;flex-wrap:wrap!important;gap:10px!important;align-items:end!important;padding:12px!important;border:1px solid #dbcaef!important;border-radius:12px!important;background:#f9f5ff!important;margin:0!important}
+html body.professional-area #categorias-loja .nu449-subcat-form[hidden]{display:none!important}
+html body.professional-area #categorias-loja .nu449-subcat-form>label{flex:1!important;min-width:170px!important}
+html body.professional-area #categorias-loja .nu449-subcat-empty{margin:0!important;color:#596579!important;font-size:13px!important}
+html body.professional-area #categorias-loja .nu449-subcat-list{display:grid!important;gap:6px!important}
+html body.professional-area #categorias-loja .nu449-subcat-row{padding:11px!important;border-radius:10px!important;border:1px solid #e7e0ed!important;background:#faf9fc!important}
+html body.professional-area #categorias-loja .nu449-subcat-row>form:first-child{display:flex!important;align-items:end!important;gap:10px!important;flex-wrap:wrap!important}
+html body.professional-area #categorias-loja .nu449-subcat-row>form:first-child label:first-child{flex:1!important;min-width:170px!important}
+html body.professional-area #categorias-loja .nu449-edit-category{padding:10px!important;border-top:1px solid #ebe2f3!important}
+html body.professional-area #categorias-loja .nu449-edit-category>summary,html body.professional-area #categorias-loja .nu449-bulk>summary{cursor:pointer!important;color:#52258c!important;font-size:14px!important;font-weight:700!important}
+html body.professional-area #categorias-loja .nu449-category-edit-form{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:10px!important;padding:12px 0!important}
+html body.professional-area #categorias-loja .nu449-secondary-actions{display:flex!important;align-items:end!important;justify-content:space-between!important;flex-wrap:wrap!important;gap:12px!important}
+html body.professional-area #categorias-loja .nu449-secondary-actions .nu-position142{max-width:110px!important}
+html body.professional-area #categorias-loja .nu449-category-edit-form input[name="name"],
+html body.professional-area #categorias-loja .nu449-subcat-row input[name="name"],
+html body.professional-area #categorias-loja .nu449-subcat-form input[name="name"]{
+  color:#202b3a!important;-webkit-text-fill-color:#202b3a!important;background:#fff!important;
+  opacity:1!important;filter:none!important;font-weight:650!important;
+}
+html body.professional-area #categorias-loja .nu449-category-list{display:block!important}
+@media(max-width:600px){
+  html body.professional-area #categorias-loja .nu449-category-header{padding:12px!important}
+  html body.professional-area #categorias-loja .nu449-category-body{padding:12px!important}
+  html body.professional-area #categorias-loja .nu449-add-button{width:100%!important}
+  html body.professional-area #categorias-loja .nu449-subcat-form>label{flex-basis:100%!important}
+}
