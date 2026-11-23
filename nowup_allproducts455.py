@@ -198,7 +198,7 @@ def install(ns):
                             record = dict(entry)
                             try:
                                 record["fields455"] = ", ".join(json.loads(entry["detail"]).keys())
-                            record["created_display455"] = datetime.fromisoformat(entry["created_at"]).astimezone(LOCAL_TZ).strftime("%d/%m/%Y %H:%M")
+                                record["created_display455"] = datetime.fromisoformat(entry["created_at"]).astimezone(LOCAL_TZ).strftime("%d/%m/%Y %H:%M")
                             except (TypeError, ValueError):
                                 record["fields455"] = "Edição registrada"
                             history.setdefault(entry["product_id"], []).append(record)
