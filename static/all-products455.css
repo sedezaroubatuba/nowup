@@ -122,3 +122,42 @@ body.nu455-products-page {background:#faf8fe!important;color:#251639}
 .nu455-gross{display:flex;flex-direction:column;gap:3px;padding:9px 12px;border-radius:9px;background:#f5edfc;border:1px solid #dec7ed;color:#531b7a;font-size:13px}
 .nu455-gross small{font-size:11px;color:#766082;font-weight:500}
 .nu455-report-row span small{display:block;font-size:10px;color:#7d6a8a;margin-top:4px}
+
+/* V458: contrast override for product-history header, including global theme rules.
+   Scope to this merchant page; do not affect the customer storefront. */
+html body.nu455-products-page .nu455-root > header.nu455-header{
+ background:linear-gradient(110deg,#240c35 0%,#39104f 58%,#581578 100%)!important;
+ color:#fff!important;
+}
+html body.nu455-products-page .nu455-root > header.nu455-header h1{
+ color:#fff!important;
+ -webkit-text-fill-color:#fff!important;
+ opacity:1!important;
+ font-weight:850!important;
+ text-shadow:none!important;
+}
+html body.nu455-products-page .nu455-root > header.nu455-header p{
+ color:#f5eafa!important;
+ -webkit-text-fill-color:#f5eafa!important;
+ opacity:1!important;
+ font-weight:600!important;
+ line-height:1.45!important;
+}
+html body.nu455-products-page .nu455-root > header.nu455-header small{
+ color:#e8d0f5!important;
+ -webkit-text-fill-color:#e8d0f5!important;
+ opacity:1!important;
+ font-weight:700!important;
+ letter-spacing:.015em;
+}
+html body.nu455-products-page .nu455-root > header.nu455-header a.nu455-back{
+ color:#fff!important;
+ -webkit-text-fill-color:#fff!important;
+ opacity:1!important;
+}
+html body.nu455-products-page .nu455-root > header.nu455-header a.nu455-create{
+ color:#481466!important;
+ -webkit-text-fill-color:#481466!important;
+ background:#fff!important;
+ font-weight:800!important;
+}
