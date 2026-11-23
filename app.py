@@ -2075,9 +2075,8 @@ def catalog_return328(request, fallback):
 @app.post("/painel/cardapio/produtos")
 def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), subcategory_id261: int=Form(0), price: str=Form(""), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None), sold_by_weight370: Optional[str]=Form(None), size_kind385: str=Form("none"), sizes385: str=Form(""), colors385: str=Form(""), extra_photos385: list[UploadFile]=File(default=[]), brand387: str=Form(""), material387: str=Form(""), composition387: str=Form(""), guide387: str=Form("none"), measurements387: str=Form(""), stock_mode389: str=Form("none"), stock_total389: str=Form(""), stock_sizes389: str=Form(""), stock_variants391: str=Form(""), stock_version391: str=Form(""), cost_price413: str=Form("__keep413"), barcode456: str=Form("")):
     # An unpriced item is stored as an unavailable draft, never offered at R$ 0.
-    if not price.strip():
-        price="0"
-        available=None
+    if not price.strip(): price="0"
+    if price_to_cents(price)==0: available=None
     from nowup_promotions285 import promotional_cents
     promo_cents285=promotional_cents(price_to_cents(price),promo_price,promo_mode,promo_percent,promo_enabled,price_to_cents)
     is_combo256,category=combo_kind(category,is_combo256)
@@ -2138,9 +2137,8 @@ def pro_product_add(request: Request, name: str=Form(...), description: str=Form
 @app.post("/painel/cardapio/produtos/{product_id}")
 def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), subcategory_id261: int=Form(0), price: str=Form(""), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None), sold_by_weight370: Optional[str]=Form(None), size_kind385: str=Form("none"), sizes385: str=Form(""), colors385: str=Form(""), extra_photos385: list[UploadFile]=File(default=[]), brand387: str=Form(""), material387: str=Form(""), composition387: str=Form(""), guide387: str=Form("none"), measurements387: str=Form(""), stock_mode389: str=Form("none"), stock_total389: str=Form(""), stock_sizes389: str=Form(""), stock_variants391: str=Form(""), stock_version391: str=Form(""), cost_price413: str=Form("__keep413"), barcode456: str=Form("")):
     # An unpriced item is stored as an unavailable draft, never offered at R$ 0.
-    if not price.strip():
-        price="0"
-        available=None
+    if not price.strip(): price="0"
+    if price_to_cents(price)==0: available=None
     from nowup_promotions285 import promotional_cents
     promo_cents285=promotional_cents(price_to_cents(price),promo_price,promo_mode,promo_percent,promo_enabled,price_to_cents)
     is_combo256,category=combo_kind(category,is_combo256)
