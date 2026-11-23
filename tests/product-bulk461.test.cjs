@@ -41,5 +41,15 @@ test('searching Skol actually renders both matching selectable products',()=>{
   assert.equal(doc.querySelectorAll('input[name=selected_ids]').length,1);
   doc.querySelector('.nu460-result input').click();
   assert.equal(doc.querySelectorAll('input[name=selected_ids]').length,2);
+  // The Leve Junto target chooser must also populate from the same catalogue.
+  const targetSearch=doc.querySelector('[data-bulk-target-search460]');
+  targetSearch.value='Gelo';
+  targetSearch.dispatchEvent(new dom.window.Event('input',{bubbles:true}));
+  const options=[...doc.querySelector('[data-bulk-target460]').options];
+  assert(options.some(option=>option.textContent.includes('Gelo de coco')));
+  targetSearch.value='Skol';
+  targetSearch.dispatchEvent(new dom.window.Event('input',{bubbles:true}));
+  assert(options.length>0);
+  assert([...doc.querySelector('[data-bulk-target460]').options].some(option=>option.textContent.includes('Skol Lata')));
  }finally{dom.window.close();}
 });
