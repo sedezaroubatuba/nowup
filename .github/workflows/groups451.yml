@@ -36,6 +36,15 @@ jobs:
           NOWUP_ADMIN_PASSWORD: test-grouped-v451-password
         run: |
           python -m pytest -q tests/test_groups451.py tests/test_subcategories448.py tests/test_categories230.py tests/test_checkout247.py test_admin205.py --disable-warnings
+      - name: Preparar navegador
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "NOWUP_CHROME_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          else
+            npx playwright install --with-deps chromium
+          fi
+      - name: Testar fotos e nomes no carrinho
+        run: node --test tests/groups451.browser.cjs
       - name: Conferir tutoriais e navegação
         run: |
           node --test tests/tutorials395.test.cjs
