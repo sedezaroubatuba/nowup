@@ -37,3 +37,17 @@ jobs:
           NOWUP_ADMIN_PASSWORD: isolated-audit-v448-password
         run: |
           python -m pytest -q tests/test_subcategories448.py tests/test_categories230.py tests/test_checkout247.py --disable-warnings
+
+      - name: Instalar Node para revisar tutoriais
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - name: Validar navegação dos tutoriais
+        run: node --test tests/tutorials395.test.cjs
+      - name: Gerar referência revisada (não publicar automaticamente)
+        run: |
+          node tools/check_tutorials395.cjs --reviewed
+          echo 'BASELINE_V448_START'
+          cat tests/tutorials395-reviewed.json
+          echo 'BASELINE_V448_END'
