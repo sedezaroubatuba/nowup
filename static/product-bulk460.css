@@ -1,0 +1,50 @@
+/* V460 — compact batch editing that preserves the existing product list. */
+.nu460-batch{margin:9px 0 15px;scroll-margin-top:20px}
+.nu460-panel{border:1px solid #bca0e3;border-radius:14px;background:#fff;overflow:hidden}
+.nu460-panel>summary{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:5px;cursor:pointer;padding:14px 16px;background:linear-gradient(110deg,#68209e,#8d31c2);color:white!important;list-style:none}
+.nu460-panel>summary::-webkit-details-marker{display:none}
+.nu460-panel>summary span{font-size:16px;font-weight:850;color:#fff!important}
+.nu460-panel>summary small{font-size:12px;color:#f5eaff!important;font-weight:650}
+.nu460-panel>form,.nu460-panel>.nu460-note{margin:10px 14px}
+.nu460-note{font-size:12px;color:#5a416e;line-height:1.5}
+.nu460-selection,.nu460-fields{padding:10px;background:#faf6ff;border:1px solid #e3d2f1;border-radius:10px}
+.nu460-batch label{display:flex;flex-direction:column;gap:6px;color:#48215f;font-weight:740;font-size:13px}
+.nu460-batch input:not([type=checkbox]):not([type=hidden]),.nu460-batch select{width:100%;min-height:43px;border:1px solid #cfb3e5;border-radius:9px;padding:9px 10px;background:#fff;color:#2b193b;font-size:14px;box-sizing:border-box}
+.nu460-selection-tools{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:9px 0;color:#5b1b87;font-size:12px;font-weight:800}
+.nu460-selection-tools button,.nu460-chip button{min-height:32px;background:#fff;color:#66159d;border:1px solid #dbc4ed;border-radius:8px;padding:5px 9px;cursor:pointer}
+.nu460-search-list{display:grid;gap:3px;max-height:270px;overflow:auto;overscroll-behavior:contain;background:white;border:1px solid #e6d6f0;border-radius:9px;padding:4px}
+.nu460-result{display:grid!important;grid-template-columns:20px minmax(0,1fr);align-items:center;gap:9px;min-height:49px;padding:6px 9px;border-bottom:1px solid #efe7f4;cursor:pointer}
+.nu460-result:last-child{border-bottom:0}
+.nu460-result:has(input:checked){background:#f1e5fb}
+.nu460-result input[type=checkbox]{width:19px;height:19px;accent-color:#7527b8}
+.nu460-result-text{min-width:0;display:grid;gap:3px}
+.nu460-result-text strong{font-size:12px;font-weight:750;color:#281137;overflow-wrap:anywhere}
+.nu460-result-text small{font-size:10px;font-weight:500;color:#624c71}
+.nu460-selected{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.nu460-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 6px 4px 9px;border-radius:20px;background:#ebd8fc;color:#4b1874;font-size:11px;font-weight:750;max-width:100%}
+.nu460-chip>span{overflow-wrap:anywhere}
+.nu460-chip button{border:0;background:transparent;padding:0 4px;font-size:18px;min-height:20px}
+.nu460-info{font-size:12px;color:#766080;padding:5px}
+.nu460-operation{margin:12px 0}
+.nu460-fields{margin:8px 0}
+.nu460-fields>div{display:grid;gap:10px}
+.nu460-fields>div[hidden]{display:none!important}
+.nu460-fields small{font-size:11px;line-height:1.45;color:#6a5477}
+.nu460-fields p{margin:0;font-size:12px;color:#5f4770}
+.nu460-price-editor{display:grid;gap:7px}
+.nu460-price-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(100px,150px);align-items:center;gap:8px;background:#fff;padding:8px;border:1px solid #e6d7ef;border-radius:8px}
+.nu460-price-row>span{overflow-wrap:anywhere;font-size:12px;color:#251431}
+.nu460-price-row>small{text-align:right;white-space:nowrap}
+.nu460-price-row>input{max-width:150px}
+.nu460-status{color:#962b42;font-size:12px;font-weight:740;min-height:12px}
+.nu460-submit{width:100%;min-height:46px}
+.nu460-submit:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:700px){
+ .nu460-panel>summary{padding:11px 12px}.nu460-panel>summary span{font-size:14px}
+ .nu460-panel>summary small{font-size:10px}
+ .nu460-panel>form,.nu460-panel>.nu460-note{margin:8px}
+ .nu460-price-row{grid-template-columns:minmax(0,1fr) minmax(105px,140px)}
+ .nu460-price-row>small{grid-column:1;text-align:left}
+ .nu460-price-row>input{grid-column:2;grid-row:1/3;width:100%}
+ .nu460-search-list{max-height:240px}
+}
