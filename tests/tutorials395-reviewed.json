@@ -1,5 +1,5 @@
 {
-  "templates/pro_panel.html": "b91a828d3c6455f20994c056c08e9a833db6ce126d3f35ed0c83978638136c3f",
+  "templates/pro_panel.html": "05b5a47da9540091cc306b63ba298e2236e91fc97c1160a624325329efb9d571",
   "templates/tutorials395.html": "ec9bc21e9bfe2404de0dc7545d0f48ff7a8e8938f168b3a16a6af50012acee4a",
   "templates/ingredients320.html": "fe707e67ad75db1bacd07d5bc651c38ed4003b4513655df73a07a0f69b663951",
   "templates/meals322.html": "2ba61d778ad9c9212adad6fb638a65ee3f0397daf0c6bb38bbbe258a8b916283",
@@ -13,7 +13,7 @@
   "static/pro198.js": "d45b8503e971c895968f75a9eeb2a6a0b59929801430fa492fb44d3ed11f33d7",
   "static/storefront187.js": "d57fd12be033358a98820cef444a82eaa47036979b37c32adf37347d513605ff",
   "static/fashion-layout391.js": "33e51e5b7922119530096ef3f99829b21bcefa5aef1cbb83c8a5c302949b545c",
-  "static/tutorials-data395.js": "3d76285bd17ea5d2c5ec6f237e19cd2d86ef6bde748315c3a0144eb8103462af",
+  "static/tutorials-data395.js": "3252b8b946bed9d9f6ed3091db12336152f53cb7683e88b3999358f8dfa6bdb7",
   "static/tutorials395.js": "cb67bfd2314e06130ef70d13e518036f8b1f4b430744741e293bcd2d98abf7da",
   "static/tutorials395.css": "1263edffdc064413ddf628738837f2b14ed44e0b3d28c0a0873221ef35b4b94f",
   "nowup_ingredients320.py": "a21f9752a9e7e03dc3bfe1628bdb5b08d8d7e7b15dcfc7fb9849014ef77d0192",
