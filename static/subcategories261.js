@@ -58,3 +58,14 @@ document.addEventListener('DOMContentLoaded',()=>{
     });
   });
 });
+/* V449: return directly to the category a merchant just edited. */
+document.addEventListener('DOMContentLoaded',()=>{
+  const selected=new URLSearchParams(location.search).get('categoria449');
+  if(!selected||!/^[0-9]+$/.test(selected))return;
+  const card=document.querySelector('[data-category449="'+selected+'"]');
+  if(!card)return;
+  const manager=document.getElementById('categorias-loja');
+  if(manager)manager.open=true;
+  card.open=true;
+  requestAnimationFrame(()=>card.scrollIntoView({block:'nearest',behavior:'instant'}));
+});
