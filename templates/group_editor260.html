@@ -8,13 +8,25 @@
       <label>Categoria<select name="category" required>{% for cat in product_categories if cat.active %}<option value="{{cat.name}}">{{cat.name}}</option>{% else %}<option value="Geral">Geral</option>{% endfor %}</select></label>
       <label data-subcat-field261 hidden>Subcategoria (opcional)<select class="input" name="subcategory_id261" data-subcat-picker261 data-selected261="0"><option value="0">Sem subcategoria</option>{% for sc in subcategories261 if sc.active %}<option value="{{sc.id}}" data-parent261="{{sc.category_name}}">{{sc.name}}</option>{% endfor %}</select></label>
       <label class="full">Descrição (opcional)<textarea name="description" maxlength="600" placeholder="Escolha o aroma na lista de sabores"></textarea></label>
-      <label>Foto principal<input class="input" type="file" name="photo" accept="image/*"></label>
-      <button class="btn primary">Criar agrupador</button>
+      <label>Foto da capa (única foto do grupo)<input class="input" type="file" name="photo" accept="image/*" required></label>
+      <div class="nu260-variants-builder full" data-variant-builder451>
+        <h3>Produtos individuais dentro desta capa</h3>
+        <p class="muted">Digite o nome e o preço de cada sabor. Não precisa colocar fotos individuais.</p>
+        <div class="nu260-variant-list" data-variant-list451>
+          <div class="nu260-variant-row">
+            <label>Nome / sabor<input class="input" name="variant_names" placeholder="Ex.: Morango" maxlength="140" required></label>
+            <label>Preço (R$)<input class="input" name="variant_prices" inputmode="decimal" placeholder="18,90" required></label>
+            <button type="button" class="btn soft tiny" data-remove-variant451 aria-label="Remover variação">Remover</button>
+          </div>
+        </div>
+        <button type="button" class="btn soft" data-add-variant451>＋ Adicionar outro sabor / produto</button>
+      </div>
+      <button class="btn primary">Salvar capa e todos os produtos</button>
     </form>
   </details>
   {% for group in grouped260 %}
   {% set head = group.header %}
-  <details class="nu-group260-editor" id="grupo260-{{head.id}}">
+  <details class="nu-group260-editor" id="grupo260-{{head.id}}" {% if request.query_params.get("grupo260") == head.id|string %}open{% endif %}>
     <summary class="nu-group260-editor-heading">
       {% if head.image_filename %}<img src="/uploads/{{head.image_filename}}" alt="" onerror="this.onerror=null;this.src='/static/product-placeholder.svg'">{% else %}<span>▦</span>{% endif %}
       <span><b>{{head.name}}</b><small>{{head.category}} · {{group['items']|length}} itens · {{'Ativo' if head.available else 'Oculto'}}</small></span><span>Gerenciar ›</span>
