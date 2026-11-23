@@ -69,9 +69,15 @@ def test_create_and_unfiltered_catalog(env):
     assert 'data-subcategory261="0"' in menu.text
     panel=client.get("/painel")
     assert panel.status_code==200
-    assert "Escolha uma categoria" in panel.text
-    assert "Adicionar subcategoria" in panel.text
-    assert 'data-subcats-content261 hidden' in panel.text
+    # Category names must be visible without clicking a faded input.
+    assert '<strong class="nu449-category-name">Tabacaria</strong>' in panel.text
+    assert f'data-category449="{cats["Tabacaria"]}"' in panel.text
+    assert 'class="nu449-category-summary"' in panel.text
+    # Subcategory creation is embedded in each category, never in an unrelated bottom picker.
+    assert 'class="nu449-new-subcategory"' in panel.text
+    assert 'name="category_id" value="'+str(cats["Tabacaria"])+'"' in panel.text
+    assert "＋ Adicionar subcategoria" in panel.text
+    assert "data-subcats-content261 hidden" not in panel.text
     assert "data-subcat-picker261" in panel.text
     script=(m.BASE/"static"/"storefront187.js").read_text()
     assert "selectedSubcategory261=''" in script
@@ -117,3 +123,15 @@ def test_bulk_assign_and_delete_preserve_products(env):
         assert conn.execute("SELECT subcategory_id261 FROM products WHERE id=?",(product,)).fetchone()[0]==0
         assert conn.execute("SELECT id FROM products WHERE id=?",(product,)).fetchone() is not None
     m.init_db()  # migration must be re-runnable
+
+def test_return_to_same_category_after_saving(env):
+    m, client, _, stores, cats = env
+    category_id=cats['Tabacaria']
+    response=client.post('/painel/cardapio/subcategorias261',
+        data={'category_id':category_id,'name':'Piteiras 449'},follow_redirects=False)
+    assert response.status_code==303
+    assert f'categoria449={category_id}' in response.headers.get('location','')
+    page=client.get('/painel?categoria449='+str(category_id))
+    assert page.status_code==200
+    assert f'data-category449="{category_id}"' in page.text
+    assert 'Piteiras 449' in page.text
