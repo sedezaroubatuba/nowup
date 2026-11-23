@@ -86,12 +86,13 @@
    section.hidden=!active;
    section.querySelectorAll("input,select,textarea").forEach(input=>{
     if(input.name==="prices_json"||input.name==="target_id"||input.name==="new_category"||
-       input.name==="subcategory_id261"||input.name==="available_value"){
+       input.name==="subcategory_id261"||input.name==="available_value"||input.dataset.price460){
      input.disabled=!active;
     }
    });
   });
   if(operation.value==="prices")priceInput();
+  else priceBox.querySelectorAll("input[data-price460]").forEach(input=>{input.required=false;input.disabled=true;});
  }
  function syncSubcats(){
   const current=String(subcategory.value);
@@ -143,7 +144,8 @@
     values[input.dataset.price460]=input.value.trim();
     if(!input.value.trim())input.setCustomValidity("Informe o preço.");
     else input.setCustomValidity("");
-    if(Number(input.value.trim().replace(/\./g,"").replace(",","."))<=0)input.setCustomValidity("Preço deve ser maior que zero.");
+    const parsed=Number(input.value.trim().replace(/\./g,"").replace(",","."));
+    if(!Number.isFinite(parsed)||parsed<=0)input.setCustomValidity("Preço válido deve ser maior que zero.");
     const product=byId.get(input.dataset.price460);
     const entered=Number(input.value.trim().replace(/\./g,"").replace(",","."));
     if(product&&Number.isFinite(entered)&&Math.round(entered*100)!==Number(product.price))changed=true;
