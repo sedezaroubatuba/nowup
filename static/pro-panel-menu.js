@@ -47,6 +47,18 @@
       if(search?.value)search.value='';
       filter(button);
     }, true);
+    // Expose the merchant's *selected* tab (not the temporary global search result).
+    // The post-save return flow restores the tab and query without switching categories.
+    window.NOWUP_PRO_PRODUCT_FILTERS = {
+      current: () => activeButton?.dataset.proCategory || 'all',
+      restore: (category, query) => {
+        const button = buttons.find(item => item.dataset.proCategory === category) || allButton;
+        if (search) search.value = typeof query === 'string' ? query : '';
+        filter(button);
+      },
+      visibleCards: () => Array.from(grid.querySelectorAll('[data-pro-product]'))
+        .filter(card => !card.hidden && card.style.display !== 'none')
+    };
     if (buttons.length) filter(buttons.find(button => button.classList.contains('active')) || buttons[0]);
   }
 
