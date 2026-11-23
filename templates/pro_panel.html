@@ -193,7 +193,7 @@ body.fashion-store385 :is(a[href="#lanches-refeicoes322"],a[href="#combos-loja"]
 <link rel="stylesheet" href="/static/subcategories449.css?v=450">
 <details class="product-create" id="novo-produto" {% if request.query_params.get("ok")=="produto" %}open{% endif %}>
 {% if request.query_params.get("ok")=="produto" %}<p role="status">Produto cadastrado! Cadastre o próximo produto abaixo.</p>{% endif %}
-<summary class="btn primary" role="button">＋ Adicionar produto</summary>
+<summary class="btn primary" role="button">＋ Adicionar produto</summary><p><a class="btn soft" href="#agrupadores260">▦ Produto com sabores ou variações (uma única foto)</a></p>
 {% if pro.business_type=='fashion' %}<p>Moda e acessórios • R$ 49,90/mês no catálogo com WhatsApp</p>{{fashion385.form(product_categories,products)}}{% else %}<nav class="nu322-tabs" aria-label="Tipo de cadastro"><a class="btn primary" href="#novo-produto" data-nav198>Produtos</a><a class="btn soft" href="#lanches-refeicoes322" data-nav198>Lanches e refeições</a></nav>
 <form action="/painel/cardapio/produtos" method="post" enctype="multipart/form-data" class="product-form">
 <label class="full">Este produto é um combo?<select name="is_combo256" data-combo-type303><option value="0" selected>Não</option><option value="1">Sim</option></select><small>Ao marcar Sim, configure os produtos e as quantidades. A categoria é independente.</small></label>
@@ -221,9 +221,14 @@ body.fashion-store385 :is(a[href="#lanches-refeicoes322"],a[href="#combos-loja"]
 <button class="btn primary">Salvar e cadastrar próximo</button>
 </form>{% endif %}
 </details>
+{% if pro.is_premium and pro.offer_mode in ['menu','catalog'] and pro.business_type!='fashion' %}
+{% include "group_editor260.html" %}
+{% endif %}
+<link rel="stylesheet" href="/static/groups260.css?v=451">
+<script src="/static/groups260.js?v=451" defer></script>
 
 <section id="produtos-loja" class="panel full" aria-label="Pesquisar e editar produtos"><h3>Produtos</h3><label for="pesquisar-produtos299">Pesquisar produtos</label><input id="pesquisar-produtos299" class="input" type="search" data-pro-search placeholder="Digite o nome ou código do produto" autocomplete="off" style="width:100%;min-height:48px;margin:8px 0 12px"><nav class="menu-category-nav pro-product-filters" aria-label="Filtrar produtos do painel"><button type="button" class="active" data-pro-category="all">Todos</button><a class="btn soft" href="#combos-loja" data-nav198>🍻 Combos</a><button type="button" data-pro-category="promocoes">Promoções</button>{% for category in product_categories if category.name|lower != 'combos' %}<button type="button" data-pro-category="{{category.name}}">{{category.name}}</button>{% endfor %}</nav><p class="muted">Para montar ou editar um combo, abra a área Combos.</p></section>
-<div class="product-admin-grid" data-pro-products>{% for product in products if product.id not in meal_ids322 and not product.sold_by_weight370 %}{% include 'merchant_product_card.html' %}{% else %}<div class="empty-state full">
+<div class="product-admin-grid" data-pro-products>{% for product in products if product.id not in meal_ids322 and not product.sold_by_weight370 and not product.is_group_header260 and not product.group_parent_id260 %}{% include 'merchant_product_card.html' %}{% else %}<div class="empty-state full">
 <span>🍽</span>
 <h3>Nenhum produto comum cadastrado</h3>
 <p class="muted">Use “Adicionar produto”. Produtos por peso ficam na área própria.</p>
