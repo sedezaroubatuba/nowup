@@ -101,7 +101,9 @@ def _member(conn, owner, group_id, item_id):
     return row
 
 
-def _redirect():
+def _redirect(group_id=None):
+    if group_id:
+        return RedirectResponse(f"/painel?ok=agrupador&grupo260={group_id}#grupo260-{group_id}", status_code=303)
     return RedirectResponse("/painel?ok=agrupador#agrupadores260", status_code=303)
 
 
@@ -110,7 +112,6 @@ def register(app, db, require_user, require_premium_catalog, save_image, price_t
     @app.post("/painel/cardapio/agrupadores")
     def group_create260(request: Request, name: str = Form(...), category: str = Form(...),
                         subcategory_id261: int = Form(0), description: str = Form(""),
-                        variant_names: list[str] = Form([]), variant_prices: list[str] = Form([]),
                         photo: UploadFile | None = File(None)):
         user = require_user(request, "professional")
         conn = db()
@@ -121,16 +122,9 @@ def register(app, db, require_user, require_premium_catalog, save_image, price_t
                 raise HTTPException(400, "Informe o nome do agrupador.")
             cat = _valid_category(conn, pro["id"], category)
             subcat = nowup_subcategories448.valid_selection(conn, pro["id"], cat, subcategory_id261)
-            if len(variant_names) != len(variant_prices) or not 1 <= len(variant_names) <= 80:
-                raise HTTPException(400, "Adicione de 1 a 80 variações com nome e preço.")
-            variants = []
-            for raw_name, raw_price in zip(variant_names, variant_prices):
-                flavor = raw_name.strip()[:140]
-                cents = price_to_cents(raw_price)
-                if not flavor or cents <= 0:
-                    raise HTTPException(400, "Cada variação precisa de nome e preço maior que zero.")
-                variants.append((flavor, cents))
-            fn = save_image(photo) if photo and photo.filename else ""
+            if not photo or not photo.filename:
+                raise HTTPException(400, "Envie a foto de capa que será usada no agrupador.")
+            fn = save_image(photo)
             created = now_iso()
             cur = conn.execute(
                 """INSERT INTO products(professional_id,name,description,category,price_cents,image_filename,
@@ -138,19 +132,13 @@ def register(app, db, require_user, require_premium_catalog, save_image, price_t
                    VALUES(?,?,?,?,0,?,1,?,?,1)""",
                 (pro["id"], clean, description.strip()[:600], cat, fn, created, created),
             )
-            parent_id = cur.lastrowid
-            conn.execute("UPDATE products SET subcategory_id261=? WHERE id=?", (subcat, parent_id))
-            for flavor, cents in variants:
-                conn.execute(
-                    """INSERT INTO products(professional_id,name,description,category,price_cents,
-                       image_filename,available,created_at,updated_at,group_parent_id260)
-                       VALUES(?,?,'',?,?, '',1,?,?,?)""",
-                    (pro["id"], flavor, cat, cents, created, created, parent_id),
-                )
+            group_id = cur.lastrowid
+            conn.execute("UPDATE products SET subcategory_id261=? WHERE id=? AND professional_id=?",
+                         (subcat, group_id, pro["id"]))
             conn.commit()
         finally:
             conn.close()
-        return RedirectResponse(f"/painel?ok=agrupador&grupo260={parent_id}#grupo260-{parent_id}", 303)
+        return RedirectResponse(f"/painel?ok=agrupador&grupo260={group_id}#grupo260-{group_id}", 303)
 
 
     @app.post("/painel/cardapio/agrupadores/{group_id}")
@@ -179,7 +167,7 @@ def register(app, db, require_user, require_premium_catalog, save_image, price_t
             conn.commit()
         finally:
             conn.close()
-        return _redirect()
+        return _redirect(group_id)
 
     @app.post("/painel/cardapio/agrupadores/{group_id}/itens")
     def item_create260(request: Request, group_id: int, name: str = Form(...), price: str = Form(...),
@@ -205,7 +193,7 @@ def register(app, db, require_user, require_premium_catalog, save_image, price_t
             conn.commit()
         finally:
             conn.close()
-        return _redirect()
+        return _redirect(group_id)
 
     @app.post("/painel/cardapio/agrupadores/{group_id}/itens/{item_id}")
     def item_edit260(request: Request, group_id: int, item_id: int, name: str = Form(...),
@@ -237,7 +225,7 @@ def register(app, db, require_user, require_premium_catalog, save_image, price_t
             conn.commit()
         finally:
             conn.close()
-        return _redirect()
+        return _redirect(group_id)
 
     @app.post("/painel/cardapio/agrupadores/{group_id}/itens/{item_id}/disponibilidade")
     def item_available260(request: Request, group_id: int, item_id: int, available: int = Form(...)):
@@ -254,7 +242,7 @@ def register(app, db, require_user, require_premium_catalog, save_image, price_t
             conn.commit()
         finally:
             conn.close()
-        return _redirect()
+        return _redirect(group_id)
 
     @app.post("/painel/cardapio/agrupadores/{group_id}/vincular")
     def item_link260(request: Request, group_id: int, item_id: int = Form(...)):
@@ -273,7 +261,7 @@ def register(app, db, require_user, require_premium_catalog, save_image, price_t
             conn.commit()
         finally:
             conn.close()
-        return _redirect()
+        return _redirect(group_id)
 
     @app.post("/painel/cardapio/agrupadores/{group_id}/itens/{item_id}/desvincular")
     def item_unlink260(request: Request, group_id: int, item_id: int):
@@ -288,7 +276,7 @@ def register(app, db, require_user, require_premium_catalog, save_image, price_t
             conn.commit()
         finally:
             conn.close()
-        return _redirect()
+        return _redirect(group_id)
 
     @app.post("/painel/cardapio/agrupadores/{group_id}/promocao")
     def group_promotion260(request: Request, group_id: int, item_ids: list[int] = Form([]),
@@ -333,7 +321,7 @@ def register(app, db, require_user, require_premium_catalog, save_image, price_t
             conn.commit()
         finally:
             conn.close()
-        return _redirect()
+        return _redirect(group_id)
 
     @app.post("/painel/cardapio/agrupadores/{group_id}/excluir")
     def group_delete260(request: Request, group_id: int):
@@ -350,4 +338,4 @@ def register(app, db, require_user, require_premium_catalog, save_image, price_t
             conn.commit()
         finally:
             conn.close()
-        return _redirect()
+        return _redirect(group_id)
