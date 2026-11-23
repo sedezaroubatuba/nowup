@@ -2,26 +2,15 @@
   <div class="section-title"><div><span class="kicker">Produtos por sabores, modelos ou aromas</span><h2>Produtos agrupadores</h2></div></div>
   <p class="muted">Um único cartão com foto na categoria escolhida. Dentro dele, cada item tem seu próprio preço, disponibilidade, histórico de vendas, sem precisar de foto individual.</p>
   <details class="nu-group260-create">
-    <summary class="btn primary">＋ Criar produto agrupador</summary>
+    <summary class="btn primary">＋ Criar produto agrupador (capa)</summary>
     <form action="/painel/cardapio/agrupadores" method="post" enctype="multipart/form-data" class="product-form">
       <label>Nome do agrupador<input class="input" name="name" maxlength="140" placeholder="Ex.: Essências Ziggy — Sabores" required></label>
       <label>Categoria<select name="category" required>{% for cat in product_categories if cat.active %}<option value="{{cat.name}}">{{cat.name}}</option>{% else %}<option value="Geral">Geral</option>{% endfor %}</select></label>
       <label data-subcat-field261 hidden>Subcategoria (opcional)<select class="input" name="subcategory_id261" data-subcat-picker261 data-selected261="0"><option value="0">Sem subcategoria</option>{% for sc in subcategories261 if sc.active %}<option value="{{sc.id}}" data-parent261="{{sc.category_name}}">{{sc.name}}</option>{% endfor %}</select></label>
       <label class="full">Descrição (opcional)<textarea name="description" maxlength="600" placeholder="Escolha o aroma na lista de sabores"></textarea></label>
       <label>Foto da capa (única foto do grupo)<input class="input" type="file" name="photo" accept="image/*" required></label>
-      <div class="nu260-variants-builder full" data-variant-builder451>
-        <h3>Produtos individuais dentro desta capa</h3>
-        <p class="muted">Digite o nome e o preço de cada sabor. Não precisa colocar fotos individuais.</p>
-        <div class="nu260-variant-list" data-variant-list451>
-          <div class="nu260-variant-row">
-            <label>Nome / sabor<input class="input" name="variant_names" placeholder="Ex.: Morango" maxlength="140" required></label>
-            <label>Preço (R$)<input class="input" name="variant_prices" inputmode="decimal" placeholder="18,90" required></label>
-            <button type="button" class="btn soft tiny" data-remove-variant451 aria-label="Remover variação">Remover</button>
-          </div>
-        </div>
-        <button type="button" class="btn soft" data-add-variant451>＋ Adicionar outro sabor / produto</button>
-      </div>
-      <button class="btn primary">Salvar capa e todos os produtos</button>
+      <p class="muted full">Após salvar a capa, clique em <strong>+ Adicionar produto</strong>. A categoria será herdada automaticamente.</p>
+      <button class="btn primary" type="submit">Criar capa e escolher produtos</button>
     </form>
   </details>
   {% for group in grouped260 %}
@@ -43,12 +32,13 @@
           <button class="btn primary">Salvar agrupador</button>
         </form>
       </details>
-      <h3>Itens e disponibilidade</h3>
+      <h3>Produtos deste agrupador</h3><p class="muted">Categoria: <b>{{head.category}}</b>. Cada produto é vendido individualmente.</p>
       <p class="muted">O funcionário pode marcar cada sabor como disponível ou indisponível sem abrir a edição completa.</p>
       <div class="nu-group260-member-list">
         {% for item in group['items'] %}
         <div class="nu-group260-member">
           <div class="nu-group260-member-title">
+            {% if item.image_filename %}<img class="nu260-mini-photo" src="/uploads/{{item.image_filename}}" alt="Foto de {{item.name}}">{% elif head.image_filename %}<img class="nu260-mini-photo" src="/uploads/{{head.image_filename}}" alt="Foto da capa">{% endif %}
             <span><b>{{item.name}}</b><small>R$ {{'%.2f'|format(item.price_cents/100)|replace('.',',')}}{% if item.promo_price_cents>0 %} · Promo cadastrada: R$ {{'%.2f'|format(item.promo_price_cents/100)|replace('.',',')}}{% endif %}</small></span>
             <form action="/painel/cardapio/agrupadores/{{head.id}}/itens/{{item.id}}/disponibilidade" method="post">
               <input name="available" type="hidden" value="{{0 if item.available else 1}}">
@@ -60,6 +50,7 @@
               <label>Nome<input class="input" name="name" value="{{item.name}}" maxlength="140" required></label>
               <label>Preço<input class="input" name="price" value="{{'%.2f'|format(item.price_cents/100)|replace('.',',')}}" required></label>
               <label>Preço promocional individual (opcional)<input class="input" name="promo_price" value="{% if item.promo_price_cents %}{{'%.2f'|format(item.promo_price_cents/100)|replace('.',',')}}{% endif %}" placeholder="Deixe vazio para retirar"></label>
+              <label>Foto individual (opcional)<input class="input" name="photo" type="file" accept="image/*"><small>Se deixar sem foto, aparecerá a imagem da capa principal.</small></label>
               
               <label class="check"><input name="available" type="checkbox" value="1" {% if item.available %}checked{% endif %}> Disponível</label>
               <button class="btn primary">Salvar item</button>
@@ -69,10 +60,11 @@
         </div>
         {% else %}<p class="muted">Cadastre os sabores ou vincule produtos existentes abaixo.</p>{% endfor %}
       </div>
-      <details class="nu-group260-add"><summary class="btn soft">＋ Adicionar sabor, modelo ou aroma</summary>
+      <details class="nu-group260-add"><summary class="btn soft">＋ Adicionar produto (nome, preço e foto opcional)</summary>
         <form action="/painel/cardapio/agrupadores/{{head.id}}/itens" method="post" enctype="multipart/form-data" class="product-form">
           <label>Nome<input class="input" name="name" placeholder="Ex.: Morango 50 g" maxlength="140" required></label>
           <label>Preço<input class="input" name="price" placeholder="12,00" required></label>
+          <label>Foto do produto (opcional)<input class="input" name="photo" type="file" accept="image/*"><small>Sem foto própria, o item usa a foto da capa.</small></label>
           
           <label class="check"><input type="checkbox" name="available" value="1" checked> Disponível</label>
           <button class="btn primary">Adicionar item</button>
