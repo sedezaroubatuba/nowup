@@ -67,7 +67,7 @@
         <summary>
           <span class="nu455-chevron" aria-hidden="true">›</span>
           <span class="nu455-name">{{product.name}}
-            <small>{% if product.is_group_header260 %}▦ Capa de agrupador{% elif product.group_parent_id260 %}↳ {{product.group_name455}}{% else %}Código {{product.id}}{% endif %}</small>
+            <small>{% if product.is_group_header260 %}▦ Capa de agrupador{% elif product.group_parent_id260 %}↳ {{product.group_name455}}{% elif product.is_combo256 %}🍻 Combo · Código {{product.id}}{% elif product.sold_by_weight370 %}⚖ Por peso · Código {{product.id}}{% else %}Código {{product.id}}{% endif %}</small>
           </span>
           <span class="nu455-category">{{product.category}}</span>
           <strong class="nu455-price">{% if product.is_group_header260 %}Capa{% else %}R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}{% endif %}</strong>
@@ -81,7 +81,7 @@
           </div>
           <div class="nu455-form-side">
             <h3>{{product.name}}</h3>
-            <p class="nu455-muted">Código interno {{product.id}} · Última alteração: {{product.updated_at[:16]|replace('T',' ')}}</p>
+            <p class="nu455-muted">Código interno {{product.id}} · Última alteração: {{product.updated_display455}}</p>
             <form class="nu455-edit-form" method="post" action="/painel/todos-produtos/{{product.id}}/editar" enctype="multipart/form-data">
               <input type="hidden" name="return_q455" value="{{q455}}">
               <input type="hidden" name="return_category455" value="{{category455}}">
@@ -157,7 +157,7 @@
             <p class="nu455-muted">{% if product.inventory455 is not none %}Estoque controlado: {{product.inventory455}} un.{% else %}Estoque numérico não controlado neste cadastro.{% endif %}
             {% if product.is_group_header260 %} Esta capa reúne as vendas dos itens do agrupador.{% elif product.group_parent_id260 %} Este é um item individual do agrupador "{{product.group_name455}}".{% endif %}</p>
             <details class="nu455-audit"><summary>Histórico de edições nesta nova área</summary>
-              {% for audit in history455.get(product.id,[]) %}<p>{{audit.created_at[:16]|replace('T',' ')}} — {{audit.fields455}}</p>
+              {% for audit in history455.get(product.id,[]) %}<p>{{audit.created_display455|default(audit.created_at[:16]|replace('T',' '))}} — {{audit.fields455}}</p>
               {% else %}<p>As alterações feitas a partir desta nova área serão registradas aqui. Alterações antigas não foram recuperadas.</p>{% endfor %}
             </details>
             <form class="nu455-delete" action="/painel/todos-produtos/{{product.id}}/excluir" method="post" data-confirm-delete>
