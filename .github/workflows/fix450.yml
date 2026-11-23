@@ -1,0 +1,50 @@
+name: V450 - formulário mobile e pesquisa de produtos
+on:
+  push:
+    branches: [fix/v450-subcategoria-form-busca]
+  pull_request:
+    branches: [codex/categorias-icones-v230]
+permissions:
+  contents: read
+jobs:
+  ui-v450:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          python -m pip install -r requirements-dev.txt
+          npm ci
+      - name: Javascript syntax and product tests
+        env:
+          NOWUP_DB_ENGINE: sqlite
+          NOWUP_ADMIN_EMAIL: isolated-450@example.invalid
+          NOWUP_ADMIN_PASSWORD: isolated-v450-pass
+        run: |
+          node --check static/pro-panel-menu.js
+          node --check static/menu88.js
+          node --check static/storefront187.js
+          python -m pytest -q tests/test_subcategories448.py tests/test_categories230.py tests/test_checkout247.py test_admin205.py --disable-warnings
+      - name: Setup Chromium
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "NOWUP_CHROME_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          else
+            npx playwright install --with-deps chromium
+          fi
+      - name: Validate mobile form, tab switching and search
+        run: node --test tests/subcategories450.browser.cjs
+      - name: Tutorial navigation and baseline output
+        run: |
+          node --test tests/tutorials395.test.cjs
+          node tools/check_tutorials395.cjs --reviewed
+          echo 'BASELINE_V450_START'
+          cat tests/tutorials395-reviewed.json
+          echo 'BASELINE_V450_END'

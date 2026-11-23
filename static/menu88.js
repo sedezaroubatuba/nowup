@@ -150,7 +150,14 @@
   const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   const filter=()=>root.querySelectorAll('[data-product]').forEach(p=>p.hidden=(category!=='all'&&p.dataset.category!==category)||!normalize(p.dataset.name+' '+p.textContent).includes(normalize(search?.value)));
   root.querySelectorAll('[data-category-filter]').forEach(b=>b.addEventListener('click',()=>{category=b.dataset.categoryFilter;root.querySelectorAll('[data-category-filter]').forEach(x=>x.classList.toggle('active',x===b));filter();}));
-  search?.addEventListener('input',filter);
+  search?.addEventListener('input',()=>{
+    // Search across all products, even if a category chip was active earlier.
+    if(search.value.trim()){
+      category='all';
+      root.querySelectorAll('[data-category-filter]').forEach(x=>x.classList.toggle('active',x.dataset.categoryFilter==='all'));
+    }
+    filter();
+  });
   root.querySelector('[data-cart-summary]')?.addEventListener('click',()=>{const summary=root.querySelector('.menu-cart');summary?.scrollIntoView({behavior:'smooth',block:'center'});summary?.focus({preventScroll:true});});
   function openOrderDialog353(target){
     // Keep order dialogs outside catalogue sections that can be hidden by filters.

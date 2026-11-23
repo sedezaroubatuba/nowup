@@ -251,7 +251,19 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  window.addEventListener('resize',()=>requestAnimationFrame(sizeCombos275));
  function searchView354(event){
   if(event.target!==search)return;
-  if(selectedCategory){event.stopImmediatePropagation();filterCategory();return;}
+  if(selectedCategory){
+    if(search.value.trim()){
+      // Searching a product name is global even after entering a category.
+      // Move to the full catalog before delegating the input to native search.
+      event.stopImmediatePropagation();
+      showProducts();
+      search.dispatchEvent(new Event('input',{bubbles:true}));
+    }else{
+      event.stopImmediatePropagation();
+      filterCategory();
+    }
+    return;
+  }
   // Legacy target listeners stop propagation. Switch views in capture phase
   // too, so paste/autofill can search without a preceding click or keydown.
   if(body.classList.contains('nu187-store-home')&&search.value.trim())showProducts();
