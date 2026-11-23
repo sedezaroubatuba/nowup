@@ -10,6 +10,8 @@
  if(count)new MutationObserver(refresh).observe(count,{childList:true,characterData:true,subtree:true});refresh();
  }
  root.querySelectorAll('.menu-products>[data-product]').forEach(card=>{
+ // Group covers contain nested products: never move a child's controls to the cover.
+ if(card.dataset.group260==='1')return;
  const photo=card.querySelector(':scope>img,:scope>.menu-product-placeholder');
  const quantity=card.querySelector('[data-product-quantity]')?.closest('label');
  if(photo&&quantity){const media=document.createElement('div');media.className='nu163-media';photo.before(media);media.append(photo,quantity);quantity.classList.add('nu163-quantity');quantity.setAttribute('aria-label','Quantidade de '+card.dataset.name);[...quantity.childNodes].filter(n=>n.nodeType===3).forEach(n=>n.remove());}
