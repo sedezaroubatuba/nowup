@@ -52,6 +52,8 @@ def test_create_and_unfiltered_catalog(env):
         response=client.post("/painel/cardapio/subcategorias261",
                              data={"category_id":cid,"name":name},follow_redirects=False)
         assert response.status_code==303
+        assert response.headers['location'].startswith('/painel?ok=subcategoria&categoria449=')
+        assert response.headers['location'].endswith('#categoria-'+str(cid))
     with m.db() as conn:
         seda=conn.execute("SELECT id FROM product_subcategories261 WHERE professional_id=? AND name='Sedas'",
                          (stores[0]["id"],)).fetchone()
@@ -69,10 +71,17 @@ def test_create_and_unfiltered_catalog(env):
     assert 'data-subcategory261="0"' in menu.text
     panel=client.get("/painel")
     assert panel.status_code==200
-    assert "Escolha uma categoria" in panel.text
+    # V449: category names are visible before expanding, and each category owns its form.
+    assert f'id="categoria-{cats["Tabacaria"]}"' in panel.text
+    assert 'class="nu449-category-name">Tabacaria</strong>' in panel.text
+    assert f'aria-controls="nu449-new-subcat-{cats["Tabacaria"]}"' in panel.text
     assert "Adicionar subcategoria" in panel.text
-    assert 'data-subcats-content261 hidden' in panel.text
+    assert 'data-subcats-content261 hidden' not in panel.text
+    assert "Escolha uma categoria" not in panel.text
     assert "data-subcat-picker261" in panel.text
+    resumed=client.get(f'/painel?categoria449={cats["Tabacaria"]}')
+    assert resumed.status_code==200
+    assert f'id="categoria-{cats["Tabacaria"]}" open' in resumed.text
     script=(m.BASE/"static"/"storefront187.js").read_text()
     assert "selectedSubcategory261=''" in script
     assert "subcatOptions261.hidden=true" in script
