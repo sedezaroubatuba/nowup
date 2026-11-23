@@ -1,32 +1,14 @@
 /* NowUp v261: parent-first setup, optional product assignment and bulk actions. */
 document.addEventListener('DOMContentLoaded',()=>{
-  document.querySelectorAll('[data-subcats-admin261]').forEach(manager=>{
-    const category=manager.querySelector('[data-subcats-category261]');
-    const content=manager.querySelector('[data-subcats-content261]');
-    const sectors=[...manager.querySelectorAll('[data-subcats-sector261]')];
-    function showSector(){
-      const chosen=category?.value||'';
-      if(content)content.hidden=!chosen;
-      sectors.forEach(section=>{
-        section.hidden=section.dataset.subcatsSector261!==chosen;
-        if(section.hidden){
-          const form=section.querySelector('[data-subcats-add-form261]');
-          const toggle=section.querySelector('[data-subcats-add-toggle261]');
-          if(form)form.hidden=true;
-          if(toggle)toggle.setAttribute('aria-expanded','false');
-        }
-      });
-    }
-    category?.addEventListener('change',showSector);
-    showSector();
-    manager.querySelectorAll('[data-subcats-add-toggle261]').forEach(btn=>{
-      btn.addEventListener('click',()=>{
-        const form=btn.closest('[data-subcats-sector261]')?.querySelector('[data-subcats-add-form261]');
-        if(!form)return;
-        form.hidden=!form.hidden;
-        btn.setAttribute('aria-expanded',String(!form.hidden));
-        if(!form.hidden)form.querySelector('input[name="name"]')?.focus();
-      });
+  // V449: the category itself owns the add-subcategory control.
+  document.querySelectorAll('#categorias-loja .nu449-category-details').forEach(detail=>{
+    const button=detail.querySelector('[data-subcats-add-toggle261]');
+    const form=detail.querySelector('[data-subcats-add-form261]');
+    if(!button||!form)return;
+    button.addEventListener('click',()=>{
+      form.hidden=!form.hidden;
+      button.setAttribute('aria-expanded',String(!form.hidden));
+      if(!form.hidden)form.querySelector('input[name="name"]')?.focus();
     });
   });
 
