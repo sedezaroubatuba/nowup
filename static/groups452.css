@@ -1,0 +1,348 @@
+/* V452 — opção 2 aprovada: capa e lista vertical compacta, sem letras na vertical.
+   These selectors deliberately outrank the generic two-column catalog rules. */
+html body.public-profile-area [data-native-menu] .menu-products > details.menu-product.nu-group260[data-group260="1"] {
+  display: block !important;
+  grid-template-columns: minmax(0,1fr) !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: auto !important;
+  padding: 0 !important;
+  margin: 0 0 12px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  border: 1px solid #d8bdf0 !important;
+  border-radius: 18px !important;
+  background: #fff !important;
+}
+html body.public-profile-area [data-native-menu] .menu-products > details.nu-group260[hidden] {
+  display: none !important;
+}
+html body.public-profile-area [data-native-menu] .menu-products > details.nu-group260 > summary.nu-group260-cover {
+  display: grid !important;
+  grid-column: 1 / -1 !important;
+  grid-template-columns: 92px minmax(0,1fr) !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  gap: 12px !important;
+  align-items: center !important;
+  min-height: 112px !important;
+  margin: 0 !important;
+  padding: 12px !important;
+  background: #f8f3fd !important;
+  cursor: pointer;
+  list-style: none;
+}
+html body.public-profile-area [data-native-menu] .nu-group260-cover::-webkit-details-marker { display: none !important; }
+html body.public-profile-area [data-native-menu] .nu-group260-cover::marker { content: "" !important; }
+html body.public-profile-area [data-native-menu] .nu-group260-cover > img,
+html body.public-profile-area [data-native-menu] .nu-group260-cover > .nu-group260-placeholder {
+  width: 92px !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: 94px !important;
+  min-height: 0 !important;
+  object-fit: contain !important;
+  border-radius: 12px !important;
+  margin: 0 !important;
+  background: #fff !important;
+}
+html body.public-profile-area [data-native-menu] .nu-group260-cover > .menu-product-info {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  grid-column: 2 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: visible !important;
+}
+html body.public-profile-area [data-native-menu] .nu-group260-cover h3 {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 0 5px !important;
+  font-size: 17px !important;
+  line-height: 1.3 !important;
+  font-weight: 800 !important;
+  color: #26183e !important;
+  text-align: left !important;
+  writing-mode: horizontal-tb !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+}
+html body.public-profile-area [data-native-menu] .nu-group260-cover .menu-product-info > p {
+  display: block !important;
+  width: auto !important;
+  margin: 0 0 7px !important;
+  font-size: 13px !important;
+  color: #665877 !important;
+  line-height: 1.4 !important;
+  writing-mode: horizontal-tb !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+}
+html body.public-profile-area [data-native-menu] .nu-group260-cover .nu-group260-open {
+  display: inline-block !important;
+  width: auto !important;
+  max-width: 100% !important;
+  margin: 4px 0 0 !important;
+  padding: 5px 9px !important;
+  border-radius: 12px !important;
+  background: #eee1fb !important;
+  color: #682ba9 !important;
+  font-weight: 750 !important;
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+  text-align: left !important;
+  writing-mode: horizontal-tb !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+}
+html body.public-profile-area [data-native-menu] .menu-products > details.nu-group260 > .nu-group260-items {
+  display: grid !important;
+  grid-column: 1 / -1 !important;
+  grid-template-columns: minmax(0,1fr) !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  gap: 7px !important;
+  box-sizing: border-box !important;
+  padding: 12px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: #fff !important;
+}
+html body.public-profile-area [data-native-menu] .nu-group260:not([open]) > .nu-group260-items { display:none !important; }
+html body.public-profile-area [data-native-menu] .nu-group260-items > .nu452-list-title {
+  display:block !important;
+  width:100% !important;
+  margin: 0 !important;
+  padding: 0 2px !important;
+  color: #3a2255 !important;
+  font-size: 15px !important;
+  font-weight: 750 !important;
+  line-height:1.35 !important;
+}
+html body.public-profile-area [data-native-menu] .nu-group260-items > .nu-group260-hint {
+  display:block !important;
+  width:100% !important;
+  margin: 0 0 5px !important;
+  padding: 0 2px !important;
+  color:#71617e !important;
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+  word-break:normal !important;
+}
+html body.public-profile-area [data-native-menu] .nu-group260-items > article.nu-group260-row {
+  display: grid !important;
+  grid-template-columns: 58px minmax(0,1fr) 108px !important;
+  grid-template-rows: auto !important;
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  min-height:102px !important;
+  box-sizing:border-box !important;
+  align-items:center !important;
+  gap:8px !important;
+  margin:0 !important;
+  padding:10px 8px !important;
+  border:1px solid #eee7f4 !important;
+  border-radius:13px !important;
+  background:#fff !important;
+  overflow:visible !important;
+}
+html body.public-profile-area [data-native-menu] .nu-group260-items > article.nu-group260-row[hidden] {
+  display:none !important;
+}
+html body.public-profile-area [data-native-menu] .nu-group260-row > img {
+  display:block !important;
+  width:58px !important;
+  max-width:100% !important;
+  height:66px !important;
+  min-height:0 !important;
+  margin:0 !important;
+  object-fit:contain !important;
+  border-radius:9px !important;
+  background:#f8f5fb !important;
+}
+html body.public-profile-area [data-native-menu] .nu-group260-row > .nu-group260-row-main {
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  box-sizing:border-box !important;
+  gap:5px !important;
+  margin:0 !important;
+  padding:0 !important;
+  writing-mode:horizontal-tb !important;
+}
+html body.public-profile-area [data-native-menu] .nu-group260-row h4 {
+  display:block !important;
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  font-weight:750 !important;
+  font-size:14px !important;
+  line-height:1.35 !important;
+  color:#251735 !important;
+  text-align:left !important;
+  margin:0 !important;
+  writing-mode:horizontal-tb !important;
+  word-break:normal !important;
+  overflow-wrap:break-word !important;
+  white-space:normal !important;
+}
+html body.public-profile-area [data-native-menu] .nu-group260-row strong {
+  display:block !important;
+  max-width:100% !important;
+  margin:0 !important;
+  font-size:14px !important;
+  line-height:1.35 !important;
+  color:#7032b8 !important;
+  font-weight:800 !important;
+  white-space:normal !important;
+  word-break:normal !important;
+  overflow-wrap:break-word !important;
+}
+html body.public-profile-area [data-native-menu] .nu-group260-row > .product-buy {
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+  justify-content:center !important;
+  width:108px !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  gap:6px !important;
+  margin:0 !important;
+  padding:0 !important;
+  box-sizing:border-box !important;
+}
+html body.public-profile-area [data-native-menu] .nu-group260-row .product-buy > label {
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:2px !important;
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  box-sizing:border-box !important;
+  font-size:0 !important;
+  margin:0 !important;
+  white-space:nowrap !important;
+}
+html body.public-profile-area [data-native-menu] .nu-group260-row .product-buy input[data-product-quantity]{
+  display:block !important;
+  flex:1 1 38px !important;
+  width:38px !important;
+  min-width:0 !important;
+  max-width:44px !important;
+  height:34px !important;
+  min-height:34px !important;
+  padding:2px 0 !important;
+  margin:0 !important;
+  font-size:15px !important;
+  text-align:center !important;
+  box-sizing:border-box !important;
+}
+html body.public-profile-area [data-native-menu] .nu-group260-row .product-buy button:not([data-add]){
+  flex:none !important;
+  width:30px !important;
+  height:34px !important;
+  min-width:30px !important;
+  min-height:34px !important;
+  padding:0 !important;
+  margin:0 !important;
+  border-radius:9px !important;
+  font-size:18px !important;
+}
+html body.public-profile-area [data-native-menu] .nu-group260-row .product-buy button[data-add] {
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  flex:0 0 auto !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  height:40px !important;
+  min-height:40px !important;
+  border-radius:10px !important;
+  padding:6px 8px !important;
+  margin:0 !important;
+  background:#7333b9 !important;
+  color:#fff !important;
+  font-size:13px !important;
+  font-weight:750 !important;
+  line-height:1.2 !important;
+  white-space:normal !important;
+  word-break:normal !important;
+  box-sizing:border-box !important;
+}
+html body.public-profile-area [data-native-menu] .nu-group260-row .product-buy button[data-add]:disabled {
+  background:#dcd4e4 !important;
+  color:#5c5264 !important;
+}
+html body.public-profile-area [data-native-menu] .nu-group260-row .product-options {
+  display:grid !important;
+  grid-column:1 / -1 !important;
+  gap:5px !important;
+  min-width:0 !important;
+  max-width:100% !important;
+}
+html body.public-profile-area [data-native-menu] .nu-group260-items > button.nu452-show-more {
+  display:block !important;
+  min-height:42px !important;
+  width:100% !important;
+  margin:5px 0 0 !important;
+  padding:9px !important;
+  border:0 !important;
+  background:#f4eafa !important;
+  color:#7136b3 !important;
+  border-radius:11px !important;
+  font-size:14px !important;
+  font-weight:750 !important;
+  cursor:pointer !important;
+}
+html body.public-profile-area [data-native-menu] .nu-group260-items > button.nu452-show-more[hidden] {
+  display:none !important;
+}
+@media (max-width:370px) {
+ html body.public-profile-area [data-native-menu] .menu-products > details.nu-group260 > summary.nu-group260-cover {
+   grid-template-columns:76px minmax(0,1fr) !important;
+   gap:9px !important;
+   padding:10px !important;
+ }
+ html body.public-profile-area [data-native-menu] .nu-group260-cover > img {
+   width:76px !important;height:84px !important;
+ }
+ html body.public-profile-area [data-native-menu] .nu-group260-items > article.nu-group260-row {
+   grid-template-columns:48px minmax(0,1fr) 96px !important;
+   gap:6px !important;
+   padding:8px 6px !important;
+ }
+ html body.public-profile-area [data-native-menu] .nu-group260-row > img {
+   width:48px !important;height:56px !important;
+ }
+ html body.public-profile-area [data-native-menu] .nu-group260-row > .product-buy {
+   width:96px !important;
+ }
+ html body.public-profile-area [data-native-menu] .nu-group260-row h4 {font-size:13px !important}
+ html body.public-profile-area [data-native-menu] .nu-group260-row .product-buy button[data-add] {font-size:12px !important}
+}
+@media (min-width:700px) {
+ html body.public-profile-area [data-native-menu] .nu-group260-items > article.nu-group260-row{
+   grid-template-columns:68px minmax(0,1fr) 144px !important;
+   padding:12px !important;
+   gap:12px !important;
+ }
+ html body.public-profile-area [data-native-menu] .nu-group260-row > img {width:68px !important;height:70px !important}
+ html body.public-profile-area [data-native-menu] .nu-group260-row > .product-buy {width:144px !important}
+ html body.public-profile-area [data-native-menu] .nu-group260-row h4 {font-size:15px !important}
+}
