@@ -266,3 +266,21 @@ html body.public-profile-area [data-native-menu] .nu451-regular-price strong{
   min-height:27px!important;height:27px!important;padding-top:3px!important;gap:6px!important;
  }
 }
+
+/* V451 follow-up: preserve native hidden states and fit in-cart quantity controls in a third-width card. */
+@media(max-width:900px){
+ html body.public-profile-area.nu233-store.nu232-store [data-native-menu][data-carousel-layout="six"] .nu190-showcase .nu190-category:not(.nu275-combo-section):not(.nu290-offers-section) .nu201-card.nu190-card[hidden],
+ html body.public-profile-area.nu233-store.nu232-store [data-native-menu][data-carousel-layout="six"] .nu190-showcase .nu190-category:not(.nu275-combo-section):not(.nu290-offers-section) .nu201-card.nu190-card .nu201-open[hidden]{
+  display:none!important;
+ }
+ html body.public-profile-area.nu233-store.nu232-store [data-native-menu][data-carousel-layout="six"] .nu190-showcase .nu190-category:not(.nu275-combo-section):not(.nu290-offers-section) .nu201-card.nu190-card .nu-step263{
+  gap:0!important;min-width:0!important;max-width:100%!important;
+ }
+ html body.public-profile-area.nu233-store.nu232-store [data-native-menu][data-carousel-layout="six"] .nu190-showcase .nu190-category:not(.nu275-combo-section):not(.nu290-offers-section) .nu201-card.nu190-card .nu-step263 button{
+  min-width:30px!important;width:30px!important;flex:0 0 30px!important;
+  min-height:44px!important;font-size:19px!important;padding:0!important;
+ }
+ html body.public-profile-area.nu233-store.nu232-store [data-native-menu][data-carousel-layout="six"] .nu190-showcase .nu190-category:not(.nu275-combo-section):not(.nu290-offers-section) .nu201-card.nu190-card .nu-step263 span{
+  flex:1!important;min-width:0!important;text-align:center!important;font-size:13px!important;
+ }
+}
