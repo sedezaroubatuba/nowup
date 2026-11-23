@@ -112,10 +112,10 @@
    if(target)target.querySelector(':scope > summary')?.focus({preventScroll:true});
   }));
  }
- function restore(){
-  if(fresh&&state.list){restoreOrdinaryProducts();return;}
-  restoreOtherEditors();
- }
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',restore,{once:true});
- else requestAnimationFrame(restore);
+ // Existing meal, combo and registration return flows retain their immediate restore.
+ // Ordinary merchant product filters need the panel menu to finish initializing first.
+ if(fresh&&state.list){
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>requestAnimationFrame(restoreOrdinaryProducts),{once:true});
+  else requestAnimationFrame(restoreOrdinaryProducts);
+ }else restoreOtherEditors();
 })();
