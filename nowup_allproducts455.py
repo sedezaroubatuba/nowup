@@ -161,7 +161,8 @@ def install(ns):
                 p["stats455"] = performance.get(p["id"], {"sold": 0, "revenue": 0, "cancelled": 0, "days": 0}).copy()
                 if p["is_group_header260"]:
                     children = [item for item in products if item["group_parent_id260"] == p["id"]]
-                    p["stats455"] = {key: sum(performance.get(item["id"], {}).get(key, 0) for item in children) for key in ("sold", "revenue", "cancelled", "days")}
+                    p["stats455"] = {key: sum(performance.get(item["id"], {}).get(key, 0) for item in children) for key in ("sold", "revenue", "cancelled")}
+                    p["stats455"]["days"] = 0  # Group-cover days are not a sum of child days.
                 p["inventory455"] = inventory.get(p["id"])
                 p["status455"] = ("Indisponível" if not p["available"] else
                                   "Sem estoque" if p["inventory455"] is not None and p["inventory455"] <= 0 else "Ativo")
@@ -190,7 +191,12 @@ def install(ns):
                         "SELECT product_id,detail,created_at FROM product_audit455 WHERE professional_id=? AND product_id IN (" + marker + ") ORDER BY id DESC",
                         (pro["id"], *ids)).fetchall():
                         if len(history.get(entry["product_id"], [])) < 6:
-                            history.setdefault(entry["product_id"], []).append(dict(entry))
+                            record = dict(entry)
+                            try:
+                                record["fields455"] = ", ".join(json.loads(entry["detail"]).keys())
+                            except (TypeError, ValueError):
+                                record["fields455"] = "Edição registrada"
+                            history.setdefault(entry["product_id"], []).append(record)
             except Exception:
                 pass
             ranking = sorted((p for p in products if not p["is_group_header260"]),
@@ -222,7 +228,10 @@ def install(ns):
                         available: str | None = Form(None),
                         photo: UploadFile | None = File(None),
                         recommend256: str | None = Form(None),
-                        related256: list[int] = Form([]), next_id: int = Form(0)):
+                        related256: list[int] = Form([]), next_id: int = Form(0),
+                        return_q455: str = Form(""), return_category455: str = Form(""),
+                        return_status455: str = Form("all"), return_period455: str = Form("30"),
+                        return_page455: int = Form(1)):
         user = require_user(request, "professional")
         conn = db()
         try:
@@ -287,13 +296,18 @@ def install(ns):
                 conn.commit()
             else:
                 conn.commit()
-            data = await_form455(request)
+            data = {"q": return_q455, "category": return_category455,
+                    "status": return_status455, "period": return_period455,
+                    "page": str(return_page455)}
             return RedirectResponse(return_url(data, next_id, "salvo"), 303)
         finally:
             conn.close()
 
     @app.post("/painel/todos-produtos/{product_id}/excluir")
-    def product_delete455(request: Request, product_id: int, next_id: int = Form(0)):
+    def product_delete455(request: Request, product_id: int, next_id: int = Form(0),
+                          return_q455: str = Form(""), return_category455: str = Form(""),
+                          return_status455: str = Form("all"), return_period455: str = Form("30"),
+                          return_page455: int = Form(1)):
         user = require_user(request, "professional")
         conn = db()
         try:
@@ -308,7 +322,9 @@ def install(ns):
                              (row["image_filename"], now_iso(), pro["id"], product_id))
             conn.execute("DELETE FROM products WHERE id=? AND professional_id=?", (product_id, pro["id"]))
             conn.commit()
-            data = await_form455(request)
+            data = {"q": return_q455, "category": return_category455,
+                    "status": return_status455, "period": return_period455,
+                    "page": str(return_page455)}
             return RedirectResponse(return_url(data, next_id, "excluido"), 303)
         finally:
             conn.close()
@@ -343,10 +359,3 @@ def install(ns):
                 "category": category_row["name"], "ok": "leve-junto", "total": changed}) + "#leve-junto455", 303)
         finally:
             conn.close()
-
-
-def await_form455(request):
-    """Only lightweight return-position fields are read from the submitted form."""
-    # Called from synchronous FastAPI routes; use the already-parsed dependency body.
-    # The form is instead carried by a separate GET-safe hidden field dependency below.
-    return {}
