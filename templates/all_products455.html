@@ -3,6 +3,7 @@
 {% block body_class %}professional-area nu455-products-page{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="/static/all-products455.css?v=459">
+<link rel="stylesheet" href="/static/product-bulk460.css?v=460">
 <main class="nu455-root">
   <header class="nu455-header">
     <a class="nu455-back" href="/painel#cardapio" aria-label="Voltar ao painel">‹</a>
@@ -23,11 +24,87 @@
   </section>
   {% if ok455 %}
     <p class="nu455-message" role="status">
-    {% if ok455 == 'excluido' %}Produto excluído. Você continua na lista.
+    {% if ok455 == 'lote' %}Lote concluído com sucesso! {{request.query_params.get('changed','0')}} produto(s) alterado(s) de {{request.query_params.get('selected','0')}} selecionado(s). Escolha os próximos dez.
+    {% elif ok455 == 'excluido' %}Produto excluído. Você continua na lista.
     {% elif ok455 == 'leve-junto' %}Regra de Leve Junto aplicada à categoria.
     {% else %}Alterações salvas! Continue pelo próximo produto.{% endif %}
     </p>
   {% endif %}
+
+  <section id="lote460" class="nu460-batch" aria-label="Alterações em lote">
+    <details class="nu460-panel">
+      <summary><span>☑ Edição em lote</span><small>Marque até 10 produtos e salve tudo de uma vez</small></summary>
+      <p class="nu460-note">Procure e marque até dez produtos. A seleção continua enquanto você faz outras buscas nesta caixa. Depois de salvar, escolha mais dez. As vendas e o histórico anterior são preservados.</p>
+      <form method="post" action="/painel/todos-produtos/lote" data-bulk-form460>
+        <div class="nu460-selection">
+          <label>Buscar e marcar produtos
+            <input type="search" data-bulk-search460 placeholder="Ex.: gelo, cerveja, código interno…" autocomplete="off" aria-label="Buscar produtos para selecionar">
+          </label>
+          <div class="nu460-selection-tools">
+            <span data-bulk-count460 aria-live="polite">0 de 10 produtos selecionados</span>
+            <button type="button" data-bulk-clear460>Limpar seleção</button>
+          </div>
+          <div class="nu460-search-list" data-bulk-results460 role="group" aria-label="Resultados para seleção"></div>
+          <div class="nu460-selected" data-bulk-selected460 aria-live="polite"></div>
+          <div data-bulk-ids460></div>
+        </div>
+        <label class="nu460-operation">O que você deseja alterar?
+          <select name="operation" data-bulk-operation460 required>
+            <option value="related">Leve Junto — associar produto</option>
+            <option value="category">Trocar categoria e subcategoria</option>
+            <option value="prices">Alterar preços individuais</option>
+            <option value="availability">Alterar disponibilidade</option>
+          </select>
+        </label>
+        <div class="nu460-fields">
+          <div data-bulk-mode460="related">
+            <label>Buscar produto para oferecer no Leve Junto
+              <input data-bulk-target-search460 type="search" placeholder="Ex.: gelo de coco, carvão…" autocomplete="off">
+            </label>
+            <label>Produto sugerido
+              <select name="target_id" data-bulk-target460>
+                <option value="0">Pesquise e escolha o produto</option>
+              </select>
+            </label>
+            <small>Adiciona a sugestão aos produtos selecionados sem remover as combinações já existentes. O cliente decide se compra.</small>
+          </div>
+          <div data-bulk-mode460="category" hidden>
+            <label>Nova categoria
+              <select name="new_category" data-bulk-category460>
+                <option value="">Selecione a categoria</option>
+                {% for cat in categories455 %}<option value="{{cat.name}}">{{cat.name}}</option>{% endfor %}
+              </select>
+            </label>
+            <label>Nova subcategoria (opcional)
+              <select name="subcategory_id261" data-bulk-subcategory460>
+                <option value="0">Sem subcategoria</option>
+                {% for sub in subcategories455 %}<option value="{{sub.id}}" data-parent="{{sub.category_name}}">{{sub.name}}</option>{% endfor %}
+              </select>
+            </label>
+            <small>Itens dentro de agrupadores mantêm a categoria da capa; nesses casos, use o editor do agrupador para preservar o vínculo.</small>
+          </div>
+          <div data-bulk-mode460="prices" hidden>
+            <p>Defina o novo preço de venda de cada produto. Nenhum preço muda até você confirmar.</p>
+            <div class="nu460-price-editor" data-bulk-price-fields460></div>
+            <input type="hidden" name="prices_json" data-bulk-prices-json460 value="">
+            <small>Promoções continuam cadastradas. O novo preço normal deve ser maior que o promocional vigente.</small>
+          </div>
+          <div data-bulk-mode460="availability" hidden>
+            <label>Novo status
+              <select name="available_value">
+                <option value="">Escolha</option>
+                <option value="1">Disponível para venda</option>
+                <option value="0">Indisponível</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <p role="status" class="nu460-status" data-bulk-status460></p>
+        <button type="submit" class="nu455-primary nu460-submit" data-bulk-submit460>Conferir e salvar até 10 produtos</button>
+      </form>
+    </details>
+  </section>
+
   <section id="lista-produtos455" class="nu455-main">
     <h2>Lista de produtos</h2>
     <form class="nu455-filters" method="get" action="/painel/todos-produtos">
@@ -230,5 +307,6 @@
   </section>
 </main>
 <script type="application/json" id="nu455-product-names">{{all_names455|tojson}}</script>
-<script defer src="/static/all-products455.js?v=456"></script>
+<script defer src="/static/all-products455.js?v=456"
+<script defer src="/static/product-bulk460.js?v=460"></script>></script>
 {% endblock %}

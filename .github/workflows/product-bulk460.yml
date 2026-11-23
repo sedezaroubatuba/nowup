@@ -1,0 +1,39 @@
+name: V460 - selecao e edicao de dez produtos por lote
+on:
+  push:
+    branches: [codex/edicao-lote-dez-v460]
+  pull_request:
+    branches: [codex/categorias-icones-v230]
+permissions:
+  contents: read
+jobs:
+  bulk-edit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NOWUP_DB_ENGINE: sqlite
+      NOWUP_ADMIN_EMAIL: bulk460@example.invalid
+      NOWUP_ADMIN_PASSWORD: isolated-bulk460-test-password
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: |
+          python -m pip install -r requirements-dev.txt
+          npm ci
+      - name: Check syntax
+        run: |
+          python -m py_compile app.py nowup_bulk460.py
+          node --check static/product-bulk460.js
+      - name: Test atomic bulk edits and legacy history
+        run: |
+          python -m pytest -q tests/test_product_bulk460.py tests/test_all_products455.py tests/test_catalog328.py --disable-warnings
+      - name: Test existing editor continuity
+        run: |
+          node --test tests/product-next423.test.cjs tests/product-return454.test.cjs
