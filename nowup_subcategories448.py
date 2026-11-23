@@ -82,8 +82,10 @@ def public_rows(conn, professional_id):
     ).fetchall()
 
 
-def _go():
-    return RedirectResponse("/painel?ok=subcategoria#categorias-loja", 303)
+def _go(category_id=0):
+    # Reopen the exact category that the merchant just edited.
+    suffix = f"&categoria449={int(category_id)}" if category_id else ""
+    return RedirectResponse(f"/painel?ok=subcategoria{suffix}#categorias-loja", 303)
 
 
 def register(app, db, require_user, require_premium_catalog, now_iso):
@@ -118,7 +120,7 @@ def register(app, db, require_user, require_premium_catalog, now_iso):
                 raise HTTPException(409, "Já existe uma subcategoria com esse nome nesta categoria.")
         finally:
             conn.close()
-        return _go()
+        return _go(category_id)
 
     @app.post("/painel/cardapio/subcategorias261/organizar")
     def bulk_assign261(request: Request, category_id: int = Form(...),
@@ -149,7 +151,7 @@ def register(app, db, require_user, require_premium_catalog, now_iso):
                 conn.commit()
         finally:
             conn.close()
-        return _go()
+        return _go(category_id)
 
     @app.post("/painel/cardapio/subcategorias261/{subcategory_id}")
     def edit261(request: Request, subcategory_id: int, name: str = Form(...),
@@ -174,7 +176,7 @@ def register(app, db, require_user, require_premium_catalog, now_iso):
                 raise HTTPException(409, "Já existe uma subcategoria com esse nome nesta categoria.")
         finally:
             conn.close()
-        return _go()
+        return _go(sc['category_id'])
 
     @app.post("/painel/cardapio/subcategorias261/{subcategory_id}/excluir")
     def delete261(request: Request, subcategory_id: int):
@@ -191,5 +193,5 @@ def register(app, db, require_user, require_premium_catalog, now_iso):
             conn.commit()
         finally:
             conn.close()
-        return _go()
+        return _go(sc['category_id'])
 

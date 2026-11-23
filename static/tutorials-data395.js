@@ -69,21 +69,21 @@ window.NOWUP_TUTORIALS395=[
   "steps": [
    {
     "page": "categorias-loja",
-    "target": "#categorias-loja input[name=\"name\"]",
+    "target": "#categorias-loja .nu449-new-category > summary",
     "title": "Crie uma categoria",
-    "text": "Exemplos: Bebidas, Lanches, Refeições ou Camisetas. Escolha um nome curto, um ícone e salve."
+    "text": "Para criar uma categoria principal, toque em Criar categoria principal, digite o nome, escolha o ícone e salve."
    },
    {
     "page": "categorias-loja",
     "target": "#categorias-loja",
     "title": "Organize e publique",
-    "text": "Nas categorias cadastradas, confira Pública e ajuste a posição na ordem desejada. Se ainda não houver categorias, cadastre a primeira."
+    "text": "Os nomes das categorias ficam sempre visíveis. Toque em uma delas e use Adicionar subcategoria; para renomear ou mudar a posição, abra Alterar nome, ícone e posição."
    },
    {
     "page": "novo-produto",
     "target": "#novo-produto select[name=\"category\"]",
     "title": "Vincule o produto",
-    "text": "Escolha a categoria correta no cadastro do produto e salve. A categoria sozinha não cadastra produtos."
+    "text": "Escolha a categoria principal no cadastro do produto. Se houver subcategorias, selecione a desejada; caso contrário, deixe sem subcategoria e salve."
    },
    {
     "page": "inicio",

@@ -1,0 +1,69 @@
+{# V449: editor contextual; 'category' belongs to the current merchant. #}
+<div class="nu449-subcategory-section" aria-label="Subcategorias de {{category.name}}">
+  {% if category.active %}
+  <details class="nu449-new-subcategory">
+    <summary class="nu449-add-button">＋ Adicionar subcategoria</summary>
+    <form action="/painel/cardapio/subcategorias261" method="post" class="nu449-subcategory-form">
+      <input type="hidden" name="category_id" value="{{category.id}}">
+      <label>Nome da subcategoria
+        <input class="input" name="name" maxlength="80" placeholder="Ex.: Sedas, Tabacos, Piteiras" required>
+      </label>
+      <button type="submit" class="btn primary">Salvar subcategoria</button>
+    </form>
+  </details>
+  {% else %}
+  <p class="nu449-hint">Ative esta categoria para adicionar subcategorias.</p>
+  {% endif %}
+
+  {% set children449 = subcategories261 | selectattr('category_id','equalto',category.id) | list %}
+  {% if children449 %}
+  <details class="nu449-existing-subcategories">
+    <summary>Ver / editar subcategorias ({{children449|length}})</summary>
+    <div class="nu449-existing-list">
+      {% for sc in children449 %}
+      <div class="nu449-subcategory-edit">
+        <form action="/painel/cardapio/subcategorias261/{{sc.id}}" method="post" class="nu449-subcategory-edit-form">
+          <label>Nome<input class="input" name="name" maxlength="80" value="{{sc.name}}" required></label>
+          <label>Posição<input class="input" type="number" min="1" max="9999" name="sort_order" value="{{sc.sort_order}}"></label>
+          <label class="check"><input type="checkbox" name="active" value="1" {% if sc.active %}checked{% endif %}> Visível no filtro</label>
+          <button type="submit" class="btn soft tiny">Salvar</button>
+        </form>
+        <form action="/painel/cardapio/subcategorias261/{{sc.id}}/excluir" method="post" data-confirm-delete>
+          <button type="submit" class="btn danger tiny">Excluir subcategoria</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+  </details>
+  {% endif %}
+
+  {% if category.active and children449 %}
+  <details class="nu449-bulk">
+    <summary>Organizar produtos em subcategorias</summary>
+    <form action="/painel/cardapio/subcategorias261/organizar" method="post" data-bulk261>
+      <input type="hidden" name="category_id" value="{{category.id}}">
+      <label>Mover os produtos selecionados para
+        <select class="input" name="subcategory_id" required>
+          <option value="0">Sem subcategoria</option>
+          {% for sc in children449 if sc.active %}
+          <option value="{{sc.id}}">{{sc.name}}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <div class="nu-subcats261-actions">
+        <button type="button" class="btn soft tiny" data-all261>Selecionar todos</button>
+        <button type="button" class="btn soft tiny" data-none261>Desmarcar</button>
+      </div>
+      <div class="nu-subcats261-choices">
+        {% for product in products if product.category|lower == category.name|lower %}
+        <label class="check">
+          <input type="checkbox" name="product_ids" value="{{product.id}}">
+          <span>{{product.name}}{% for sc in children449 if sc.id==product.subcategory_id261 %} <small>({{sc.name}})</small>{% endfor %}</span>
+        </label>
+        {% else %}<p>Nenhum produto nesta categoria.</p>{% endfor %}
+      </div>
+      <button type="submit" class="btn primary">Salvar organização</button>
+    </form>
+  </details>
+  {% endif %}
+</div>
