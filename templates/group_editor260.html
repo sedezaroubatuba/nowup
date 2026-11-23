@@ -32,6 +32,19 @@
           <button class="btn primary">Salvar agrupador</button>
         </form>
       </details>
+      <details class="nu-group260-add" {% if request.query_params.get("grupo260") == head.id|string and request.query_params.get("novo260") == "1" %} open{% endif %}><summary class="btn soft">＋ Cadastrar novo produto</summary>
+        <form action="/painel/cardapio/agrupadores/{{head.id}}/itens" method="post" enctype="multipart/form-data" class="product-form">
+          <label>Nome<input class="input" name="name" placeholder="Ex.: Morango 50 g" maxlength="140" required></label>
+          <label>Preço<input class="input" name="price" placeholder="12,00" required></label>
+          <label>Foto do produto (opcional)<input class="input" name="photo" type="file" accept="image/*"><small>Sem foto própria, o item usa a foto da capa.</small></label>
+          
+          <label class="check"><input type="checkbox" name="available" value="1" checked> Disponível</label>
+          <button class="btn primary">Adicionar item</button>
+        </form>
+      </details>
+      <details class="nu-group260-members" {% if request.query_params.get("grupo260") == head.id|string and request.query_params.get("itens260") == "1" %} open{% endif %}>
+        <summary class="nu-group260-members-summary"><span>▸ Ver produtos ({{group['items']|length}})</span><small>Toque para expandir ou recolher</small></summary>
+        <div class="nu-group260-members-body">
       <h3>Produtos deste agrupador</h3><p class="muted">Categoria: <b>{{head.category}}</b>. Cada produto é vendido individualmente.</p>
       <p class="muted">O funcionário pode marcar cada sabor como disponível ou indisponível sem abrir a edição completa.</p>
       <div class="nu-group260-member-list">
@@ -61,15 +74,7 @@
         </div>
         {% else %}<p class="muted">Cadastre os sabores ou vincule produtos existentes abaixo.</p>{% endfor %}
       </div>
-      <details class="nu-group260-add"><summary class="btn soft">＋ Adicionar produto (nome, preço e foto opcional)</summary>
-        <form action="/painel/cardapio/agrupadores/{{head.id}}/itens" method="post" enctype="multipart/form-data" class="product-form">
-          <label>Nome<input class="input" name="name" placeholder="Ex.: Morango 50 g" maxlength="140" required></label>
-          <label>Preço<input class="input" name="price" placeholder="12,00" required></label>
-          <label>Foto do produto (opcional)<input class="input" name="photo" type="file" accept="image/*"><small>Sem foto própria, o item usa a foto da capa.</small></label>
-          
-          <label class="check"><input type="checkbox" name="available" value="1" checked> Disponível</label>
-          <button class="btn primary">Adicionar item</button>
-        </form>
+        </div>
       </details>
       {% if ungrouped260 %}
       <details><summary>Vincular um produto já cadastrado</summary>
