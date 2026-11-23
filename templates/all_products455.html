@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+{% block title %}Todos os Produtos | NowUp{% endblock %}
+{% block body_class %}professional-area nu455-products-page{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/all-products455.css?v=455">
+<main class="nu455-root">
+  <header class="nu455-header">
+    <a class="nu455-back" href="/painel#cardapio" aria-label="Voltar ao painel">‹</a>
+    <div><small>NowUp Brasil · {{pro.display_name}}</small><h1>Todos os Produtos</h1>
+      <p>Lista A–Z, edição, histórico e sugestões de venda. Cadastro separado.</p></div>
+    <a class="nu455-create" href="/painel#novo-produto">＋ Cadastrar</a>
+  </header>
+  <nav class="nu455-tabs" aria-label="Áreas de produtos">
+    <a href="#lista-produtos455">▤ Lista de Produtos</a>
+    <a href="#vendas-categoria455">▥ Vendas por categoria</a>
+    <a href="#ranking455">♜ Ranking</a>
+    <a href="#leve-junto455">✧ Leve Junto</a>
+  </nav>
+  <section class="nu455-metrics" aria-label="Resumo do catálogo">
+    <div><small>Total cadastrado</small><strong>{{total455}}</strong></div>
+    <div><small>Na seleção</small><strong>{{count455}}</strong></div>
+    <div><small>Por página</small><strong>10</strong></div>
+  </section>
+  {% if ok455 %}
+    <p class="nu455-message" role="status">
+    {% if ok455 == 'excluido' %}Produto excluído. Você continua na lista.
+    {% elif ok455 == 'leve-junto' %}Regra de Leve Junto aplicada à categoria.
+    {% else %}Alterações salvas! Continue pelo próximo produto.{% endif %}
+    </p>
+  {% endif %}
+  <section id="lista-produtos455" class="nu455-main">
+    <h2>Lista de produtos</h2>
+    <form class="nu455-filters" method="get" action="/painel/todos-produtos">
+      <label class="nu455-search">Buscar por nome ou código
+        <input type="search" name="q" value="{{q455}}" placeholder="Ex.: cerveja, seda, 1234…" autocomplete="off">
+      </label>
+      <label>Categoria
+        <select name="category"><option value="">Todas as categorias</option>
+          {% for cat in categories455 %}<option value="{{cat.name}}" {% if category455==cat.name %}selected{% endif %}>{{cat.name}}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Disponibilidade
+        <select name="status">
+          <option value="all" {% if status455=='all' %}selected{% endif %}>Todos</option>
+          <option value="active" {% if status455=='active' %}selected{% endif %}>Ativos</option>
+          <option value="inactive" {% if status455=='inactive' %}selected{% endif %}>Indisponíveis</option>
+          <option value="no-stock" {% if status455=='no-stock' %}selected{% endif %}>Sem estoque (quando controlado)</option>
+        </select>
+      </label>
+      <label>Período de vendas
+        <select name="period">
+          <option value="30" {% if period455=='30' %}selected{% endif %}>30 dias</option>
+          <option value="90" {% if period455=='90' %}selected{% endif %}>90 dias</option>
+          <option value="365" {% if period455=='365' %}selected{% endif %}>1 ano</option>
+          <option value="all" {% if period455=='all' %}selected{% endif %}>Todo o histórico</option>
+        </select>
+      </label>
+      <button class="nu455-primary" type="submit">Filtrar</button>
+      <a class="nu455-clear" href="/painel/todos-produtos#lista-produtos455">Limpar</a>
+    </form>
+    <div class="nu455-list-heading" aria-hidden="true">
+      <b>Produto (A–Z)</b><b>Categoria</b><b>Preço</b><b>Status</b>
+    </div>
+    <div class="nu455-list">
+      {% for product in products455 %}
+      <details class="nu455-item" id="produto-{{product.id}}" {% if open455==product.id %}open{% endif %}>
+        <summary>
+          <span class="nu455-chevron" aria-hidden="true">›</span>
+          <span class="nu455-name">{{product.name}}
+            <small>{% if product.is_group_header260 %}▦ Capa de agrupador{% elif product.group_parent_id260 %}↳ {{product.group_name455}}{% elif product.is_combo256 %}🍻 Combo · Código {{product.id}}{% elif product.sold_by_weight370 %}⚖ Por peso · Código {{product.id}}{% else %}Código {{product.id}}{% endif %}</small>
+          </span>
+          <span class="nu455-category">{{product.category}}</span>
+          <strong class="nu455-price">{% if product.is_group_header260 %}Capa{% else %}R$ {{'%.2f'|format(product.price_cents/100)|replace('.',',')}}{% endif %}</strong>
+          <span class="nu455-status {% if product.status455=='Ativo' %}is-active{% elif product.status455=='Sem estoque' %}is-empty{% else %}is-off{% endif %}">{{product.status455}}</span>
+        </summary>
+        <div class="nu455-expanded">
+          <div class="nu455-photo-side">
+            {% if product.display_image455 %}<img loading="lazy" decoding="async" src="/uploads/{{product.display_image455}}" alt="Foto de {{product.name}}" onerror="this.onerror=null;this.src='/static/product-placeholder.svg'">
+            {% else %}<img loading="lazy" src="/static/product-placeholder.svg" alt="Produto sem foto">{% endif %}
+            <small>Foto aparece somente com o produto aberto.</small>
+          </div>
+          <div class="nu455-form-side">
+            <h3>{{product.name}}</h3>
+            <p class="nu455-muted">Código interno {{product.id}} · Última alteração: {{product.updated_display455}}</p>
+            <form class="nu455-edit-form" method="post" action="/painel/todos-produtos/{{product.id}}/editar" enctype="multipart/form-data">
+              <input type="hidden" name="return_q455" value="{{q455}}">
+              <input type="hidden" name="return_category455" value="{{category455}}">
+              <input type="hidden" name="return_status455" value="{{status455}}">
+              <input type="hidden" name="return_period455" value="{{period455}}">
+              <input type="hidden" name="return_page455" value="{{page455}}">
+              <input type="hidden" name="next_id" value="{{product.next455}}">
+              <label class="nu455-wide">Nome do produto
+                <input name="name" value="{{product.name}}" maxlength="140" required>
+              </label>
+              {% if product.group_parent_id260 %}
+                <div class="nu455-wide nu455-inherited"><b>Categoria herdada:</b> {{product.category}}.
+                  Para trocar a categoria deste item, edite a capa do agrupador ou desvincule-o no cadastro atual.
+                  <a href="/painel?grupo260={{product.group_parent_id260}}#grupo260-{{product.group_parent_id260}}">Abrir agrupador</a>
+                </div>
+              {% else %}
+                <label>Categoria
+                  <select name="category" required data-category455>
+                    {% for cat in categories455 %}
+                      <option value="{{cat.name}}" {% if cat.name==product.category %}selected{% endif %}>{{cat.name}}</option>
+                    {% endfor %}
+                    {% if product.category not in (categories455|map(attribute='name')|list) %}
+                      <option value="{{product.category}}" selected>{{product.category}} (antiga)</option>
+                    {% endif %}
+                  </select>
+                </label>
+                <label>Subcategoria
+                  <select name="subcategory_id261" data-subcategory455>
+                    <option value="0">Sem subcategoria</option>
+                    {% for sub in subcategories455 %}
+                    <option value="{{sub.id}}" data-parent="{{sub.category_name}}" {% if product.subcategory_id261==sub.id %}selected{% endif %}>{{sub.name}}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+              {% endif %}
+              {% if not product.is_group_header260 %}
+              <label>Preço normal de venda (R$)
+                <input name="price" inputmode="decimal" value="{{'%.2f'|format(product.price_cents/100)|replace('.',',')}}" required>
+              </label>
+              {% endif %}
+              <label>Trocar foto
+                <input name="photo" type="file" accept="image/*">
+              </label>
+              <label class="nu455-wide">Descrição
+                <textarea name="description" rows="2" maxlength="600">{{product.description or ''}}</textarea>
+              </label>
+              <label class="nu455-toggle"><input type="checkbox" name="available" value="1" {% if product.available %}checked{% endif %}> Disponível para venda</label>
+              {% if not product.is_group_header260 %}
+              <div class="nu455-wide nu455-related">
+                <div class="nu455-label">Leve Junto — importar produtos da própria loja</div>
+                <label class="nu455-toggle"><input name="recommend256" type="checkbox" value="1" {% if product.recommend256 %}checked{% endif %}> Destacar este produto nas sugestões gerais</label>
+                <div data-related455 data-self="{{product.id}}" data-max="20">
+                  <div data-selected455>
+                    {% for ref in product.related_ids455 %}<input name="related256" type="hidden" value="{{ref}}">{% endfor %}
+                  </div>
+                  <input type="search" data-search455 placeholder="Buscar produto para oferecer junto..." autocomplete="off" aria-label="Buscar produtos relacionados">
+                  <div class="nu455-search-results" data-results455></div>
+                </div>
+                <small>Até 20 combinações cadastradas; o cliente vê no máximo 5 sugestões e decide se adiciona.</small>
+              </div>
+              {% endif %}
+              {% if product.is_combo256 or product.sold_by_weight370 or product.group_parent_id260 or product.is_group_header260 %}
+              <div class="nu455-wide nu455-inherited">
+                {% if product.group_parent_id260 or product.is_group_header260 %}
+                  A montagem e o vínculo de sabores continuam disponíveis no editor de agrupadores.
+                  <a href="/painel#agrupadores260">Abrir edição avançada de agrupadores</a>
+                {% elif product.sold_by_weight370 %}
+                  Configurações de pesagem continuam no cadastro atual.
+                  <a href="/painel#produtos-peso370">Abrir produtos por peso</a>
+                {% else %}
+                  Os ingredientes e itens obrigatórios do combo permanecem no editor atual.
+                  <a href="/painel#combos-loja">Abrir montagem do combo</a>
+                {% endif %}
+              </div>
+              {% endif %}
+              <button class="nu455-primary nu455-wide" type="submit">✓ Salvar alterações e seguir</button>
+            </form>
+          </div>
+          <section class="nu455-history">
+            <h4>Desempenho do produto · {{'Todo o histórico' if period455=='all' else period455 ~ ' dias'}}</h4>
+            <div class="nu455-stat-grid">
+              <div><small>Unidades vendidas</small><strong>{{product.stats455.sold}}</strong></div>
+              <div><small>Faturamento concluído</small><strong>R$ {{'%.2f'|format(product.stats455.revenue/100)|replace('.',',')}}</strong></div>
+              <div><small>Unidades em pedidos cancelados</small><strong>{{product.stats455.cancelled}}</strong></div>
+              <div><small>Dias com venda</small><strong>{% if product.is_group_header260 %}—{% else %}{{product.stats455.days}}{% endif %}</strong></div>
+            </div>
+            <p class="nu455-muted">{% if product.inventory455 is not none %}Estoque controlado: {{product.inventory455}} un.{% else %}Estoque numérico não controlado neste cadastro.{% endif %}
+            {% if product.is_group_header260 %} Esta capa reúne as vendas dos itens do agrupador.{% elif product.group_parent_id260 %} Este é um item individual do agrupador "{{product.group_name455}}".{% endif %}</p>
+            <details class="nu455-audit"><summary>Histórico de edições nesta nova área</summary>
+              {% for audit in history455.get(product.id,[]) %}<p>{{audit.created_display455|default(audit.created_at[:16]|replace('T',' '))}} — {{audit.fields455}}</p>
+              {% else %}<p>As alterações feitas a partir desta nova área serão registradas aqui. Alterações antigas não foram recuperadas.</p>{% endfor %}
+            </details>
+            <form class="nu455-delete" action="/painel/todos-produtos/{{product.id}}/excluir" method="post" data-confirm-delete>
+              <input type="hidden" name="return_q455" value="{{q455}}">
+              <input type="hidden" name="return_category455" value="{{category455}}">
+              <input type="hidden" name="return_status455" value="{{status455}}">
+              <input type="hidden" name="return_period455" value="{{period455}}">
+              <input type="hidden" name="return_page455" value="{{page455}}">
+              <input type="hidden" name="next_id" value="{{product.next455}}">
+              <button type="submit">Excluir {{'agrupador (preservando os itens)' if product.is_group_header260 else 'produto'}}</button>
+            </form>
+          </section>
+        </div>
+      </details>
+      {% else %}
+      <p class="nu455-empty">Nenhum produto encontrado. Ajuste a busca ou os filtros.</p>
+      {% endfor %}
+    </div>
+    <nav class="nu455-pagination" aria-label="Páginas da lista de produtos">
+      {% if page455>1 %}<a href="/painel/todos-produtos?q={{q455|urlencode}}&category={{category455|urlencode}}&status={{status455}}&period={{period455}}&page={{page455-1}}#lista-produtos455">‹ Anterior</a>{% endif %}
+      <span>Página <b>{{page455}}</b> de {{pages455}} · {{count455}} resultado(s)</span>
+      {% if page455<pages455 %}<a href="/painel/todos-produtos?q={{q455|urlencode}}&category={{category455|urlencode}}&status={{status455}}&period={{period455}}&page={{page455+1}}#lista-produtos455">Próxima ›</a>{% endif %}
+    </nav>
+  </section>
+  <div class="nu455-lower">
+    <section id="vendas-categoria455" class="nu455-report"><h2>Vendas por categoria</h2>
+      <p class="nu455-muted">Somente vendas concluídas no período selecionado; inclui vendas manuais registradas no NowUp.</p>
+      {% for name,stats in category_ranking455 %}
+        <div class="nu455-report-row"><span>{{name}}</span><b>R$ {{'%.2f'|format(stats.revenue/100)|replace('.',',')}}</b><small>{{stats.sold}} un.</small></div>
+      {% else %}<p>Nenhuma venda concluída registrada no período.</p>{% endfor %}
+    </section>
+    <section id="ranking455" class="nu455-report"><h2>Ranking de produtos</h2>
+      <p class="nu455-muted">Mais vendidos por unidades; produtos individuais dos agrupadores participam do ranking.</p>
+      {% for product in ranking455 %}
+        <div class="nu455-report-row"><span>{{loop.index}}. {{product.name}}</span><b>{{product.stats455.sold}} un.</b><small>R$ {{'%.2f'|format(product.stats455.revenue/100)|replace('.',',')}}</small></div>
+      {% endfor %}
+    </section>
+  </div>
+  <section id="leve-junto455" class="nu455-bulk">
+    <h2>Leve Junto por categoria</h2>
+    <p>Associar um produto a todos os produtos de uma categoria. Ex.: cervejas → carvão; uísques → gelo de coco. Não adiciona itens automaticamente ao carrinho do cliente.</p>
+    <form action="/painel/todos-produtos/leve-junto-categoria" method="post">
+      <label>Categoria de origem<select name="category" required><option value="">Selecione</option>
+        {% for cat in categories455 %}<option value="{{cat.name}}">{{cat.name}}</option>{% endfor %}
+      </select></label>
+      <label>Produto para sugerir<select name="target_id" required><option value="">Selecione</option>
+        {% for item in all_names455 %}<option value="{{item.id}}">{{item.name}}</option>{% endfor %}
+      </select></label>
+      <button class="nu455-primary" type="submit" data-bulk-confirm455>Associar à categoria</button>
+    </form>
+    <small>Preserva sugestões anteriores, respeitando o limite de 20 por produto. A listagem e os preços dos clientes não são alterados.</small>
+  </section>
+</main>
+<script type="application/json" id="nu455-product-names">{{all_names455|tojson}}</script>
+<script defer src="/static/all-products455.js?v=455"></script>
+{% endblock %}

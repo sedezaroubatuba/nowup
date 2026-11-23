@@ -3432,3 +3432,7 @@ nowup_subcategories448.register(app, db, require_user, require_premium_catalog, 
 
 # V451: isolated group/variant forms on the live cardapio.
 nowup_groups260.register(app,db,require_user,require_premium_catalog,save_image,price_to_cents,now_iso)
+
+# V455: independent all-products manager; existing registration forms are unchanged.
+import nowup_allproducts455
+nowup_allproducts455.install(globals())
