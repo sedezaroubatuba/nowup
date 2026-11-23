@@ -140,3 +140,23 @@ def test_no_cross_store_mutation_and_group_removal_preserves_products(env):
             "SELECT COUNT(*) FROM products WHERE professional_id=? AND group_parent_id260=0 AND name IN ('Morango','Uva','Melancia')",
             (stores[0]["id"],),
         ).fetchone()[0] == 3
+
+
+def test_group_editor_quick_add_stays_above_collapsed_products():
+    """Keep the creation form accessible without scrolling past existing items."""
+    source = (Path(__file__).resolve().parents[1] / "templates" / "group_editor260.html").read_text()
+    assert source.index('class="nu-group260-add"') < source.index('class="nu-group260-members"')
+    assert '<details class="nu-group260-members">' in source
+    assert 'Ver produtos cadastrados ({{group.items|length}})' in source
+    assert 'Cadastrar novo produto' in source
+
+
+def test_group_save_redirect_reopens_correct_form():
+    import nowup_groups260
+    result = nowup_groups260._redirect(42, add_item=True)
+    assert result.status_code == 303
+    assert result.headers["location"] == (
+        "/painel?ok=agrupador&grupo260=42&novo260=1#agrupadores260"
+    )
+    result = nowup_groups260._redirect(42, view_members=True)
+    assert result.headers["location"].endswith("&itens260=1#agrupadores260")
