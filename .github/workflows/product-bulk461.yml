@@ -1,0 +1,35 @@
+name: V461 - busca em lote funcional
+on:
+  push:
+    branches: [codex/corrigir-busca-lote-v461]
+  pull_request:
+    branches: [codex/categorias-icones-v230]
+permissions:
+  contents: read
+jobs:
+  bulk-search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NOWUP_DB_ENGINE: sqlite
+      NOWUP_ADMIN_EMAIL: bulk461@example.invalid
+      NOWUP_ADMIN_PASSWORD: isolated-bulk461-test-password
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: |
+          python -m pip install -r requirements-dev.txt
+          npm ci
+      - name: Validate HTML and existing bulk endpoints
+        run: python -m pytest -q tests/test_bulk_script461.py tests/test_product_bulk460.py --disable-warnings
+      - name: Validate search, select and JavaScript
+        run: |
+          node --check static/product-bulk460.js
+          node --test tests/product-bulk461.test.cjs
