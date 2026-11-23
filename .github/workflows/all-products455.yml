@@ -1,0 +1,41 @@
+name: V455 — Todos os Produtos separado do cadastro
+on:
+  push:
+    branches:
+      - codex/todos-produtos-v455-20261123
+  pull_request:
+    branches:
+      - codex/categorias-icones-v230
+permissions:
+  contents: read
+jobs:
+  all-products:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    env:
+      NOWUP_DB_ENGINE: sqlite
+      NOWUP_ADMIN_EMAIL: v455-check@example.invalid
+      NOWUP_ADMIN_PASSWORD: isolated-v455-test-password
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: |
+          python -m pip install -r requirements-dev.txt
+          npm ci
+      - name: Check source syntax and templates
+        run: |
+          python -m py_compile app.py nowup_allproducts455.py
+          node --check static/all-products455.js
+      - name: Check list, ownership, sales and existing product editor
+        run: |
+          python -m pytest -q tests/test_all_products455.py tests/test_catalog328.py tests/test_groups451.py --disable-warnings
+      - name: JavaScript catalogue regression
+        run: |
+          node --test tests/product-next423.test.cjs tests/product-return454.test.cjs
