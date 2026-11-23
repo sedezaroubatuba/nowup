@@ -152,6 +152,7 @@ body.fashion-store385 :is(a[href="#lanches-refeicoes322"],a[href="#combos-loja"]
 </form>
 <div class="category-admin-list nu449-category-list">
 {% for category in product_categories %}
+{% set position449 = loop.index %}
 {% include "category_inline449.html" %}
 {% endfor %}
 </div>
