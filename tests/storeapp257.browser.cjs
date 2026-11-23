@@ -9,7 +9,7 @@ for(const entry of ['menu?loja=1','cardapio'])for(const blocked of [true,false])
  await page.goto('https://nowup.local/p/shop/'+entry);await page.evaluate(blocked=>{if(blocked)window.open=()=>null;window.NOWUP_MENU={customerId:10,open:true,whatsappCheckout:true};localStorage.setItem('nowup-cart:whatsapp257:u:10:/p/shop',JSON.stringify([['1',{productId:1,name:'Produto',unitPrice:300,quantity:2,options:[],max:99}]]));},blocked);
  await page.addScriptTag({content:read('static/menu88.js')});await page.locator('[data-checkout]').click();await page.getByRole('button',{name:'Finalizar',exact:true}).click();
  if(blocked){await page.getByRole('link',{name:'Abrir WhatsApp e enviar pedido'}).waitFor();assert.equal(await page.getByRole('link',{name:'Acompanhar pedido e pagar'}).count(),0);assert.equal(await page.getByText('Enviar pedido pelo NowUp',{exact:true}).count(),0);}
- else{await page.locator('[data-whatsapp-ready257]').waitFor();assert.ok(!page.url().includes('/pedido/'));}).count(),0);}
+ else{await page.locator('[data-whatsapp-ready257]').waitFor();assert.ok(!page.url().includes('/pedido/'));}
  assert.equal(requests,1);assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('nowup-cart:whatsapp257:u:10:/p/shop')||'[]')),[]);
  }finally{await browser.close();}
 });

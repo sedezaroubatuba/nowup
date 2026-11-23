@@ -37,7 +37,11 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  const originals=Array.from(layout.querySelectorAll('[data-product]')),sections=new Map(),refreshers=[],cartRefreshers=[];
  originals.forEach(card=>{if(card.dataset.comboLocal303!=='1'&&(card.dataset.combo256==='1'||card.dataset.category==='combos')){card.dataset.category='combos';const label=card.querySelector('.menu-product-info small');if(label)label.textContent='Combos';}});
  const back=make('button','nu187-back','←');back.type='button';heading.prepend(back);
- let homeScroll=0,selectedCategory=null;
+ let homeScroll=0,selectedCategory=null,selectedSubcategory261='';
+  const subcats261=[...root.querySelectorAll('[data-scid261]')].map(element=>({
+    id:element.dataset.scid261,parent:element.dataset.parent261,name:element.dataset.name261
+  }));
+  const hasSubcategories261=key=>subcats261.some(sc=>sc.parent===key);
  const categoryView=make('section','nu191-category-view');categoryView.hidden=true;layout.before(categoryView);
  const categoryTitle=make('h2'),categoryCount=make('p','nu191-count'),categoryEmpty=make('p','nu191-empty','Nenhum produto encontrado nesta categoria.');categoryEmpty.hidden=true;
  const categoryHeader=make('header','nu219-category-header'),less=make('button','nu219-less','Ver menos ⌃');
@@ -45,7 +49,47 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  categoryHeader.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap';
  categoryTitle.style.margin='0';less.style.cssText='border:1px solid #e6dcf2;background:#f5effc;color:#7132bf;border-radius:10px;padding:10px 14px;min-height:44px;font:inherit;font-size:14px;font-weight:700;cursor:pointer';
  less.addEventListener('click',()=>{const key=selectedCategory;showHome();const section=sections.get(key);if(section){section.scrollIntoView({block:'start',behavior:'auto'});section.querySelector('header button')?.focus({preventScroll:true});}});
- categoryHeader.append(less,categoryTitle);categoryView.append(categoryHeader,categoryCount,categoryEmpty);const categoryCache=new Map();
+ categoryHeader.append(less,categoryTitle);
+  const subcatWrap261=make('div','nu261-filter-wrap');
+  const subcatTrigger261=make('button','nu261-filter-trigger','Filtrar categoria ▾');subcatTrigger261.type='button';
+  subcatTrigger261.setAttribute('aria-expanded','false');
+  const subcatOptions261=make('div','nu261-pills');subcatOptions261.hidden=true;
+  subcatWrap261.append(subcatTrigger261,subcatOptions261);subcatWrap261.hidden=true;
+  subcatTrigger261.addEventListener('click',()=>{
+    subcatOptions261.hidden=!subcatOptions261.hidden;
+    subcatTrigger261.setAttribute('aria-expanded',String(!subcatOptions261.hidden));
+  });
+  categoryView.append(categoryHeader,subcatWrap261,categoryCount,categoryEmpty);
+  const categoryCache=new Map();
+  function resetSubcategory261(key){
+    selectedSubcategory261='';
+    subcatTrigger261.textContent='Filtrar categoria ▾';
+    subcatTrigger261.setAttribute('aria-expanded','false');
+    subcatOptions261.hidden=true;subcatOptions261.replaceChildren();
+    const choices=subcats261.filter(sc=>sc.parent===key);
+    subcatWrap261.hidden=choices.length===0;
+    if(!choices.length)return;
+    const all=make('button','nu261-active','Todos os produtos');
+    all.type='button';all.setAttribute('aria-pressed','true');
+    const options=[all];
+    choices.forEach(sc=>{
+      const button=make('button','',sc.name);
+      button.type='button';button.dataset.subFilter261=sc.id;
+      button.setAttribute('aria-pressed','false');options.push(button);
+    });
+    options.forEach(button=>button.addEventListener('click',()=>{
+      selectedSubcategory261=button.dataset.subFilter261||'';
+      options.forEach(other=>{
+        const active=other===button;other.classList.toggle('nu261-active',active);
+        other.setAttribute('aria-pressed',String(active));
+      });
+      subcatTrigger261.textContent=selectedSubcategory261
+        ? 'Filtrar categoria: '+button.textContent+' ▾' : 'Filtrar categoria ▾';
+      subcatOptions261.hidden=true;subcatTrigger261.setAttribute('aria-expanded','false');
+      filterCategory();
+    }));
+    subcatOptions261.append(...options);
+  }
  const money=cents=>(cents/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
  const resize=()=>window.dispatchEvent(new Event('resize'));
  function showProducts(focus=false){
@@ -184,14 +228,14 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  function filterCategory(){
   if(!selectedCategory)return;
   const entry=categoryCache.get(selectedCategory),query=search.value.trim();let count=0;
-  entry.cards.forEach(({source,node})=>{const text=(source.dataset.name||'')+' '+(source.querySelector('.menu-product-info p')?.textContent||'');const match=window.NowUpSearch179?window.NowUpSearch179.matches(text,query):text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(query.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase());node.hidden=!match;if(match)count++;});
+  entry.cards.forEach(({source,node})=>{const text=(source.dataset.name||'')+' '+(source.querySelector('.menu-product-info p')?.textContent||'');const found=window.NowUpSearch179?window.NowUpSearch179.matches(text,query):text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(query.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase());const match=found&&(!selectedSubcategory261||source.dataset.subcategory261===selectedSubcategory261);node.hidden=!match;if(match)count++;});
   categoryCount.textContent=count+' '+(count===1?'produto':'produtos');categoryEmpty.hidden=count>0;
  }
  function showCategory(key){
   const group=groups.get(key);if(!group)return;
-  if(desktop228.matches&&sections.get(key)?.nuExpand312){showHome();const section=sections.get(key);section.nuExpand312();markCategory362(key);section.scrollIntoView({block:'start',behavior:'auto'});return;}
+  if(desktop228.matches&&!hasSubcategories261(key)&&sections.get(key)?.nuExpand312){showHome();const section=sections.get(key);section.nuExpand312();markCategory362(key);section.scrollIntoView({block:'start',behavior:'auto'});return;}
   if(body.classList.contains('nu187-store-home'))homeScroll=window.scrollY;
-  selectedCategory=key;markCategory362(key);body.classList.remove('nu187-store-home');body.classList.add('nu191-category');
+  selectedCategory=key;resetSubcategory261(key);markCategory362(key);body.classList.remove('nu187-store-home');body.classList.add('nu191-category');
   intro.hidden=true;showcase.hidden=true;categoryView.hidden=false;back.setAttribute('aria-label','Voltar à página da loja');
   if(nav)sticky.append(nav);
   if(!categoryCache.has(key)){
@@ -225,6 +269,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   // Special collections must always use their own product groups, including after a search.
   if(special){showCategory(key);return;}
   if(selectedCategory){if(key==='all')showHome();else showCategory(key);return;}
+  if(hasSubcategories261(key)){showCategory(key);return;}
   (sections.get(key)||showcase).scrollIntoView({block:'start',behavior:'auto'});
  }
  root.addEventListener('click',handleCategory297,true);
