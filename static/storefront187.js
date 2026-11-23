@@ -17,7 +17,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  const heading=root?.querySelector('.nu83-catalog-heading'),layout=root?.querySelector('.menu-layout');
  const search=heading?.querySelector('[data-product-search], [data-store-search]');
  if(!root||!template||!heading||!layout||!search){body.classList.remove('nu187-store-home');return;}
- const pageSize235=({large:1,pair:2})[root.dataset.carouselLayout]||4;
+ const pageSize235=({large:1,pair:2,six:6})[root.dataset.carouselLayout]||4;
  const desktop228=matchMedia('(min-width:901px)');
  if(desktop228.matches)root.id='nu312-catalog';
  const desktopSheet312=document.createElement('link');desktopSheet312.rel='stylesheet';desktopSheet312.href='/static/catalog-desktop312.css?v=348';document.head.append(desktopSheet312);
@@ -140,6 +140,11 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   if(item.classList.contains('nu275-combo-card'))item.prepend(make('span','nu284-combo-badge','COMBO'));
   if(regular>price)content.insertBefore(make('del','nu284-old-price',money(regular)),content.querySelector('strong'));
   if(item.classList.contains('nu275-combo-card')||offer){const priceBox=make('div','nu289-combo-price'),label=make('small','',item.classList.contains('nu275-combo-card')?'Preço do combo':'Preço promocional'),old=content.querySelector('.nu284-old-price'),value=content.querySelector('strong');priceBox.append(label);if(old)priceBox.append(old);priceBox.append(value);content.append(priceBox);}
+  // Ordinary products use the light-lilac price plaque; combos and promotions retain their original layout.
+  if(!item.classList.contains('nu275-combo-card')&&!offer&&!(regular>price)){
+    const value=content.querySelector('strong');
+    if(value){const priceBox=make('div','nu451-regular-price');priceBox.append(value);content.append(priceBox);item.classList.add('nu451-regular-card');}
+  }
   if(card.dataset.combo256==='1'&&window.NOWUP_COMBO_PRICE303){try{const result=window.NOWUP_COMBO_PRICE303.compare(JSON.parse(card.dataset.custom192||'{}'),JSON.parse(card.dataset.comboPrices303||'{}'),price);if(result?.saving>0){content.append(make('small','nu303-separate',(result.variable?'Avulsos a partir de ':'Avulsos: ')+money(result.separate)),make('small','nu303-saving',(result.variable?'Economize a partir de ':'Economize ')+money(result.saving)));}}catch(_){}}
   const toggle=make('button','nu201-open','Adicionar');toggle.type='button';toggle.setAttribute('aria-label','Adicionar '+card.dataset.name);toggle.setAttribute('aria-expanded','false');
   const panel=make('div','nu201-panel');panel.hidden=true;
