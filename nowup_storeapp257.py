@@ -86,6 +86,9 @@ def validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighbor
                 product["name"]=f"{parent['name']} — {product['name']}"
                 if not product.get("image_filename"):
                     product["image_filename"]=parent["image_filename"]
+                # A scheduled group promotion must not charge outside its date window.
+                from nowup_groups260 import effective_promo_cents
+                product["promo_price_cents"]=effective_promo_cents(product)
             if dict(p).get('business_type')=='fashion':product['_selection391']=raw.get('customization',{})
             user_notes305=item_notes
             quantities255[pid]=quantities255.get(pid,0)+qty
