@@ -35,7 +35,7 @@ def test_optional_cost_without_activation_and_saved_barcode(env):
         assert exact=={"cents":700,"estimated":False}
     result=client.post(f"/painel/cardapio/produtos/{row['id']}",data={
         "name":"V456 com custo", "category":"Geral", "price":"12,00",
-        "barcode456":"","cost_price413":"","cost_present456":"1","available":"1","extras_mode":"none"
+        "barcode456":"","barcode_present456":"1","cost_price413":"","cost_present456":"1","available":"1","extras_mode":"none"
     },follow_redirects=False)
     assert result.status_code==303
     with m.db() as conn:
