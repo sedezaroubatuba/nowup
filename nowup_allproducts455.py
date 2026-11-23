@@ -152,6 +152,10 @@ def install(ns):
                 pass
             by_id = {p["id"]: p for p in products}
             for p in products:
+                try:
+                    p["updated_display455"] = datetime.fromisoformat(p["updated_at"]).astimezone(LOCAL_TZ).strftime("%d/%m/%Y %H:%M")
+                except (ValueError, TypeError):
+                    p["updated_display455"] = str(p["updated_at"])[:16]
                 if p["group_parent_id260"] and not p["image_filename"]:
                     p["display_image455"] = photos.get(p["group_parent_id260"], "")
                 else:
@@ -194,6 +198,7 @@ def install(ns):
                             record = dict(entry)
                             try:
                                 record["fields455"] = ", ".join(json.loads(entry["detail"]).keys())
+                            record["created_display455"] = datetime.fromisoformat(entry["created_at"]).astimezone(LOCAL_TZ).strftime("%d/%m/%Y %H:%M")
                             except (TypeError, ValueError):
                                 record["fields455"] = "Edição registrada"
                             history.setdefault(entry["product_id"], []).append(record)
@@ -265,6 +270,9 @@ def install(ns):
             cents = 0 if old["is_group_header260"] else price_to_cents(price)
             if not old["is_group_header260"] and cents <= 0:
                 raise HTTPException(400, "O preço deve ser maior que zero.")
+            promo = int(old.get("promo_price_cents") or 0)
+            if promo > 0 and cents <= promo and not old["is_group_header260"]:
+                raise HTTPException(400, "Preço normal precisa ficar acima do preço promocional existente.")
             ids = [] if old["is_group_header260"] else [int(x) for x in related256]
             related = validate_pairs(conn, pro["id"], ids, product_id=product_id)
             if ids:
