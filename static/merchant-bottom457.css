@@ -1,0 +1,45 @@
+/* V457: Merchant-only persistent navigation. Never touches the customer footer. */
+html body.professional-area .nu457-merchant-bottom{
+ position:fixed!important;bottom:0!important;left:0!important;right:0!important;
+ width:100%!important;z-index:1600!important;display:grid!important;
+ grid-template-columns:repeat(4,minmax(0,1fr))!important;
+ align-items:stretch;gap:4px;background:#fff!important;
+ border-top:1px solid #dbc3ee!important;
+ box-shadow:0 -5px 24px #2e0e4b14!important;
+ padding:5px 8px max(6px,env(safe-area-inset-bottom,0px))!important;
+ box-sizing:border-box;
+}
+html body.professional-area .nu457-merchant-bottom>a{
+ color:#573478!important;display:flex!important;align-items:center!important;justify-content:center!important;
+ flex-direction:column!important;text-align:center;gap:3px!important;text-decoration:none!important;
+ font-size:11px!important;font-weight:730!important;line-height:1.18!important;
+ min-height:54px!important;border-radius:11px!important;min-width:0!important;padding:5px 2px!important;
+}
+html body.professional-area .nu457-merchant-bottom>a>svg{
+ width:24px;height:24px;stroke:#7132aa;stroke-width:1.8;fill:none;
+ stroke-linecap:round;stroke-linejoin:round;flex:none;
+}
+html body.professional-area .nu457-merchant-bottom>a>span{font:inherit;color:inherit;white-space:normal;overflow-wrap:anywhere}
+html body.professional-area .nu457-merchant-bottom>a[aria-current=page]{
+ background:linear-gradient(140deg,#8b25ce,#59158c)!important;color:#fff!important;
+}
+html body.professional-area .nu457-merchant-bottom>a[aria-current=page]>svg{stroke:white}
+html body.professional-area .nu457-merchant-bottom>a:focus-visible{outline:3px solid #ac81df;outline-offset:-2px}
+html body.professional-area{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))!important}
+html body.professional-area .nu455-root{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))!important}
+html body.professional-area .nu457-merchant-bottom~.mobile-bottom-nav{display:none!important}
+@media(min-width:900px){
+ html body.professional-area .nu457-merchant-bottom{max-width:540px!important;left:50%!important;right:auto!important;transform:translateX(-50%);border:1px solid #dbc3ee!important;border-radius:15px 15px 0 0;}
+}
+@media(max-width:365px){html body.professional-area .nu457-merchant-bottom>a{font-size:10px!important}html body.professional-area .nu457-merchant-bottom>a>svg{width:22px;height:22px}}
+/* History list: improve name, price, category and supporting text contrast. */
+html body.nu455-products-page .nu455-item>summary{background:#fff!important;color:#1e1630!important;opacity:1!important}
+html body.nu455-products-page .nu455-item[open]>summary{background:#eed7fa!important}
+html body.nu455-products-page .nu455-name{color:#170d29!important;font-weight:850!important;opacity:1!important}
+html body.nu455-products-page .nu455-name small{color:#433251!important;font-weight:660!important;opacity:1!important}
+html body.nu455-products-page .nu455-price{color:#23093f!important;font-weight:850!important}
+html body.nu455-products-page .nu455-category{color:#43125f!important;background:#e9d3f5!important;font-weight:740!important}
+html body.nu455-products-page .nu455-status.is-active{color:#115727!important;background:#c9f4d1!important;font-weight:850!important}
+html body.nu455-products-page .nu455-status.is-off{color:#573651!important;font-weight:800!important}
+html body.nu455-products-page .nu455-status.is-empty{color:#744300!important;font-weight:850!important}
+html body.nu455-products-page .nu455-chevron{color:#641492!important}
