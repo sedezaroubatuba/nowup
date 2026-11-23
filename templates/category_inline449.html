@@ -93,7 +93,7 @@
         </form>
         <div class="nu449-secondary-actions">
           <label class="nu-position142">Posição
-            <input class="input" type="number" min="1" max="{{product_categories|length}}" value="{{loop.index}}" data-category-position142="{{category.id}}" aria-label="Posição de {{category.name}}">
+            <input class="input" type="number" min="1" max="{{product_categories|length}}" value="{{position449}}" data-category-position142="{{category.id}}" aria-label="Posição de {{category.name}}">
           </label>
           <form action="/painel/cardapio/categorias/{{category.id}}/excluir" method="post" data-confirm-delete>
             <button type="submit" class="btn danger tiny">Excluir categoria</button>
