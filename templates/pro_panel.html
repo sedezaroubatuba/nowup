@@ -143,30 +143,27 @@ body.fashion-store385 :is(a[href="#lanches-refeicoes322"],a[href="#combos-loja"]
 
 
 
-<details class="menu-category-manager nu-categories138" id="categorias-loja"><summary class="btn primary">＋ Adicionar / editar categorias <small>{{product_categories|length}} cadastradas</small></summary>
+<details class="menu-category-manager nu-categories138" id="categorias-loja" {% if request.query_params.get("categoria449") %}open{% endif %}><summary class="btn primary">＋ Adicionar / editar categorias <small>{{product_categories|length}} cadastradas</small></summary>
 <h3>Categorias do {{'catálogo' if pro.offer_mode=='catalog' else 'cardápio'}}</h3>
 <form action="/painel/cardapio/categorias" method="post" class="category-add-form">
 <label>Nova categoria<input class="input" name="name" maxlength="80" placeholder="Ex.: Lanches, Bebidas, Porções" required></label>
 <label class="nu230-picker-field">Ícone<select name="icon_key" data-icon-picker230><option value="auto">Automático pelo nome</option>{% for item in category_catalog230 %}<option value="{{item.key}}"{% if chosen230|default('auto')==item.key %} selected{% endif %}>{{item.label}}</option>{% endfor %}</select></label>
 <button class="btn primary">Adicionar categoria</button>
 </form>
-<div class="category-admin-list">{% for category in product_categories %}<div class="category-admin-row">
-<form action="/painel/cardapio/categorias/{{category.id}}" method="post">
-<input class="input" name="name" value="{{category.name}}" required>
-{% set chosen230=category.icon_key %}<label class="nu230-picker-field">Ícone<select name="icon_key" data-icon-picker230><option value="auto">Automático pelo nome</option>{% for item in category_catalog230 %}<option value="{{item.key}}"{% if chosen230|default('auto')==item.key %} selected{% endif %}>{{item.label}}</option>{% endfor %}</select></label>
-<label class="check"><input type="checkbox" name="active" value="1" {% if category.active %}checked{% endif %}> Pública</label>
-<button class="btn soft tiny">Salvar</button>
-</form>
-<label class="nu-position142">Posição<input class="input" type="number" min="1" max="{{product_categories|length}}" value="{{loop.index}}" data-category-position142="{{category.id}}" aria-label="Posição de {{category.name}}"></label>
-<form action="/painel/cardapio/categorias/{{category.id}}/excluir" method="post" data-confirm-delete><button class="btn danger tiny">Excluir</button></form>
-</div>{% endfor %}</div>
-<p class="muted">Numere de 1 a {{product_categories|length}} sem repetir posições e salve todas de uma vez.</p><button type="button" class="btn primary" data-save-order142>Salvar ordem</button><p data-order-status142 role="status" aria-live="polite"></p>
-{% include "subcategory_editor261.html" %}
+<div class="category-admin-list nu449-category-list">
+{% for category in product_categories %}
+{% include "category_inline449.html" %}
+{% endfor %}
+</div>
+<p class="muted">Aperte a categoria desejada para adicionar subcategorias. A posição continua disponível em "Editar categoria".</p>
+<button type="button" class="btn soft" data-save-order142>Salvar ordem das categorias</button>
+<p data-order-status142 role="status" aria-live="polite"></p>
+
 </details>
 
 
 
-<link rel="stylesheet" href="/static/subcategories261.css?v=448"><script src="/static/subcategories261.js?v=448" defer></script>
+<link rel="stylesheet" href="/static/subcategories261.css?v=449"><script src="/static/subcategories261.js?v=449" defer></script>
 <details class="product-create" id="novo-produto" {% if request.query_params.get("ok")=="produto" %}open{% endif %}>
 {% if request.query_params.get("ok")=="produto" %}<p role="status">Produto cadastrado! Cadastre o próximo produto abaixo.</p>{% endif %}
 <summary class="btn primary" role="button">＋ Adicionar produto</summary>
