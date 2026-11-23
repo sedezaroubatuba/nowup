@@ -3447,3 +3447,7 @@ nowup_groups260.register(app,db,require_user,require_premium_catalog,save_image,
 # V455: independent all-products manager; existing registration forms are unchanged.
 import nowup_allproducts455
 nowup_allproducts455.install(globals())
+
+# V460: ten-at-a-time bulk editing, isolated from the original catalogue handlers.
+import nowup_bulk460
+nowup_bulk460.install(globals())
