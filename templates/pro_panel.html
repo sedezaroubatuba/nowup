@@ -224,8 +224,8 @@ body.fashion-store385 :is(a[href="#lanches-refeicoes322"],a[href="#combos-loja"]
 {% if pro.is_premium and pro.offer_mode in ['menu','catalog'] and pro.business_type!='fashion' %}
 {% include "group_editor260.html" %}
 {% endif %}
-<link rel="stylesheet" href="/static/groups260.css?v=451">
-<script src="/static/groups260.js?v=451" defer></script>
+<link rel="stylesheet" href="/static/groups260.css?v=453">
+<script src="/static/groups260.js?v=453" defer></script>
 
 <section id="produtos-loja" class="panel full" aria-label="Pesquisar e editar produtos"><h3>Produtos</h3><label for="pesquisar-produtos299">Pesquisar produtos</label><input id="pesquisar-produtos299" class="input" type="search" data-pro-search placeholder="Digite o nome ou código do produto" autocomplete="off" style="width:100%;min-height:48px;margin:8px 0 12px"><nav class="menu-category-nav pro-product-filters" aria-label="Filtrar produtos do painel"><button type="button" class="active" data-pro-category="all">Todos</button><a class="btn soft" href="#combos-loja" data-nav198>🍻 Combos</a><button type="button" data-pro-category="promocoes">Promoções</button>{% for category in product_categories if category.name|lower != 'combos' %}<button type="button" data-pro-category="{{category.name}}">{{category.name}}</button>{% endfor %}</nav><p class="muted">Para montar ou editar um combo, abra a área Combos.</p></section>
 <div class="product-admin-grid" data-pro-products>{% for product in products if product.id not in meal_ids322 and not product.sold_by_weight370 and not product.is_group_header260 and not product.group_parent_id260 %}{% include 'merchant_product_card.html' %}{% else %}<div class="empty-state full">
