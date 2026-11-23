@@ -161,3 +161,33 @@ html body.nu455-products-page .nu455-root > header.nu455-header a.nu455-create{
  background:#fff!important;
  font-weight:800!important;
 }
+
+/* V459: force readable light text in the history header. Global site heading
+   and generic header colors used to override its original dark-theme rules. */
+html body.professional-area.nu455-products-page main.nu455-root > header.nu455-header{
+ background:linear-gradient(115deg,#230b36 0%,#3b0b5b 55%,#521478 100%)!important;
+ color:#fff!important;
+}
+html body.professional-area.nu455-products-page main.nu455-root > header.nu455-header > div{
+ color:#fff!important;opacity:1!important;
+}
+html body.professional-area.nu455-products-page main.nu455-root > header.nu455-header h1{
+ color:#fff!important;-webkit-text-fill-color:#fff!important;
+ opacity:1!important;font-weight:850!important;text-shadow:0 1px 2px #12052440;
+}
+html body.professional-area.nu455-products-page main.nu455-root > header.nu455-header > div > small{
+ color:#f0e4fb!important;-webkit-text-fill-color:#f0e4fb!important;
+ opacity:1!important;font-weight:650!important;
+}
+html body.professional-area.nu455-products-page main.nu455-root > header.nu455-header > div > p{
+ color:#f7efff!important;-webkit-text-fill-color:#f7efff!important;
+ opacity:1!important;font-weight:600!important;line-height:1.45!important;
+}
+html body.professional-area.nu455-products-page main.nu455-root > header.nu455-header > a.nu455-back{
+ color:#fff!important;-webkit-text-fill-color:#fff!important;opacity:1!important;
+}
+@media(max-width:700px){
+ html body.professional-area.nu455-products-page main.nu455-root > header.nu455-header h1{font-size:clamp(20px,5.3vw,27px)!important;line-height:1.2!important;}
+ html body.professional-area.nu455-products-page main.nu455-root > header.nu455-header > div > small{font-size:11px!important;}
+ html body.professional-area.nu455-products-page main.nu455-root > header.nu455-header > div > p{font-size:12px!important;}
+}
