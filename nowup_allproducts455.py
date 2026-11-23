@@ -140,6 +140,9 @@ def install(ns):
             period = period if period in PERIODS else "30"
             status = status if status in ("all", "active", "inactive", "no-stock") else "all"
             performance = _sales(conn, pro["id"], period)
+            # Separate recorded cost from illustrative 20% gross margin where missing.
+            cost_rows = conn.execute("SELECT product_id,cost_cents FROM product_costs413 WHERE professional_id=?",(pro["id"],)).fetchall()
+            costs455 = {int(row["product_id"]):int(row["cost_cents"]) for row in cost_rows}
             photos = {p["id"]: p["image_filename"] for p in products if p["is_group_header260"]}
             parents = {p["id"]: p["name"] for p in products if p["is_group_header260"]}
             inventory = {}
@@ -167,6 +170,11 @@ def install(ns):
                     children = [item for item in products if item["group_parent_id260"] == p["id"]]
                     p["stats455"] = {key: sum(performance.get(item["id"], {}).get(key, 0) for item in children) for key in ("sold", "revenue", "cancelled")}
                     p["stats455"]["days"] = 0  # Group-cover days are not a sum of child days.
+                recorded_cost = costs455.get(p["id"])
+                stats = p["stats455"]
+                stats["profit_estimate455"] = recorded_cost is None
+                stats["gross_cents455"] = (round(stats["revenue"]*0.20) if recorded_cost is None
+                                           else stats["revenue"] - stats["sold"]*recorded_cost)
                 p["inventory455"] = inventory.get(p["id"])
                 p["status455"] = ("Indisponível" if not p["available"] else
                                   "Sem estoque" if p["inventory455"] is not None and p["inventory455"] <= 0 else "Ativo")
@@ -210,9 +218,11 @@ def install(ns):
             for p in products:
                 if p["is_group_header260"]:
                     continue
-                rec = category_totals.setdefault(p["category"], {"sold": 0, "revenue": 0, "cancelled": 0})
-                for field in rec:
+                rec = category_totals.setdefault(p["category"], {"sold": 0, "revenue": 0, "cancelled": 0, "gross_recorded455": 0, "gross_estimated455": 0})
+                for field in ("sold","revenue","cancelled"):
                     rec[field] += p["stats455"][field]
+                label = "gross_estimated455" if p["stats455"]["profit_estimate455"] else "gross_recorded455"
+                rec[label] += p["stats455"]["gross_cents455"]
             category_ranking = sorted(category_totals.items(), key=lambda row: -row[1]["revenue"])
             return templates.TemplateResponse("all_products455.html", context(
                 request, pro=pro, products455=page_products, all_names455=[
