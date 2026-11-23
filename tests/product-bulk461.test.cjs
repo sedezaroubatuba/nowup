@@ -9,7 +9,7 @@ const records=[
  {id:21,name:'Gelo de coco',category:'Gelo',price:250,parent:0}
 ];
 function setup(){
- const html=\`<section class="nu460-batch"><form data-bulk-form460 action="/painel/todos-produtos/lote">
+ const html=`<section class="nu460-batch"><form data-bulk-form460 action="/painel/todos-produtos/lote">
  <input data-bulk-search460 type="search"><div data-bulk-results460></div>
  <span data-bulk-count460></span><div data-bulk-selected460></div><div data-bulk-ids460></div>
  <select data-bulk-operation460 name="operation"><option value="related">Leve Junto</option><option value="prices">Preços</option></select>
@@ -21,7 +21,7 @@ function setup(){
  <button type="button" data-bulk-clear460>Limpar</button>
  <div data-bulk-mode460="related"></div><div data-bulk-mode460="category"></div>
  <div data-bulk-mode460="prices"></div><div data-bulk-mode460="availability"></div>
- </form></section><script id="nu455-product-names" type="application/json">\${JSON.stringify(records)}</script>\`;
+ </form></section><script id="nu455-product-names" type="application/json">${JSON.stringify(records)}</script>`;
  const dom=new JSDOM(html,{url:'https://nowupbrasil.com/painel/todos-produtos',runScripts:'outside-only'});
  dom.window.eval(source);
  return dom;
@@ -39,8 +39,6 @@ test('searching Skol actually renders both matching selectable products',()=>{
   search.value='Gelo';search.dispatchEvent(new dom.window.Event('input',{bubbles:true}));
   assert.equal(doc.querySelectorAll('.nu460-result').length,1);
   assert.equal(doc.querySelectorAll('input[name=selected_ids]').length,1);
-  doc.querySelector('.nu460-result input').click();
-  assert.equal(doc.querySelectorAll('input[name=selected_ids]').length,2);
   // The Leve Junto target chooser must also populate from the same catalogue.
   const targetSearch=doc.querySelector('[data-bulk-target-search460]');
   targetSearch.value='Gelo';
@@ -50,6 +48,9 @@ test('searching Skol actually renders both matching selectable products',()=>{
   targetSearch.value='Skol';
   targetSearch.dispatchEvent(new dom.window.Event('input',{bubbles:true}));
   assert(options.length>0);
-  assert([...doc.querySelector('[data-bulk-target460]').options].some(option=>option.textContent.includes('Skol Lata')));
+  assert([...doc.querySelector('[data-bulk-target460]').options].some(option=>option.textContent.includes('Skol Lata 473ml')));
+  // Select a second product from the updated source search; retain first selection.
+  doc.querySelector('.nu460-result input').click();
+  assert.equal(doc.querySelectorAll('input[name=selected_ids]').length,2);
  }finally{dom.window.close();}
 });
