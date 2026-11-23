@@ -204,7 +204,8 @@ def register(app, db, require_user, require_premium_catalog, save_image, price_t
     @app.post("/painel/cardapio/agrupadores/{group_id}/itens/{item_id}")
     def item_edit260(request: Request, group_id: int, item_id: int, name: str = Form(...),
                      price: str = Form(...), promo_price: str = Form(""),
-                     available: str | None = Form(None), photo: UploadFile | None = File(None)):
+                     available: str | None = Form(None), use_cover_photo: str | None = Form(None),
+                     photo: UploadFile | None = File(None)):
         user = require_user(request, "professional")
         conn = db()
         try:
@@ -215,7 +216,7 @@ def register(app, db, require_user, require_premium_catalog, save_image, price_t
             cents = price_to_cents(price)
             if not clean or cents <= 0:
                 raise HTTPException(400, "Informe o nome e um preço maior que zero.")
-            fn = save_image(photo) if photo and photo.filename else item["image_filename"]
+            fn = "" if use_cover_photo else (save_image(photo) if photo and photo.filename else item["image_filename"])
             # A manual promotion changes only this flavor, not the entire group.
             promo = price_to_cents(promo_price) if promo_price.strip() else 0
             if promo and promo >= cents:
