@@ -59,6 +59,17 @@
   let imageURL='';const upload=form.querySelector('[name=photo]');const oldPhoto=upload?.dataset.preview250;if(oldPhoto){photo.src=oldPhoto;photo.hidden=false;}
   upload?.addEventListener('change',()=>{if(imageURL)URL.revokeObjectURL(imageURL);if(upload.files?.[0]){imageURL=URL.createObjectURL(upload.files[0]);photo.src=imageURL;photo.hidden=false;}});
   function update(){productName.textContent=form.querySelector('[name=name]')?.value||'Nome do produto';description.textContent=form.querySelector('[name=description]')?.value||'';const raw=form.querySelector('[name=price]')?.value||'0',value=Number(raw.includes(',')?raw.replace(/\./g,'').replace(',','.'):raw);price.textContent=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number.isFinite(value)?value:0)+(kind==='weight'?' / kg':'');detail.textContent=kind==='weight'?'O cliente escolhe quilos + gramas. Total estimado conforme o peso.':kind==='combo'?'Os itens obrigatórios entram automaticamente. O cliente escolhe somente nos grupos configurados.':'';}
+  // Price may be left empty only for an unavailable draft. Checkout never receives zero-priced products.
+  const selling=form.querySelector('[name=price]');
+  if(selling){
+   selling.required=false;
+   selling.placeholder='Opcional para salvar como rascunho';
+   const priceLabel=selling.closest('label');
+   if(priceLabel){
+     const hint=el('small','Se deixar vazio, o produto será salvo indisponível até receber um preço.','nu410-help');
+     priceLabel.append(hint);
+   }
+  }
   form.append(heading);grid.append(basic,options);form.append(preview,grid,footer);form.addEventListener('input',update);update();
   form.addEventListener('invalid',event=>{for(let n=event.target.parentElement;n&&n!==form;n=n.parentElement)if(n.tagName==='DETAILS')n.open=true;},true);
  });}
