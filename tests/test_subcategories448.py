@@ -77,7 +77,7 @@ def test_create_and_unfiltered_catalog(env):
     assert f'aria-controls="nu449-new-subcat-{cats["Tabacaria"]}"' in panel.text
     assert "Adicionar subcategoria" in panel.text
     assert 'data-subcats-content261 hidden' not in panel.text
-    assert "Escolha uma categoria" not in panel.text
+    assert 'data-subcats-category261' not in panel.text
     assert "data-subcat-picker261" in panel.text
     resumed=client.get(f'/painel?categoria449={cats["Tabacaria"]}')
     assert resumed.status_code==200
