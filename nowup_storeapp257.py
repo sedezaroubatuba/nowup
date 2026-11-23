@@ -62,6 +62,30 @@ def validate(g,conn,p,cart_json,fulfillment_type,payment_method,address,neighbor
             raise HTTPException(400,"Um produto do carrinho ficou indisponível. Atualize o cardápio antes de enviar o pedido.")
         if product:
             product=dict(product)
+            # A cover card is not a sellable SKU. Variants remain individually
+            # priced and must have an enabled parent in the same merchant store.
+            if product.get("is_group_header260"):
+                raise HTTPException(400,"Escolha um sabor ou item do agrupador antes de finalizar.")
+            parent_id=int(product.get("group_parent_id260") or 0)
+            if parent_id:
+                parent=conn.execute(
+                    """SELECT id,name,image_filename,available,category,subcategory_id261
+                       FROM products WHERE id=? AND professional_id=? AND is_group_header260=1""",
+                    (parent_id,p["id"]),
+                ).fetchone()
+                if not parent or not parent["available"]:
+                    raise HTTPException(409,"O agrupador deste produto não está disponível. Atualize o carrinho.")
+                if parent["subcategory_id261"] and not conn.execute(
+                    """SELECT 1 FROM product_subcategories261 sc
+                       JOIN product_categories pc ON pc.id=sc.category_id
+                       WHERE sc.id=? AND sc.professional_id=? AND sc.active=1
+                         AND pc.professional_id=? AND pc.active=1""",
+                    (parent["subcategory_id261"],p["id"],p["id"]),
+                ).fetchone():
+                    raise HTTPException(409,"A seção deste produto está indisponível.")
+                product["name"]=f"{parent['name']} — {product['name']}"
+                if not product.get("image_filename"):
+                    product["image_filename"]=parent["image_filename"]
             if dict(p).get('business_type')=='fashion':product['_selection391']=raw.get('customization',{})
             user_notes305=item_notes
             quantities255[pid]=quantities255.get(pid,0)+qty
