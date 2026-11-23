@@ -138,3 +138,12 @@ def test_edit_individual_photo_remains_optional(env):
     with m.db() as conn:
         latest=conn.execute("SELECT price_cents,image_filename FROM products WHERE id=?",(child["id"],)).fetchone()
         assert latest["price_cents"]==590 and latest["image_filename"] and latest["image_filename"]!=parent["image_filename"]
+    revert=client.post(f"/painel/cardapio/agrupadores/{parent['id']}/itens/{child['id']}",
+        data={"name":"Fini Morango","price":"5,90","available":"1","use_cover_photo":"1"},
+        follow_redirects=False)
+    assert revert.status_code==303
+    with m.db() as conn:
+        current=conn.execute("SELECT image_filename FROM products WHERE id=?",(child["id"],)).fetchone()
+        assert current["image_filename"]==""
+    html=client.get(f"/p/{stores[0]['slug']}/menu").text
+    assert f'data-group-photo260="/uploads/{parent["image_filename"]}"' in html
