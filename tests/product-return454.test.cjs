@@ -18,6 +18,9 @@ function build(items,ok=''){
      </select></label>
      <button type="submit">Salvar</button>
    </form>
+   <form action="/painel/cardapio/produtos/${id}/excluir" method="post">
+     <button type="submit">Excluir</button>
+   </form>
   </details>`).join('');
  const html=`<div class="pro-dashboard">
    <section id="produtos-loja"><nav class="pro-product-filters">
@@ -116,5 +119,21 @@ test('global name search keeps underlying category when saved and cleared',async
  d.querySelector('[data-pro-search]').value='';
  d.querySelector('[data-pro-search]').dispatchEvent(new second.w.Event('input',{bubbles:true}));
  assert.equal(d.querySelector('[data-pro-category="Tabacaria"]').classList.contains('active'),true);
+ first.dom.window.close();second.dom.window.close();
+});
+
+test('confirmed deletion keeps the source category and continues to the next item',async()=>{
+ const first=build([[1,'Tabacaria','Seda A'],[2,'Tabacaria','Seda B'],[3,'Cervejas','Skol']]);
+ initialize(first.w);await pause(first.w,35);choose(first.w,'Tabacaria');
+ const deleted=first.w.document.getElementById('produto-editor328-1').querySelector('form[action$="/excluir"]');
+ deleted.dispatchEvent(new first.w.SubmitEvent('submit',{bubbles:true,cancelable:true,submitter:deleted.querySelector('button')}));
+ const state=JSON.parse(first.w.sessionStorage.getItem(key));
+ assert.equal(state.deleted,true);
+ assert.equal(state.next,'produto-editor328-2');
+ const second=await returnPage([[2,'Tabacaria','Seda B'],[3,'Cervejas','Skol']],state,'?ok=produto-excluido#cardapio');
+ assert.equal(second.w.location.hash,'#produtos-loja');
+ assert.equal(second.w.document.querySelector('[data-pro-category="Tabacaria"]').classList.contains('active'),true);
+ assert.equal(second.w.document.getElementById('produto-editor328-2').open,true);
+ assert.match(second.w.document.querySelector('.nu454-product-saved').textContent,/Produto excluído/);
  first.dom.window.close();second.dom.window.close();
 });
