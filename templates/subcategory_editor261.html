@@ -1,0 +1,70 @@
+<section class="nu-subcats261-manager" aria-label="Cadastro de subcategorias" data-subcats-admin261>
+  <h3>Subcategorias (opcional)</h3>
+  <p class="muted">Primeiro escolha a categoria. Depois cadastre e organize somente as subcategorias daquele setor, sem deixar listas expostas.</p>
+  <label class="nu-subcats261-selector">
+    Categoria principal
+    <select class="input" data-subcats-category261>
+      <option value="">Escolha uma categoria</option>
+      {% for cat in product_categories if cat.active %}
+      <option value="{{cat.id}}">{{cat.name}}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <div data-subcats-content261 hidden>
+    {% for cat in product_categories if cat.active %}
+    <div class="nu-subcats261-sector" data-subcats-sector261="{{cat.id}}" hidden>
+      <div class="nu-subcats261-controls">
+        <button type="button" class="btn soft" data-subcats-add-toggle261 aria-expanded="false">＋ Adicionar subcategoria</button>
+      </div>
+      <form action="/painel/cardapio/subcategorias261" method="post" class="nu-subcats261-add" data-subcats-add-form261 hidden>
+        <input type="hidden" name="category_id" value="{{cat.id}}">
+        <label>Nome da subcategoria<input class="input" name="name" maxlength="80" placeholder="Ex.: {{'Sedas' if 'tabac' in cat.name|lower else 'Vinhos'}}" required></label>
+        <button class="btn primary" type="submit">Salvar subcategoria</button>
+      </form>
+      <details class="nu-subcats261-existing">
+        <summary>Ver e editar subcategorias de {{cat.name}} ({{subcategories261|selectattr('category_id','equalto',cat.id)|list|length}})</summary>
+        {% for sc in subcategories261 if sc.category_id==cat.id %}
+        <div class="nu-subcats261-row">
+          <form action="/painel/cardapio/subcategorias261/{{sc.id}}" method="post">
+            <label>Nome<input class="input" name="name" value="{{sc.name}}" maxlength="80" required></label>
+            <label>Ordem<input class="input" type="number" name="sort_order" min="1" max="9999" value="{{sc.sort_order}}"></label>
+            <label class="check"><input type="checkbox" name="active" value="1" {% if sc.active %}checked{% endif %}> Visível no filtro</label>
+            <button class="btn soft tiny" type="submit">Salvar</button>
+          </form>
+          <form action="/painel/cardapio/subcategorias261/{{sc.id}}/excluir" method="post" data-confirm-delete>
+            <button class="btn danger tiny" type="submit">Excluir subcategoria (preserva produtos)</button>
+          </form>
+        </div>
+        {% else %}<p class="muted">Nenhuma subcategoria cadastrada neste setor.</p>{% endfor %}
+      </details>
+      <details class="nu-subcats261-bulk">
+        <summary>Organizar produtos já cadastrados em {{cat.name}}</summary>
+        <form action="/painel/cardapio/subcategorias261/organizar" method="post" data-bulk261>
+          <input type="hidden" name="category_id" value="{{cat.id}}">
+          <label>Mover os produtos selecionados para
+            <select name="subcategory_id" class="input" required>
+              <option value="0">Sem subcategoria (direto em {{cat.name}})</option>
+              {% for sc in subcategories261 if sc.category_id==cat.id and sc.active %}
+              <option value="{{sc.id}}">{{sc.name}}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <div class="nu-subcats261-actions">
+            <button type="button" class="btn soft tiny" data-all261>Selecionar todos</button>
+            <button type="button" class="btn soft tiny" data-none261>Desmarcar todos</button>
+          </div>
+          <div class="nu-subcats261-choices">
+            {% for product in products if product.category|lower == cat.name|lower %}
+            <label class="check">
+              <input type="checkbox" name="product_ids" value="{{product.id}}">
+              <span>{{product.name}}{% for sc in subcategories261 if sc.id==product.subcategory_id261 %} <small>({{sc.name}})</small>{% endfor %}{% if product.is_group_header260 %} <small>— Agrupador</small>{% endif %}</span>
+            </label>
+            {% else %}<p class="muted">Não há produtos nesta categoria.</p>{% endfor %}
+          </div>
+          <button class="btn primary" type="submit">Salvar organização</button>
+        </form>
+      </details>
+    </div>
+    {% endfor %}
+  </div>
+</section>
