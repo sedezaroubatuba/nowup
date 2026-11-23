@@ -34,7 +34,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  const sticky=root.querySelector('.nu-menu-sticky')||heading.parentElement;
  const anchor=document.createComment('store190');layout.before(anchor);anchor.before(intro);
  const showcase=make('div','nu190-showcase');layout.before(showcase);
- const originals=Array.from(layout.querySelectorAll('.menu-products > [data-product]')),sections=new Map(),refreshers=[],cartRefreshers=[];
+ const catalogItems=layout.querySelector('.menu-products')||layout;const originals=Array.from(catalogItems.children).filter(el=>el.matches('[data-product]')),sections=new Map(),refreshers=[],cartRefreshers=[];
  originals.forEach(card=>{if(card.dataset.comboLocal303!=='1'&&(card.dataset.combo256==='1'||card.dataset.category==='combos')){card.dataset.category='combos';const label=card.querySelector('.menu-product-info small');if(label)label.textContent='Combos';}});
  const back=make('button','nu187-back','←');back.type='button';heading.prepend(back);
  let homeScroll=0,selectedCategory=null,selectedSubcategory261='';
