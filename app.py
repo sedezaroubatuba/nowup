@@ -7,6 +7,7 @@ import nowup_marketing309
 import nowup_neighborhoods267
 from nowup_combos303 import attach_prices, current_price, combo_kind
 import nowup_categories230
+import nowup_subcategories448
 import nowup_ingredients320
 import nowup_included195
 from nowup_custom192 import parse_config, save_config, charge_options, validate_customization, bind_combo_products
@@ -740,6 +741,7 @@ def init_db():
     ensure_column(conn, "products", "promo_price_cents", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "products", "featured", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(conn, "products", "max_quantity", "INTEGER NOT NULL DEFAULT 99")
+    nowup_subcategories448.migrate(conn, ensure_column)
     conn.execute("CREATE TABLE IF NOT EXISTS checkout_requests229(customer_id INTEGER NOT NULL,professional_id INTEGER NOT NULL,request_key TEXT NOT NULL,payload_hash TEXT NOT NULL,order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,created_at TEXT NOT NULL,PRIMARY KEY(customer_id,professional_id,request_key))")
     ensure_column(conn,'products','fashion_photos385',"TEXT NOT NULL DEFAULT '[]'")
     ensure_column(conn,'products','fashion_details387',"TEXT NOT NULL DEFAULT '{}'")
@@ -1207,7 +1209,7 @@ def profile(request: Request, slug: str):
     reviews=conn.execute("SELECT r.*,u.name FROM reviews r JOIN users u ON u.id=r.customer_id WHERE r.professional_id=? ORDER BY r.id DESC",(p["id"],)).fetchall()
     cats=conn.execute("SELECT c.* FROM categories c JOIN professional_categories pc ON pc.category_id=c.id WHERE pc.professional_id=?",(p["id"],)).fetchall()
     product_count=conn.execute("SELECT COUNT(*) FROM products WHERE professional_id=? AND available=1",(p["id"],)).fetchone()[0] if p["is_premium"] and p["offer_mode"] in ("menu","catalog") else 0
-    products=[]; menu_categories=[]; product_options={}
+    products=[]; menu_categories=[]; product_options={}; subcategories261=[]
     if p["is_premium"] and p["offer_mode"] in ("menu","catalog"):
         products=conn.execute("""SELECT pr.* FROM products pr
           WHERE pr.professional_id=?
@@ -1215,6 +1217,7 @@ def profile(request: Request, slug: str):
             OR EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) AND pc.active=1))
           ORDER BY COALESCE((SELECT pc.sort_order FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) LIMIT 1),999999),pr.category,pr.sort_order,pr.id DESC""",(p["id"],)).fetchall()
         products=attach_prices(conn,p["id"],products)
+        subcategories261=nowup_subcategories448.public_rows(conn,p["id"])
         menu_categories=[]
         for product in products:
             category=(product["category"] or "Geral").strip() or "Geral"
@@ -1232,7 +1235,7 @@ def profile(request: Request, slug: str):
     has_contact=(pub["contact_target"]=="external" and bool(pub["external_url"])) or (pub["contact_target"]!="external" and bool(re.sub(r"\D","",pub["whatsapp"] or "")))
     pub["contact_link"]=""
     status=shop_status(p)
-    return attach_cart_assets144(templates.TemplateResponse("profile.html", context(request, pro=pub, products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, photos=photos, posts=posts, reviews=reviews, pro_categories=cats, product_count=product_count, shop_status=status, hours_lines=business_hours_lines(p), can_review=can_review)))
+    return attach_cart_assets144(templates.TemplateResponse("profile.html", context(request, pro=pub, products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, subcategories261=subcategories261, photos=photos, posts=posts, reviews=reviews, pro_categories=cats, product_count=product_count, shop_status=status, hours_lines=business_hours_lines(p), can_review=can_review)))
 
 @app.get("/p/{slug}/menu", response_class=HTMLResponse)
 def native_menu(request: Request, slug: str):
@@ -1246,6 +1249,7 @@ def native_menu(request: Request, slug: str):
         OR EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) AND pc.active=1))
       ORDER BY COALESCE((SELECT pc.sort_order FROM product_categories pc WHERE pc.professional_id=pr.professional_id AND lower(pc.name)=lower(pr.category) LIMIT 1),999999),pr.category,pr.sort_order,pr.id DESC""",(p["id"],)).fetchall()
     products=attach_prices(conn,p["id"],products)
+    subcategories261=nowup_subcategories448.public_rows(conn,p["id"])
     menu_categories=[]
     for product in products:
         category=(product["category"] or "Geral").strip() or "Geral"
@@ -1258,7 +1262,7 @@ def native_menu(request: Request, slug: str):
     conn.execute("INSERT INTO analytics_events(professional_id,event_type,created_at) VALUES(?,?,?)",(p["id"],"menu_click",now_iso())); conn.commit()
     product_groups,delivery_zones=menu_rules89(conn,p["id"]); conn.close()
     status=shop_status(p)
-    return attach_cart_assets144(attach_food_assets(templates.TemplateResponse("menu.html", context(request, pro=nowup_links352.public_links(p), products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, shop_status=status))))
+    return attach_cart_assets144(attach_food_assets(templates.TemplateResponse("menu.html", context(request, pro=nowup_links352.public_links(p), products=products, product_options=product_options, product_groups=product_groups, delivery_zones=delivery_zones, menu_categories=menu_categories, subcategories261=subcategories261, shop_status=status))))
 
 def options_single158(conn, product_id, raw_options):
     if not isinstance(raw_options,list):raise HTTPException(400,"Adicionais inválidos.")
@@ -1744,6 +1748,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
         for index,name in enumerate(existing,1):
             conn.execute("INSERT OR IGNORE INTO product_categories(professional_id,name,sort_order,active,created_at) VALUES(?,?,?,?,?)",(p["id"],name,index,1,now_iso()))
         conn.commit(); product_categories=conn.execute("SELECT * FROM product_categories WHERE professional_id=? ORDER BY sort_order,id",(p["id"],)).fetchall()
+    subcategories261=nowup_subcategories448.rows(conn,p["id"])
     selected={r[0] for r in conn.execute("SELECT category_id FROM professional_categories WHERE professional_id=?",(p["id"],)).fetchall()}
     today=datetime.now(SAO_PAULO_TZ).date()
     try:
@@ -1842,7 +1847,7 @@ def pro_panel(request: Request, mes: str="", inicio: str="", fim: str="", pedido
     kanban=nowup_merchant228.board(conn,p["id"],lower228,upper228,SAO_PAULO_TZ)
     conn.close()
     status=shop_status(p); business_hours=parse_business_hours(p["business_hours"])
-    return templates.TemplateResponse("pro_panel.html", context(request, kanban=kanban, manual=nowup_sales107.panel_data(request,conta), combo_catalog298=combo_catalog298, pair_catalog328=[{"id":row["id"],"name":row["name"]} for row in products], meal_ids322=meal_ids322, ingredient_catalog320=ingredient_catalog320, included_catalog195=included_catalog195, shared_extras=shared_extras, shared_selected=shared_selected, pro=p, photos=photos, posts=posts, products=products, product_groups=product_groups, delivery_zones=delivery_zones, merchant_overview=merchant_overview, product_options=product_options, product_categories=product_categories, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, today_orders=today_orders, day_order_summary=day_order_summary, order_day=order_day.isoformat(), today_day=today.isoformat(), order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
+    return templates.TemplateResponse("pro_panel.html", context(request, kanban=kanban, manual=nowup_sales107.panel_data(request,conta), combo_catalog298=combo_catalog298, pair_catalog328=[{"id":row["id"],"name":row["name"]} for row in products], meal_ids322=meal_ids322, ingredient_catalog320=ingredient_catalog320, included_catalog195=included_catalog195, shared_extras=shared_extras, shared_selected=shared_selected, pro=p, photos=photos, posts=posts, products=products, product_groups=product_groups, delivery_zones=delivery_zones, merchant_overview=merchant_overview, product_options=product_options, product_categories=product_categories, subcategories261=subcategories261, selected=selected, max_photos=MAX_PHOTOS, active_cities=active_cities(), analytics=analytics, daily_rows=daily_rows, filter_start=start.isoformat(), filter_end=end.isoformat(), filter_month=mes, support_link=support_link, profile_completion=profile_completion, orders=orders, today_orders=today_orders, day_order_summary=day_order_summary, order_day=order_day.isoformat(), today_day=today.isoformat(), order_items_by_order=order_items_by_order, order_item_options=order_item_options, order_summary=order_summary, top_products=top_products, order_status=pedido_status, shop_status=status, business_hours=business_hours, days=DAYS, day_labels=DAY_LABELS, latest_order_id=latest_order_id, latest_notification_id=latest_notification_id, store_clients=store_clients, store_client_orders=store_client_orders, store_notifications=store_notifications))
 
 @app.post('/painel/plano')
 def request_store_plan(request: Request, plan: str=Form(...), offer_mode: str=Form('services'), category_id: int=Form(0)):
@@ -1942,6 +1947,7 @@ def pro_menu_category_delete(request: Request, category_id: int):
     u=require_user(request,"professional"); conn=db(); p=require_premium_catalog(conn,u["id"]); row=conn.execute("SELECT * FROM product_categories WHERE id=? AND professional_id=?",(category_id,p["id"])).fetchone()
     if row:
         conn.execute("UPDATE products SET category='Geral',updated_at=? WHERE professional_id=? AND lower(category)=lower(?)",(now_iso(),p["id"],row["name"]))
+        conn.execute("UPDATE products SET subcategory_id261=0 WHERE professional_id=? AND subcategory_id261 IN (SELECT id FROM product_subcategories261 WHERE category_id=? AND professional_id=?)",(p['id'],category_id,p['id']))
         conn.execute("DELETE FROM product_categories WHERE id=?",(category_id,)); conn.execute("INSERT OR IGNORE INTO product_categories(professional_id,name,sort_order,active,created_at) VALUES(?,?,?,?,?)",(p["id"],"Geral",999,1,now_iso())); conn.commit()
     conn.close(); return RedirectResponse("/painel?ok=categoria-excluida#cardapio",303)
 
@@ -2061,7 +2067,7 @@ def catalog_return328(request, fallback):
     return RedirectResponse(fallback,303)
 
 @app.post("/painel/cardapio/produtos")
-def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None), sold_by_weight370: Optional[str]=Form(None), size_kind385: str=Form("none"), sizes385: str=Form(""), colors385: str=Form(""), extra_photos385: list[UploadFile]=File(default=[]), brand387: str=Form(""), material387: str=Form(""), composition387: str=Form(""), guide387: str=Form("none"), measurements387: str=Form(""), stock_mode389: str=Form("none"), stock_total389: str=Form(""), stock_sizes389: str=Form(""), stock_variants391: str=Form(""), stock_version391: str=Form(""), cost_price413: str=Form("__keep413")):
+def pro_product_add(request: Request, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), subcategory_id261: int=Form(0), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None), sold_by_weight370: Optional[str]=Form(None), size_kind385: str=Form("none"), sizes385: str=Form(""), colors385: str=Form(""), extra_photos385: list[UploadFile]=File(default=[]), brand387: str=Form(""), material387: str=Form(""), composition387: str=Form(""), guide387: str=Form("none"), measurements387: str=Form(""), stock_mode389: str=Form("none"), stock_total389: str=Form(""), stock_sizes389: str=Form(""), stock_variants391: str=Form(""), stock_version391: str=Form(""), cost_price413: str=Form("__keep413")):
     from nowup_promotions285 import promotional_cents
     promo_cents285=promotional_cents(price_to_cents(price),promo_price,promo_mode,promo_percent,promo_enabled,price_to_cents)
     is_combo256,category=combo_kind(category,is_combo256)
@@ -2097,10 +2103,11 @@ def pro_product_add(request: Request, name: str=Form(...), description: str=Form
     except HTTPException: conn.close(); raise
     try: cost413=nowup_costs413.prepare(conn,p["id"],cost_price413)
     except Exception:conn.rollback();conn.close();raise
+    chosen_sc261=nowup_subcategories448.valid_selection(conn,p["id"],category,subcategory_id261)
     created=now_iso(); cur=conn.execute("INSERT INTO products(professional_id,name,description,category,price_cents,image_filename,available,created_at,updated_at,promo_price_cents,featured,max_quantity) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",(p["id"],name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,created,created,promo_cents285,1 if featured else 0,max(1,min(99,max_quantity))))
     nowup_costs413.save(conn,p['id'],cur.lastrowid,cost413)
     conn.execute('UPDATE products SET sold_by_weight370=? WHERE id=?',(int(sold_by_weight370=='1'),cur.lastrowid))
-    conn.execute("UPDATE products SET sold_cold=? WHERE id=?",(1 if sold_cold else 0,cur.lastrowid))
+    conn.execute("UPDATE products SET sold_cold=?,subcategory_id261=? WHERE id=?",(1 if sold_cold else 0,chosen_sc261,cur.lastrowid))
     conn.execute("UPDATE products SET is_combo256=?,recommend256=?,related256=? WHERE id=?",(bool(is_combo256),bool(recommend256),pair_ids256,cur.lastrowid))
     if extras_mode=="legacy":configure_personalization153(conn,cur.lastrowid,bool(personalizable),max_choices)
     else:configure_shared155(conn,p["id"],cur.lastrowid,extras_mode,extra_ids,max_choices)
@@ -2118,7 +2125,7 @@ def pro_product_add(request: Request, name: str=Form(...), description: str=Form
     conn.commit(); conn.close(); return catalog_return328(request,"/painel?ok=combo#combos-loja" if is_combo256 else "/painel?ok=refeicao#lanches-refeicoes322" if custom192 and custom192.get("is_meal317") else "/painel?ok=produto#novo-produto")
 
 @app.post("/painel/cardapio/produtos/{product_id}")
-def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None), sold_by_weight370: Optional[str]=Form(None), size_kind385: str=Form("none"), sizes385: str=Form(""), colors385: str=Form(""), extra_photos385: list[UploadFile]=File(default=[]), brand387: str=Form(""), material387: str=Form(""), composition387: str=Form(""), guide387: str=Form("none"), measurements387: str=Form(""), stock_mode389: str=Form("none"), stock_total389: str=Form(""), stock_sizes389: str=Form(""), stock_variants391: str=Form(""), stock_version391: str=Form(""), cost_price413: str=Form("__keep413")):
+def pro_product_edit(request: Request, product_id: int, name: str=Form(...), description: str=Form(""), category: str=Form("Geral"), subcategory_id261: int=Form(0), price: str=Form(...), promo_price: str=Form(""), promo_mode: str=Form("legacy"), promo_percent: str=Form(""), promo_enabled: Optional[str]=Form(None), max_quantity: int=Form(99), featured: Optional[str]=Form(None), available: Optional[str]=Form(None), photo: Optional[UploadFile]=File(None), personalizable: Optional[str]=Form(None), max_choices: int=Form(3), extras_mode: str=Form("legacy"), extra_ids: list[int]=Form([]), customization192: str=Form(""), sold_cold: Optional[str]=Form(None), is_combo256: Optional[str]=Form(None), recommend256: Optional[str]=Form(None), related256: list[int]=Form([]), combo_editor301: Optional[str]=Form(None), recommend_config310: Optional[str]=Form(None), sold_by_weight370: Optional[str]=Form(None), size_kind385: str=Form("none"), sizes385: str=Form(""), colors385: str=Form(""), extra_photos385: list[UploadFile]=File(default=[]), brand387: str=Form(""), material387: str=Form(""), composition387: str=Form(""), guide387: str=Form("none"), measurements387: str=Form(""), stock_mode389: str=Form("none"), stock_total389: str=Form(""), stock_sizes389: str=Form(""), stock_variants391: str=Form(""), stock_version391: str=Form(""), cost_price413: str=Form("__keep413")):
     from nowup_promotions285 import promotional_cents
     promo_cents285=promotional_cents(price_to_cents(price),promo_price,promo_mode,promo_percent,promo_enabled,price_to_cents)
     is_combo256,category=combo_kind(category,is_combo256)
@@ -2163,6 +2170,7 @@ def pro_product_edit(request: Request, product_id: int, name: str=Form(...), des
     if combo_editor301 and is_combo256:
         pair_ids256=product["related256"]
         if recommend_config310!="1":recommend256=bool(product["recommend256"])
+    chosen_sc261=nowup_subcategories448.valid_selection(conn,p["id"],category,subcategory_id261)
     fn=product["image_filename"]
     if photo and photo.filename:
         new_fn=save_image(photo)
@@ -2171,7 +2179,7 @@ def pro_product_edit(request: Request, product_id: int, name: str=Form(...), des
     except Exception:conn.rollback();conn.close();raise
     conn.execute("UPDATE products SET name=?,description=?,category=?,price_cents=?,image_filename=?,available=?,updated_at=?,promo_price_cents=?,featured=?,max_quantity=? WHERE id=?",(name.strip()[:140],description.strip()[:600],category.strip()[:80] or "Geral",price_to_cents(price),fn,1 if available else 0,now_iso(),promo_cents285,1 if featured else 0,max(1,min(99,max_quantity)),product_id)); configure_personalization153(conn,product_id,bool(personalizable),max_choices) if extras_mode=="legacy" else configure_shared155(conn,p["id"],product_id,extras_mode,extra_ids,max_choices)
     nowup_costs413.save(conn,p['id'],product_id,cost413)
-    conn.execute("UPDATE products SET sold_cold=? WHERE id=? AND professional_id=?",(1 if sold_cold else 0,product_id,p["id"]))
+    conn.execute("UPDATE products SET sold_cold=?,subcategory_id261=? WHERE id=? AND professional_id=?",(1 if sold_cold else 0,chosen_sc261,product_id,p["id"]))
     if nowup_fashion385.is_fashion(p):
         try:
             nowup_fashion385.save_photos(globals(),conn,product_id,extra_photos385)
@@ -3413,3 +3421,6 @@ nowup_cash424.install(globals())
 # Customer-selected WhatsApp fallback after a server-timed minute.
 import nowup_wait434
 nowup_wait434.install(globals())
+
+# V448: optional subcategories on the existing production code path.
+nowup_subcategories448.register(app, db, require_user, require_premium_catalog, now_iso)
