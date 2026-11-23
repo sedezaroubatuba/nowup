@@ -45,9 +45,5 @@ jobs:
       - run: npm ci
       - name: Validar navegação dos tutoriais
         run: node --test tests/tutorials395.test.cjs
-      - name: Gerar referência revisada (não publicar automaticamente)
-        run: |
-          node tools/check_tutorials395.cjs --reviewed
-          echo 'BASELINE_V448_START'
-          cat tests/tutorials395-reviewed.json
-          echo 'BASELINE_V448_END'
+      - name: Conferir referência de tutoriais revisados
+        run: node tools/check_tutorials395.cjs
