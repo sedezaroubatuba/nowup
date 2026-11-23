@@ -11,7 +11,7 @@
   const form=event.target;
   if(event.defaultPrevented||!form.closest('.pro-dashboard'))return;
   const url=new URL(form.action,location.href);
-  if(!/^\/painel\/cardapio\/(produtos(?:\/\d+(?:\/disponibilidade)?)?|ingredientes320)$/.test(url.pathname))return;
+  if(!/^\/painel\/cardapio\/(produtos(?:\/\d+(?:\/(?:disponibilidade|excluir))?)?|ingredientes320)$/.test(url.pathname))return;
   if(form.dataset.saving328){event.preventDefault();return;}
   const editor=form.closest('[data-product-id]'),list=!!editor?.closest('[data-pro-products]');
   const target=editor?.id||(form.dataset.mealEditor322==='1'?'novo-lanche322':url.pathname.endsWith('ingredientes320')?'ingredientes320':form.dataset.comboEditor301?'cadastrar-combo':'novo-produto');
@@ -23,12 +23,14 @@
   const previousCategory=editor?.dataset.category||'',newCategory=form.querySelector('select[name="category"]')?.value||previousCategory;
   // Editors in the ordinary-product list always return to that list, not to a
   // moved product that has ceased to belong to the previous category.
-  url.searchParams.set('return_to328',list?'produtos-loja':target);
-  form.action=url.pathname+url.search;
+  if(!url.pathname.endsWith('/excluir')){
+   url.searchParams.set('return_to328',list?'produtos-loja':target);
+   form.action=url.pathname+url.search;
+  }
   try{sessionStorage.setItem(key,JSON.stringify({
    target,time:Date.now(),scroll:window.scrollY,
    next:next?.id,previous:previous?.id,filters,searches,list,category,
-   previousCategory,newCategory
+   previousCategory,newCategory,deleted:url.pathname.endsWith('/excluir')
   }));}catch(_){}
   form.dataset.saving328='1';form.setAttribute('aria-busy','true');
   const button=event.submitter;
@@ -41,7 +43,7 @@
   });
  }));
  const ok=new URLSearchParams(location.search).get('ok');
- if(!['produto','refeicao','combo','ingrediente','disponibilidade'].includes(ok)){
+ if(!['produto','refeicao','combo','ingrediente','disponibilidade','produto-excluido'].includes(ok)){
   if(ok==='categoria-ordenada'){const box=document.getElementById('categorias-loja');if(box)box.open=true;}
   return;
  }
@@ -98,7 +100,7 @@
   history.replaceState(null,'','#produtos-loja');
   window.dispatchEvent(new Event('nowup:panelnavigate'));
   const moved=state.previousCategory&&normalize(state.previousCategory)!==normalize(state.newCategory);
-  const label=moved?'Produto salvo e movido para '+state.newCategory+'. ':'Alterações salvas. ';
+  const label=state.deleted?'Produto excluído. ':moved?'Produto salvo e movido para '+state.newCategory+'. ':'Alterações salvas. ';
   const message=label+(target?'Próximo produto pronto para edição.':'Você continua nesta categoria.');
   const header=document.getElementById('produtos-loja');
   if(header){
