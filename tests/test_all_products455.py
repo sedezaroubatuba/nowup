@@ -36,7 +36,8 @@ def test_page_is_ten_alphabetical_items_with_owner_guard(env):
     next_page = client.get("/painel/todos-produtos?q=Bebida&category=Cervejas&page=2")
     assert next_page.status_code == 200 and "Bebida 10" in next_page.text
     assert "10" in response.text
-    assert not "<img" in response.text.split('class="nu455-item"')[0]
+    summary = response.text.split('<details class="nu455-item"', 1)[1].split('</summary>', 1)[0]
+    assert "<img" not in summary  # The site header may contain its own logo image.
     assert _fold("Água 500ml") == "agua 500ml"
     assert m.app is not None
     assert ids
