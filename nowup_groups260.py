@@ -43,7 +43,13 @@ def public_catalog(rows, today=None):
                and (not p["is_group_header260"] or
                     (p["available"] and any(c["available"] for c in grouped.get(p["id"], []))))]
     for parent_id, children in grouped.items():
-        cover = heads[parent_id].get("image_filename", "")
+        head = heads[parent_id]
+        available = [child for child in children if child["available"]]
+        head["group_min_price260"] = min(
+            (child["promo_price_cents"] or child["price_cents"] for child in available),
+            default=0,
+        )
+        cover = head.get("image_filename", "")
         for child in children:
             child["group_cover260"] = cover
             child["group_name260"] = heads[parent_id]["name"]
