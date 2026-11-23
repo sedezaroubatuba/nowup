@@ -157,7 +157,7 @@ body.fashion-store385 :is(a[href="#lanches-refeicoes322"],a[href="#combos-loja"]
 <div class="category-admin-list nu449-category-list">
 {% for category in product_categories %}
 <div class="category-admin-row nu449-category-row">
-<details class="nu449-category-card">
+<details class="nu449-category-card" data-category449="{{category.id}}">
 <summary class="nu449-category-summary" aria-label="Abrir categoria {{category.name}} e suas subcategorias">
 <strong class="nu449-category-name">{{category.name}}</strong>
 <span class="nu449-category-count">{{subcategories261|selectattr('category_id','equalto',category.id)|list|length}} subcategorias</span>
