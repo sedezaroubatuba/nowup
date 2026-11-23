@@ -14,7 +14,7 @@
       <b class="nu-group260-open">Escolher entre {{items260|length}} opções ›</b>
     </div>
   </summary>
-  <div class="nu-group260-items"><p class="nu-group260-hint">Escolha o sabor ou modelo. Cada opção tem seu próprio preço.</p>
+  <div class="nu-group260-items"><h3 class="nu452-list-title">Opções de {{product.name}}</h3><p class="nu-group260-hint">Escolha o sabor e adicione ao carrinho. Cada opção tem seu próprio preço.</p>
     {% for item in items260 %}
     <article class="nu-group260-row" data-product data-id="{{item.id}}" data-category="{{item.category|lower}}" data-subcategory261="{{product.subcategory_id261}}"
              data-name="{{product.name}} — {{item.name}}" data-group-cover260="{% if product.image_filename %}/uploads/{{product.image_filename}}{% endif %}" data-group-photo260="{% if item.image_filename %}/uploads/{{item.image_filename}}{% elif product.image_filename %}/uploads/{{product.image_filename}}{% endif %}" data-group-name260="{{product.name}}" data-price="{{item.promo_price_cents if item.promo_price_cents>0 else item.price_cents}}"
@@ -45,15 +45,15 @@
             {% endfor %}
           </div>
         {% endif %}
-        <div class="product-buy">
-          <label>Qtd.<input class="product-quantity-input" type="number" min="1" max="{{item.max_quantity}}" value="1"
-                            data-product-quantity inputmode="numeric" aria-label="Quantidade de {{item.name}}"
-                            {% if not item.available or not shop_status.open or (user and user.id==pro.user_id) %}disabled{% endif %}></label>
-          <button class="btn primary" type="button" data-add
-                  {% if not item.available or not shop_status.open or (user and user.id==pro.user_id) %}disabled{% endif %}>
-                  {{'Indisponível' if not item.available else ('Adicionar' if shop_status.open else 'Fechado')}}
-          </button>
-        </div>
+      </div>
+      <div class="product-buy" aria-label="Adicionar {{item.name}} ao carrinho">
+        <label>Qtd.<input class="product-quantity-input" type="number" min="1" max="{{item.max_quantity}}" value="1"
+                           data-product-quantity inputmode="numeric" aria-label="Quantidade de {{item.name}}"
+                           {% if not item.available or not shop_status.open or (user and user.id==pro.user_id) %}disabled{% endif %}></label>
+        <button class="btn primary" type="button" data-add
+                {% if not item.available or not shop_status.open or (user and user.id==pro.user_id) %}disabled{% endif %}>
+                {{'Indisponível' if not item.available else ('Adicionar' if shop_status.open else 'Fechado')}}
+        </button>
       </div>
     </article>
     {% endfor %}
