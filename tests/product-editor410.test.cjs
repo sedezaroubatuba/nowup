@@ -16,7 +16,14 @@ test('all four real forms retain their controls, serialize and show preview afte
  const forms=['#novo-produto form','#produtos-peso370 form','#cadastrar-combo form','#novo-lanche322 form'].map(s=>d.querySelector(s));assert(forms.every(Boolean));
  const serialized=f=>[...new w.FormData(f)].map(([k,v])=>[k,typeof v==='string'?v:v.name]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)));const before=forms.map(serialized);
  w.eval(fs.readFileSync('static/product-editor410.js','utf8'));await tick(w);
- forms.forEach((f,i)=>{assert.equal(f.dataset.editor410,'1');assert.deepEqual(serialized(f),before[i]);assert.equal(f.querySelectorAll('.nu410-header').length,1);const b=[...f.querySelectorAll('button')].find(b=>b.textContent==='Ver prévia');assert(b);b.click();assert.equal(f.querySelector('.nu410-preview').hidden,false);});
+ forms.forEach((f,i)=>{assert.equal(f.dataset.editor410,'1');
+  // V456 adds an optional barcode but preserves every original field and value.
+  const previous=serialized(f).filter(([key])=>key!=='barcode456');
+  assert.deepEqual(previous,before[i]);
+  assert.equal(f.querySelectorAll('.nu410-header').length,1);
+  assert(f.querySelector('[name=barcode456]'));
+  assert.equal(f.querySelector('.nu410-preview').hidden,false);
+ });
  const meal=forms[3],normal=forms[0];assert(meal.querySelector('[aria-label="Máximo de adicionais deste produto"]'));assert(normal.querySelector('[aria-label="Ingrediente"]')||normal.textContent.includes('Ingredientes e personalização'));assert(meal.textContent.includes('Leve junto'));assert.equal(meal.querySelectorAll('[name=max_choices]').length,1);
  meal.querySelector('[name=name]').value='X-bacon editado';meal.querySelector('[name=price]').value='25,00';meal.dispatchEvent(new w.Event('input',{bubbles:true}));assert.match(meal.querySelector('.nu410-price').textContent,/25,00/);assert.equal(meal.querySelector('.nu410-preview h4').textContent,'X-bacon editado');
  }finally{w.close();}
