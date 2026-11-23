@@ -9,7 +9,7 @@
   if(form.dataset.editor410||!/^\/painel\/cardapio\/produtos(?:\/\d+)?$/.test(new URL(form.action,location.href).pathname)||form.querySelector('[name=size_kind385]'))return;
   const host=form.querySelector('[data-editor192]');if(host&&!host.dataset.ready328)return;
   if(host?._editor321&&!form.dataset.compact200)return;
-  form.dataset.editor410='1';form.classList.add('nu410-form');const kind=kindOf(form),name=kinds.find(k=>k[0]===kind)[1];
+  form.dataset.editor410='1';form.classList.add('nu410-form','nu456-unified');const kind=kindOf(form),name=kinds.find(k=>k[0]===kind)[1];
   const original=[...form.children],heading=el('header',null,'nu410-header'),isEdit=/\/produtos\/\d+$/.test(new URL(form.action,location.href).pathname);
   heading.append(el('span','CADASTRO DE PRODUTOS','nu410-eyebrow'),el('h2',isEdit?'Editar '+name.toLowerCase():'Novo '+name.toLowerCase()),el('p','Mesmo cadastro completo, com visual renovado. Configurações avançadas permanecem disponíveis.'));
   if(isEdit){
@@ -52,15 +52,14 @@
   if(related.children.length>1&&!related.isConnected)options.append(related);
   if(promotion.children.length>1)options.append(promotion);
   if(advanced.children.length>1)options.append(advanced);
-  const preview=el('aside',null,'nu410-preview');preview.hidden=true;preview.setAttribute('aria-label','Prévia do produto');
+  const preview=el('aside',null,'nu410-preview');preview.hidden=false;preview.setAttribute('aria-label','Prévia do produto');
   const previewTitle=el('h3','Prévia do cliente'),photo=el('img'),productName=el('h4'),description=el('p'),price=el('strong',null,'nu410-price'),detail=el('p',null,'nu410-preview-note');photo.alt='Foto do produto';photo.hidden=true;preview.append(previewTitle,photo,productName,description,price,detail,el('p','Prévia visual. Os adicionais e escolhas são conferidos no cardápio.','nu410-help'));
-  const previewButton=el('button','Ver prévia','btn soft');previewButton.type='button';previewButton.setAttribute('aria-expanded','false');
-  previewButton.onclick=()=>{preview.hidden=!preview.hidden;previewButton.setAttribute('aria-expanded',String(!preview.hidden));update();if(!preview.hidden)preview.scrollIntoView?.({block:'nearest'});};footer.prepend(previewButton);
+  // Show the image and live client preview automatically; no extra tap on mobile.
   const submit=footer.querySelector('button:not([type=button])');if(submit){submit.classList.add('nu410-save');submit.textContent=isEdit?'✓ Salvar alterações':'✓ Salvar produto';}
   let imageURL='';const upload=form.querySelector('[name=photo]');const oldPhoto=upload?.dataset.preview250;if(oldPhoto){photo.src=oldPhoto;photo.hidden=false;}
   upload?.addEventListener('change',()=>{if(imageURL)URL.revokeObjectURL(imageURL);if(upload.files?.[0]){imageURL=URL.createObjectURL(upload.files[0]);photo.src=imageURL;photo.hidden=false;}});
   function update(){productName.textContent=form.querySelector('[name=name]')?.value||'Nome do produto';description.textContent=form.querySelector('[name=description]')?.value||'';const raw=form.querySelector('[name=price]')?.value||'0',value=Number(raw.includes(',')?raw.replace(/\./g,'').replace(',','.'):raw);price.textContent=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number.isFinite(value)?value:0)+(kind==='weight'?' / kg':'');detail.textContent=kind==='weight'?'O cliente escolhe quilos + gramas. Total estimado conforme o peso.':kind==='combo'?'Os itens obrigatórios entram automaticamente. O cliente escolhe somente nos grupos configurados.':'';}
-  form.append(heading);grid.append(basic,options);form.append(grid,preview,footer);form.addEventListener('input',update);update();
+  form.append(heading);grid.append(basic,options);form.append(preview,grid,footer);form.addEventListener('input',update);update();
   form.addEventListener('invalid',event=>{for(let n=event.target.parentElement;n&&n!==form;n=n.parentElement)if(n.tagName==='DETAILS')n.open=true;},true);
  });}
  let scheduled=false;function schedule(){if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;initialize();});}
