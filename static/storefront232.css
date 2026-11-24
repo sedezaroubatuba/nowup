@@ -199,7 +199,7 @@ html body.public-profile-area [data-native-menu] .nu451-regular-price strong{
  html body.public-profile-area.nu233-store.nu232-store [data-native-menu][data-carousel-layout="six"] .nu190-showcase .nu190-category:not(.nu275-combo-section):not(.nu290-offers-section){
   margin:6px 0 9px!important;padding-bottom:0!important;
  }
- html body.public-profile-area.nu233-store.nu232-store [data-native-menu][data-carousel-layout="six"] .nu190-showcase .nu190-category:not(.nu275-combo-section):not(.nu290-offers-section)>.nu190-track>.nu190-page{
+ html body.public-profile-area.nu233-store.nu232-store [data-native-menu][data-carousel-layout="six"] .nu190-showcase .nu190-category:not(.nu275-combo-section):not(.nu290-offers-section)>.nu471-carousel>.nu190-track>.nu190-page{
   display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
   grid-template-rows:repeat(2,auto)!important;gap:6px!important;
   padding:0 2px!important;align-items:stretch!important;
