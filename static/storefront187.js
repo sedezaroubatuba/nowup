@@ -20,7 +20,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  const pageSize235=({large:1,pair:2,six:6})[root.dataset.carouselLayout]||4;
  const desktop228=matchMedia('(min-width:901px)');
  if(desktop228.matches)root.id='nu312-catalog';
- const desktopSheet312=document.createElement('link');desktopSheet312.rel='stylesheet';desktopSheet312.href='/static/catalog-desktop312.css?v=348';document.head.append(desktopSheet312);
+ const desktopSheet312=document.createElement('link');desktopSheet312.rel='stylesheet';desktopSheet312.href='/static/catalog-desktop312.css?v=466';document.head.append(desktopSheet312);
  const desktopStyle228=document.createElement('style');
  desktopStyle228.textContent=`@media(min-width:901px){
  html body.public-profile-area.nu228-desktop-catalog [data-native-menu] .nu187-intro{display:block!important}
@@ -69,10 +69,11 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
    button.type='button';
    button.setAttribute('aria-pressed',String(!id));
    button.addEventListener('click',()=>{
+    if(selectedSubcategory261===id)return;
+    controls.find(control=>control.getAttribute('aria-pressed')==='true')?.setAttribute('aria-pressed','false');
     selectedSubcategory261=id;
-    controls.forEach(control=>control.setAttribute('aria-pressed',String(control===button)));
+    button.setAttribute('aria-pressed','true');
     filterCategory();
-    window.scrollTo({top:0,behavior:"instant"});
    });
    return button;
   });
@@ -249,8 +250,10 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  function filterCategory(){
   if(!selectedCategory)return;
   const entry=categoryCache.get(selectedCategory),query=search.value.trim();let count=0;
-  entry.cards.forEach(({source,node})=>{const text=(source.dataset.name||'')+' '+(source.querySelector('.menu-product-info p')?.textContent||'');const found=window.NowUpSearch179?window.NowUpSearch179.matches(text,query):text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(query.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase());const match=found&&(!selectedSubcategory261||source.dataset.subcategory261===selectedSubcategory261);node.hidden=!match;if(match)count++;});
-  categoryCount.textContent=count+' '+(count===1?'produto':'produtos');categoryEmpty.hidden=count>0;
+  entry.cards.forEach(({source,node})=>{const text=(source.dataset.name||'')+' '+(source.querySelector('.menu-product-info p')?.textContent||'');const found=window.NowUpSearch179?window.NowUpSearch179.matches(text,query):text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(query.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase());const match=found&&(!selectedSubcategory261||source.dataset.subcategory261===selectedSubcategory261);if(node.hidden===match)node.hidden=!match;if(match)count++;});
+  const label=count+' '+(count===1?'produto':'produtos');
+  if(categoryCount.textContent!==label)categoryCount.textContent=label;
+  if(categoryEmpty.hidden!==(count>0))categoryEmpty.hidden=count>0;
  }
  function showCategory(key,{filter=false}={}){
   const group=groups.get(key);if(!group)return;
@@ -260,7 +263,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   if(body.classList.contains('nu187-store-home'))homeScroll=window.scrollY;
   selectedCategory=key;prepareSubcategories(key);markCategory362(key);body.classList.remove('nu187-store-home');body.classList.add('nu191-category');
   intro.hidden=true;showcase.hidden=true;categoryView.hidden=false;back.setAttribute('aria-label','Voltar à página da loja');
-  if(nav)sticky.append(nav);
+  if(nav){if(desktop228.matches)anchor.after(nav);else sticky.append(nav);}
   sticky.append(subcategoryFilters);
   if(!categoryCache.has(key)){
    const grid=make('div','nu191-grid');grid.classList.toggle('nu275-combos-grid',key==='__combos256'||key==='__offers256');grid.classList.toggle('nu277-promotions-grid',key==='__offers256');const cards=group.cards.map(source=>{const node=compact(source,key==='__offers256');grid.append(node);return {source,node};});categoryFooter.before(grid);categoryCache.set(key,{grid,cards});
@@ -309,10 +312,13 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   if(!groups.has(key))return;
   pendingCategory=key;
   categoryLabel.textContent=groups.get(key).name;
-  if(desktop228.matches&&body.classList.contains('nu187-store-home'))button.after(categoryActions);
+  if(desktop228.matches&&nav?.parentElement!==sticky)button.after(categoryActions);
   else sticky.append(categoryActions);
   categoryActions.hidden=false;
   markCategory362(key);
+  if(desktop228.matches&&body.classList.contains('nu187-store-home')){
+   sections.get(key)?.scrollIntoView({block:'start',behavior:'instant'});
+  }
  }
  applyCategory.addEventListener('click',()=>showCategory(pendingCategory,{filter:true}));
  allCategories.addEventListener('click',showAllCategories);

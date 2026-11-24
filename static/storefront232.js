@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (intro.nextElementSibling !== bar) bar.before(intro);
         if (nav && bar.nextElementSibling !== nav) bar.after(nav);
       }
-    } else if (nav && nav.parentElement !== bar) bar.append(nav);
+    } else if (nav && nav.parentElement !== bar && (mobile.matches || !body.classList.contains('nu191-category'))) bar.append(nav);
     // The slideshow belongs to the page flow, never the sticky search controls.
     body.classList.toggle('nu237-banner-hidden', !home);
     if (body.classList.contains('nu248-slide-collapsed')) body.classList.remove('nu248-slide-collapsed');
