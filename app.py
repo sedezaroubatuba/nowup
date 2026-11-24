@@ -310,7 +310,7 @@ def require_user(request: Request, role: Optional[str]=None):
 PUBLIC_CATEGORY_SLUGS = ("restaurantes-e-lanchonetes", "lanches-e-pizzarias", "padarias-e-cafeterias", "doces-e-sorveterias", "mercados-e-mercearias", "conveniencias-e-adegas", "pet-shops-e-veterinarios")
 
 def public_business_scope():
-    return "p.is_demo=0 AND p.plan_active IN ('vitrine','ambos','completo') AND EXISTS(SELECT 1 FROM professional_categories scope_pc JOIN categories scope_c ON scope_c.id=scope_pc.category_id WHERE scope_pc.professional_id=p.id AND scope_c.active=1)"
+    return "p.is_demo=0 AND p.slug='adega-sede-zero' AND p.plan_active IN ('vitrine','ambos','completo') AND EXISTS(SELECT 1 FROM professional_categories scope_pc JOIN categories scope_c ON scope_c.id=scope_pc.category_id WHERE scope_pc.professional_id=p.id AND scope_c.active=1)"
 
 def context(request: Request, **kwargs):
     conn = db()
