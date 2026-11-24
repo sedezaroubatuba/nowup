@@ -1,5 +1,4 @@
 """Public catalog search; uses current data and makes no database mutations."""
-import re
 import secrets
 import unicodedata
 from urllib.parse import quote
@@ -36,36 +35,43 @@ def register(app, db, public_business_scope, shop_status):
             return JSONResponse({'products':[],'stores':[]},headers={'Cache-Control':'no-store'})
         conn=db()
         try:
-            conn.create_function('nu177_normalize',1,normalize,deterministic=True)
             if not city.strip():
                 city_row=conn.execute("SELECT city FROM professionals WHERE city!='' AND blocked=0 AND admission_status='approved' ORDER BY id LIMIT 1").fetchone()
                 city=city_row['city'] if city_row else 'Ubatuba'
             scope="p.blocked=0 AND p.admission_status='approved' AND "+public_business_scope()
-            params=[normalize(city)]
-            scope+=" AND nu177_normalize(p.city)=?"
+            params=[]
+            city_key=normalize(city)
             if category:
                 scope+=' AND EXISTS(SELECT 1 FROM professional_categories pc JOIN categories c ON c.id=pc.category_id WHERE pc.professional_id=p.id AND c.active=1 AND c.slug=?)'
                 params.append(category[:100])
-            product_match=' AND '.join(["instr(nu177_normalize(pr.name || ' ' || coalesce(pr.description,'') || ' ' || coalesce(pr.category,'')),?)>0"]*len(tokens))
+            def matches(*fields):
+                text = normalize(" ".join(str(value or "") for value in fields))
+                return all(token in text for token in tokens)
             # Cardapio-only stores have a private external menu and are excluded.
             product_sql='''SELECT pr.*,p.business_type,
-                p.slug store_slug,p.display_name store_name,p.city,p.neighborhood,p.business_hours,p.business_status,
+                p.slug,p.slug store_slug,p.display_name,p.display_name store_name,p.city,p.neighborhood,p.business_hours,p.business_status,
                 p.id professional_id FROM products pr JOIN professionals p ON p.id=pr.professional_id
                 WHERE '''+scope+''' AND p.plan_active IN ('ambos','completo') AND p.is_premium=1 AND p.offer_mode IN ('menu','catalog') AND pr.available=1 AND pr.is_group_header260=0
                 AND (pr.group_parent_id260=0 OR EXISTS (SELECT 1 FROM products parent WHERE parent.id=pr.group_parent_id260 AND parent.professional_id=p.id AND parent.available=1))
                 AND (NOT EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=p.id AND lower(pc.name)=lower(pr.category))
-                OR EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=p.id AND lower(pc.name)=lower(pr.category) AND pc.active=1)) AND '''+product_match
+                OR EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=p.id AND lower(pc.name)=lower(pr.category) AND pc.active=1))'''
             products=[]
-            for row in conn.execute(product_sql,params+tokens):
-                r=dict(row);status=shop_status(r)
-                if open_now=='1' and not status['open']:continue
+            for row in conn.execute(product_sql,params):
+                r=dict(row)
+                if normalize(r['city']) != city_key or not matches(r['name'],r['description'],r['category']):
+                    continue
+                if open_now=='1' and not shop_status(r)['open']:
+                    continue
                 products.append(r)
             products=rank_products(products,query,city)[:30]
-            store_match=' AND '.join(["instr(nu177_normalize(p.display_name || ' ' || coalesce(p.description,'') || ' ' || coalesce(p.services,'')),?)>0"]*len(tokens))
             stores=[]
-            for row in conn.execute('SELECT p.* FROM professionals p WHERE '+scope+' AND '+store_match,params+tokens):
-                r=dict(row);status=shop_status(r)
-                if open_now=='1' and not status['open']:continue
+            for row in conn.execute('SELECT p.* FROM professionals p WHERE '+scope,params):
+                r=dict(row)
+                if normalize(r['city']) != city_key or not matches(r['display_name'],r['description'],r['services']):
+                    continue
+                status=shop_status(r)
+                if open_now=='1' and not status['open']:
+                    continue
                 stores.append((r,status))
             stores.sort(key=lambda item:(relevance(item[0]['display_name'],'','',query),secrets.randbits(32)))
             def image(filename):return '/uploads/'+quote(filename,safe='') if filename else ''
