@@ -81,7 +81,7 @@ def test_create_and_unfiltered_catalog(env):
     assert "data-subcat-picker261" in panel.text
     script=(m.BASE/"static"/"storefront187.js").read_text()
     assert "selectedSubcategory261=''" in script
-    assert "subcatOptions261.hidden=true" in script
+    assert "subcategoryFilters.hidden=!choices.length" in script
 
 
 def test_invalid_parent_and_cross_store_are_rejected(env):

@@ -331,7 +331,8 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  function updateCategoryArrow(){
   scrollCategories.hidden=desktop228.matches||categoryBar274.scrollWidth<=categoryBar274.clientWidth+1;
  }
- new ResizeObserver(updateCategoryArrow).observe(categoryBar274);
+ updateCategoryArrow();
+ if(typeof ResizeObserver==='function')new ResizeObserver(updateCategoryArrow).observe(categoryBar274);
  // Focus alone does not switch views: explicit top-search interaction does.
  search.addEventListener('click',()=>{if(body.classList.contains('nu187-store-home'))showProducts(true);});
  search.addEventListener('keydown',event=>{if(body.classList.contains('nu187-store-home')&&(event.key==='Enter'||event.key.length===1))showProducts();});
