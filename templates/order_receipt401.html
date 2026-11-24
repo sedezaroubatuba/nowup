@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}Notinha {{order.order_code}} | NowUp{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="/static/order-receipt401.css?v=407">
+<link rel="stylesheet" href="/static/order-receipt401.css?v=469">
 <main class="nu401-receipt"><header class="nu406-heading nu401-no-print"><span class="nu406-eyebrow">SEU PEDIDO, EM CADA DETALHE</span><h1>{{'Notinha — atendimento pelo WhatsApp' if order.status=='whatsapp_finalized' else 'Notinha confirmada' if confirmed401 else 'Notinha de conferência'}}</h1><p>{{order.display_name}} · {{order.order_code}}</p></header>
 {% if order.status=='whatsapp_finalized' %}<p class="alert nu401-no-print">Atendimento pelo WhatsApp. Este pedido fica apenas para consulta no NowUp.</p>{% elif not confirmed401 %}<p class="alert nu401-no-print">Pedido ainda não confirmado. Confira os itens e o pagamento antes do aceite.</p>{% endif %}
 {% if merchant401 %}{% include 'order_status425.html' %}{% endif %}

@@ -70,3 +70,27 @@ def test_delivery_card_and_cash_instructions(channel):
             c.execute("UPDATE orders SET payment_method=?,change_for_cents=?,fulfillment_type='delivery' WHERE id=?",(method,change,o['id']))
             order=c.execute('SELECT o.*,p.display_name FROM orders o JOIN professionals p ON p.id=o.professional_id WHERE o.id=?',(o['id'],)).fetchone()
             assert expected in m.nowup_notinha401.receipt(c,order,m.ORDER_STATUS_LABELS)
+
+def test_merchant_receipt_photos_include_combo_contents(channel,monkeypatch):
+    m,client,_,order,item,owner,buyer=setup_order(channel)
+    pack={"items":[
+        {"name":"Item do catálogo","quantity":2,"product_id":item["product_id"]},
+        {"name":"Item manual","quantity":1}
+    ]}
+    with m.db() as c:
+        c.execute("UPDATE products SET image_filename=? WHERE id=?",("foto produto.jpg",item["product_id"]))
+        c.execute("UPDATE orders SET address_reference=? WHERE id=?",("Linha 1\nLinha 2",order["id"]))
+        c.execute("UPDATE order_items SET combo_pack305=? WHERE id=?",(json.dumps(pack),item["id"]))
+        c.commit()
+    path=f"/pedidos/{order['id']}/notinha"
+    assert "nu469-receipt-photo" not in client.get(path).text
+    monkeypatch.setattr(m,'current_user',lambda request:owner)
+    for endpoint in (path, f"/painel/pedidos/{order['id']}/detalhes407?central=1", f"/pedido/{order['tracking_token']}"):
+        response=client.get(endpoint)
+        assert response.status_code==200
+        paper=BeautifulSoup(response.text,'html.parser').select_one('.nu401-paper')
+        photos=paper.select('img.nu469-receipt-photo')
+        assert [img['src'] for img in photos]==['/uploads/foto%20produto.jpg']*2
+        assert [img['width'] for img in photos]==['40','28']
+        assert 'Item manual' in paper.text
+        assert 'TOTAL: R$ 3,00' in paper.text

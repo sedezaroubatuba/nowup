@@ -17,3 +17,10 @@ html body .nu401-receipt .nu406-grand-total strong{color:#421476!important;opaci
 
 .nu401-receipt .nu407-receipt-price{display:block;margin-top:4px;font-size:16px;white-space:nowrap}
 @media print{html body .nu401-receipt .nu406-item strong,html body .nu401-receipt .nu406-summary b,html body .nu401-receipt .nu406-grand-total strong{color:#000!important}}
+
+@media screen{
+  .nu401-paper .nu406-item:has(.nu469-receipt-photo){display:flex;align-items:center;gap:8px}
+  .nu401-paper .nu469-receipt-photo{display:block;flex:none;object-fit:contain;border:1px solid #eee6f8;border-radius:7px;background:#fff}
+  .nu401-paper .nu469-receipt-child{display:flex;align-items:center;gap:7px}
+}
+@media print{.nu401-paper .nu469-receipt-photo{display:none!important}}

@@ -19,9 +19,13 @@ def install(g):
                     ON i.id=op.order_item_id WHERE i.order_id=? ORDER BY op.id''',(order_id,)):
                 options.setdefault(option['order_item_id'],[]).append(option)
             paid=g['nowup_notinha401'].payment_checked(c,order)
+            receipt_text, photos = ('', {})
+            if central:
+                receipt_text, photos = g['nowup_notinha401'].merchant_receipt(c,order,g['ORDER_STATUS_LABELS'])
             return g['templates'].TemplateResponse('merchant_order407.html',{
                 'request':request,'central418':central,'user':user,'order':order,'items':items,'options':options,
                 'order_items_by_order':{order_id:items},'order_item_options':options,
+                'receipt_text401':receipt_text,'receipt_photos469':photos,
                 'review_customer':False,'order_link377':False,'payment_checked':paid,
                 'status_labels':g['ORDER_STATUS_LABELS']},headers={'Cache-Control':'private, no-store'})
 

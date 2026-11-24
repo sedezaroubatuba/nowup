@@ -2,7 +2,7 @@
 {% import 'order_line347.html' as lines347 %}
 {% block title %}Pedido {{order.order_code}} | NowUp{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="/static/order-status369.css?v=377"><link rel="stylesheet" href="/static/order-receipt401.css?v=407">
+<link rel="stylesheet" href="/static/order-status369.css?v=377"><link rel="stylesheet" href="/static/order-receipt401.css?v=469">
 <link rel="stylesheet" href="/static/order-link377.css?v=419">
 {% if clear_cart200 %}<script id="cart-confirmation200" type="application/json">{{ {'path':'/p/' ~ order.slug,'customerId':order.customer_id}|tojson }}</script><script src="/static/cart-confirm200.js?v=255"></script>{% endif %}
 {% set review_customer=user and user.role=='customer' %}
@@ -17,7 +17,7 @@
 <section id="pedido377" role="tabpanel" aria-labelledby="tab-pedido377" class="panel order-card">
 {% include 'order_revision.html' %}
 {% if not review_customer %}{% include 'order_status425.html' %}{% endif %}
-{% set receipt_text401=receipt_text408(order) %}{% set confirmed401=order.status in ['awaiting_payment','confirmed','preparing','ready','out_for_delivery','completed'] %}{% include 'order_paper408.html' %}
+{% if merchant_payment419 %}{% set receipt_text401, receipt_photos469=merchant_receipt469(order) %}{% else %}{% set receipt_text401=receipt_text408(order) %}{% endif %}{% set confirmed401=order.status in ['awaiting_payment','confirmed','preparing','ready','out_for_delivery','completed'] %}{% include 'order_paper408.html' %}
 {% if not review_customer %}<a class="btn soft" href="/painel?abrir_pedido={{order.id}}#pedido-{{order.id}}">Abrir no painel da loja</a><button type="button" class="btn soft" data-copy-order377>Copiar link para enviar ao cliente</button><p data-copy-feedback377 role="status"></p>{% endif %}
 <details><summary>Histórico do pedido</summary><ol class="order-timeline">{% for event in history %}<li><b>{{status_labels.get(event.status,event.status)}}</b><time datetime="{{event.created_at}}">{{event.created_at|order_datetime347}}</time></li>{% endfor %}</ol></details>
 </section>

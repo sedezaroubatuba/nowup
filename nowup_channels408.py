@@ -35,6 +35,10 @@ def install(g):
     def receipt_text(order):
         with g['db']() as c:return g['nowup_notinha401'].receipt(c,order,g['ORDER_STATUS_LABELS'])
     g['templates'].env.globals['receipt_text408']=receipt_text
+    def merchant_receipt(order):
+        with g['db']() as c:
+            return g['nowup_notinha401'].merchant_receipt(c,order,g['ORDER_STATUS_LABELS'])
+    g['templates'].env.globals['merchant_receipt469']=merchant_receipt
     def requested_category(pid):
         with g['db']() as c:
             r=c.execute('SELECT cat.name FROM professionals p JOIN categories cat ON cat.id=p.plan_category408 WHERE p.id=?',(pid,)).fetchone()

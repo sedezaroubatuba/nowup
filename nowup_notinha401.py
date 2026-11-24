@@ -19,7 +19,7 @@ def payment_checked(c,o):
     r=c.execute('SELECT amount_cents FROM order_payment_checks401 WHERE order_id=?',(o['id'],)).fetchone()
     return bool(r and r['amount_cents']==o['total_cents'] and o['payment_method']=='pix')
 
-def receipt(c,o,labels):
+def receipt(c,o,labels,product_lines=None):
     paid=payment_checked(c,o) and o['status'] not in {'cancelled','rejected','whatsapp_finalized'}
     lines=[o['display_name'], 'PEDIDO '+str(o['order_code'] or o['id']),
            'Situação: '+labels.get(o['status'],o['status']), '',
@@ -29,7 +29,9 @@ def receipt(c,o,labels):
     if o['address_reference']:lines.append('Referência: '+o['address_reference'])
     lines+=['','ITENS']
     for row in c.execute('SELECT * FROM order_items WHERE order_id=? ORDER BY id',(o['id'],)):
-        i=dict(row);lines.append(f"{i['quantity']} × {i['product_name']} — {money(i['quantity']*i['unit_price_cents'])}")
+        i=dict(row)
+        if product_lines is not None:product_lines[len(lines)]=i['product_id']
+        lines.append(f"{i['quantity']} × {i['product_name']} — {money(i['quantity']*i['unit_price_cents'])}")
         for op in c.execute('SELECT option_name FROM order_item_options WHERE order_item_id=? ORDER BY id',(i['id'],)):
             lines.append('  + '+op['option_name']+' (incluído no valor do item)')
         try:pack=json.loads(i.get('combo_pack305') or '{}')
@@ -38,6 +40,7 @@ def receipt(c,o,labels):
             for unit in range(i['quantity']):
                 lines.append('  Combo '+str(unit+1)+' — composição incluída:')
                 for child in pack['items']:
+                    if product_lines is not None:product_lines[len(lines)]=child.get('product_id')
                     lines.append(f"    {child.get('quantity',1)} × {child.get('name','')}")
                 for child in pack.get('units364',[]):
                     lines.append(f"    {child.get('name','')} {child.get('position','')}: {child.get('notes') or 'Completo'}")
@@ -60,7 +63,39 @@ def receipt(c,o,labels):
     if o['notes']:lines.append('Observações: '+o['notes'])
     if o['status'] in {'cancelled','rejected'}:lines.append('PEDIDO ENCERRADO. Se houve pagamento, combine a devolução com a loja.')
     lines+=['','Resumo do pedido — não é documento fiscal.']
+    if product_lines is not None:
+        indexed = {}
+        offset = 0
+        for index, line in enumerate(lines):
+            if index in product_lines:
+                indexed[offset] = product_lines[index]
+            offset += 1 + line.count('\n')
+        product_lines.clear()
+        product_lines.update(indexed)
     return '\n'.join(lines)
+
+def merchant_receipt(c, order, labels):
+    """Resolve thumbnails for the exact products recorded on this store's order."""
+    product_lines = {}
+    text = receipt(c, order, labels, product_lines)
+    ids = sorted({int(value) for value in product_lines.values()
+                  if re.fullmatch(r"[0-9]{1,19}", str(value)) and 0 < int(value) <= 2**63-1})
+    filenames = {}
+    for start in range(0, len(ids), 400):
+        batch = ids[start:start+400]
+        placeholders = ",".join("?" for _ in batch)
+        for row in c.execute(f"""
+            SELECT p.id, COALESCE(NULLIF(p.image_filename, ''), parent.image_filename) AS filename
+            FROM products p
+            LEFT JOIN products parent ON parent.id=p.group_parent_id260
+              AND parent.professional_id=p.professional_id AND parent.is_group_header260=1
+            WHERE p.professional_id=? AND p.id IN ({placeholders})
+            """, (order['professional_id'], *batch)):
+            if row['filename']:
+                filenames[str(row['id'])] = '/uploads/' + quote(row['filename'], safe='')
+    return text, {line: filenames[str(pid)] for line, pid in product_lines.items()
+                  if str(pid) in filenames}
+
 
 def install(g):
     app=g['app'];db=g['db'];auth=g['require_user']
@@ -81,11 +116,11 @@ def install(g):
             o=c.execute('SELECT o.*,p.display_name,p.slug,p.user_id AS owner_id FROM orders o JOIN professionals p ON p.id=o.professional_id WHERE o.id=?',(order_id,)).fetchone()
             if not o or (slug and o['slug']!=slug) or u['id'] not in (o['owner_id'],o['customer_id']):raise HTTPException(404,'Pedido não encontrado')
             merchant=u['id']==o['owner_id'];confirmed=o['status'] in CONFIRMED
-            text=receipt(c,o,g['ORDER_STATUS_LABELS'])
+            text,photos=merchant_receipt(c,o,g['ORDER_STATUS_LABELS']) if merchant else (receipt(c,o,g['ORDER_STATUS_LABELS']),{})
             phone=re.sub(r'\D','',o['customer_phone'] or '')
             if len(phone) in (10,11):phone='55'+phone
             whatsapp='https://wa.me/'+phone+'?text='+quote(text,safe='') if merchant and confirmed and re.fullmatch(r'55\d{10,11}',phone) else ''
-            return g['templates'].TemplateResponse('order_receipt401.html',g['context'](request,order=o,receipt_text401=text,merchant401=merchant,confirmed401=confirmed,whatsapp401=whatsapp,payment_checked=payment_checked(c,o)),headers={'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow'})
+            return g['templates'].TemplateResponse('order_receipt401.html',g['context'](request,order=o,receipt_text401=text,receipt_photos469=photos,merchant401=merchant,confirmed401=confirmed,whatsapp401=whatsapp,payment_checked=payment_checked(c,o)),headers={'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow'})
     app.add_api_route('/p/{slug}/pedidos/{order_id}/notinha',show,methods=['GET'],include_in_schema=False)
     @app.post('/painel/pedidos/{order_id}/conferir-pix')
     def check(request:Request,order_id:int):
