@@ -136,13 +136,18 @@ document.addEventListener('DOMContentLoaded',()=>{
   const pages=[],pageSources238=[];
   for(let i=0;i<group.cards.length;i+=pageSize235){const page=make('div','nu190-page');page.style.minHeight='150px';pageSources238.push(group.cards.slice(i,i+pageSize235));pages.push(page);track.append(page);}
   function loadPage238(i){const page=pages[i];if(!page||page.dataset.loaded238)return;page.dataset.loaded238='1';pageSources238[i].forEach(card=>page.append(compact(card)));}
+  const swipeHint=make('div','nu264-swipe-hint');
+  const swipePrev=make('button','nu264-swipe-arrow','←'),swipeNext=make('button','nu264-swipe-arrow','→');
+  swipePrev.type=swipeNext.type='button';swipePrev.setAttribute('aria-label','Ver produtos anteriores de '+group.name);swipeNext.setAttribute('aria-label','Ver mais produtos de '+group.name);
+  const swipeText=make('span','nu264-swipe-text','Deslize para ver mais produtos');
+  swipeHint.append(swipePrev,swipeText,swipeNext);swipeHint.hidden=pages.length<=1;section.append(swipeHint);
   loadPage238(0);loadPage238(1);section.append(track);
   const indicator=make('div','nu190-indicator'),prev=make('button','','‹'),next=make('button','','›'),dots=make('div','nu190-dots');prev.type=next.type='button';prev.setAttribute('aria-label','Página anterior de '+group.name);next.setAttribute('aria-label','Próxima página de '+group.name);
   let index=0;
   const dotButtons=pages.map((_,i)=>{const b=make('button');b.type='button';b.setAttribute('aria-label','Página '+(i+1)+' de '+group.name);b.addEventListener('click',()=>go(i));dots.append(b);return b;});
-  function refresh(){index=Math.max(0,Math.min(pages.length-1,Math.round(track.scrollLeft/Math.max(track.clientWidth,1))));loadPage238(index);loadPage238(index+1);dotButtons.forEach((b,i)=>{b.classList.toggle('active',i===index);b.setAttribute('aria-current',i===index?'true':'false');});prev.disabled=index===0;next.disabled=index===pages.length-1;}
+  function refresh(){index=Math.max(0,Math.min(pages.length-1,Math.round(track.scrollLeft/Math.max(track.clientWidth,1))));loadPage238(index);loadPage238(index+1);dotButtons.forEach((b,i)=>{b.classList.toggle('active',i===index);b.setAttribute('aria-current',i===index?'true':'false');});prev.disabled=index===0;next.disabled=index===pages.length-1;swipePrev.disabled=prev.disabled;swipeNext.disabled=next.disabled;}
   function go(i){loadPage238(i);loadPage238(i+1);track.scrollTo({left:Math.max(0,Math.min(pages.length-1,i))*track.clientWidth,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});}
-  prev.addEventListener('click',()=>go(index-1));next.addEventListener('click',()=>go(index+1));track.addEventListener('scroll',refresh,{passive:true});
+  prev.addEventListener('click',()=>go(index-1));next.addEventListener('click',()=>go(index+1));swipePrev.addEventListener('click',()=>go(index-1));swipeNext.addEventListener('click',()=>go(index+1));track.addEventListener('scroll',refresh,{passive:true});
   track.addEventListener('keydown',event=>{if(event.target!==track)return;if(event.key==='ArrowRight'||event.key==='ArrowLeft'){event.preventDefault();go(index+(event.key==='ArrowRight'?1:-1));}});
   indicator.append(prev,dots,next);section.append(indicator,make('small','nu190-hint',pages.length>1?'Deslize para o lado':'Todos os produtos desta categoria'));refreshers.push(refresh);refresh();showcase.append(section);
  });
