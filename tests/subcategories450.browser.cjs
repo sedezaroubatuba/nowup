@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const {chromium}=require('playwright');
 const folder=path.resolve(__dirname,'..');
 const read=name=>fs.readFileSync(path.join(folder,name),'utf8');
-const css=[read('static/pro198.css'),read('static/subcategories261.css'),read('static/subcategories449.css')].join('\n');
+const css=[read('static/pro198.css'),read('static/subcategories261.css'),read('static/subcategories449.css'),read('static/mobile-compact437.css')].join('\n');
 const js=read('static/pro-panel-menu.js');
 const fixture='<html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
 +'<body class="professional-area"><main class="pro-dashboard">'
@@ -10,7 +10,7 @@ const fixture='<html><head><meta name="viewport" content="width=device-width,ini
 +'<details class="nu449-category-card" open><summary class="nu449-category-summary"><strong class="nu449-category-name">Tabacaria</strong></summary>'
 +'<div class="nu449-category-body"><div class="nu449-subcategory-section"><details class="nu449-new-subcategory">'
 +'<summary class="nu449-add-button">＋ Adicionar subcategoria</summary>'
-+'<form class="nu449-subcategory-form"><input type="hidden" name="category_id" value="7">'
++'<form class="nu449-subcategory-form" action="/painel/cardapio/subcategorias261"><input type="hidden" name="category_id" value="7">'
 +'<label>Nome da subcategoria<input class="input" name="name" placeholder="Ex.: Sedas, Tabacos, Piteiras" required></label>'
 +'<button type="submit" class="btn primary">Salvar subcategoria</button></form>'
 +'</details></div></div></details></div></div></details>'
@@ -28,6 +28,7 @@ async function launch(width=390){
  await page.setContent(fixture);
  await page.addStyleTag({content:css});
  await page.addScriptTag({content:js});
+ await page.addScriptTag({content:read('static/mobile-compact437.js')});
  return {browser,page};
 }
 test('closed form stays hidden; open form has non-overlapping input and save button on mobile',async()=>{
@@ -41,6 +42,7 @@ test('closed form stays hidden; open form has non-overlapping input and save but
   await summary.click();
   assert.equal(await input.isVisible(),true);
   assert.equal(await button.isVisible(),true);
+  assert.equal(await form.locator('.nu437-save').count(),0,'inline form keeps its save button in normal flow');
   const top=await summary.boundingBox(),field=await input.boundingBox(),save=await button.boundingBox();
   assert.ok(field.y>=top.y+top.height+2,'Name input must be below the add button');
   assert.ok(save.y>=field.y+field.height+5,'Save button must be below the name input, never overlapping');

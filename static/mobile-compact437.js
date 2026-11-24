@@ -51,7 +51,7 @@
  }
  function scan(){
   if(!mobile.matches)return;
-  document.querySelectorAll('.pro-dashboard form').forEach(form=>{
+  document.querySelectorAll('.pro-dashboard form:not(.nu449-subcategory-form)').forEach(form=>{
    const action=form.getAttribute('action')||'';
    if(/\/excluir(?:$|\?)/.test(action)||!form.querySelector('[name=name], [name=description], [data-editor192]'))return;
    if(/\/painel\/(?:cardapio|ingredientes|acompanhamentos|adicionais)/.test(action))enhance(form);
