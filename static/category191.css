@@ -28,6 +28,14 @@ html body.public-profile-area [data-native-menu] .nu462-collapse-footer{margin:1
 html body.public-profile-area [data-native-menu] .nu462-collapse-footer .nu219-less{margin:0!important}
 
 
+@media(min-width:901px){
+  html body.public-profile-area.nu191-category [data-native-menu] .nu191-category-view{
+    width:100%;max-width:none;min-width:0;
+  }
+  html body.public-profile-area [data-native-menu][data-carousel-layout] .nu191-grid:not([hidden]){
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px;
+  }
+}
 @media(max-width:900px){
   html body.public-profile-area.nu191-category .nu371-floating-collapse{display:none!important}
 
