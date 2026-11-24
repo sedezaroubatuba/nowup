@@ -877,7 +877,7 @@ def select_home_stores90(conn, rows, visitor_key, visit_date):
     """Keep existing sections; rank eligible stores by completed orders and fair rotation.
 
     Exposure is a server selection in a leading slot, not a verified screen view.
-    Count each browser/store once per local day, never count hidden 'Ver todas'.
+    Count each browser/store once per local day in the leading slots.
     """
     today=datetime.strptime(visit_date,"%Y-%m-%d").date()
     cutoff=(today-timedelta(days=6)).isoformat()
@@ -899,8 +899,8 @@ def select_home_stores90(conn, rows, visitor_key, visit_date):
         pool=[r for r in rows if bool(r["shop_status"]["open"])==opened]
         featured=sorted([r for r in pool if r["featured"]],key=popular_key)
         others=[r for r in pool if not r["featured"]]
-        popular=sorted(others,key=popular_key)
-        discovery=sorted(others,key=discovery_key)
+        popular=iter(sorted(others,key=popular_key))
+        discovery=iter(sorted(others,key=discovery_key))
         chosen={r["id"] for r in featured}; section=list(featured)
         any_sales=any(sales.get(r["id"],0)>0 for r in others)
         slot=0
@@ -954,10 +954,6 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
         conn.execute("INSERT OR IGNORE INTO daily_home_visits(visit_date,visitor_key,created_at) VALUES(?,?,?)",(visit_date,visitor_key,now_iso()))
         conn.commit()
     people_today=conn.execute("SELECT COUNT(*) FROM daily_home_visits WHERE visit_date=?",(visit_date,)).fetchone()[0]
-    total_professionals238=conn.execute(f"SELECT COUNT(*) FROM professionals p WHERE {' AND '.join(where)}",params).fetchone()[0]
-    # Bound the rich rows loaded for home; the paginated directory keeps every match reachable.
-    # Favor shops with less exposure so the candidate window rotates beyond the first page.
-    candidate_limit238=total_professionals238 if open_now=='1' else 60
     cutoff238=(datetime.now(SAO_PAULO_TZ).date()-timedelta(days=6)).isoformat()
     rows = conn.execute(f"""
       SELECT p.*, u.name as owner_name,
@@ -974,8 +970,8 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
       WHERE {' AND '.join(where)}
       ORDER BY p.featured DESC,
        (SELECT COUNT(*) FROM home_store_exposure90 ex WHERE ex.professional_id=p.id AND ex.visit_date>=?) ASC,
-       p.verified DESC,rating DESC,p.id DESC LIMIT ?
-    """, [*params,cutoff238,candidate_limit238]).fetchall()
+       p.verified DESC,rating DESC,p.id DESC
+    """, [*params,cutoff238]).fetchall()
     rows=[dict(r) for r in rows]
     for row in rows: row["shop_status"]=shop_status(row)
     if open_now=="1": rows=[r for r in rows if r["shop_status"]["open"]]
@@ -999,7 +995,7 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
     offers=[r for r in rows if r["featured"]]
     recommended=[r for r in rows if r["business_type"]!="restaurant"]
     conn.close()
-    response=templates.TemplateResponse("home.html", context(request, professionals=rows[:24], total_professionals238=len(rows) if open_now=="1" else total_professionals238, rotating_stores=rotating_stores[:12], catalog_stores=catalog_stores[:12], recent_orders=recent_orders, status_labels=ORDER_STATUS_LABELS, open_now=open_now, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today, has_home_filter=bool(q or category or business_type)))
+    response=templates.TemplateResponse("home.html", context(request, professionals=rows, rotating_stores=rotating_stores[:12], catalog_stores=catalog_stores[:12], recent_orders=recent_orders, status_labels=ORDER_STATUS_LABELS, open_now=open_now, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today, has_home_filter=bool(q or category or business_type)))
     response = attach_food_assets(response)
     # A home deve buscar a identidade atual das lojas em cada acesso.
     response.headers["Cache-Control"] = "private, no-store"
