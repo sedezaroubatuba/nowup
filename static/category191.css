@@ -90,3 +90,25 @@ html body.public-profile-area [data-native-menu] .nu219-category-footer .nu219-l
     padding:8px 10px!important;font-size:13px!important;
   }
 }
+
+/* Visible, usable swipe guidance only for multi-page categories. */
+html body.public-profile-area [data-native-menu] .nu264-swipe-hint{
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
+  margin:0 0 9px;padding:3px 5px;border:1px solid #e6d8f7;
+  border-radius:10px;background:#f5edff;color:#6430a5;
+}
+html body.public-profile-area [data-native-menu] .nu264-swipe-hint[hidden]{display:none!important}
+html body.public-profile-area [data-native-menu] .nu264-swipe-text{
+  font-size:13px;line-height:1.3;text-align:center;font-weight:650;
+}
+html body.public-profile-area [data-native-menu] .nu264-swipe-arrow{
+  display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;
+  width:44px;height:44px;border:0;border-radius:8px;background:#7434b7;
+  color:#fff;font-size:25px;line-height:1;cursor:pointer;padding:0;
+}
+html body.public-profile-area [data-native-menu] .nu264-swipe-arrow:disabled{
+  background:transparent;color:#a698bc;cursor:default;
+}
+html body.public-profile-area [data-native-menu] .nu264-swipe-arrow:focus-visible{
+  outline:2px solid #7434b7;outline-offset:2px;
+}
