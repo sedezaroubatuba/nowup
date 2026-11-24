@@ -1,5 +1,5 @@
 {% set items260 = grouped_products260.get(product.id, []) %}
-<details class="menu-product nu-group260" data-product data-group260="1"
+<details class="menu-product nu-group260" data-card-treatment="{{product.card_treatment}}" data-product data-group260="1"
          data-category="{{product.category|lower}}" data-subcategory261="{{product.subcategory_id261}}" data-name="{{product.name}}"
          data-id="{{product.id}}" data-dish="0" data-price="0" data-max="99">
   <summary class="nu-group260-cover">
@@ -16,7 +16,7 @@
   </summary>
   <div class="nu-group260-items">
     {% for item in items260 %}
-    <article class="nu-group260-row" data-product data-id="{{item.id}}" data-category="{{item.category|lower}}"
+    <article class="nu-group260-row" data-card-treatment="{{item.card_treatment}}" data-product data-id="{{item.id}}" data-category="{{item.category|lower}}"
              data-name="{{item.name}}" data-price="{{item.promo_price_cents if item.promo_price_cents>0 else item.price_cents}}"
              data-max="{{item.max_quantity}}" data-cold="{{1 if item.sold_cold else 0}}"
              data-custom192="{{item.customization192}}" data-dish="{{1 if item.is_dish else 0}}">

@@ -99,6 +99,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  }
  function compact(card){
   const item=make('article','nu190-card nu201-card'),image=card.querySelector('.nu163-media img, img');
+  item.dataset.cardTreatment=card.dataset.cardTreatment||'standard';
   if(image){const photo=make('img');photo.src=image.currentSrc||image.getAttribute('src');photo.alt='';photo.loading='lazy';photo.addEventListener('error',()=>{photo.src='/static/product-placeholder.svg';},{once:true});item.append(photo);}
   else item.append(make('div','nu190-no-image','🍽'));
   if(card.dataset.cold==='1'){const ice=make('span','nu201-ice','❄');ice.title='Vendido gelado';ice.setAttribute('aria-label','Vendido gelado');item.append(ice);}
