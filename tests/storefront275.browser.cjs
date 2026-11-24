@@ -23,6 +23,7 @@ test('combo carousel, three-column expanded grid and explicit category filtering
   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
   const columns=grid=>grid.evaluate(e=>getComputedStyle(e).gridTemplateColumns.split(' ').length);
   assert.equal(await columns(page.locator('.nu275-combos-grid:visible')),3);
+  assert.equal(await page.locator('.nu275-combos-grid:visible .nu451-regular-price').count(),0);
   assert.equal(await page.locator('.nu191-category-view h2').textContent(),'Combos');
 
   const apply=page.getByRole('button',{name:'Filtrar',exact:true});
@@ -30,6 +31,7 @@ test('combo carousel, three-column expanded grid and explicit category filtering
   await apply.click();
   const promotions=page.locator('.nu277-promotions-grid:visible');
   assert.equal(await columns(promotions),3);
+  assert.equal(await promotions.locator('.nu451-regular-price').count(),0);
   assert.equal(await promotions.locator('.nu190-card:visible').count(),2);
   const search=page.locator('[data-product-search]');
   await search.fill('Refrigerante');
@@ -39,7 +41,10 @@ test('combo carousel, three-column expanded grid and explicit category filtering
   await page.locator('[data-category-filter="cervejas"]').click();
   await apply.click();
   assert.ok(await promotions.isHidden());
-  assert.equal(await columns(page.locator('.nu191-grid:visible')),3);
+  const regular=page.locator('.nu191-grid:visible');
+  assert.equal(await columns(regular),3);
+  assert.match(await regular.locator('.nu451-regular-price strong').textContent(),/4,00/);
+  assert.match(await regular.locator('del').textContent(),/5,00/);
   assert.deepEqual(errors,[]);
  }finally{await browser.close();}
 });

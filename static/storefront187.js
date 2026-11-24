@@ -96,6 +96,12 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   if(nav)anchor.after(nav);search.value='';search.dispatchEvent(new Event('input',{bubbles:true}));search.placeholder='Pesquisar produtos';search.setAttribute('aria-label','Pesquisar produtos nesta loja');search.blur();
   refreshers.forEach(fn=>fn());cartRefreshers.forEach(fn=>fn());resize();window.scrollTo({top:homeScroll,behavior:'instant'});
  }
+ function highlightRegularPrice(content){
+  const price=content.querySelector('strong');
+  const box=make('div','nu451-regular-price');
+  price.replaceWith(box);
+  box.append(price);
+ }
  function compact(card,offer=false){
   // A cover represents several real products; never add one automatically.
   if(card.dataset.group260==='1'){
@@ -105,6 +111,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
     else panel.append(make('div','nu190-no-image','▦'));
     const content=make('div','nu190-card-content');
     content.append(make('h3','',card.dataset.name||'Produto'),make('strong','', 'A partir de '+money(Number(card.dataset.price)||0)));
+    if(!offer)highlightRegularPrice(content);
     content.append(make('small','nu260-variant-count',card.querySelectorAll('.nu-group260-row').length+' sabores ou opções'));
     const choose=make('button','nu201-open','Escolher sabor');choose.type='button';
     choose.setAttribute('aria-label','Escolher variação de '+(card.dataset.name||'Produto'));
@@ -129,10 +136,9 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   if(item.classList.contains('nu275-combo-card'))item.prepend(make('span','nu284-combo-badge','COMBO'));
   if(regular>price)content.insertBefore(make('del','nu284-old-price',money(regular)),content.querySelector('strong'));
   if(item.classList.contains('nu275-combo-card')||offer){const priceBox=make('div','nu289-combo-price'),label=make('small','',item.classList.contains('nu275-combo-card')?'Preço do combo':'Preço promocional'),old=content.querySelector('.nu284-old-price'),value=content.querySelector('strong');priceBox.append(label);if(old)priceBox.append(old);priceBox.append(value);content.append(priceBox);}
-  // Ordinary products use the light-lilac price plaque; combos and promotions retain their original layout.
-  if(!item.classList.contains('nu275-combo-card')&&!offer&&!(regular>price)){
-    const value=content.querySelector('strong');
-    if(value){const priceBox=make('div','nu451-regular-price');priceBox.append(value);content.append(priceBox);item.classList.add('nu451-regular-card');}
+  if(!item.classList.contains('nu275-combo-card')&&!offer){
+    highlightRegularPrice(content);
+    item.classList.add('nu451-regular-card');
   }
   if(card.dataset.combo256==='1'&&window.NOWUP_COMBO_PRICE303){try{const result=window.NOWUP_COMBO_PRICE303.compare(JSON.parse(card.dataset.custom192||'{}'),JSON.parse(card.dataset.comboPrices303||'{}'),price);if(result?.saving>0){content.append(make('small','nu303-separate',(result.variable?'Avulsos a partir de ':'Avulsos: ')+money(result.separate)),make('small','nu303-saving',(result.variable?'Economize a partir de ':'Economize ')+money(result.saving)));}}catch(_){}}
   const toggle=make('button','nu201-open','Adicionar');toggle.type='button';toggle.setAttribute('aria-label','Adicionar '+card.dataset.name);toggle.setAttribute('aria-expanded','false');
