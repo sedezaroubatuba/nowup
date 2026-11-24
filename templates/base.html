@@ -473,10 +473,19 @@ try {
 </script><script id="nowup-search177-init">document.addEventListener('DOMContentLoaded',()=>{
  'use strict';
  const deep=new URLSearchParams(location.search).get('produto');
+ if(new URLSearchParams(location.search).get('vitrine_carrinho')==='1')requestAnimationFrame(()=>{
+   document.querySelector('[data-native-menu] [data-cart-summary]')?.click();
+ });
  if(deep&&/^\d+$/.test(deep)){
   const root=document.querySelector('[data-native-menu]');
   const card=root?.querySelector('[data-product][data-id="'+deep+'"]');
-  if(card){const search=root.querySelector('[data-product-search]');if(search){search.value=card.dataset.name||'';search.dispatchEvent(new Event('input',{bubbles:true}));}card.id='produto-'+deep;card.classList.add('nu177-found');card.tabIndex=-1;requestAnimationFrame(()=>{card.scrollIntoView({block:'start',behavior:'auto'});card.focus({preventScroll:true});});}
+  if(card){const search=root.querySelector('[data-product-search]');if(search){search.value=card.dataset.name||'';search.dispatchEvent(new Event('input',{bubbles:true}));}card.id='produto-'+deep;card.classList.add('nu177-found');card.tabIndex=-1;requestAnimationFrame(()=>{card.scrollIntoView({block:'start',behavior:'auto'});card.focus({preventScroll:true});
+     if(new URLSearchParams(location.search).get('vitrine_opcoes')==='1'){
+       if(card.dataset.group260==='1')card.open=true;
+       else {card.closest('details.nu-group260')?.setAttribute('open','');(card.querySelector('.nu151-choose')||card.querySelector('[data-add]'))?.click();}
+       const clean=new URL(location.href);clean.searchParams.delete('vitrine_opcoes');history.replaceState(history.state,'',clean);
+     }
+   });}
  }
  const form=document.querySelector('body.v50-directory-home .v50-search');
  const input=form?.querySelector('[name="q"]');
@@ -496,7 +505,12 @@ try {
   if(product){copy.append(el('strong','nu177-price',money.format(item.price_cents/100)));copy.append(el('small','',item.store_name));}
   else copy.append(el('small','',item.city));
   copy.append(el('small',item.open?'nu177-open':'nu177-closed',item.open?'● Loja aberta':'Loja fechada'));
-  a.append(copy);return a;
+  a.append(copy);
+  if(!product||!item.cart||!window.NowUpVitrine473)return a;
+  const result=el('div','nu177-buy-result'),buy=el('button','vitrine-add','Adicionar');
+  buy.type='button';buy.disabled=!item.open;
+  buy.addEventListener('click',()=>window.NowUpVitrine473.add(item.cart));
+  result.append(a,buy);return result;
  }
  async function run(scroll=false){
   const query=input.value.trim();if(query.length<2){reset();return;}

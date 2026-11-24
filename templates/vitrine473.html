@@ -1,0 +1,51 @@
+{% macro shelf(title, products, key='') %}
+<section class="vitrine-shelf" {% if key %}id="vitrine-{{key}}" hidden{% endif %}>
+  <h2>{{title}}</h2>
+  {% if products %}
+  <div class="vitrine-products">
+    {% for item in products %}
+    <article>
+      <img src="{{ '/uploads/' ~ (item.image_filename|urlencode) if item.image_filename else '/static/product-placeholder.svg' }}" alt="" loading="lazy" width="144" height="110">
+      <h3>{{item.name}}</h3>
+      {% if item.promo %}<del>R$ {{'%.2f'|format(item.price_cents/100)|replace('.',',')}}</del>{% endif %}
+      <strong>R$ {{'%.2f'|format(item.price/100)|replace('.',',')}}{% if item.sold_by_weight370 %}/kg{% endif %}</strong>
+      <button type="button" class="vitrine-add" data-vitrine-item="{{ {
+        'id': item.id, 'name': item.name, 'price': item.price, 'max': item.max_quantity,
+        'slug': showcase_store.slug, 'store': showcase_store.display_name, 'options': item.requires_options
+      }|tojson|forceescape }}" {% if not item.open or (user and user.id==showcase_store.user_id) %}disabled{% endif %}>{{ 'Adicionar' if item.open else 'Loja fechada' }}</button>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}<p>Nenhum produto disponível nesta seção.</p>{% endif %}
+</section>
+{% endmacro %}
+<link rel="stylesheet" href="/static/vitrine473.css?v=473">
+<script defer src="/static/vitrine473.js?v=473"></script>
+<div class="vitrine-home container" data-vitrine data-customer="{{user.id if user and user.role=='customer' else ''}}">
+  {% if showcase_store %}
+  <nav class="vitrine-covers" aria-label="Categorias de produtos">
+    {% for key,(label,items) in showcase_groups.items() %}
+    <button type="button" data-vitrine-category="{{key}}" aria-controls="vitrine-{{key}}" aria-pressed="false">
+      <img src="/static/vitrine473/{{key}}.webp" alt="" width="212" height="162"><span>{{label}}</span>
+    </button>
+    {% endfor %}
+  </nav>
+  <section class="vitrine-store">
+    {% if showcase_store.avatar_filename %}<img src="/uploads/{{showcase_store.avatar_filename|urlencode}}" alt="" width="62" height="62">{% endif %}
+    <div><h1>{{showcase_store.display_name}}</h1><small>{{showcase_store.shop_status.label}}</small></div>
+    <a href="/p/{{showcase_store.slug}}/menu">Ver loja completa <span aria-hidden="true">›</span></a>
+  </section>
+  <a class="vitrine-cart" data-vitrine-cart data-slug="{{showcase_store.slug}}" href="/p/{{showcase_store.slug}}/menu?vitrine_carrinho=1">Ver carrinho <span data-vitrine-count></span></a>
+  <p class="vitrine-status" data-vitrine-status role="status"></p>
+  {% for key,(label,items) in showcase_groups.items() %}{{ shelf(label,items,key) }}{% endfor %}
+  {{ shelf('Chocolates',chocolates) }}
+  {{ shelf('Mais produtos da Sede Zero',showcase_products) }}
+  <p class="vitrine-soon">Em breve, novas lojas em Ubatuba.</p>
+  {% endif %}
+</div>
+<dialog class="vitrine-login" id="vitrine-login">
+  <form method="dialog"><button aria-label="Fechar" class="vitrine-close">×</button></form>
+  <h2>Entre para adicionar ao carrinho</h2>
+  <a href="/entrar?tipo=cliente&amp;comprar=1">Entrar</a>
+  <a href="/cadastro/cliente">Criar conta</a>
+</dialog>

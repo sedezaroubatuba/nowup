@@ -1,4 +1,3 @@
-from nowup_combos303 import current_price
 """Public catalog search; uses current data and makes no database mutations."""
 import re
 import secrets
@@ -26,6 +25,7 @@ def rank_products(rows, query, city, random_key=None):
 
 
 def register(app, db, public_business_scope, shop_status):
+    from nowup_vitrine473 import browse_item
     from fastapi import Request
     from fastapi.responses import JSONResponse
 
@@ -48,10 +48,11 @@ def register(app, db, public_business_scope, shop_status):
                 params.append(category[:100])
             product_match=' AND '.join(["instr(nu177_normalize(pr.name || ' ' || coalesce(pr.description,'') || ' ' || coalesce(pr.category,'')),?)>0"]*len(tokens))
             # Cardapio-only stores have a private external menu and are excluded.
-            product_sql='''SELECT pr.id,pr.name,pr.description,pr.category,pr.price_cents,pr.promo_price_cents,pr.image_filename,
+            product_sql='''SELECT pr.*,p.business_type,
                 p.slug store_slug,p.display_name store_name,p.city,p.neighborhood,p.business_hours,p.business_status,
                 p.id professional_id FROM products pr JOIN professionals p ON p.id=pr.professional_id
-                WHERE '''+scope+''' AND p.plan_active IN ('ambos','completo') AND p.is_premium=1 AND p.offer_mode IN ('menu','catalog') AND pr.available=1
+                WHERE '''+scope+''' AND p.plan_active IN ('ambos','completo') AND p.is_premium=1 AND p.offer_mode IN ('menu','catalog') AND pr.available=1 AND pr.is_group_header260=0
+                AND (pr.group_parent_id260=0 OR EXISTS (SELECT 1 FROM products parent WHERE parent.id=pr.group_parent_id260 AND parent.professional_id=p.id AND parent.available=1))
                 AND (NOT EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=p.id AND lower(pc.name)=lower(pr.category))
                 OR EXISTS(SELECT 1 FROM product_categories pc WHERE pc.professional_id=p.id AND lower(pc.name)=lower(pr.category) AND pc.active=1)) AND '''+product_match
             products=[]
@@ -71,8 +72,9 @@ def register(app, db, public_business_scope, shop_status):
             payload=[]
             for r in products:
                 status=shop_status(r)
-                payload.append({'id':r['id'],'name':r['name'],'store_name':r['store_name'],'city':r['city'],
-                    'price_cents':current_price(r),
+                item=browse_item(r,status)
+                payload.append({'cart':{'id':r['id'],'name':r['name'],'price':item['price'],'max':r['max_quantity'],'slug':r['store_slug'],'store':r['store_name'],'options':item['requires_options']},'id':r['id'],'name':r['name'],'store_name':r['store_name'],'city':r['city'],
+                    'price_cents':item['price'],
                     'image':image(r['image_filename']),'open':bool(status['open']),
                     'url':'/p/'+quote(r['store_slug'],safe='')+'/menu?produto='+str(r['id'])+'#produto-'+str(r['id'])})
             return JSONResponse({'products':payload,'stores':[{'name':r['display_name'],'city':r['city'],'open':bool(status['open']),

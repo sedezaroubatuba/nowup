@@ -9,6 +9,7 @@ from nowup_combos303 import attach_prices, current_price, combo_kind
 import nowup_categories230
 import nowup_subcategories448
 import nowup_groups260
+import nowup_vitrine473
 import nowup_ingredients320
 import nowup_included195
 from nowup_custom192 import parse_config, save_config, charge_options, validate_customization, bind_combo_products
@@ -309,7 +310,7 @@ def require_user(request: Request, role: Optional[str]=None):
 PUBLIC_CATEGORY_SLUGS = ("restaurantes-e-lanchonetes", "lanches-e-pizzarias", "padarias-e-cafeterias", "doces-e-sorveterias", "mercados-e-mercearias", "conveniencias-e-adegas", "pet-shops-e-veterinarios")
 
 def public_business_scope():
-    return "p.plan_active IN ('vitrine','ambos','completo') AND EXISTS(SELECT 1 FROM professional_categories scope_pc JOIN categories scope_c ON scope_c.id=scope_pc.category_id WHERE scope_pc.professional_id=p.id AND scope_c.active=1)"
+    return "p.is_demo=0 AND p.plan_active IN ('vitrine','ambos','completo') AND EXISTS(SELECT 1 FROM professional_categories scope_pc JOIN categories scope_c ON scope_c.id=scope_pc.category_id WHERE scope_pc.professional_id=p.id AND scope_c.active=1)"
 
 def context(request: Request, **kwargs):
     conn = db()
@@ -994,8 +995,11 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
     restaurants=[r for r in rows if r["business_type"]=="restaurant"]
     offers=[r for r in rows if r["featured"]]
     recommended=[r for r in rows if r["business_type"]!="restaurant"]
+    showcase_store = next((row for row in rows if row["slug"] == "adega-sede-zero"), None)
+    groups, chocolates, showcase_products = (nowup_vitrine473.shelves(conn, showcase_store)
+                                              if showcase_store else ({}, [], []))
     conn.close()
-    response=templates.TemplateResponse("home.html", context(request, professionals=rows, rotating_stores=rotating_stores[:12], catalog_stores=catalog_stores[:12], recent_orders=recent_orders, status_labels=ORDER_STATUS_LABELS, open_now=open_now, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today, has_home_filter=bool(q or category or business_type)))
+    response=templates.TemplateResponse("home.html", context(request, professionals=rows, showcase_store=showcase_store, showcase_groups=groups, chocolates=chocolates, showcase_products=showcase_products, rotating_stores=rotating_stores[:12], catalog_stores=catalog_stores[:12], recent_orders=recent_orders, status_labels=ORDER_STATUS_LABELS, open_now=open_now, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today, has_home_filter=bool(q or category or business_type)))
     response = attach_food_assets(response)
     # A home deve buscar a identidade atual das lojas em cada acesso.
     response.headers["Cache-Control"] = "private, no-store"
