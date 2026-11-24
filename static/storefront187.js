@@ -82,7 +82,6 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  const money=cents=>(cents/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
  const resize=()=>window.dispatchEvent(new Event('resize'));
  function showProducts(focus=false){
-  clearCategoryChoice();
   if(body.classList.contains('nu187-store-home'))homeScroll=window.scrollY;
   selectedCategory=null;subcategoryFilters.remove();activeCategory.hidden=true;categoryView.hidden=true;body.classList.remove('nu191-category');
   intro.hidden=!desktop228.matches;showcase.hidden=true;body.classList.toggle('nu228-desktop-catalog',desktop228.matches);back.setAttribute('aria-label','Voltar às informações da loja');
@@ -90,7 +89,6 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   resize();window.scrollTo({top:0,behavior:'instant'});if(focus)search.focus({preventScroll:true});
  }
  function showHome(){
-  clearCategoryChoice();
   body.classList.remove('nu228-desktop-catalog');
 
   selectedCategory=null;subcategoryFilters.remove();activeCategory.hidden=true;categoryView.hidden=true;body.classList.remove('nu191-category');
@@ -170,7 +168,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  }
  let spyFrame362=0;
  function scheduleCategory362(){if(spyFrame362)return;spyFrame362=requestAnimationFrame(()=>{
-  spyFrame362=0;if(!body.classList.contains('nu187-store-home')||showcase.hidden||search.value.trim()||pendingCategory)return;
+  spyFrame362=0;if(!body.classList.contains('nu187-store-home')||showcase.hidden||search.value.trim())return;
   const top=Math.max(0,sticky.getBoundingClientRect().bottom)+24;
   let current=null;for(const [key,section] of sections){const box=section.getBoundingClientRect();if(!box.height)continue;if(current===null)current=key;if(box.top<=top)current=key;else break;}
   if(current)markCategory362(current);
@@ -181,7 +179,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  categoryView.addEventListener('touchstart',event=>{const t=event.touches[0];swipe362=event.touches.length===1&&!event.target.closest('button,a,input,textarea,select,label')?{x:t.clientX,y:t.clientY}:null;},{passive:true});
  categoryView.addEventListener('touchcancel',()=>swipe362=null,{passive:true});
  categoryView.addEventListener('touchend',event=>{const start=swipe362;swipe362=null;if(!start||!selectedCategory||search.value.trim()||document.querySelector('dialog[open]'))return;const t=event.changedTouches[0],dx=start.x-t.clientX,dy=start.y-t.clientY;if(Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.5)return;const keys=[...ordered256.keys()],index=keys.indexOf(selectedCategory),next=index+(dx>0?1:-1);if(index>=0&&next>=0&&next<keys.length)showCategory(keys[next]);},{passive:true});
- root.addEventListener('keydown',event=>{const button=event.target.closest('[data-category-filter]');if(!button||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)||(!selectedCategory&&!desktop228.matches))return;const available=buttons.filter(b=>b.isConnected&&b.dataset.categoryFilter!=='all'),index=available.indexOf(button),next=available[index+(['ArrowRight','ArrowDown'].includes(event.key)?1:-1)];if(!next)return;event.preventDefault();event.stopImmediatePropagation();offerCategory(next);next.focus({preventScroll:true});},true);
+ root.addEventListener('keydown',event=>{const button=event.target.closest('[data-category-filter]');if(!button||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)||(!selectedCategory&&!desktop228.matches))return;const available=buttons.filter(b=>b.isConnected&&b.dataset.categoryFilter!=='all'),index=available.indexOf(button),next=available[index+(['ArrowRight','ArrowDown'].includes(event.key)?1:-1)];if(!next)return;event.preventDefault();event.stopImmediatePropagation();showCategory(next.dataset.categoryFilter,{filter:true});next.focus({preventScroll:true});},true);
 
  buttons.filter(b=>b.dataset.categoryFilter!=='all').forEach(b=>groups.set(b.dataset.categoryFilter,{name:b.textContent.trim(),cards:[]}));
  const catalog275=catalogGroups275(originals);
@@ -223,12 +221,12 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
    more.setAttribute('aria-controls',grid.id);more.setAttribute('aria-expanded','false');
    const collapse347=make('button','nu347-collapse','Ver menos ⌃');collapse347.type='button';collapse347.hidden=true;
    collapse347.setAttribute('aria-controls',grid.id);collapse347.setAttribute('aria-expanded','false');collapse347.setAttribute('aria-label','Recolher produtos de '+group.name);
-   if(group.cards.length>8){header.classList.add('nu347-category-heading');header.prepend(collapse347);}
+   if(group.cards.length>8&&!hasSubcategories261(key)){header.classList.add('nu347-category-heading');header.prepend(collapse347);}
    function load312(limit){while(loaded<Math.min(limit,group.cards.length)){grid.append(compact(group.cards[loaded++],key==='__offers256'));}}
    const controls347=catalogExpansion347({grid,more,collapseButton:collapse347,load:load312,count:group.cards.length,limit:limit347,refresh:()=>cartRefreshers.forEach(fn=>fn()),section});
    load312(limit347);
-   if(group.cards.length>8)grid.append(more);
-   more.addEventListener('click',controls347.expand);collapse347.addEventListener('click',controls347.collapse);section.nuExpand312=controls347.expand;
+   if(group.cards.length>8||hasSubcategories261(key))grid.append(more);
+   more.addEventListener('click',hasSubcategories261(key)?()=>showCategory(key):controls347.expand);collapse347.addEventListener('click',controls347.collapse);section.nuExpand312=controls347.expand;
    section.append(grid);showcase.append(section);return;
   }
   const track=make('div','nu190-track');track.tabIndex=0;track.setAttribute('aria-label','Produtos de '+group.name+'; deslize para os lados');
@@ -257,7 +255,6 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  }
  function showCategory(key,{filter=false}={}){
   const group=groups.get(key);if(!group)return;
-  clearCategoryChoice();
   activeCategory.hidden=!filter;
   if(!filter&&desktop228.matches&&!hasSubcategories261(key)&&sections.get(key)?.nuExpand312){showHome();const section=sections.get(key);section.nuExpand312();markCategory362(key);section.scrollIntoView({block:'start',behavior:'auto'});return;}
   if(body.classList.contains('nu187-store-home'))homeScroll=window.scrollY;
@@ -288,51 +285,20 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  root.addEventListener('input',searchView354,true);
  root.addEventListener('search',searchView354,true);
  if(!originals.length)showcase.append(make('p','nu190-empty','Esta loja ainda não publicou produtos.'));
- const categoryActions=make('div','nu462-category-actions');
- categoryActions.hidden=true;
- const categoryLabel=make('strong','nu462-category-label');
- const applyCategory=make('button','nu462-apply','Filtrar');
- const allCategories=make('button','','Todos');
- applyCategory.type=allCategories.type='button';
- allCategories.setAttribute('aria-label','Buscar em todas as categorias');
- categoryActions.append(categoryLabel,applyCategory,allCategories);
  const activeCategory=make('button','nu462-active-category');
  activeCategory.type='button';activeCategory.hidden=true;heading.after(activeCategory);
- let pendingCategory=null;
- function clearCategoryChoice(){
-  pendingCategory=null;categoryActions.hidden=true;categoryActions.remove();
- }
  function showAllCategories(){
   showProducts();
   markCategory362('all');
   search.dispatchEvent(new Event('input',{bubbles:true}));
  }
- function offerCategory(button){
-  const key=button.dataset.categoryFilter;
-  if(!groups.has(key))return;
-  pendingCategory=key;
-  categoryLabel.textContent=groups.get(key).name;
-  if(desktop228.matches&&nav?.parentElement!==sticky)button.after(categoryActions);
-  else sticky.append(categoryActions);
-  categoryActions.hidden=false;
-  markCategory362(key);
-  if(desktop228.matches&&body.classList.contains('nu187-store-home')){
-   sections.get(key)?.scrollIntoView({block:'start',behavior:'instant'});
-  }
- }
- applyCategory.addEventListener('click',()=>showCategory(pendingCategory,{filter:true}));
- allCategories.addEventListener('click',showAllCategories);
  activeCategory.addEventListener('click',showAllCategories);
- root.addEventListener('nowup-category-action',event=>{
-  if(event.detail==='all')showAllCategories();
-  else showCategory(event.detail,{filter:true});
- });
  root.addEventListener('click',event=>{
   const button=event.target.closest('.menu-category-nav [data-category-filter]');
   if(!button)return;
   event.preventDefault();event.stopImmediatePropagation();
   if(button.dataset.categoryFilter==='all')showAllCategories();
-  else offerCategory(button);
+  else if(selectedCategory!==button.dataset.categoryFilter)showCategory(button.dataset.categoryFilter,{filter:true});
  },true);
  const scrollCategories=make('button','nu462-scroll-categories','›');
  scrollCategories.type='button';scrollCategories.hidden=true;

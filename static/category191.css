@@ -15,16 +15,12 @@ html body.public-profile-area .nu191-category-view>h2{margin:0 0 4px!important;f
 .nu191-empty{font-size:14px;color:#637184;padding:14px 0}
 @media(min-width:800px){.nu191-category-view{max-width:850px;margin:14px auto}}
 
-.nu462-category-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:6px;background:#f5edff;border-radius:12px}
-.nu462-category-actions[hidden],.nu462-active-category[hidden],.nu462-scroll-categories[hidden],
+.nu462-active-category[hidden],.nu462-scroll-categories[hidden],
 .nu465-subcategories[hidden]{display:none!important}
-.nu462-category-label{grid-column:1/-1;color:#502184;padding:0 4px;overflow-wrap:anywhere}
-.nu462-category-actions button,.nu168-categories nav .nu462-category-actions button,
 .nu462-active-category,.nu462-scroll-categories{
   min-height:44px;padding:6px 9px;border:1px solid #7132bf;border-radius:9px;
   background:#fff;color:#592590;text-align:center;font:inherit;font-weight:700;cursor:pointer;
 }
-.nu462-category-actions .nu462-apply,.nu168-categories nav .nu462-apply{background:#7132bf;color:#fff}
 .nu462-active-category{margin:4px 0;background:#f5edff}
 .nu462-scroll-categories{flex:0 0 32px;padding:2px;font-size:24px}
 html body.public-profile-area [data-native-menu] .nu219-category-header{position:static!important}

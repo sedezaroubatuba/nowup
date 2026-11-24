@@ -248,11 +248,11 @@ html body.public-profile-area [data-native-menu] .nu83-catalog-heading .nu83-sea
 <link rel="stylesheet" href="/static/storefront187.css?v=383">
 <script id="nu230-data" type="application/json">{{ {'catalog': category_catalog230|default([]), 'choices': category_choices230|default({})}|tojson }}</script>
 <script src="/static/categories230.js?v=294" defer></script>
-<script src="/static/images258.js?v=258" defer></script><script src="/static/storefront187.js?v=466" defer></script>
+<script src="/static/images258.js?v=258" defer></script><script src="/static/storefront187.js?v=467" defer></script>
 <noscript><style>html body.nu187-store-home [data-native-menu] .menu-layout{display:block!important}</style></noscript>
 <script>setTimeout(()=>{if(document.body&&!document.body.dataset.store187Ready)document.body.classList.remove("nu187-store-home");},3000);</script>
 <link rel="stylesheet" href="/static/showcase190.css?v=197">
-<link rel="stylesheet" href="/static/category191.css?v=465">
+<link rel="stylesheet" href="/static/category191.css?v=467">
 <link rel="stylesheet" href="/static/compact200.css?v=200"><link rel="stylesheet" href="/static/products201.css?v=201"><link rel="stylesheet" href="/static/order-banner202.css?v=259"><link rel="stylesheet" href="/static/categories230.css?v=230"><link rel="stylesheet" href="/static/products231.css?v=231"><link rel="stylesheet" href="/static/storefront232.css?v=451"><script defer src="/static/storefront232.js?v=466"></script><link rel="stylesheet" href="/static/upload-preview250.css?v=340"><script defer src="/static/upload-preview250.js?v=250"></script><script defer src="/static/cart-lifecycle247.js?v=345"></script>
 <link rel="stylesheet" href="/static/surfaces340.css?v=341">
 <link rel="stylesheet" href="/static/order-layout347.css?v=348"></head><body class="{% if store_app256 %}store-app256 {% endif %}{% if request is defined and request.url.path.startswith('/p/') and pro is defined and (request.url.path.rstrip('/').endswith('/menu') or (pro.plan_active in ['cardapio','ambos','completo'] and pro.is_premium and pro.offer_mode in ['menu','catalog'])) %}nu169-products-view nu170-fixed-catalog nu172-catalog-pending nu187-store-home {% endif %}{% block body_class %}{% endblock %}">{% include "opening260.html" %}
@@ -366,18 +366,7 @@ try {
  const list=document.createElement('nav');list.setAttribute('aria-label','Categorias da loja');dialog.append(list);
  const trigger=document.createElement('button');trigger.type='button';trigger.className='nu168-trigger';trigger.textContent='☰';trigger.setAttribute('aria-label','Abrir categorias');trigger.setAttribute('aria-controls',dialog.id);trigger.setAttribute('aria-expanded','false');heading.prepend(trigger);
  document.body.append(dialog);
- const actions=document.createElement('div');actions.className='nu462-category-actions';actions.hidden=true;
- const apply=document.createElement('button'),all=document.createElement('button');
- apply.type=all.type='button';apply.className='nu462-apply';apply.textContent='Filtrar';all.textContent='Todos';
- all.setAttribute('aria-label','Buscar em todas as categorias');actions.append(apply,all);
- let pending=null,entries=[];
- function select(key){
-  dialog.close();
-  if(root.dataset.categoryActions462)root.dispatchEvent(new CustomEvent('nowup-category-action',{detail:key}));
-  else originals.find(original=>original.dataset.categoryFilter===key)?.click();
- }
- apply.addEventListener('click',()=>select(pending.dataset.categoryFilter));
- all.addEventListener('click',()=>select('all'));
+ let entries=[];
  function buildEntries(){
   entries=[...nav.querySelectorAll('[data-category-filter]')].map(original=>{
   const button=document.createElement('button');button.type='button';button.textContent=original.textContent.trim();
@@ -387,16 +376,15 @@ try {
    button.replaceChildren(window.NowUpCategory230.create(name),label);
   }
   button.addEventListener('click',()=>{
-   if(original.dataset.categoryFilter==='all'||!root.dataset.categoryActions462){select(original.dataset.categoryFilter);return;}
-   pending=original;button.after(actions);actions.hidden=false;sync();
-   actions.scrollIntoView({block:'nearest'});
+   dialog.close();
+   original.click();
   });
   return {original,button};
   });
   list.replaceChildren(...entries.map(entry=>entry.button));
  }
- function sync(){entries.forEach(({original,button})=>{const active=pending?pending===original:original.classList.contains('active');button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});}
- function open(opener=trigger){pending=null;actions.hidden=true;buildEntries();sync();dialog.showModal();trigger.setAttribute('aria-expanded','true');dialog.dataset.opener=opener===trigger?'catalog':'site';document.documentElement.classList.add('nu168-menu-open');close.focus();}
+ function sync(){entries.forEach(({original,button})=>{const active=original.classList.contains('active');button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});}
+ function open(opener=trigger){buildEntries();sync();dialog.showModal();trigger.setAttribute('aria-expanded','true');dialog.dataset.opener=opener===trigger?'catalog':'site';document.documentElement.classList.add('nu168-menu-open');close.focus();}
  trigger.addEventListener('click',()=>open());close.addEventListener('click',()=>dialog.close());
  dialog.addEventListener('close',()=>{trigger.setAttribute('aria-expanded','false');document.documentElement.classList.remove('nu168-menu-open');trigger.focus({preventScroll:true});});
  dialog.addEventListener('click',event=>{if(event.target!==dialog)return;const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();});

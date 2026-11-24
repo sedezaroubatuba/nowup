@@ -4,7 +4,7 @@ const css=['static/products231.css','static/storefront232.css','static/offers256
 const code=fs.readFileSync('static/storefront187.js','utf8');
 const cards=[...Array(6)].map((_,i)=>({id:i+1,name:'Combo '+i,category:'cervejas',combo:'1',price:i===0?25990:2000,regular:i===0?25990:2000})).concat([{id:7,name:'Cerveja promoção',category:'cervejas',combo:'0',price:400,regular:500},{id:8,name:'Refrigerante promoção',category:'refrigerantes',combo:'0',price:700,regular:900}]);
 const fixture=`<!doctype html><style>*{box-sizing:border-box}body{margin:0}.nu190-track{display:flex;overflow:auto}.nu190-page{flex:0 0 100%}[hidden]{display:none!important}${css}</style><body class="public-profile-area nu233-store nu232-store"><template id="nu187-store-template"><section class="nu187-intro"><h1>Loja</h1></section></template><main data-native-menu data-carousel-layout="compact"><div class="nu-menu-sticky"><div class="nu83-catalog-heading"><button class="nu168-trigger">☰</button><label class="nu83-search"><input data-product-search></label></div><nav class="menu-category-nav"><button data-category-filter="all">Todos</button><button data-category-filter="cervejas">Cervejas</button></nav></div><div class="menu-layout"><div class="menu-products">${cards.map(c=>`<article data-product data-id="${c.id}" data-name="${c.name}" data-category="${c.category}" data-combo256="${c.combo}" data-available256="1" data-price="${c.price}" data-regular256="${c.regular}" data-max="99"><div class="menu-product-info"><small>Cervejas</small><p>Descrição</p><input data-product-quantity value="1"><button data-add>Adicionar</button></div></article>`).join('')}</div></div></main><script>window.NowUpCategory230={create:()=>document.createElement('span')};</script><script>${code}</script>`;
-test('combo carousel, three-column expanded grid and explicit category filtering',async()=>{
+test('combo carousel, three-column expanded grid and direct category selection',async()=>{
  const browser=await chromium.launch({headless:true,executablePath:process.env.NOWUP_CHROME_EXECUTABLE||undefined,args:['--no-sandbox']});
  try{
   const page=await browser.newPage({viewport:{width:390,height:844}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.setContent(fixture);await page.waitForSelector('.nu275-combo-section');
@@ -26,9 +26,7 @@ test('combo carousel, three-column expanded grid and explicit category filtering
   assert.equal(await page.locator('.nu275-combos-grid:visible .nu451-regular-price').count(),0);
   assert.equal(await page.locator('.nu191-category-view h2').textContent(),'Combos');
 
-  const apply=page.getByRole('button',{name:'Filtrar',exact:true});
   await page.locator('[data-category-filter="__offers256"]').click();
-  await apply.click();
   const promotions=page.locator('.nu277-promotions-grid:visible');
   assert.equal(await columns(promotions),3);
   assert.equal(await promotions.locator('.nu451-regular-price').count(),0);
@@ -39,7 +37,6 @@ test('combo carousel, three-column expanded grid and explicit category filtering
   assert.match(await promotions.locator('.nu190-card:visible h3').textContent(),/Refrigerante/);
   await search.clear();
   await page.locator('[data-category-filter="cervejas"]').click();
-  await apply.click();
   assert.ok(await promotions.isHidden());
   const regular=page.locator('.nu191-grid:visible');
   assert.equal(await columns(regular),3);

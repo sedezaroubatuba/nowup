@@ -89,7 +89,7 @@ window.NOWUP_TUTORIALS395=[
     "page": "inicio",
     "target": ".nu221-store-link",
     "title": "Confira as abas",
-    "text": "Abra sua loja, toque numa categoria e escolha Filtrar para conferir os produtos dela. Use Todos para voltar a buscar no catálogo inteiro."
+    "text": "Abra sua loja e toque numa categoria para ver seus produtos e as subcategorias disponíveis no topo."
    }
   ]
  },
