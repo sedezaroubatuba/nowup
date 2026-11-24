@@ -1,6 +1,4 @@
 """NowUp v260: product groups use real product IDs for stock, sales and checkout."""
-import json
-
 import nowup_subcategories261
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
@@ -27,28 +25,12 @@ def effective_promo_cents(product, today=None):
                      and (not product["promo_end260"] or product["promo_end260"] >= today)) else 0
 
 
-def _catalog_card_treatment(product):
-    category = (product.get("category") or "").strip().casefold()
-    name = (product.get("name") or "").strip().casefold()
-    if (product["promo_price_cents"] > 0 or category.startswith(("combo", "promo"))
-            or name == "combo" or name.startswith("combo ")):
-        return "featured"
-
-    try:
-        config = json.loads(product.get("customization192") or "{}")
-    except (TypeError, ValueError):
-        return "standard"
-    included = config.get("included195") if isinstance(config, dict) else None
-    return "featured" if isinstance(included, dict) and included.get("is_combo") is True else "standard"
-
-
 def public_catalog(rows, today=None):
     """Hide children from the top-level catalog; keep them as real sellable items."""
     expanded = []
     for row in rows:
         item = dict(row)
         item["promo_price_cents"] = effective_promo_cents(row, today)
-        item["card_treatment"] = _catalog_card_treatment(item)
         expanded.append(item)
     heads = {r["id"]: r for r in expanded if r["is_group_header260"]}
     grouped = {key: [] for key in heads}
