@@ -19,8 +19,27 @@ html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layou
 html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu190-showcase .nu275-combo-section>header h2.nu286-category-label{border-color:#762bc0!important}
 html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu190-showcase .nu290-offers-section>header h2.nu286-category-label{border-color:#ff7828!important}
 
-/* V299: purple outlines throughout the remaining storefront categories. */
-html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu190-showcase .nu190-category:not(.nu290-offers-section) .nu201-card.nu190-card{border:2px solid #762bc0!important;box-shadow:0 2px 7px #762bc010!important}
+/* Plain cards use the same neutral frame in carousels, expanded categories and search. */
+html body.public-profile-area [data-native-menu][data-carousel-layout]
+:is(.nu190-showcase, .nu191-grid) .nu201-card.nu190-card:not(.nu275-combo-card, .nu293-offer-card, .nu256-highlight),
+html body.public-profile-area .native-menu[data-native-menu] .menu-products >
+.menu-product[data-product]:not([data-combo256="1"], :has(> .menu-product-info > div > strong > del)) {
+  background: transparent !important;
+  border: 1px solid #ededf0 !important;
+  box-shadow: none !important;
+}
+
+html body.public-profile-area .native-menu[data-native-menu] .menu-products >
+.menu-product[data-product]:not([data-combo256="1"]) .menu-product-info > div > strong:not(:has(del)),
+html body.public-profile-area [data-native-menu] .nu-group260-row-main > strong:not(:has(del)) {
+  align-self: stretch !important;
+  background: #f1e1fc;
+  border: 1px solid #e1c4f7;
+  border-radius: 9px;
+  padding: 6px 4px;
+  text-align: center !important;
+}
+
 html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu190-showcase .nu190-category:not(.nu290-offers-section)>header h2.nu286-category-label{border-color:#762bc0!important}
 html body.public-profile-area.nu233-store [data-native-menu] .menu-category-nav.nu274-categories>button:not(.active){border-color:#762bc0!important}
 

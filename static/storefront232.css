@@ -208,8 +208,7 @@ html body.public-profile-area [data-native-menu] .nu451-regular-price strong{
   display:flex!important;flex-direction:column!important;align-items:stretch!important;
   grid-template-columns:none!important;width:100%!important;height:auto!important;
   min-width:0!important;min-height:0!important;padding:6px!important;gap:5px!important;
-  border:1.5px solid #8d44ca!important;border-radius:12px!important;box-sizing:border-box!important;
-  background:#fff!important;overflow:hidden!important;
+  border-radius:12px!important;box-sizing:border-box!important;overflow:hidden!important;
  }
  html body.public-profile-area.nu233-store.nu232-store [data-native-menu][data-carousel-layout="six"] .nu190-showcase .nu190-category:not(.nu275-combo-section):not(.nu290-offers-section) .nu201-card.nu190-card>img,
  html body.public-profile-area.nu233-store.nu232-store [data-native-menu][data-carousel-layout="six"] .nu190-showcase .nu190-category:not(.nu275-combo-section):not(.nu290-offers-section) .nu201-card.nu190-card>.nu190-no-image{
