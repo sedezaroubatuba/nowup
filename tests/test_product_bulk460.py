@@ -1,4 +1,4 @@
-"""V460 bulk safety: 10 max, one transaction, no cross-shop edits or history resets."""
+"""V460 bulk safety: 20 max, one transaction, no cross-shop edits or history resets."""
 import json
 
 import pytest
@@ -14,7 +14,7 @@ def batch_env(env):
                 "INSERT OR IGNORE INTO product_categories(professional_id,name,sort_order,active,created_at) VALUES(?,?,?,?,?)",
                 (store, category, 2, 1, m.now_iso()))
         ids=[]
-        for i in range(13):
+        for i in range(21):
             name="Lote460 "+str(i).zfill(2)
             product=conn.execute("""INSERT INTO products(professional_id,name,category,price_cents,available,created_at,updated_at)
               VALUES(?,?,?,?,?,?,?)""",
@@ -48,14 +48,15 @@ def test_history_page_contains_batch_selector_and_merchant_search(batch_env):
     assert "Produto de outra loja460" not in response.text
 
 
-def test_batch_rejects_more_than_ten_and_duplicates(batch_env):
+def test_batch_rejects_larger_or_duplicate_selections(batch_env):
     m,client,store,ids,_,_=batch_env
-    over=submit(client,ids[:11],"availability",available_value="0")
+    over=submit(client,ids[:21],"availability",available_value="0")
     assert over.status_code==400
     repeated=submit(client,[ids[0],ids[0]],"availability",available_value="0")
     assert repeated.status_code==400
     with m.db() as conn:
-        assert all(conn.execute("SELECT available FROM products WHERE id=?",(pid,)).fetchone()[0]==1 for pid in ids[:11])
+        assert all(conn.execute("SELECT available FROM products WHERE id=?",(pid,)).fetchone()[0]==1 for pid in ids[:21])
+
 
 
 def test_related_bulk_preserves_prior_suggestions_and_writes_audit(batch_env):
@@ -147,3 +148,13 @@ def test_batch_does_not_change_sales_or_order_items(batch_env):
     with m.db() as conn:
         assert conn.execute("SELECT COUNT(*) FROM orders WHERE professional_id=?",(store,)).fetchone()[0]==before
         assert conn.execute("SELECT COUNT(*) FROM order_items").fetchone()[0]==lines
+
+
+def test_batch_accepts_twenty_products(batch_env):
+    m,client,_,ids,_,_=batch_env
+    with m.db() as conn:
+        conn.executemany("UPDATE products SET available=1 WHERE id=?", [(pid,) for pid in ids[:20]])
+        conn.commit()
+    accepted=submit(client,ids[:20],"availability",available_value="0")
+    assert accepted.status_code==303
+    assert "changed=20" in accepted.headers["location"]

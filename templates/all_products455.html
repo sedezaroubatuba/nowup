@@ -3,7 +3,7 @@
 {% block body_class %}professional-area nu455-products-page{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="/static/all-products455.css?v=459">
-<link rel="stylesheet" href="/static/product-bulk460.css?v=460">
+<link rel="stylesheet" href="/static/product-bulk460.css?v=465">
 <main class="nu455-root">
   <header class="nu455-header">
     <a class="nu455-back" href="/painel#cardapio" aria-label="Voltar ao painel">‹</a>
@@ -33,15 +33,18 @@
 
   <section id="lote460" class="nu460-batch" aria-label="Alterações em lote">
     <details class="nu460-panel">
-      <summary><span>☑ Edição em lote</span><small>Marque até 10 produtos e salve tudo de uma vez</small></summary>
-      <p class="nu460-note">Procure e marque até dez produtos. A seleção continua enquanto você faz outras buscas nesta caixa. Depois de salvar, escolha mais dez. As vendas e o histórico anterior são preservados.</p>
+      <summary><span>☑ Edição em lote</span><small>Marque até 20 produtos e salve tudo de uma vez</small></summary>
+      <p class="nu460-note">Marque até 20 produtos. A seleção continua ao trocar de categoria ou fazer outra busca. As vendas e o histórico são preservados.</p>
       <form method="post" action="/painel/todos-produtos/lote" data-bulk-form460>
         <div class="nu460-selection">
+          <label>Filtrar por categoria
+            <select data-bulk-filter465><option value="">Todas as categorias</option></select>
+          </label>
           <label>Buscar e marcar produtos
             <input type="search" data-bulk-search460 placeholder="Ex.: gelo, cerveja, código interno…" autocomplete="off" aria-label="Buscar produtos para selecionar">
           </label>
           <div class="nu460-selection-tools">
-            <span data-bulk-count460 aria-live="polite">0 de 10 produtos selecionados</span>
+            <span data-bulk-count460 aria-live="polite">0 de 20 produtos selecionados</span>
             <button type="button" data-bulk-clear460>Limpar seleção</button>
           </div>
           <div class="nu460-search-list" data-bulk-results460 role="group" aria-label="Resultados para seleção"></div>
@@ -100,7 +103,7 @@
           </div>
         </div>
         <p role="status" class="nu460-status" data-bulk-status460></p>
-        <button type="submit" class="nu455-primary nu460-submit" data-bulk-submit460>Conferir e salvar até 10 produtos</button>
+        <button type="submit" class="nu455-primary nu460-submit" data-bulk-submit460>Conferir e salvar até 20 produtos</button>
       </form>
     </details>
   </section>
@@ -308,5 +311,5 @@
 </main>
 <script type="application/json" id="nu455-product-names">{{all_names455|tojson}}</script>
 <script defer src="/static/all-products455.js?v=461"></script>
-<script defer src="/static/product-bulk460.js?v=461"></script>
+<script defer src="/static/product-bulk460.js?v=465"></script>
 {% endblock %}

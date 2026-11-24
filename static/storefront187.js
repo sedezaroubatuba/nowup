@@ -55,10 +55,10 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  const lessBottom=less.cloneNode(true);
  lessBottom.addEventListener('click',collapseCategory);
  categoryFooter.append(lessBottom);
- const subcategoryFilters=make('div','nu261-pills');
+ const subcategoryFilters=make('div','nu261-pills nu465-subcategories');
  subcategoryFilters.setAttribute('role','group');
  subcategoryFilters.setAttribute('aria-label','Subcategorias');
- categoryView.append(categoryHeader,subcategoryFilters,categoryCount,categoryEmpty,categoryFooter);
+ categoryView.append(categoryHeader,categoryCount,categoryEmpty,categoryFooter);
  const categoryCache=new Map();
  function prepareSubcategories(key){
   selectedSubcategory261='';
@@ -72,6 +72,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
     selectedSubcategory261=id;
     controls.forEach(control=>control.setAttribute('aria-pressed',String(control===button)));
     filterCategory();
+    window.scrollTo({top:0,behavior:"instant"});
    });
    return button;
   });
@@ -82,7 +83,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  function showProducts(focus=false){
   clearCategoryChoice();
   if(body.classList.contains('nu187-store-home'))homeScroll=window.scrollY;
-  selectedCategory=null;activeCategory.hidden=true;categoryView.hidden=true;body.classList.remove('nu191-category');
+  selectedCategory=null;subcategoryFilters.remove();activeCategory.hidden=true;categoryView.hidden=true;body.classList.remove('nu191-category');
   intro.hidden=!desktop228.matches;showcase.hidden=true;body.classList.toggle('nu228-desktop-catalog',desktop228.matches);back.setAttribute('aria-label','Voltar às informações da loja');
   if(nav)sticky.append(nav);body.classList.remove('nu187-store-home');search.placeholder='Buscar nesta loja';search.setAttribute('aria-label','Buscar produtos nesta loja');
   resize();window.scrollTo({top:0,behavior:'instant'});if(focus)search.focus({preventScroll:true});
@@ -91,7 +92,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   clearCategoryChoice();
   body.classList.remove('nu228-desktop-catalog');
 
-  selectedCategory=null;activeCategory.hidden=true;categoryView.hidden=true;body.classList.remove('nu191-category');
+  selectedCategory=null;subcategoryFilters.remove();activeCategory.hidden=true;categoryView.hidden=true;body.classList.remove('nu191-category');
   intro.hidden=false;showcase.hidden=false;body.classList.add('nu187-store-home');back.setAttribute('aria-label','Voltar ao início do NowUp');
   if(nav)anchor.after(nav);search.value='';search.dispatchEvent(new Event('input',{bubbles:true}));search.placeholder='Pesquisar produtos';search.setAttribute('aria-label','Pesquisar produtos nesta loja');search.blur();
   refreshers.forEach(fn=>fn());cartRefreshers.forEach(fn=>fn());resize();window.scrollTo({top:homeScroll,behavior:'instant'});
@@ -260,6 +261,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   selectedCategory=key;prepareSubcategories(key);markCategory362(key);body.classList.remove('nu187-store-home');body.classList.add('nu191-category');
   intro.hidden=true;showcase.hidden=true;categoryView.hidden=false;back.setAttribute('aria-label','Voltar à página da loja');
   if(nav)sticky.append(nav);
+  sticky.append(subcategoryFilters);
   if(!categoryCache.has(key)){
    const grid=make('div','nu191-grid');grid.classList.toggle('nu275-combos-grid',key==='__combos256'||key==='__offers256');grid.classList.toggle('nu277-promotions-grid',key==='__offers256');const cards=group.cards.map(source=>{const node=compact(source,key==='__offers256');grid.append(node);return {source,node};});categoryFooter.before(grid);categoryCache.set(key,{grid,cards});
   }

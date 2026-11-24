@@ -1,4 +1,4 @@
-"""V460: atomic, store-scoped bulk editing, at most ten products per operation."""
+"""V460: atomic, store-scoped bulk editing, at most twenty products per operation."""
 from __future__ import annotations
 
 import json
@@ -10,12 +10,12 @@ from fastapi.responses import RedirectResponse
 import nowup_subcategories448
 
 
-MAX_BULK460 = 10
+MAX_BULK460 = 20
 
 
 def _unique_ids460(ids):
     if not 1 <= len(ids) <= MAX_BULK460:
-        raise HTTPException(400, "Selecione de 1 a 10 produtos por operação.")
+        raise HTTPException(400, f"Selecione de 1 a {MAX_BULK460} produtos por operação.")
     if any(not isinstance(pid, int) or pid <= 0 for pid in ids) or len(set(ids)) != len(ids):
         raise HTTPException(400, "A seleção contém produtos inválidos ou duplicados.")
     return ids

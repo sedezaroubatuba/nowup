@@ -1,6 +1,6 @@
 <!doctype html><html lang="pt-BR"><head>
-<link rel="stylesheet" href="/static/nowup-dialogs.css?v=361">
-<script src="/static/nowup-dialogs.js?v=361"></script>
+<link rel="stylesheet" href="/static/nowup-dialogs.css?v=465">
+<script src="/static/nowup-dialogs.js?v=465"></script>
 <link rel="stylesheet" href="/static/navigation-instant98.css?v=98">
 <script src="/static/navigation-instant98.js?v=98"></script><meta name="color-scheme" content="only light"><meta name="supported-color-schemes" content="light"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{% if store_app256 %}{{store_app256.name}}{% else %}{% block title %}{{settings.seo_title or settings.brand_name or 'NowUp'}}{% endblock %}{% endif %}</title><meta name="description" content="{% block meta_description %}{{settings.seo_description or 'Encontre profissionais e empresas perto de você.'}}{% endblock %}"><meta name="keywords" content="{{settings.seo_keywords or ''}}">
@@ -248,11 +248,11 @@ html body.public-profile-area [data-native-menu] .nu83-catalog-heading .nu83-sea
 <link rel="stylesheet" href="/static/storefront187.css?v=383">
 <script id="nu230-data" type="application/json">{{ {'catalog': category_catalog230|default([]), 'choices': category_choices230|default({})}|tojson }}</script>
 <script src="/static/categories230.js?v=294" defer></script>
-<script src="/static/images258.js?v=258" defer></script><script src="/static/storefront187.js?v=463" defer></script>
+<script src="/static/images258.js?v=258" defer></script><script src="/static/storefront187.js?v=465" defer></script>
 <noscript><style>html body.nu187-store-home [data-native-menu] .menu-layout{display:block!important}</style></noscript>
 <script>setTimeout(()=>{if(document.body&&!document.body.dataset.store187Ready)document.body.classList.remove("nu187-store-home");},3000);</script>
 <link rel="stylesheet" href="/static/showcase190.css?v=197">
-<link rel="stylesheet" href="/static/category191.css?v=462">
+<link rel="stylesheet" href="/static/category191.css?v=465">
 <link rel="stylesheet" href="/static/compact200.css?v=200"><link rel="stylesheet" href="/static/products201.css?v=201"><link rel="stylesheet" href="/static/order-banner202.css?v=259"><link rel="stylesheet" href="/static/categories230.css?v=230"><link rel="stylesheet" href="/static/products231.css?v=231"><link rel="stylesheet" href="/static/storefront232.css?v=451"><script defer src="/static/storefront232.js?v=409"></script><link rel="stylesheet" href="/static/upload-preview250.css?v=340"><script defer src="/static/upload-preview250.js?v=250"></script><script defer src="/static/cart-lifecycle247.js?v=345"></script>
 <link rel="stylesheet" href="/static/surfaces340.css?v=341">
 <link rel="stylesheet" href="/static/order-layout347.css?v=348"></head><body class="{% if store_app256 %}store-app256 {% endif %}{% if request is defined and request.url.path.startswith('/p/') and pro is defined and (request.url.path.rstrip('/').endswith('/menu') or (pro.plan_active in ['cardapio','ambos','completo'] and pro.is_premium and pro.offer_mode in ['menu','catalog'])) %}nu169-products-view nu170-fixed-catalog nu172-catalog-pending nu187-store-home {% endif %}{% block body_class %}{% endblock %}">{% include "opening260.html" %}

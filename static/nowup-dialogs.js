@@ -14,12 +14,13 @@ function open(options){const job=queue.then(()=>new Promise(resolve=>{
   [...select.options].forEach(option=>{if(option.hidden)return;const button=document.createElement('button');button.type='button';button.className='nu-dialog-option';button.textContent=(option.parentElement.tagName==='OPTGROUP'?option.parentElement.label+' · ':'')+option.textContent;button.disabled=option.disabled||(option.parentElement.tagName==='OPTGROUP'&&option.parentElement.disabled);button.setAttribute('aria-pressed',String(option.selected));button.addEventListener('click',()=>finish(option));list.append(button);});d.append(list,empty);
   search?.addEventListener('input',()=>{const norm=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR');let count=0;for(const b of list.children){b.hidden=!norm(b.textContent).includes(norm(search.value));if(!b.hidden)count++;}empty.hidden=!!count;});
  }
+ if(options.warning){const warning=document.createElement('p');warning.className='nu-dialog-warning';warning.textContent=options.warning;d.append(warning);}
  const actions=document.createElement('div');actions.className='nu-dialog-actions';
- if(options.cancel!==false){const cancel=document.createElement('button');cancel.type='button';cancel.className='nu-dialog-secondary';cancel.textContent='Cancelar';cancel.addEventListener('click',()=>finish(null));actions.append(cancel);}
+ if(options.cancel!==false){const cancel=document.createElement('button');cancel.type='button';cancel.className='nu-dialog-secondary';cancel.textContent=options.cancelLabel||'Cancelar';cancel.addEventListener('click',()=>finish(null));actions.append(cancel);}
  if(!options.select){const ok=document.createElement('button');ok.type='button';ok.textContent=options.confirm||'OK';ok.addEventListener('click',()=>{if(field&&options.required&&!field.value.trim()){field.setCustomValidity('Informe o motivo para continuar.');field.reportValidity();return;}finish(field?field.value:true);});field?.addEventListener('input',()=>field.setCustomValidity(''));actions.append(ok);}
  d.append(actions);d.addEventListener('cancel',e=>{e.preventDefault();finish(null);});document.body.append(d);d.showModal();(field||d.querySelector('input')||d.querySelector('[aria-pressed="true"]')||actions.querySelector('button'))?.focus();
 }));queue=job.catch(()=>{});return job;}
-window.NowUpDialog={alert:message=>open({message,title:'Aviso',cancel:false}),confirm:message=>open({message,title:'Confirmar ação',confirm:'Confirmar'}),prompt:(message,value='',extra={})=>open({message,value,input:true,title:'Confira os dados',...extra})};
+window.NowUpDialog={alert:message=>open({message,title:'Aviso',cancel:false}),confirm:(message,extra)=>open({message,title:'Confirmar ação',confirm:'Confirmar',...extra}),prompt:(message,value='',extra={})=>open({message,value,input:true,title:'Confira os dados',...extra})};
 window.alert=message=>{window.NowUpDialog.alert(message);};
 const waiting=new WeakSet(),approved=new WeakSet();
 document.addEventListener('submit',async event=>{const form=event.target;if(approved.has(form)){approved.delete(form);return;}

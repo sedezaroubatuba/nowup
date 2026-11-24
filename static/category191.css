@@ -17,7 +17,7 @@ html body.public-profile-area .nu191-category-view>h2{margin:0 0 4px!important;f
 
 .nu462-category-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:6px;background:#f5edff;border-radius:12px}
 .nu462-category-actions[hidden],.nu462-active-category[hidden],.nu462-scroll-categories[hidden],
-.nu191-category-view .nu261-pills[hidden]{display:none!important}
+.nu465-subcategories[hidden]{display:none!important}
 .nu462-category-label{grid-column:1/-1;color:#502184;padding:0 4px;overflow-wrap:anywhere}
 .nu462-category-actions button,.nu168-categories nav .nu462-category-actions button,
 .nu462-active-category,.nu462-scroll-categories{
@@ -64,3 +64,8 @@ html body.public-profile-area [data-native-menu] .nu462-collapse-footer .nu219-l
     flex:0 0 24px;width:24px;min-width:0;padding-inline:0;
   }
 }
+
+html body.public-profile-area [data-native-menu] .nu-menu-sticky .nu465-subcategories{
+  flex-wrap:nowrap;margin:4px 0 0;padding:4px 0 8px;overflow-x:auto;overscroll-behavior-inline:contain;
+}
+.nu465-subcategories button{flex:none}
