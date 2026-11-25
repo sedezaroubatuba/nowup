@@ -616,6 +616,10 @@ def init_db():
       CREATE INDEX IF NOT EXISTS idx_exposure_date238 ON home_store_exposure90(visit_date,professional_id);
     """)
     ensure_column(conn, "professionals", "carousel_layout235", "TEXT NOT NULL DEFAULT 'compact'")
+    if not conn.execute("SELECT 1 FROM site_settings WHERE key='sede_zero_carousel479'").fetchone():
+        result = conn.execute("UPDATE professionals SET carousel_layout235='eight' WHERE slug='adega-sede-zero'")
+        if result.rowcount:
+            conn.execute("INSERT OR IGNORE INTO site_settings(key,value) VALUES('sede_zero_carousel479','1')")
     ensure_column(conn, "product_categories", "icon_key", "TEXT NOT NULL DEFAULT 'auto'")
     ensure_column(conn, "users", "email_verified", "INTEGER NOT NULL DEFAULT 1")
     ensure_column(conn, "users", "verification_token", "TEXT DEFAULT ''")
@@ -2229,7 +2233,7 @@ def pro_cart_notice143(request: Request, cart_notice: str=Form("")):
 @app.post("/painel/cardapio/exibicao")
 def pro_carousel_layout235(request: Request, carousel_layout235: str=Form(...)):
     u=require_user(request,"professional")
-    if carousel_layout235 not in ("compact", "pair", "large", "six"):
+    if carousel_layout235 not in ("compact", "pair", "large", "six", "eight"):
         raise HTTPException(422,"Formato de carrossel inválido")
     conn=db()
     try:

@@ -75,7 +75,8 @@ html body.v50-directory-home.vitrine-launch main.v50-home > .v50-head {
   border-color:transparent!important;
 }
 html body.v50-directory-home.vitrine-launch > .top .nowup-official-logo {
-  filter:brightness(0) invert(1);
+  filter:none!important; background:#fff; border-radius:12px; padding:3px 7px;
+  width:clamp(100px,30vw,148px)!important; height:clamp(38px,11vw,50px)!important; object-fit:contain!important;
 }
 html body.v50-directory-home.vitrine-launch > .top .nu174-bell {
   color:#fff!important; background:#ffffff14!important; border-color:#ffffff55!important;
@@ -96,3 +97,11 @@ html body.v50-directory-home.vitrine-launch .mobile-bottom-nav a[aria-current="p
   background:#ffffff1a!important;
 }
 .vitrine-launch .vitrine-store img { border:1px solid #fff; }
+
+html body.v50-directory-home.vitrine-launch > .top .brand {
+  display:flex!important; align-items:center; gap:6px; flex-shrink:1; min-width:0;
+}
+html body.v50-directory-home.vitrine-launch > .top .brand .vitrine-header-store-logo {
+  width:clamp(32px,10vw,48px)!important; height:clamp(32px,10vw,48px)!important;
+  flex:none; object-fit:contain!important; border-radius:50%; border:1px solid #fff;
+}
