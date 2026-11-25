@@ -13,12 +13,12 @@
 .vitrine-cart { background:#ede2fa; color:#512086!important; }
 .vitrine-status { margin:0; min-height:0; }
 .vitrine-status:not(:empty) { margin:8px 0; }
-.vitrine-shelf { margin:16px 0; }
+.vitrine-shelf { margin:16px 0; padding:10px 6px; background:#f1e3fc; border-radius:14px; }
 .vitrine-shelf[hidden] { display:none!important; }
 .vitrine-shelf h2 { font-size:20px; margin:0 0 7px; }
 .vitrine-products { display:grid; grid-auto-flow:column; grid-auto-columns:calc((100% - 15px)/4); gap:5px; overflow:auto; scroll-snap-type:x proximity; }
 .vitrine-products article { scroll-snap-align:start; display:flex; flex-direction:column; gap:5px; padding:5px 1px; min-width:0; }
-.vitrine-products img { width:100%; height:clamp(60px,19vw,108px); object-fit:contain; }
+.vitrine-products img { width:100%; height:clamp(60px,19vw,108px); object-fit:contain; background:#fff; border-radius:8px; }
 .vitrine-products h3 { font-size:clamp(10px,2.8vw,14px); margin:0; overflow-wrap:anywhere; }
 .vitrine-products strong { align-self:start; margin-top:auto; padding:3px 5px; border-radius:8px; background:#eee1fc; color:#41136d; font-size:clamp(10px,2.8vw,15px); white-space:nowrap; }
 .vitrine-products del { color:#6b6476; font-size:12px; }
@@ -31,7 +31,6 @@
 .vitrine-login > a { display:flex; margin-top:9px; }
 .vitrine-login > a:last-child { color:#7132bf!important; background:#f0e6fa; }
 .vitrine-close { margin-left:auto; display:block; border:0; background:none; font-size:24px; cursor:pointer; }
-.vitrine-chocolates { padding:10px 6px; background:#f1e3fc; border-radius:14px; }
 .vitrine-chocolates h2 { color:#41136d!important; }
 .vitrine-shelf { scroll-margin-top:120px; }
 body.nu177-searching .vitrine-home :is(.vitrine-covers,.vitrine-store,.vitrine-shelf,.vitrine-soon) { display:none; }
@@ -42,7 +41,7 @@ html body.v50-directory-home main.v50-home .vitrine-home .vitrine-store :is(h1,s
 .vitrine-products { scrollbar-width:thin; scrollbar-color:#cdb3ea transparent; }
 .nu177-results .nu177-product-grid {
   grid-template-columns:repeat(4,minmax(0,1fr)); grid-auto-flow:row; grid-auto-columns:auto;
-  overflow:visible; row-gap:14px; margin:6px 0 14px;
+  overflow:visible; row-gap:14px; margin:6px 0 14px; padding:10px 6px; background:#f1e3fc; border-radius:14px;
 }
 .nu177-product-link { display:flex; flex-direction:column; flex:1; min-width:0; color:inherit; }
 .nu177-product-link > div { flex:1; display:flex; flex-direction:column; gap:5px; }
