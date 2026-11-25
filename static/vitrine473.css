@@ -22,7 +22,7 @@
 .vitrine-products article { scroll-snap-align:start; display:flex; flex-direction:column; gap:5px; padding:5px 1px; min-width:0; }
 .vitrine-products img { width:100%; height:clamp(60px,19vw,108px); object-fit:contain; background:#fff; border-radius:8px; }
 .vitrine-products h3 { font-size:clamp(10px,2.8vw,14px); margin:0; overflow-wrap:anywhere; }
-.vitrine-products strong { align-self:start; margin-top:auto; padding:3px 5px; border-radius:8px; background:#eee1fc; color:#41136d; font-size:clamp(10px,2.8vw,15px); white-space:nowrap; }
+.vitrine-products strong { align-self:start; margin-top:auto; padding:3px 5px; border-radius:8px; background:#aee6be; color:#181818; font-size:clamp(10px,2.8vw,15px); white-space:nowrap; }
 .vitrine-products del { color:#6b6476; font-size:12px; }
 .vitrine-add { width:100%; min-height:44px; padding-inline:1px; font-size:clamp(10px,2.75vw,13px); }
 .vitrine-add:disabled { background:#e8e2ef; color:#625970!important; cursor:default; }
@@ -111,3 +111,5 @@ html body.v50-directory-home.vitrine-launch > .top .brand .vitrine-header-store-
   width:clamp(32px,10vw,48px)!important; height:clamp(32px,10vw,48px)!important;
   flex:none; object-fit:contain!important; border-radius:50%; border:1px solid #fff;
 }
+
+.vitrine-products .vitrine-add:not(:disabled) { background:#7132bf!important; color:#fff!important; }

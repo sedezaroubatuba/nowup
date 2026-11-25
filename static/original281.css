@@ -116,3 +116,25 @@ html body.public-profile-area [data-native-menu] .nu471-carousel-next.nu481-prev
 }
 .nu481-carousel-notice:empty { padding:0; }
 html body.public-profile-area [data-native-menu] .nu190-indicator[hidden] { display:none!important; }
+
+/* Sede Zero price treatment shared by carousel, category and catalog search. */
+html body.public-profile-area.sede-zero-price-theme [data-native-menu][data-carousel-layout]
+:is(.nu190-showcase,.nu191-grid) :is(.nu451-regular-price,.nu289-combo-price),
+html body.public-profile-area.sede-zero-price-theme .native-menu[data-native-menu] .menu-products >
+.menu-product[data-product] .menu-product-info > div > strong,
+html body.public-profile-area.sede-zero-price-theme [data-native-menu] .nu-group260-row-main > strong {
+  background:#aee6be!important;
+  border-color:#8dcca3!important;
+  border-radius:8px;
+  color:#181818!important;
+}
+html body.public-profile-area.sede-zero-price-theme [data-native-menu][data-carousel-layout]
+:is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card .nu190-card-content :is(.nu451-regular-price,.nu289-combo-price) > strong {
+  color:#181818!important;
+}
+html body.public-profile-area.sede-zero-price-theme [data-native-menu][data-carousel-layout]
+:is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card :is(.nu201-open:not(.nu284-combo-open),.nu190-add):not(:disabled),
+html body.public-profile-area.sede-zero-price-theme [data-native-menu] .menu-products [data-add]:not(:disabled) {
+  background:#7132bf!important;
+  color:#fff!important;
+}
