@@ -19,7 +19,7 @@
   {% else %}<p>Nenhum produto disponível nesta seção.</p>{% endif %}
 </section>
 {% endmacro %}
-<link rel="stylesheet" href="/static/vitrine473.css?v=476">
+<link rel="stylesheet" href="/static/vitrine473.css?v=477">
 <script defer src="/static/vitrine473.js?v=473"></script>
 <div class="vitrine-home container" data-vitrine data-primary-store="{{showcase_store.slug if showcase_store else ''}}" data-owner-store="{{showcase_store.slug if showcase_store and user and user.id==showcase_store.user_id else ''}}" data-customer="{{user.id if user and user.role=='customer' else ''}}">
   {% if showcase_store %}
