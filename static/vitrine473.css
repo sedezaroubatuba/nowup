@@ -71,15 +71,15 @@ html body.v50-directory-home main.v50-home .v50-head .v50-search button {
 
 html body.v50-directory-home.vitrine-launch > .top,
 html body.v50-directory-home.vitrine-launch main.v50-home > .v50-head {
-  background:linear-gradient(105deg,#6411ac,#2321a4)!important;
-  border-color:transparent!important;
+  background:#fff!important;
+  border-color:#eee8f3!important;
 }
 html body.v50-directory-home.vitrine-launch > .top .nowup-official-logo {
   filter:none!important; background:#fff; border-radius:12px; padding:3px 7px;
   width:clamp(100px,30vw,148px)!important; height:clamp(38px,11vw,50px)!important; object-fit:contain!important;
 }
 html body.v50-directory-home.vitrine-launch > .top .nu174-bell {
-  color:#fff!important; background:#ffffff14!important; border-color:#ffffff55!important;
+  color:#7132bf!important; background:#fff!important; border-color:#e5d9f3!important;
 }
 html body.v50-directory-home.vitrine-launch .v50-head .v50-search {
   background:#fff!important; border-radius:14px;
@@ -92,6 +92,12 @@ html body.v50-directory-home.vitrine-launch .mobile-bottom-nav a {
 }
 html body.v50-directory-home.vitrine-launch .mobile-bottom-nav a :is(svg,span) {
   color:#fff!important;
+}
+html body.v50-directory-home.vitrine-launch .mobile-bottom-nav > a > svg {
+  stroke:#fff!important;
+}
+html body.v50-directory-home.vitrine-launch .mobile-bottom-nav > a[aria-current="page"] > svg {
+  stroke:#7132bf!important;
 }
 html body.v50-directory-home.vitrine-launch .mobile-bottom-nav a[aria-current="page"] {
   background:#ffffff1a!important;
