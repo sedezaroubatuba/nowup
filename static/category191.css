@@ -40,8 +40,12 @@ html body.public-profile-area [data-native-menu] .nu462-collapse-footer .nu219-l
   html body.public-profile-area.nu191-category .nu371-floating-collapse{display:none!important}
 
   html body.public-profile-area [data-native-menu][data-carousel-layout] .nu191-grid:not([hidden]){
-    grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;grid-auto-rows:auto!important;
+    grid-template-columns:repeat(var(--nu481-columns,2),minmax(0,1fr))!important;gap:6px!important;grid-auto-rows:auto!important;
   }
+  [data-carousel-layout="six"] { --nu481-columns:3; }
+  [data-carousel-layout="eight"] { --nu481-columns:4; }
+  [data-carousel-layout="large"] .nu191-grid:not(.nu275-combos-grid) { --nu481-columns:1; }
+  .nu191-grid.nu275-combos-grid { --nu481-columns:2; }
   html body.public-profile-area [data-native-menu][data-carousel-layout] .nu191-grid .nu201-card.nu190-card:not([hidden]){
     display:flex!important;flex-direction:column!important;align-items:stretch!important;
     min-width:0!important;height:auto!important;min-height:0!important;padding:5px!important;gap:5px!important;
