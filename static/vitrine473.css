@@ -35,5 +35,30 @@
 .vitrine-chocolates h2 { color:#41136d!important; }
 .vitrine-shelf { scroll-margin-top:120px; }
 body.nu177-searching .vitrine-home :is(.vitrine-covers,.vitrine-store,.vitrine-shelf,.vitrine-soon) { display:none; }
-.nu177-buy-result { display:flex; flex-direction:column; gap:4px; }
-.nu177-buy-result .vitrine-add { width:auto; align-self:end; }
+html body.v50-directory-home main.v50-home .vitrine-home .vitrine-store :is(h1,small) {
+  color:#fff!important;
+}
+.vitrine-owner { color:#624677; font-size:12px; }
+.vitrine-products { scrollbar-width:thin; scrollbar-color:#cdb3ea transparent; }
+.nu177-results .nu177-product-grid {
+  grid-template-columns:repeat(4,minmax(0,1fr)); grid-auto-flow:row; grid-auto-columns:auto;
+  overflow:visible; row-gap:14px; margin:6px 0 14px;
+}
+.nu177-product-link { display:flex; flex-direction:column; flex:1; min-width:0; color:inherit; }
+.nu177-product-link > div { flex:1; display:flex; flex-direction:column; gap:5px; }
+.nu177-product-link > div > h3 { margin:0; font-size:clamp(10px,2.8vw,14px); overflow-wrap:anywhere; }
+.nu177-product-link small { font-size:10px; overflow-wrap:anywhere; }
+.nu177-product-link:focus-visible { outline:2px solid #7132bf; outline-offset:2px; }
+
+
+html body.v50-directory-home main.v50-home .v50-head .v50-search button {
+  background:#7132bf!important; color:#fff!important;
+}
+.vitrine-covers img { aspect-ratio:1.22; }
+.vitrine-products article { text-align:center; align-items:stretch; }
+.vitrine-products strong { align-self:center; }
+.vitrine-products .vitrine-add { border-radius:8px; }
+.vitrine-store { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:8px; }
+.vitrine-store img { width:clamp(42px,13vw,62px); height:auto; aspect-ratio:1; }
+.vitrine-store small { display:block; font-size:10px; }
+.vitrine-store a { min-height:40px; padding-inline:8px; font-size:clamp(10px,2.9vw,14px); white-space:nowrap; }

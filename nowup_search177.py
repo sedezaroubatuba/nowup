@@ -65,7 +65,7 @@ def rank_products(rows, query, city, random_key=None):
 
 
 def register(app, db, public_business_scope, shop_status):
-    from nowup_vitrine473 import browse_item
+    from nowup_vitrine473 import browse_item, is_vitrine_product
     from fastapi import Request
     from fastapi.responses import JSONResponse
 
@@ -100,7 +100,7 @@ def register(app, db, public_business_scope, shop_status):
             products=[]
             for row in conn.execute(product_sql,params):
                 r=dict(row)
-                if normalize(r['city']) != city_key:
+                if normalize(r['city']) != city_key or not is_vitrine_product(r):
                     continue
                 if open_now=='1' and not shop_status(r)['open']:
                     continue

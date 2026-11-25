@@ -493,22 +493,27 @@ try {
  if(!form||!input||!main)return;
  input.type='search';input.autocomplete='off';
  const panel=document.createElement('section');panel.className='nu177-results container';panel.setAttribute('aria-label','Resultados da pesquisa');panel.hidden=true;
- const categories=main.querySelector('.nu173-categories');if(categories)categories.after(panel);else main.append(panel);
+ const vitrine=main.querySelector('[data-vitrine]');
+ if(vitrine)vitrine.after(panel);else main.append(panel);
  const el=(tag,cls,value)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(value!==undefined)n.textContent=value;return n;};
  const money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
  let timer,controller,sequence=0;
  function reset(){clearTimeout(timer);controller?.abort();sequence++;panel.hidden=true;panel.replaceChildren();document.body.classList.remove('nu177-searching');input.removeAttribute('aria-busy');}
  function card(item,product){
-  const a=el('a','nu177-result');a.href=item.url;
+  const a=el('a',product?'nu177-product-link':'nu177-result');a.href=item.url;
   if(item.image){const img=el('img');img.src=item.image;img.alt=item.name;img.loading='lazy';img.addEventListener('error',()=>img.remove(),{once:true});a.append(img);}
-  const copy=el('div');copy.append(el('b','',item.name));
-  if(product){copy.append(el('strong','nu177-price',money.format(item.price_cents/100)));copy.append(el('small','',item.store_name));}
-  else copy.append(el('small','',item.city));
-  copy.append(el('small',item.open?'nu177-open':'nu177-closed',item.open?'● Loja aberta':'Loja fechada'));
+  const copy=el('div');copy.append(el(product?'h3':'b','',item.name));
+  if(product){
+   copy.append(el('strong','',money.format(item.price_cents/100)));
+   if(item.cart?.slug!==vitrine?.dataset.primaryStore)copy.append(el('small','',item.store_name));
+  }else{
+   copy.append(el('small','',item.city));
+   copy.append(el('small',item.open?'nu177-open':'nu177-closed',item.open?'● Loja aberta':'Loja fechada'));
+  }
   a.append(copy);
   if(!product||!item.cart||!window.NowUpVitrine473)return a;
-  const result=el('div','nu177-buy-result'),buy=el('button','vitrine-add','Adicionar');
-  buy.type='button';buy.disabled=!item.open;
+  const result=el('article','nu177-buy-result'),buy=el('button','vitrine-add',item.open?'Adicionar':'Loja fechada');
+  buy.type='button';buy.disabled=!item.open||vitrine?.dataset.ownerStore===item.cart.slug;
   buy.addEventListener('click',()=>window.NowUpVitrine473.add(item.cart));
   result.append(a,buy);return result;
  }
@@ -522,11 +527,15 @@ try {
    const data=await response.json();if(id!==sequence)return;
    panel.replaceChildren();const header=el('header');header.append(el('h2','','Resultados para “'+query+'”'));
    const clear=el('button','btn soft','Limpar busca');clear.type='button';clear.addEventListener('click',()=>{input.value='';reset();input.focus();});header.append(clear);panel.append(header);
-   if(data.products.length){panel.append(el('h3','','Produtos e pratos'));const grid=el('div','nu177-grid');data.products.forEach(item=>grid.append(card(item,true)));panel.append(grid);}
+   if(data.products.length){panel.append(el('h3','','Produtos e pratos'));const grid=el('div','vitrine-products nu177-product-grid');data.products.forEach(item=>grid.append(card(item,true)));panel.append(grid);}
    if(data.stores.length){panel.append(el('h3','','Lojas'));const grid=el('div','nu177-grid');data.stores.forEach(item=>grid.append(card(item,false)));panel.append(grid);}
    if(!data.products.length&&!data.stores.length)panel.append(el('p','','Nenhum resultado nesta cidade. Tente outro nome de produto ou loja.'));
    panel.hidden=false;document.body.classList.add('nu177-searching');
-   if(scroll)panel.scrollIntoView({behavior:'auto',block:'start'});
+   if(scroll){
+    const searchBottom=form.getBoundingClientRect().bottom;
+    const top=window.scrollY+panel.getBoundingClientRect().top-searchBottom-18;
+    window.scrollTo({top:Math.max(0,top),behavior:'auto'});
+   }
   }catch(error){if(error.name!=='AbortError'&&id===sequence){panel.replaceChildren(el('p','','Não foi possível carregar a busca inteligente. Toque em Buscar novamente.'));panel.hidden=false;document.body.classList.remove('nu177-searching');}}
   finally{if(id===sequence)input.removeAttribute('aria-busy');}
  }

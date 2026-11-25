@@ -1,6 +1,12 @@
 """Vitrine shelves backed by the public store catalog."""
+from itertools import zip_longest
+
 from nowup_groups260 import effective_promo_cents
 from nowup_search177 import normalize
+
+
+def is_vitrine_product(row):
+    return "tabacaria" not in normalize(row.get("category"))
 
 
 def browse_item(row, status):
@@ -26,7 +32,7 @@ def shelves(conn, store):
         ))
         ORDER BY pr.featured DESC, pr.sort_order, pr.id DESC
     """, (store["id"],)).fetchall()
-    products = [browse_item(row, store["shop_status"]) for row in rows if not row["is_group_header260"]]
+    products = [browse_item(row, store["shop_status"]) for row in rows if not row["is_group_header260"] and is_vitrine_product(dict(row))]
     covers = {
         "cervejas": ("Cervejas", ("cerveja", "chopp")),
         "refrigerantes": ("Refrigerantes", ("refrigerante", "bebidas nao alcoolicas", "bebidas nao alcolicas")),
@@ -41,4 +47,12 @@ def shelves(conn, store):
             items = [p for p in items if not any(word in normalize(p["name"]).split() for word in ("agua","suco","energetico","isotonico"))]
         groups[key] = (title, items)
     chocolates = [p for p in products if "chocolate" in normalize(p["category"])]
-    return groups, chocolates, products[:12]
+    recommendations = []
+    seen = set()
+    for group in zip_longest(*(items[:12] for _, items in groups.values())):
+        for item in group:
+            if item is None or item["id"] in seen:
+                continue
+            recommendations.append(item)
+            seen.add(item["id"])
+    return groups, chocolates, recommendations[:12]
