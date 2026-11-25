@@ -14,7 +14,9 @@
     root.querySelectorAll('[data-vitrine-cart]').forEach(link => {
       let count = 0;
       try { count = [...entries(link.dataset.slug).values()].reduce((n, row) => n + Number(row.quantity || 0), 0); } catch (_) {}
-      link.querySelector('[data-vitrine-count]').textContent = count ? '· ' + count : '';
+      link.hidden = !customer || count < 1;
+      link.querySelector('[data-vitrine-count]').textContent = String(count);
+      link.setAttribute('aria-label', 'Carrinho, ' + count + (count === 1 ? ' item' : ' itens'));
     });
   }
 

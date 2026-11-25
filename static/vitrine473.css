@@ -10,7 +10,9 @@
 .vitrine-store small { font-size:12px; }
 .vitrine-store a, .vitrine-cart, .vitrine-add, .vitrine-login > a { display:inline-flex; align-items:center; justify-content:center; gap:6px; border:0; color:#fff!important; background:#7132bf; border-radius:10px; min-height:42px; padding:6px 10px; font:inherit; font-size:13px; font-weight:750; cursor:pointer; }
 .vitrine-store a { margin-inline-start:auto; }
-.vitrine-cart { background:#ede2fa; color:#512086!important; }
+.vitrine-toolbar { display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+.vitrine-cart { background:#ede2fa; color:#512086!important; margin:4px 0 0 auto; min-height:40px; }
+.vitrine-cart[hidden] { display:none!important; }
 .vitrine-status { margin:0; min-height:0; }
 .vitrine-status:not(:empty) { margin:8px 0; }
 .vitrine-shelf { margin:16px 0; padding:10px 3px; background:#fff; }
@@ -37,7 +39,7 @@ body.nu177-searching .vitrine-home :is(.vitrine-covers,.vitrine-store,.vitrine-s
 html body.v50-directory-home main.v50-home .vitrine-home .vitrine-store :is(h1,small) {
   color:#fff!important;
 }
-.vitrine-owner { color:#624677; font-size:12px; }
+.vitrine-owner { margin:4px 0 0; color:#624677; font-size:11px; line-height:1.3; }
 .vitrine-products { scrollbar-width:thin; scrollbar-color:#cdb3ea transparent; }
 .nu177-results .nu177-product-grid {
   grid-template-columns:repeat(4,minmax(0,1fr)); grid-auto-flow:row; grid-auto-columns:auto;
