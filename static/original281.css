@@ -138,7 +138,7 @@ html body.public-profile-area.sede-zero-price-theme [data-native-menu][data-caro
 :is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card :is(.nu201-open:not(.nu284-combo-open),.nu190-add):not(:disabled),
 html body.public-profile-area.sede-zero-price-theme [data-native-menu] .menu-products [data-add]:not(:disabled),
 html body.public-profile-area.sede-zero-price-theme [data-native-menu] .nu-group260-row .product-buy button[data-add]:not(:disabled) {
-  background:#5110b8!important;
+  background:#3d008d!important;
   background-image:none!important;
   color:#fff!important;
 }
@@ -201,5 +201,5 @@ html body.public-profile-area.sede-zero-price-theme.nu233-store [data-native-men
 }
 html body.public-profile-area.sede-zero-price-theme.nu233-store [data-native-menu][data-carousel-layout]
 :is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card :is(button.nu201-open,button.nu190-add):not(:disabled) {
-  background:#5110b8!important; color:#fff!important;
+  background:#3d008d!important; color:#fff!important;
 }
