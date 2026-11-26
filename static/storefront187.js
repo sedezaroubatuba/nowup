@@ -135,6 +135,10 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   const content=make('div','nu190-card-content');content.append(make('h3','',card.dataset.name||'Produto'),make('strong','',money(Number(card.dataset.price)||0)+(card.dataset.weight370==='1'?'/kg':'')));
   if(item.classList.contains('nu275-combo-card'))item.prepend(make('span','nu284-combo-badge','COMBO'));
   if(regular>price)content.insertBefore(make('del','nu284-old-price',money(regular)),content.querySelector('strong'));
+  else if(!item.classList.contains('nu275-combo-card')){
+    const spacer=make('span','nu284-old-price nu487-old-slot');spacer.setAttribute('aria-hidden','true');
+    content.insertBefore(spacer,content.querySelector('strong'));
+  }
   if(item.classList.contains('nu275-combo-card')||offer){const priceBox=make('div','nu289-combo-price'),label=make('small','',item.classList.contains('nu275-combo-card')?'Preço do combo':'Preço promocional'),old=content.querySelector('.nu284-old-price'),value=content.querySelector('strong');priceBox.append(label);if(old)priceBox.append(old);priceBox.append(value);content.append(priceBox);}
   if(!item.classList.contains('nu275-combo-card')&&!offer){
     highlightRegularPrice(content);

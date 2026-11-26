@@ -203,3 +203,42 @@ html body.public-profile-area.sede-zero-price-theme.nu233-store [data-native-men
 :is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card :is(button.nu201-open,button.nu190-add):not(:disabled) {
   background:#3d008d!important; color:#fff!important;
 }
+
+/* V487: equal title and old-price slots keep ordinary product rows aligned.
+   Keep the existing image sizes, columns, colors and special combo layout. */
+html body.public-profile-area.nu233-store.nu232-store [data-native-menu][data-carousel-layout] :is(.nu191-grid,.nu190-showcase .nu190-category:not(.nu275-combo-section)) .nu201-card.nu190-card:not(.nu275-combo-card,.nu260-showcase) .nu190-card-content{
+  display:flex!important;flex-direction:column!important;justify-content:flex-start!important;
+  align-self:stretch!important;flex:1!important;min-width:0!important;gap:5px!important;
+}
+html body.public-profile-area.nu233-store.nu232-store [data-native-menu][data-carousel-layout] :is(.nu191-grid,.nu190-showcase .nu190-category:not(.nu275-combo-section)) .nu201-card.nu190-card:not(.nu275-combo-card,.nu260-showcase) .nu190-card-content>h3{
+  display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:3!important;
+  line-height:1.25!important;height:3.75em!important;min-height:3.75em!important;max-height:3.75em!important;
+  flex:0 0 3.75em!important;overflow:hidden!important;margin:0!important;
+}
+html body.public-profile-area.nu233-store.nu232-store [data-native-menu][data-carousel-layout] :is(.nu191-grid,.nu190-showcase .nu190-category:not(.nu275-combo-section)) .nu201-card.nu190-card:not(.nu275-combo-card,.nu260-showcase) .nu284-old-price{
+  display:block!important;line-height:1.2!important;height:1.2em!important;
+  min-height:1.2em!important;flex:0 0 1.2em!important;margin:0!important;
+  white-space:nowrap!important;
+}
+.nu487-old-slot{visibility:hidden!important;pointer-events:none!important}
+html body.public-profile-area.nu233-store.nu232-store [data-native-menu][data-carousel-layout] :is(.nu191-grid,.nu190-showcase .nu190-category:not(.nu275-combo-section)) .nu201-card.nu190-card:not(.nu275-combo-card,.nu260-showcase) .nu190-card-content>:is(.nu451-regular-price,.nu289-combo-price){
+  margin:0!important;flex:none!important;align-self:stretch!important;min-height:34px;
+}
+html body.public-profile-area.nu233-store.nu232-store [data-native-menu][data-carousel-layout] :is(.nu191-grid,.nu190-showcase .nu190-category:not(.nu275-combo-section)) .nu201-card.nu190-card:not(.nu275-combo-card,.nu260-showcase) .nu190-card-content>.nu-cart-actions262{
+  margin-top:auto!important;flex:none!important;width:100%!important;
+}
+/* Vitrine: reserve the same title and discount lines, even without a sale. */
+.vitrine-home .vitrine-product-detail{justify-content:flex-start}
+.vitrine-home .vitrine-product-detail>h3{
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;
+  line-height:1.25;height:3.75em;min-height:3.75em;max-height:3.75em;overflow:hidden;
+}
+.vitrine-home .vitrine-product-detail>del,
+.vitrine-home .vitrine-product-detail:not(:has(>del))::after{
+  display:block;line-height:1.2;height:1.2em;min-height:1.2em;font-size:12px;margin:0;
+}
+.vitrine-home .vitrine-product-detail:not(:has(>del))::after{
+  content:"";order:2;visibility:hidden;
+}
+.vitrine-home .vitrine-product-detail>strong{order:3;margin-top:0!important}
+.vitrine-home .vitrine-view-product{margin-top:auto}
