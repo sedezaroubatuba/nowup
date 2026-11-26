@@ -138,7 +138,7 @@ html body.public-profile-area.sede-zero-price-theme [data-native-menu][data-caro
 :is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card :is(.nu201-open:not(.nu284-combo-open),.nu190-add):not(:disabled),
 html body.public-profile-area.sede-zero-price-theme [data-native-menu] .menu-products [data-add]:not(:disabled),
 html body.public-profile-area.sede-zero-price-theme [data-native-menu] .nu-group260-row .product-buy button[data-add]:not(:disabled) {
-  background:#6b22cf!important;
+  background:#5110b8!important;
   background-image:none!important;
   color:#fff!important;
 }
@@ -170,10 +170,6 @@ html body.public-profile-area.sede-zero-price-theme [data-native-menu][data-caro
   background:#bafa38!important; color:#311054!important; border:0!important; font-weight:800!important; flex:none;
 }
 html body.public-profile-area.sede-zero-price-theme [data-native-menu][data-carousel-layout]
-:is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card:not(.nu275-combo-card,.nu293-offer-card,.nu256-highlight) {
-  background:#faf6ff!important; border:1px solid #dcc1f8!important;
-}
-html body.public-profile-area.sede-zero-price-theme [data-native-menu][data-carousel-layout]
 :is(.nu190-showcase,.nu191-grid) :is(.nu451-regular-price,.nu289-combo-price) {
   background:#bafa38!important; border-color:#bafa38!important;
 }
@@ -182,5 +178,28 @@ html body.public-profile-area.sede-zero-price-theme [data-native-menu] .nu190-ca
   background:#bafa38!important; border-color:#bafa38!important;
 }
 html body.public-profile-area.sede-zero-price-theme [data-native-menu] .nu-group260-cover .nu-group260-open {
-  background:#6b22cf!important; color:#fff!important;
+  background:#5110b8!important; color:#fff!important;
+}
+
+/* Sede Zero product surfaces, including expanded categories and grouped items. */
+html body.public-profile-area.sede-zero-price-theme.nu233-store [data-native-menu]
+:is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card,
+html body.public-profile-area.sede-zero-price-theme.nu233-store [data-native-menu]
+:is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card > :is(img,.nu190-no-image,.nu190-card-content),
+html body.public-profile-area.sede-zero-price-theme.nu233-store [data-native-menu]
+.menu-products > :is(.menu-product[data-product],details.menu-product.nu-group260[data-group260="1"]),
+html body.public-profile-area.sede-zero-price-theme.nu233-store [data-native-menu]
+.menu-products > details.nu-group260 > :is(summary.nu-group260-cover,.nu-group260-items),
+html body.public-profile-area.sede-zero-price-theme.nu233-store [data-native-menu]
+:is(.nu-group260-cover,.nu-group260-row,.nu163-media) > img,
+html body.public-profile-area.sede-zero-price-theme.nu233-store [data-native-menu]
+.nu-group260-items > article.nu-group260-row,
+html body.public-profile-area.sede-zero-price-theme.nu233-store [data-native-menu] .menu-product .nu163-media {
+  background:transparent!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+}
+html body.public-profile-area.sede-zero-price-theme.nu233-store [data-native-menu][data-carousel-layout]
+:is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card :is(button.nu201-open,button.nu190-add):not(:disabled) {
+  background:#5110b8!important; color:#fff!important;
 }
