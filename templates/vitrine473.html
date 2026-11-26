@@ -1,5 +1,5 @@
-<link rel="stylesheet" href="/static/vitrine473.css?v=483">
-<script defer src="/static/vitrine473.js?v=478"></script>
+<link rel="stylesheet" href="/static/vitrine473.css?v=484">
+<script defer src="/static/vitrine473.js?v=484"></script>
 <div class="vitrine-home container" data-vitrine data-primary-store="{{showcase_store.slug if showcase_store else ''}}" data-owner-store="{{showcase_store.slug if showcase_store and user and user.id==showcase_store.user_id else ''}}" data-customer="{{user.id if user and user.role=='customer' else ''}}">
   {% if showcase_store %}
   {% set menu = '/p/' ~ (showcase_store.slug|urlencode) ~ '/menu' %}
@@ -31,13 +31,17 @@
     <div class="vitrine-products">
       {% for item in (chocolates or showcase_products)[:4] %}
       <article>
-        <a class="vitrine-product-card" href="{{menu}}?produto={{item.id}}#produto-{{item.id}}">
+        <div class="vitrine-product-card"><a class="vitrine-product-detail" href="{{menu}}?produto={{item.id}}#produto-{{item.id}}">
           <img src="{{ '/uploads/' ~ (item.image_filename|urlencode) if item.image_filename else '/static/product-placeholder.svg' }}" alt="" loading="lazy" width="144" height="110">
           <h3>{{item.name}}</h3>
           {% if item.promo %}<del>R$ {{'%.2f'|format(item.price_cents/100)|replace('.',',')}}</del>{% endif %}
           <strong>R$ {{'%.2f'|format(item.price/100)|replace('.',',')}}{% if item.sold_by_weight370 %}/kg{% endif %}</strong>
-          <span class="vitrine-view-product">Ver na loja <span aria-hidden="true">›</span></span>
         </a>
+        <button type="button" class="vitrine-view-product" data-vitrine-item="{{ {
+          'id':item.id,'name':item.name,'price':item.price,'max':item.max_quantity,
+          'slug':showcase_store.slug,'store':showcase_store.display_name,'options':item.requires_options
+        }|tojson|forceescape }}" {% if not item.open or (user and user.id==showcase_store.user_id) %}disabled{% endif %}>{{ 'Adicionar' if item.open else 'Loja fechada' }}</button>
+        </div>
       </article>
       {% endfor %}
     </div>
@@ -51,9 +55,3 @@
   <p class="vitrine-soon">Em breve, novas lojas em Ubatuba.</p>
   {% endif %}
 </div>
-<dialog class="vitrine-login" id="vitrine-login">
-  <form method="dialog"><button aria-label="Fechar" class="vitrine-close">×</button></form>
-  <h2>Entre para adicionar ao carrinho</h2>
-  <a href="/entrar?tipo=cliente&amp;comprar=1">Entrar</a>
-  <a href="/cadastro/cliente">Criar conta</a>
-</dialog>

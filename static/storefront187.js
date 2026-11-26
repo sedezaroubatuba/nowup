@@ -339,10 +339,14 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   activeCategory.hidden=!filter;
   if(!filter&&desktop228.matches&&!hasSubcategories261(key)&&sections.get(key)?.nuExpand312){showHome();const section=sections.get(key);section.nuExpand312();markCategory362(key);section.scrollIntoView({block:'start',behavior:'auto'});return;}
   if(body.classList.contains('nu187-store-home'))homeScroll=window.scrollY;
-  selectedCategory=key;prepareSubcategories(key);markCategory362(key);body.classList.remove('nu187-store-home');body.classList.add('nu191-category');
+  const switching=selectedCategory!==null;
+  selectedCategory=key;prepareSubcategories(key);body.classList.remove('nu187-store-home');body.classList.add('nu191-category');
   intro.hidden=true;showcase.hidden=true;categoryView.hidden=false;back.setAttribute('aria-label','Voltar à página da loja');
-  if(nav){if(desktop228.matches)anchor.after(nav);else sticky.append(nav);}
-  sticky.append(subcategoryFilters);
+  if(nav){
+   if(desktop228.matches&&anchor.nextElementSibling!==nav)anchor.after(nav);
+   else if(!desktop228.matches&&nav.parentElement!==sticky)sticky.append(nav);
+  }
+  if(subcategoryFilters.parentElement!==sticky)sticky.append(subcategoryFilters);
   if(!categoryCache.has(key)){
    const grid=make('div','nu191-grid');grid.classList.toggle('nu275-combos-grid',key==='__combos256'||key==='__offers256');grid.classList.toggle('nu277-promotions-grid',key==='__offers256');const cards=group.cards.map(source=>{const node=compact(source,key==='__offers256');grid.append(node);return {source,node};});categoryFooter.before(grid);categoryCache.set(key,{grid,cards});
   }
@@ -350,7 +354,9 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   categoryView.classList.toggle('nu276-combo-view',key==='__combos256'||key==='__offers256');
   const viewName276=key==='__combos256'?'Combos':key==='__offers256'?'Promoções':group.name;
   categoryTitle.replaceChildren(window.NowUpCategory230.create(viewName276),document.createTextNode(viewName276));activeCategory.textContent=viewName276+' ×';activeCategory.setAttribute('aria-label','Limpar filtro de '+viewName276);if(!filter)search.value='';search.placeholder=key==='__combos256'?'Buscar combos':key==='__offers256'?'Buscar promoções':'Buscar em '+group.name;search.setAttribute('aria-label',search.placeholder);filterCategory();
-  resize();window.scrollTo({top:0,behavior:'instant'});requestAnimationFrame(()=>markCategory362(key));
+  markCategory362(key);
+  if(!switching)resize();
+  if(window.scrollY>0)window.scrollTo({top:0,behavior:'instant'});
  }
  function searchView354(event){
   if(event.target!==search)return;

@@ -122,9 +122,11 @@ html body.public-profile-area.sede-zero-price-theme [data-native-menu][data-caro
 :is(.nu190-showcase,.nu191-grid) :is(.nu451-regular-price,.nu289-combo-price),
 html body.public-profile-area.sede-zero-price-theme .native-menu[data-native-menu] .menu-products >
 .menu-product[data-product] .menu-product-info > div > strong,
-html body.public-profile-area.sede-zero-price-theme [data-native-menu] .nu-group260-row-main > strong {
-  background:#aee6be!important;
-  border-color:#8dcca3!important;
+html body.public-profile-area.sede-zero-price-theme [data-native-menu] .nu-group260-row-main > strong,
+html body.public-profile-area.sede-zero-price-theme [data-native-menu] .nu-group260-cover .menu-product-info strong,
+html body.public-profile-area.sede-zero-price-theme [data-native-menu] .nu190-card-content > strong {
+  background:#bafa38!important;
+  border-color:#bafa38!important;
   border-radius:8px;
   color:#181818!important;
 }
@@ -134,8 +136,10 @@ html body.public-profile-area.sede-zero-price-theme [data-native-menu][data-caro
 }
 html body.public-profile-area.sede-zero-price-theme [data-native-menu][data-carousel-layout]
 :is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card :is(.nu201-open:not(.nu284-combo-open),.nu190-add):not(:disabled),
-html body.public-profile-area.sede-zero-price-theme [data-native-menu] .menu-products [data-add]:not(:disabled) {
-  background:#7132bf!important;
+html body.public-profile-area.sede-zero-price-theme [data-native-menu] .menu-products [data-add]:not(:disabled),
+html body.public-profile-area.sede-zero-price-theme [data-native-menu] .nu-group260-row .product-buy button[data-add]:not(:disabled) {
+  background:#6b22cf!important;
+  background-image:none!important;
   color:#fff!important;
 }
 
@@ -163,7 +167,7 @@ html body.public-profile-area.sede-zero-price-theme [data-native-menu][data-caro
 }
 html body.public-profile-area.sede-zero-price-theme [data-native-menu] .nu284-category-icon { color:#d0fa6b!important; }
 html body.public-profile-area.sede-zero-price-theme [data-native-menu][data-carousel-layout] .nu190-category>header button.nu471-view-all {
-  background:#c7fa71!important; color:#311054!important; border:0!important; font-weight:800!important; flex:none;
+  background:#bafa38!important; color:#311054!important; border:0!important; font-weight:800!important; flex:none;
 }
 html body.public-profile-area.sede-zero-price-theme [data-native-menu][data-carousel-layout]
 :is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card:not(.nu275-combo-card,.nu293-offer-card,.nu256-highlight) {
@@ -171,5 +175,12 @@ html body.public-profile-area.sede-zero-price-theme [data-native-menu][data-caro
 }
 html body.public-profile-area.sede-zero-price-theme [data-native-menu][data-carousel-layout]
 :is(.nu190-showcase,.nu191-grid) :is(.nu451-regular-price,.nu289-combo-price) {
-  background:#d5f8a5!important; border-color:#a9d66d!important;
+  background:#bafa38!important; border-color:#bafa38!important;
+}
+
+html body.public-profile-area.sede-zero-price-theme [data-native-menu] .nu190-card-content > .nu289-combo-price {
+  background:#bafa38!important; border-color:#bafa38!important;
+}
+html body.public-profile-area.sede-zero-price-theme [data-native-menu] .nu-group260-cover .nu-group260-open {
+  background:#6b22cf!important; color:#fff!important;
 }

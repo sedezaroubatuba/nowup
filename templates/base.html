@@ -248,7 +248,7 @@ html body.public-profile-area [data-native-menu] .nu83-catalog-heading .nu83-sea
 <link rel="stylesheet" href="/static/storefront187.css?v=383">
 <script id="nu230-data" type="application/json">{{ {'catalog': category_catalog230|default([]), 'choices': category_choices230|default({})}|tojson }}</script>
 <script src="/static/categories230.js?v=294" defer></script>
-<script src="/static/images258.js?v=258" defer></script><script src="/static/storefront187.js?v=483" defer></script>
+<script src="/static/images258.js?v=258" defer></script><script src="/static/storefront187.js?v=484" defer></script>
 <noscript><style>html body.nu187-store-home [data-native-menu] .menu-layout{display:block!important}</style></noscript>
 <script>setTimeout(()=>{if(document.body&&!document.body.dataset.store187Ready)document.body.classList.remove("nu187-store-home");},3000);</script>
 <link rel="stylesheet" href="/static/showcase190.css?v=197">
@@ -293,7 +293,7 @@ html body.public-profile-area [data-native-menu] .nu83-catalog-heading .nu83-sea
 <div><b>🔔 Novo pedido recebido!</b><span data-new-order-message>Abra a central de pedidos para conferir.</span></div>
 <button class="btn" type="button" data-open-new-order>Ver pedido</button>
 </div>
-<script src="/static/order-popup407.js?v=434" defer></script><script src="/static/order-alerts.js?v=434" defer></script>{% endif %}{% if pro is defined and products is defined and menu_categories is defined %}{% include "storefront187.html" %}{% endif %}{% block content %}{% endblock %}<link rel="stylesheet" href="/static/offers256.css?v=293"><link rel="stylesheet" href="/static/pairs310.css?v=310"><link rel="stylesheet" href="/static/original281.css?v=483"><script src="/static/pairs256.js?v=371" defer></script><script src="/static/pair-search273.js?v=328" defer></script><script src="/static/offer-photos274.js?v=306" defer></script>
+<script src="/static/order-popup407.js?v=434" defer></script><script src="/static/order-alerts.js?v=434" defer></script>{% endif %}{% if pro is defined and products is defined and menu_categories is defined %}{% include "storefront187.html" %}{% endif %}{% block content %}{% endblock %}<link rel="stylesheet" href="/static/offers256.css?v=293"><link rel="stylesheet" href="/static/pairs310.css?v=310"><link rel="stylesheet" href="/static/original281.css?v=484"><script src="/static/pairs256.js?v=371" defer></script><script src="/static/pair-search273.js?v=328" defer></script><script src="/static/offer-photos274.js?v=306" defer></script>
 {% if store_app256 %}<footer class="storeapp-foot256">Pedidos para {{store_app256.name}} · Tecnologia NowUp · <a href="{{store_app256.terms if store_app256 else '/termos'}}">Termos</a> · <a href="{{store_app256.privacy if store_app256 else '/privacidade'}}">Privacidade</a></footer>{% else %}<footer class="footer"><div class="container footergrid"><div><div class="brand footerbrand"><img class="nowup-official-logo" src="/static/nowup-logo185.png?v=196" alt="NowUp Brasil" width="150" height="118"></div><p>Descubra lojas, restaurantes e produtos perto de você.</p></div><div><b>Institucional</b><p><a href="/quem-somos">Quem somos</a></p><p><a href="{{store_app256.terms if store_app256 else '/termos'}}">Termos de uso</a></p><p><a href="{{store_app256.privacy if store_app256 else '/privacidade'}}">Privacidade</a></p></div><div><b>Para lojistas</b><p><a href="/cadastro/profissional">Cadastre-se</a></p><p><a href="/profissionais">Ver lojas</a></p><p><a href="/contato">Fale conosco</a></p></div><div><b>Atendimento</b><p>A NowUp divulga e conecta. Os pedidos são feitos e acompanhados no NowUp.</p></div></div><div class="container copyright">© 2026 NowUp. Todos os direitos reservados.</div></footer>
 {% if user and user.role=='professional' and request.url.path.startswith('/painel') %}
 <link rel="stylesheet" href="/static/merchant-bottom457.css?v=457">
@@ -576,7 +576,17 @@ document.addEventListener('DOMContentLoaded',()=>{
 {% include "communication_card373.html" %}
 {% include "sede_zero_piloto383.html" %}
 {% if pro is defined and pro and pro.business_type=='fashion' %}<link rel="stylesheet" href="/static/fashion385.css?v=391"><script defer src="/static/fashion385.js?v=391"></script><script defer src="/static/fashion-stock391.js?v=422"></script><script defer src="/static/fashion-layout391.js?v=394"></script>{% endif %}
-<script defer src="/static/order-actions405.js?v=406"></script><script defer src="/static/order-status425.js?v=425"></script><link rel="stylesheet" href="/static/order-wait434.css?v=434"><script defer src="/static/order-wait434.js?v=444"></script><link rel="stylesheet" href="/static/mobile-compact437.css?v=438"><script defer src="/static/mobile-compact437.js?v=464"></script><link rel="stylesheet" href="/static/customer-purple436.css?v=440"><script defer src="/static/inline-extra442.js?v=442"></script><script defer src="/static/bulk-extras443.js?v=443"></script></body></html>
+<script defer src="/static/order-actions405.js?v=406"></script><script defer src="/static/order-status425.js?v=425"></script><link rel="stylesheet" href="/static/order-wait434.css?v=434"><script defer src="/static/order-wait434.js?v=444"></script><link rel="stylesheet" href="/static/mobile-compact437.css?v=438"><script defer src="/static/mobile-compact437.js?v=464"></script><link rel="stylesheet" href="/static/customer-purple436.css?v=440"><script defer src="/static/inline-extra442.js?v=442"></script><script defer src="/static/bulk-extras443.js?v=443"></script>{% if user and user.role=='customer' and request.url.path=='/cliente' %}
+<script>
+try {
+ const pending=JSON.parse(sessionStorage.getItem('nowup-cart-login484')||'null');
+ sessionStorage.removeItem('nowup-cart-login484');
+ if(pending?.expires>Date.now()&&/^\/p\/[a-zA-Z0-9_-]+$/.test(pending.path))
+  location.replace(pending.path+'/menu?vitrine_carrinho=1');
+} catch (_) {}
+</script>
+{% endif %}
+</body></html>
 
 
 

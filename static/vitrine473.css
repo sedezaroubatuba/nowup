@@ -129,3 +129,7 @@ html body.v50-directory-home.vitrine-launch > .top .brand .vitrine-header-store-
 .vitrine-product-card strong { background:#bafa38; }
 .vitrine-view-product { display:flex; align-items:center; justify-content:center; gap:3px; background:#6b22cf; color:#fff; border-radius:7px; font-size:clamp(10px,2.7vw,13px); font-weight:750; text-align:center; padding:3px 1px; min-height:34px; }
 .vitrine-home a:focus-visible { outline:2px solid #7132bf; outline-offset:-2px; }
+
+.vitrine-product-detail { display:flex; flex:1; flex-direction:column; gap:5px; color:inherit; text-decoration:none; }
+.vitrine-view-product { border:0; cursor:pointer; min-height:36px; }
+.vitrine-view-product:disabled { background:#e8e2ef; color:#625970; cursor:default; }
