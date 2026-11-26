@@ -1,33 +1,15 @@
-{% macro shelf(title, products, key='') %}
-<section class="vitrine-shelf{% if title=='Chocolates' %} vitrine-chocolates{% endif %}" {% if key %}id="vitrine-{{key}}" hidden{% endif %}>
-  <h2>{{title}}</h2>
-  {% if products %}
-  <div class="vitrine-products">
-    {% for item in products %}
-    <article>
-      <img src="{{ '/uploads/' ~ (item.image_filename|urlencode) if item.image_filename else '/static/product-placeholder.svg' }}" alt="" loading="lazy" width="144" height="110">
-      <h3>{{item.name}}</h3>
-      {% if item.promo %}<del>R$ {{'%.2f'|format(item.price_cents/100)|replace('.',',')}}</del>{% endif %}
-      <strong>R$ {{'%.2f'|format(item.price/100)|replace('.',',')}}{% if item.sold_by_weight370 %}/kg{% endif %}</strong>
-      <button type="button" class="vitrine-add" data-vitrine-item="{{ {
-        'id': item.id, 'name': item.name, 'price': item.price, 'max': item.max_quantity,
-        'slug': showcase_store.slug, 'store': showcase_store.display_name, 'options': item.requires_options
-      }|tojson|forceescape }}" {% if not item.open or (user and user.id==showcase_store.user_id) %}disabled{% endif %}>{{ 'Adicionar' if item.open else 'Loja fechada' }}</button>
-    </article>
-    {% endfor %}
-  </div>
-  {% else %}<p>Nenhum produto disponível nesta seção.</p>{% endif %}
-</section>
-{% endmacro %}
-<link rel="stylesheet" href="/static/vitrine473.css?v=482">
+<link rel="stylesheet" href="/static/vitrine473.css?v=483">
 <script defer src="/static/vitrine473.js?v=478"></script>
 <div class="vitrine-home container" data-vitrine data-primary-store="{{showcase_store.slug if showcase_store else ''}}" data-owner-store="{{showcase_store.slug if showcase_store and user and user.id==showcase_store.user_id else ''}}" data-customer="{{user.id if user and user.role=='customer' else ''}}">
   {% if showcase_store %}
+  {% set menu = '/p/' ~ (showcase_store.slug|urlencode) ~ '/menu' %}
+  {% set chocolate_photo = chocolates|selectattr('image_filename')|first|default(none) %}
   <nav class="vitrine-covers" aria-label="Categorias de produtos">
-    {% for key,(label,items) in showcase_groups.items() %}
-    <button type="button" data-vitrine-category="{{key}}" aria-controls="vitrine-{{key}}" aria-pressed="false">
-      <img src="/static/vitrine473/{{key}}.webp?v=474" alt="" width="212" height="162"><span>{{label}}</span>
-    </button>
+    {% for key,label in [('promocoes','Promoções'),('cervejas','Cervejas'),('refrigerantes','Refrigerantes'),('mercearia','Mercearia'),('chocolates','Chocolates')] %}
+    <a href="{{menu}}?secao={{key}}">
+      <img src="{{ ('/uploads/' ~ (chocolate_photo.image_filename|urlencode) if chocolate_photo else '/static/product-placeholder.svg') if key=='chocolates' else '/static/vitrine473/' ~ key ~ '.webp?v=474' }}" alt="" width="212" height="162">
+      <span>{{label}}</span>
+    </a>
     {% endfor %}
   </nav>
   <div class="vitrine-toolbar">
@@ -40,9 +22,27 @@
       <span data-vitrine-count aria-hidden="true"></span>
     </a>
   </div>
-  {% for key,(label,items) in showcase_groups.items() %}{{ shelf(label,items,key) }}{% endfor %}
-  {{ shelf('Chocolates',chocolates) }}
-  {{ shelf('Mais produtos da Sede Zero',showcase_products) }}
+  {% if chocolates or showcase_products %}
+  <section class="vitrine-shelf vitrine-chocolates">
+    <header class="vitrine-shelf-heading">
+      <h2>{{'Chocolates' if chocolates else 'Produtos da Sede Zero'}}</h2>
+      <a href="{{menu}}{{'?secao=chocolates' if chocolates else ''}}">Ver todos <span aria-hidden="true">›</span></a>
+    </header>
+    <div class="vitrine-products">
+      {% for item in (chocolates or showcase_products)[:4] %}
+      <article>
+        <a class="vitrine-product-card" href="{{menu}}?produto={{item.id}}#produto-{{item.id}}">
+          <img src="{{ '/uploads/' ~ (item.image_filename|urlencode) if item.image_filename else '/static/product-placeholder.svg' }}" alt="" loading="lazy" width="144" height="110">
+          <h3>{{item.name}}</h3>
+          {% if item.promo %}<del>R$ {{'%.2f'|format(item.price_cents/100)|replace('.',',')}}</del>{% endif %}
+          <strong>R$ {{'%.2f'|format(item.price/100)|replace('.',',')}}{% if item.sold_by_weight370 %}/kg{% endif %}</strong>
+          <span class="vitrine-view-product">Ver na loja <span aria-hidden="true">›</span></span>
+        </a>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
   <section class="vitrine-store">
     {% if showcase_store.avatar_filename %}<img src="/uploads/{{showcase_store.avatar_filename|urlencode}}" alt="" width="62" height="62">{% endif %}
     <div><h1>{{showcase_store.display_name}}</h1><small>{{showcase_store.shop_status.label}}</small></div>

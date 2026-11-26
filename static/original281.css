@@ -138,3 +138,38 @@ html body.public-profile-area.sede-zero-price-theme [data-native-menu] .menu-pro
   background:#7132bf!important;
   color:#fff!important;
 }
+
+/* Sede Zero category navigation, search, and catalog cards. */
+html body.public-profile-area.sede-zero-price-theme [data-native-menu] .nu83-search,
+html body.public-profile-area.sede-zero-price-theme [data-native-menu] :is([data-product-search],[data-store-search]) {
+  background:#f3eaff!important; border-color:#8850d4!important; color:#341067!important;
+}
+html body.public-profile-area.sede-zero-price-theme [data-native-menu] .menu-category-nav [data-category-filter] {
+  background:#f1e5ff!important; color:#532098!important; border-color:#dbc6f3!important;
+}
+html body.public-profile-area.sede-zero-price-theme [data-native-menu] .menu-category-nav [data-category-filter="__offers256"]:not(.active),
+html body.public-profile-area.sede-zero-price-theme [data-native-menu] .nu465-subcategories button[aria-pressed="true"] {
+  background:#d5f8a5!important; border-color:#a9d66d!important; color:#32135a!important;
+}
+html body.public-profile-area.sede-zero-price-theme [data-native-menu] .menu-category-nav [data-category-filter].active {
+  background:#6725c5!important; color:#fff!important;
+}
+html body.public-profile-area.sede-zero-price-theme [data-native-menu][data-carousel-layout] .nu190-showcase .nu190-category>header:has(.nu471-view-all) {
+  background:#7021ca!important; border:1px solid #7021ca; border-bottom:3px solid #bafa38;
+  padding:7px!important; border-radius:12px; gap:6px!important;
+}
+html body.public-profile-area.sede-zero-price-theme [data-native-menu][data-carousel-layout] .nu190-category>header h2.nu286-category-label {
+  background:transparent!important; border:0!important; color:#fff!important; padding:0!important;
+}
+html body.public-profile-area.sede-zero-price-theme [data-native-menu] .nu284-category-icon { color:#d0fa6b!important; }
+html body.public-profile-area.sede-zero-price-theme [data-native-menu][data-carousel-layout] .nu190-category>header button.nu471-view-all {
+  background:#c7fa71!important; color:#311054!important; border:0!important; font-weight:800!important; flex:none;
+}
+html body.public-profile-area.sede-zero-price-theme [data-native-menu][data-carousel-layout]
+:is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card:not(.nu275-combo-card,.nu293-offer-card,.nu256-highlight) {
+  background:#faf6ff!important; border:1px solid #dcc1f8!important;
+}
+html body.public-profile-area.sede-zero-price-theme [data-native-menu][data-carousel-layout]
+:is(.nu190-showcase,.nu191-grid) :is(.nu451-regular-price,.nu289-combo-price) {
+  background:#d5f8a5!important; border-color:#a9d66d!important;
+}

@@ -403,6 +403,26 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  function syncNative262(){originals.forEach(card=>{const button=card.querySelector('[data-add]');if(!button)return;let step=card.querySelector('[data-step263]');if(!step){step=make('div','nu-step263');step.dataset.step263='';const less=make('button','','−'),number=make('span'),more=make('button','','+');less.type=more.type='button';less.setAttribute('aria-label','Remover uma unidade de '+card.dataset.name);more.setAttribute('aria-label','Adicionar uma unidade de '+card.dataset.name);number.setAttribute('aria-live','polite');less.onclick=()=>window.NOWUP_CART160?.adjust(card.dataset.id,-1);more.onclick=()=>window.NOWUP_CART160?.adjust(card.dataset.id,1);step.append(less,number,more);button.after(step);}const count=window.NOWUP_CART160?.quantity(card.dataset.id)||0;step.hidden=count===0;step.querySelector('span').textContent=String(count);step.lastElementChild.disabled=button.disabled||count>=Number(card.dataset.max||99);button.hidden=count>0;if(card.dataset.weight370==='1'){step.hidden=true;button.hidden=false;button.textContent=count?'Alterar peso':'Escolher peso';}card.classList.toggle('nu-cart-in262',count>0);});}
  syncNative262();window.addEventListener('nowup-cart-changed',()=>{cartRefreshers.forEach(fn=>fn());syncNative262();});
  desktop228.addEventListener('change',()=>location.reload());
- root.dataset.categoryActions462='1';body.dataset.store187Ready='1';if(new URLSearchParams(location.search).has('produto')||/^#produto-/.test(location.hash))showProducts();else showHome();
+ root.dataset.categoryActions462='1';body.dataset.store187Ready='1';
+ const params483=new URLSearchParams(location.search);
+ const shortcut483=params483.get('secao');
+ const names483={
+  cervejas:['cervejas','cerveja'],
+  refrigerantes:['refrigerantes','bebidas nao alcoolicas','bebidas nao alcolicas'],
+  mercearia:['mercearia'],
+  chocolates:['chocolates','chocolate']
+ };
+ const shortcutNames483=Object.hasOwn(names483,shortcut483)?names483[shortcut483]:[];
+ const category483=shortcut483==='promocoes'?'__offers256':shortcutNames483
+  .map(name=>buttons.find(button=>normalize274(button.textContent.trim())===name)?.dataset.categoryFilter)
+  .find(Boolean);
+ if(params483.has('produto')||/^#produto-/.test(location.hash))showProducts();
+ else if(category483&&ordered256.has(category483)){
+  showCategory(category483,{filter:true});
+  if(shortcut483==='refrigerantes'){
+   const subcategory=[...subcategoryFilters.querySelectorAll('button')].find(button=>normalize274(button.textContent.trim())==='refrigerantes');
+   subcategory?.click();
+  }
+ }else showHome();
 });
 
