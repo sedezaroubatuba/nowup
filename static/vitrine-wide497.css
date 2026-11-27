@@ -15,3 +15,19 @@ html body.vitrine-launch .v50-head .v50-search{border:1px solid #dcd3eb!importan
 .nu498-combo-price{display:inline-block;background:#fff;color:#171717!important;padding:4px 6px;border-radius:6px;margin-top:5px;font-size:clamp(13px,3.5vw,21px);font-weight:900}
 html body.vitrine-launch .vitrine-home .nu498-admin-banner{padding:0!important;display:block!important}
 html body.vitrine-launch .vitrine-home .nu498-admin-banner>img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:contain!important;background:#f6f0fc!important;border-radius:12px!important}
+/* V500: one actual product and price per weekly-promotion slide. */
+html body.vitrine-launch .vitrine-home .nu500-promo-single .nu500-promo-copy{
+ display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0
+}
+html body.vitrine-launch .vitrine-home .nu500-promo-single .nu500-promo-copy>small{
+ color:#fff!important;font-size:clamp(11px,3vw,16px)!important;line-height:1.2;
+ display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden
+}
+html body.vitrine-launch .vitrine-home .nu500-promo-single .nu498-combo-price{margin-top:0}
+html body.vitrine-launch .vitrine-home .nu500-promo-single .nu494-hero-photos{
+ align-items:center;justify-content:center;padding:6px 9px
+}
+html body.vitrine-launch .vitrine-home .nu500-promo-single .nu494-hero-photos>img{
+ width:100%!important;height:100%!important;max-height:100%!important;object-fit:contain!important;
+ margin:0!important;transform:none!important
+}

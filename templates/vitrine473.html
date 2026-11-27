@@ -10,10 +10,10 @@
   {% for item in hero_items %}{% if 'cerveja' in item.category|lower %}{% set ns_hero.beers = ns_hero.beers + [item] %}{% else %}{% set ns_hero.other = ns_hero.other + [item] %}{% endif %}{% endfor %}
   {% set hero_items = ns_hero.beers + ns_hero.other %}
   <div class="nu494-hero-track" data-nu494-scroll data-page-size="1">
-  {% for hero_page in hero_items[:12]|batch(4) %}
-  <a class="nu494-hero" href="{{menu}}?secao={{'promocoes' if offers else 'cervejas'}}">
-    <div><strong>{{'PROMOÇÕES' if offers else 'DESTAQUES'}}<br><em>DA SEMANA</em></strong><span>Confira na loja ›</span></div>
-    <div class="nu494-hero-photos">{% for item in hero_page %}{% if item.image_filename %}<span class="nu495-hero-product"><img src="/uploads/{{item.image_filename|urlencode}}" alt="" loading="lazy"><span class="nu498-banner-price">R$ {{'%.2f'|format(item.price/100)|replace('.',',')}}</span></span>{% endif %}{% endfor %}</div>
+  {% for item in hero_items[:12] %}
+  <a class="nu494-hero nu500-promo-single" href="{{menu}}?secao={{'promocoes' if offers else 'cervejas'}}" aria-label="{{item.name}} — R$ {{'%.2f'|format(item.price/100)|replace('.',',')}}. Conferir na loja">
+    <div class="nu500-promo-copy"><strong>{{'PROMOÇÕES' if offers else 'DESTAQUES'}}<br><em>DA SEMANA</em></strong><small>{{item.name}}</small><b class="nu498-combo-price">R$ {{'%.2f'|format(item.price/100)|replace('.',',')}}</b></div>
+    <div class="nu494-hero-photos"><img src="/uploads/{{item.image_filename|urlencode}}" alt="" loading="lazy"></div>
   </a>
   {% endfor %}
   {% for banner in platform if banner.kind498 in ['general','promocoes'] %}
