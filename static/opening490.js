@@ -15,7 +15,7 @@
  video.addEventListener('playing',()=>clearTimeout(startupTimer),{once:true});
  document.addEventListener('keydown',escape);document.addEventListener('visibilitychange',visibility);window.addEventListener('pagehide',stop,{once:true});
  video.muted=true;video.defaultMuted=true;video.playsInline=true;video.preload='auto';
- video.poster='/static/opening490-poster.webp';video.src=video.dataset.src;
+ video.poster=video.dataset.poster;video.src=video.dataset.src;
  el.hidden=false;
  // A slow connection or unsupported autoplay must never delay shopping.
  startupTimer=setTimeout(stop,1800);hardTimer=setTimeout(stop,5000);

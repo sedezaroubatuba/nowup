@@ -18,3 +18,8 @@
  font:600 13px/1.2 system-ui,sans-serif;cursor:pointer;
 }
 @media(prefers-reduced-motion:reduce){#nowup-opening490{display:none!important}}
+
+/* V503: never flash the platform poster when entering Sede Zero. */
+#nowup-opening490[data-opening-scope="sede-zero"] video{
+ background:#261447;object-fit:contain;
+}
