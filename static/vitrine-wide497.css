@@ -31,3 +31,19 @@ html body.vitrine-launch .vitrine-home .nu500-promo-single .nu494-hero-photos>im
  width:100%!important;height:100%!important;max-height:100%!important;object-fit:contain!important;
  margin:0!important;transform:none!important
 }
+
+/* V502: the marketplace is a full-width grid item, not the legacy 190px sidebar. */
+@media(min-width:901px){
+ html body.v50-directory-home.vitrine-launch main.v50-home > .vitrine-home{
+  grid-column:1/-1!important;width:min(1180px,100%)!important;max-width:1180px!important;
+  min-width:0!important;margin:10px auto 20px!important;padding:0 12px!important;box-sizing:border-box
+ }
+ html body.v50-directory-home.vitrine-launch main.v50-home > .v50-head > .container{
+  max-width:1180px!important;margin-inline:auto!important
+ }
+ html body.v50-directory-home.vitrine-launch main.v50-home > .nu177-results{
+  grid-column:1/-1!important;max-width:1180px!important;margin-inline:auto!important
+ }
+ html body.v50-directory-home.vitrine-launch .vitrine-home .nu494-shortcuts b,
+ html body.v50-directory-home.vitrine-launch .vitrine-home .nu494-mini-categories a{white-space:normal}
+}

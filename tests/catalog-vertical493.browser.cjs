@@ -30,3 +30,20 @@ test('home marketplace fits four products in one swipeable row on a narrow phone
  assert.equal(await button.evaluate(e=>getComputedStyle(e).fontSize),'0px');assert.ok(await button.evaluate(e=>getComputedStyle(e,'::after').content.includes('+')));
  }finally{await browser.close();}
 });
+test('desktop marketplace spans the legacy sidebar grid without clipping banners or categories',async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:process.env.NOWUP_CHROME_EXECUTABLE||undefined,args:['--no-sandbox']});
+ try{
+ const page=await browser.newPage({viewport:{width:1366,height:900}});
+ const base=fs.readFileSync('templates/base.html','utf8');
+ const legacy=base.match(/html body\.v50-directory-home \.v50-home\{display:grid!important;[^}]+\}/)[0];
+ const css=['v50-directory','vitrine473','catalog-vertical493','vitrine-color494','catalog-unified496','vitrine-wide497'].map(f=>fs.readFileSync('static/'+f+'.css','utf8')).join('\n');
+ await page.setContent(`<style>*{box-sizing:border-box}body{margin:0}${legacy}${css}</style><body class="v50-directory-home vitrine-launch"><main class="v50-home"><div class="vitrine-home container"><div class="nu494-hero-track"><a class="nu494-hero nu500-promo-single"><div class="nu500-promo-copy"><strong>PROMOÇÕES<br><em>DA SEMANA</em></strong><small>Cerveja Skol</small><b class="nu498-combo-price">R$ 45,51</b></div><div class="nu494-hero-photos"></div></a></div><nav class="nu494-shortcuts">${['Promoções','Cervejas','Refrigerantes','Mercearia','Chocolates'].map(t=>'<a><span>+</span><b>'+t+'</b></a>').join('')}</nav><div class="vitrine-products">${'<article>Produto</article>'.repeat(5)}</div></div></main>`);
+ const home=await page.locator('.vitrine-home').boundingBox();
+ assert.ok(home.width>1000);assert.ok(Math.abs(home.x-(1366-home.width)/2)<2);
+ const hero=await page.locator('.nu494-hero').boundingBox();assert.ok(hero.width>950);
+ const icons=await page.locator('.nu494-shortcuts a').evaluateAll(es=>es.map(e=>({left:e.offsetLeft,width:e.offsetWidth})));
+ for(let i=1;i<icons.length;i++)assert.ok(icons[i].left>=icons[i-1].left+icons[i-1].width);
+ const cards=await page.locator('.vitrine-products article').evaluateAll(es=>es.map(e=>e.getBoundingClientRect().toJSON()));
+ assert.equal(cards[0].y,cards[3].y);assert.ok(cards[3].right<=hero.x+hero.width+1);assert.ok(cards[4].left>=hero.x+hero.width-1);
+ }finally{await browser.close();}
+});
