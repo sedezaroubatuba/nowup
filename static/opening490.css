@@ -1,0 +1,20 @@
+/* V490: approved 3.2s city/courier opening; media is loaded only on a new app session. */
+#nowup-opening490[hidden]{display:none!important}
+#nowup-opening490{
+ position:fixed!important;inset:0!important;z-index:2147483001!important;
+ display:grid;place-items:center;overflow:hidden;background:#000;color:#fff;
+ width:100%;height:100%;height:100dvh;isolation:isolate;
+}
+#nowup-opening490 video{
+ display:block;width:min(100%,56.25vh);height:100%;height:100dvh;
+ max-width:100%;object-fit:cover;object-position:center center;
+ background:#261447 url('/static/opening490-poster.webp') center center/cover no-repeat;
+ pointer-events:none;
+}
+#nowup-opening490 .opening490-skip{
+ position:absolute;z-index:3;top:calc(env(safe-area-inset-top,0px) + 16px);
+ right:calc(env(safe-area-inset-right,0px) + 16px);min-width:48px;min-height:44px;
+ border:0;border-radius:22px;padding:8px 14px;background:#0008;color:#fff;
+ font:600 13px/1.2 system-ui,sans-serif;cursor:pointer;
+}
+@media(prefers-reduced-motion:reduce){#nowup-opening490{display:none!important}}
