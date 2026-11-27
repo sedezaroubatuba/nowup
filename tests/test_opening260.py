@@ -36,3 +36,17 @@ def test_settings_reject_unauthenticated_and_staff(panel,monkeypatch):
  monkeypatch.setattr(admin,'auth',lambda request,c:{'super':False})
  assert client.get('/admin/super/abertura').status_code==403
  assert client.post('/admin/super/abertura',data={}).status_code==403
+
+
+def test_sede_zero_uses_its_own_approved_video_only_on_store_entry(panel):
+ from types import SimpleNamespace
+ m,_,_=panel
+ template=m.templates.env.get_template('opening260.html')
+ store={'slug':'adega-sede-zero','menu':'/p/adega-sede-zero/cardapio'}
+ def page(path,store):
+  return template.render(request=SimpleNamespace(url=SimpleNamespace(path=path),query_params={}),store_app256=store,order_link377=False,settings={})
+ home=page('/p/adega-sede-zero/cardapio',store)
+ assert 'data-opening-scope="sede-zero"' in home and 'opening490-sede-zero.mp4' in home
+ assert 'opening490-nowup.mp4' not in home
+ assert 'id="nowup-opening490"' not in page('/p/adega-sede-zero/pedidos',store)
+ assert 'id="nowup-opening490"' not in page('/p/outra-loja/cardapio',{'slug':'outra-loja','menu':'/p/outra-loja/cardapio'})

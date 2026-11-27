@@ -1,7 +1,7 @@
 (()=>{'use strict';
  const el=document.getElementById('nowup-opening490');if(!el)return;
  const scope=el.dataset.openingScope,preview=el.dataset.openingPreview==='1';
- if(scope!=='nowup'){el.remove();return;}
+ if(!['nowup','sede-zero'].includes(scope)){el.remove();return;}
  const key='nowup-opening-session490:'+scope;
  let first=true;try{first=sessionStorage.getItem(key)!=='1';sessionStorage.setItem(key,'1');}catch(_){try{first=!document.referrer||new URL(document.referrer).origin!==location.origin;}catch(_){first=true;}}
  if((!first&&!preview)||matchMedia('(prefers-reduced-motion: reduce)').matches){el.remove();return;}

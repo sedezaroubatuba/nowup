@@ -1,5 +1,5 @@
-{% set opening490_scope = 'nowup' if not store_app256 else '' %}
-{% if opening490_scope and not request.url.path.startswith(('/admin','/super','/painel')) and not order_link377 %}
+{% set opening490_scope = 'sede-zero' if store_app256 and store_app256.slug in ('adega-sede-zero','samuel-dos-santos-silva') else ('nowup' if not store_app256 else '') %}
+{% if opening490_scope and not request.url.path.startswith(('/admin','/super','/painel')) and not order_link377 and (not store_app256 or request.url.path.rstrip('/') in (store_app256.menu.rstrip('/'), store_app256.menu.rstrip('/').replace('/cardapio','/menu'))) %}
 {% set opening490_cfg=opening_config260(settings) %}
 {% if opening490_cfg.enabled or request.query_params.get('abertura') == '1' %}
 <link rel="stylesheet" href="/static/opening490.css?v=490">
@@ -7,7 +7,7 @@
   <video data-opening-video data-src="/static/opening490-{{opening490_scope}}.mp4" muted playsinline preload="none" aria-hidden="true" tabindex="-1"></video>
   <button class="opening490-skip" type="button" data-opening-skip aria-label="Pular abertura">Pular ›</button>
 </section>
-<script src="/static/opening490.js?v=490"></script>
+<script src="/static/opening490.js?v=491"></script>
 {% endif %}
 {% else %}
 {% if not request.url.path.startswith(('/admin','/super','/painel')) and not store_app256 and not order_link377 %}{% set opening260=opening_config260(settings) %}{% if opening260.enabled or request.query_params.get('abertura')=='1' %}<link rel="stylesheet" href="/static/opening260.css?v=264"><section class="intro" id="nowup-opening260" style="display:none" aria-label="Abertura NowUp"><div class="ambient ambient-one"></div><div class="ambient ambient-two"></div><div class="opening-top"><button data-opening-skip260 class="skip" aria-label="Pular abertura">↗</button></div>
