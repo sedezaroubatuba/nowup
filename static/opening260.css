@@ -12,3 +12,68 @@
 #nowup-opening260{animation:opening-failsafe260 7s linear forwards}@keyframes opening-failsafe260{0%,95%{opacity:1}100%{opacity:0;visibility:hidden;pointer-events:none}}
 #nowup-wait256{position:fixed;inset:0;z-index:2147482900;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#faf7fff2;color:#7136bf;font:14px system-ui;--brand:#7136bf}
 #nowup-wait256 .wait-bike{position:relative;width:230px;height:170px}#nowup-wait256 svg{width:100%;height:100%}#nowup-wait256 .honk,#nowup-wait256 .speed-strokes{display:none}#nowup-wait256 .rear-wheel{transform-box:fill-box;transform-origin:center;animation:wait-wheel256 .3s linear infinite}#nowup-wait256 .wait-bike:after{content:'';position:absolute;left:12px;bottom:24px;width:45px;height:15px;border-radius:50%;background:#b8a7c6;animation:wait-smoke256 .8s ease-out infinite}#nowup-wait256 button{padding:12px 24px;border:0;border-radius:12px;background:#7136bf;color:white}@keyframes wait-wheel256{to{transform:rotate(360deg)}}@keyframes wait-smoke256{from{opacity:.6;transform:translateX(0) scale(.5)}to{opacity:0;transform:translateX(-35px) scale(1.8)}}@media(prefers-reduced-motion:reduce){#nowup-wait256 *{animation:none!important}}
+
+/* V488: branded app-launch variants. The original courier remains available for other stores. */
+#nowup-opening260[data-opening-mode="nowup"] {
+  --disc488:clamp(146px,41vw,220px);
+  background:#fff!important;isolation:isolate;overflow:hidden;
+}
+#nowup-opening260[data-opening-mode="nowup"] .opening-top{z-index:5}
+#nowup-opening260 .opening488-brand-disc,
+#nowup-opening260 .opening488-ring{
+  position:absolute;top:47%;left:50%;border-radius:50%;pointer-events:none;
+  transform:translate(-50%,-50%);object-fit:contain;
+}
+#nowup-opening260 .opening488-brand-disc{z-index:2;width:var(--disc488);height:var(--disc488)}
+#nowup-opening260 .opening488-ring{z-index:1;background:#09090c;width:calc(var(--disc488)*1.24);height:calc(var(--disc488)*1.24)}
+#nowup-opening260 .opening488-dark{position:absolute;inset:0;background:#000;z-index:3;opacity:0;pointer-events:none}
+#nowup-opening260.playing .opening488-brand-disc{animation:opening-brand488 var(--duration) cubic-bezier(.25,.7,.35,1) both}
+#nowup-opening260.playing .opening488-ring{animation:opening-ring488 var(--duration) ease-in-out both}
+#nowup-opening260.playing .opening488-dark{animation:opening-dark488 var(--duration) linear both}
+@keyframes opening-brand488{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.78)}
+  12%,57%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  42%{transform:translate(-50%,-50%) scale(1.045)}
+  86%,100%{opacity:1;transform:translate(-50%,-50%) scale(12)}
+}
+@keyframes opening-ring488{
+  0%,15%{opacity:0;transform:translate(-50%,calc(-50% - 31vh)) scale(.16)}
+  16%{opacity:1;transform:translate(-50%,calc(-50% - 31vh)) scale(.16)}
+  35%,57%{opacity:1;transform:translate(-50%,-50%) scale(1);box-shadow:0 0 0 transparent}
+  45%{box-shadow:0 0 28px 8px #0005}
+  86%,100%{opacity:1;transform:translate(-50%,-50%) scale(12)}
+}
+@keyframes opening-dark488{0%,79%{opacity:0}91%,100%{opacity:1}}
+#nowup-opening260[data-opening-mode="sede"]{--disc488:clamp(108px,34vw,155px)}
+#nowup-opening260[data-opening-mode="sede"] .scene{max-width:none;overflow:visible}
+#nowup-opening260[data-opening-mode="sede"] .rider-position{
+  left:0;width:clamp(205px,56vw,300px);height:calc(clamp(205px,56vw,300px)*.676);
+  bottom:25px;transform:translateX(-120%);
+}
+#nowup-opening260[data-opening-mode="sede"] .opening488-sede-disc{
+  position:absolute;z-index:2;width:var(--disc488);height:var(--disc488);
+  left:calc(-1 * var(--disc488) - 16px);bottom:0;object-fit:contain;border-radius:50%;
+  box-shadow:0 5px 7px #33204f28;pointer-events:none;
+}
+#nowup-opening260[data-opening-mode="sede"] .opening488-rope{
+  position:absolute;z-index:1;left:-19px;bottom:calc(var(--disc488)*.42);
+  width:57px;height:2px;background:#342b49;transform:rotate(8deg);transform-origin:left;
+}
+#nowup-opening260[data-opening-mode="sede"].playing .rider-position{
+  animation:opening-sede-ride488 var(--duration) linear both;
+}
+#nowup-opening260[data-opening-mode="sede"].playing .opening488-sede-disc{animation:opening-sede-bob488 .28s ease-in-out infinite alternate}
+#nowup-opening260[data-opening-mode="sede"].playing .bike-body{animation:none}
+#nowup-opening260[data-opening-mode="sede"].playing .speed-strokes{opacity:.55;animation:none}
+#nowup-opening260[data-opening-mode="sede"].playing .honk{opacity:0;animation:none}
+@keyframes opening-sede-ride488{
+  0%{transform:translateX(calc(-100% - 60px))}
+  24%{transform:translateX(27vw)}
+  68%{transform:translateX(79vw)}
+  100%{transform:translateX(calc(100vw + var(--disc488) + 70px))}
+}
+@keyframes opening-sede-bob488{from{transform:rotate(-2deg)}to{transform:rotate(2deg)}}
+@media(prefers-reduced-motion:reduce){
+  #nowup-opening260.playing :is(.opening488-brand-disc,.opening488-ring,.opening488-dark,.opening488-sede-disc){animation:none!important}
+  #nowup-opening260[data-opening-mode="sede"].playing .rider-position{animation:none!important;transform:translateX(42vw);opacity:1}
+}
