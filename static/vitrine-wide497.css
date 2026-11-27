@@ -1,0 +1,6 @@
+html body.vitrine-launch .vitrine-home .nu496-mini-banner-wrap{display:block!important}
+html body.vitrine-launch .vitrine-home .nu497-wide-track{display:flex!important;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+html body.vitrine-launch .vitrine-home .nu497-wide-track .nu496-mini-banner{flex:0 0 85%!important;min-height:clamp(90px,27vw,175px);max-height:none;padding:12px}
+html body.vitrine-launch .vitrine-home .nu497-wide-track .nu496-mini-banner>img{width:48%;object-fit:contain}
+html body.vitrine-launch .vitrine-home .nu497-wide-track .nu496-mini-banner small{color:#fff!important;line-height:1.2}
+@media(min-width:901px){html body.vitrine-launch .vitrine-home .nu497-wide-track .nu496-mini-banner{flex-basis:48%!important}}
