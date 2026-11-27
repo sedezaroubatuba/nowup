@@ -50,3 +50,14 @@ def test_sede_zero_uses_its_own_approved_video_only_on_store_entry(panel):
  assert 'opening490-nowup.mp4' not in home
  assert 'id="nowup-opening490"' not in page('/p/adega-sede-zero/pedidos',store)
  assert 'id="nowup-opening490"' not in page('/p/outra-loja/cardapio',{'slug':'outra-loja','menu':'/p/outra-loja/cardapio'})
+
+ # Marketplace navigation does not populate store_app256; the route still owns the splash.
+ for path in ('/p/adega-sede-zero','/p/adega-sede-zero/menu','/p/adega-sede-zero/cardapio','/p/samuel-dos-santos-silva/menu'):
+  internal=page(path,None)
+  assert 'data-opening-scope="sede-zero"' in internal
+  assert 'opening490-sede-zero.mp4' in internal
+  assert '/app-icon/192.png?v=402' in internal
+  assert 'opening490-nowup.mp4' not in internal
+ assert 'id="nowup-opening490"' not in page('/p/adega-sede-zero/pedidos',None)
+ assert 'id="nowup-opening490"' not in page('/p/outra-loja/menu',None)
+ assert 'data-opening-scope="nowup"' in page('/',None)
