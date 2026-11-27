@@ -84,7 +84,7 @@
     const buttons=Array.from({length:pages},(_,i)=>{
       const button=document.createElement('button');button.type='button';
       button.setAttribute('aria-label','Página '+(i+1));
-      button.onclick=()=>track.scrollTo({left:track.children[Math.min(i*size,track.children.length-1)].offsetLeft-track.children[0].offsetLeft,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+      button.onclick=()=>{track.dispatchEvent(new Event('nu501-manual'));track.scrollTo({left:track.children[Math.min(i*size,track.children.length-1)].offsetLeft-track.children[0].offsetLeft,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});};
       dots.append(button);return button;
     });
     const update=()=>{
@@ -93,5 +93,14 @@
       buttons.forEach((b,i)=>b.setAttribute('aria-current',String(i===index)));
     };
     track.addEventListener('scroll',update,{passive:true});update();
+    if(size===1&&track.matches('.nu494-hero-track,.nu497-wide-track')){
+      window.NowUpAutoSlide501?.attach({track,controls:track,advance:()=>{
+        const children=[...track.children],max=Math.max(0,track.scrollWidth-track.clientWidth);
+        const left=i=>Math.min(max,Math.max(0,children[i].offsetLeft-children[0].offsetLeft));
+        const current=track.scrollLeft>=max-2?children.length-1:children.reduce((best,_,i)=>Math.abs(track.scrollLeft-left(i))<Math.abs(track.scrollLeft-left(best))?i:best,0);
+        const next=(current+1)%children.length;
+        track.scrollTo({left:left(next),behavior:next===0?'instant':'smooth'});
+      }});
+    }
   });
 })();

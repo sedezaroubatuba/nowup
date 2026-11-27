@@ -1,5 +1,5 @@
 <link rel="stylesheet" href="/static/vitrine473.css?v=494">
-<script defer src="/static/vitrine473.js?v=498"></script>
+<script defer src="/static/vitrine473.js?v=501"></script>
 <div class="vitrine-home container" data-vitrine data-primary-store="{{showcase_store.slug if showcase_store else ''}}" data-owner-store="{{showcase_store.slug if showcase_store and user and user.id==showcase_store.user_id else ''}}" data-customer="{{user.id if user and user.role=='customer' else ''}}">
   {% set platform=platform_banners498|default([]) %}
   {% if showcase_store %}

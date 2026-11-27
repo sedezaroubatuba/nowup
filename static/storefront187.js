@@ -295,11 +295,11 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
    });
    previous.hidden=next.hidden=pages.length<2||maximum<=2;
   }
-  function go(i){
+  function go(i,automatic=false){
    if(pages.length<2)return;
    const wrapped=i<0||i>=pages.length;
    const target=(i+pages.length)%pages.length;
-   if(wrapped){
+   if(wrapped&&!automatic){
     clearTimeout(noticeTimer);
     notice.textContent=i<0?'Início da lista · Indo ao final':'Fim da lista · Voltando ao início';
     noticeTimer=setTimeout(()=>{notice.textContent='';},2100);
@@ -330,6 +330,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   });
   indicator.hidden=pages.length<2;
   indicator.append(dots);section.append(indicator);refreshers.push(refresh);showcase.append(section);refresh();
+  if(special&&pageSize275===1&&pages.length>1)window.NowUpAutoSlide501?.attach({track,controls:section,advance:()=>go(index+1,true),enabled:()=>body.classList.contains('nu187-store-home')&&!showcase.hidden});
  });
  function filterCategory(){
   if(!selectedCategory)return;
