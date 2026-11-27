@@ -99,3 +99,32 @@ html body.public-profile-area:not(.fashion-catalog385).nu233-store [data-native-
 }
 
 html body.public-profile-area:not(.fashion-catalog385).nu233-store:is(.nu232-store,.nu233-desktop) [data-native-menu][data-carousel-layout]:is(#nu312-catalog,[data-native-menu]) :is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card.nu493-quick>.nu-cart-actions262>:is(.nu201-open,.nu-step263)[hidden]{display:none!important}
+/* V495: keep cart action outside the shelves; promotional symbols are decorative. */
+html body.vitrine-launch .top .nu495-header-cart{display:inline-flex;align-items:center;justify-content:center;position:relative;flex:0 0 42px;min-width:42px;width:42px;height:42px;min-height:42px;margin:0!important;padding:0!important;background:#f0e5ff!important;color:#4b1194!important;border-radius:11px;gap:0;border:0}
+html body.vitrine-launch .top .nu495-header-cart[hidden]{display:none!important}
+html body.vitrine-launch .top .nu495-header-cart>svg{width:22px;height:22px;flex:none}
+html body.vitrine-launch .top .nu495-header-cart>[data-vitrine-count]{position:absolute;right:-3px;top:-4px;min-width:17px;height:17px;padding:0 3px;border-radius:10px;display:grid;place-items:center;background:#bafa38;color:#20132a!important;font-size:10px;font-weight:900;line-height:1}
+html body.vitrine-launch .vitrine-home .nu495-toolbar{display:contents}
+html body.vitrine-launch .vitrine-home .nu495-toolbar .vitrine-status:not([data-error]){position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip-path:inset(50%);white-space:nowrap!important;margin:0!important;padding:0!important}
+html body.vitrine-launch .vitrine-home .nu495-toolbar .vitrine-status[data-error]{position:fixed;bottom:80px;left:12px;right:12px;z-index:120;background:#fff4cd;border:1px solid #e8d492;border-radius:9px;padding:9px;color:#544112!important;text-align:center}
+.nu494-hero-photos .nu495-hero-product{flex:1 1 0;position:relative;min-width:0;height:88%;display:flex;align-items:center;justify-content:center}
+.nu494-hero-photos .nu495-hero-product>img{width:100%;height:100%;max-height:100%;object-fit:contain;margin:0!important}
+.nu494-hero-photos .nu495-hero-product .nu495-hero-plus{display:grid;place-items:center;position:absolute;right:1px;bottom:1px;width:clamp(15px,4.5vw,23px);height:clamp(15px,4.5vw,23px);margin:0!important;border-radius:50%;background:#bafa38;color:#161616!important;font:bold clamp(12px,3.5vw,17px)/1 system-ui;pointer-events:none}
+@media(max-width:900px){
+ html body.v50-directory-home.vitrine-launch > .top .nav{min-height:52px!important;gap:6px!important;padding-block:6px!important}
+ html body.v50-directory-home.vitrine-launch > .top .nowup-official-logo{width:clamp(94px,31vw,125px)!important;height:39px!important}
+ html body.vitrine-launch .vitrine-header-store-link img{width:40px!important;height:40px!important}
+ html body.vitrine-launch .top .nu495-header-cart{width:36px;height:36px;min-height:36px;min-width:36px;flex-basis:36px}
+ html body.vitrine-launch .top .mobile-menu{min-width:39px!important;min-height:39px!important;width:39px!important;height:39px!important;padding:0!important}
+ html body.vitrine-launch .v50-head{padding-block:5px!important;margin:0!important}
+ html body.vitrine-launch .v50-head .container{padding-block:0!important;margin-block:0!important}
+ html body.vitrine-launch .v50-head .v50-search{margin:0!important}
+ .nu494-mini-categories{margin:5px auto;gap:5px}
+ .nu494-promos{margin:6px 0;gap:7px}
+ .nu494-promos a{min-height:52px;padding:8px 10px}
+ html body.vitrine-launch .vitrine-home .vitrine-shelf{margin:3px 0!important;padding:5px 0 1px!important}
+ html body.vitrine-launch .vitrine-home .vitrine-shelf-heading{margin-bottom:3px}
+ html body.vitrine-launch .vitrine-home .vitrine-product-card{--nu493-photo:clamp(63px,19vw,88px)}
+ html body.vitrine-launch .vitrine-home .vitrine-products{padding:2px 0 2px!important}
+ .nu494-dots{padding:3px 0;min-height:10px}
+}

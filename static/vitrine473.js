@@ -29,7 +29,7 @@
       step.querySelector('span').textContent=String(quantity);
       step.lastElementChild.disabled=button.disabled||quantity>=Math.max(1,Math.min(99,Number(item.max)||99));
     });
-    root.querySelectorAll('[data-vitrine-cart]').forEach(link => {
+    document.querySelectorAll('[data-vitrine-cart]').forEach(link => {
       let count = 0;
       try { count = [...entries(link.dataset.slug).values()].reduce((n, row) => n + Number(row.quantity || 0), 0); } catch (_) {}
       link.hidden = count < 1;
@@ -50,7 +50,7 @@
       const max = Math.max(1, Math.min(99, Number(item.max) || 99));
       const quantity = Number(cart.get(id)?.quantity || 0);
       if (delta>0 && quantity >= max) {
-        status.textContent = 'Limite de unidades deste produto atingido.';
+        status.dataset.error='1';status.textContent = 'Limite de unidades deste produto atingido.';
         return;
       }
       if(quantity+delta<=0)cart.delete(id);
@@ -59,10 +59,10 @@
       storage.setItem(cartKey(item.slug), JSON.stringify([...cart]));
       if (customer) localStorage.setItem('nowup-cart-info:u:' + customer + ':/p/' + item.slug,
         JSON.stringify({name:item.store, updated:Date.now()}));
-      status.textContent = delta>0 ? item.name + ' adicionado ao carrinho.' : 'Quantidade atualizada.';
+      delete status.dataset.error;status.textContent = delta>0 ? item.name + ' adicionado ao carrinho.' : 'Quantidade atualizada.';
       refresh();
     } catch (_) {
-      status.textContent = 'Não foi possível atualizar o carrinho. Tente novamente.';
+      status.dataset.error='1';status.textContent = 'Não foi possível atualizar o carrinho. Tente novamente.';
     }
   }
 
