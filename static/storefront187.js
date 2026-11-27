@@ -74,6 +74,10 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
     selectedSubcategory261=id;
     button.setAttribute('aria-pressed','true');
     filterCategory();
+    // Start the newly filtered list just below the pinned shopping controls.
+    const inset=Math.max(0,parseFloat(getComputedStyle(sticky).top)||0);
+    const target=window.scrollY+categoryView.getBoundingClientRect().top-sticky.getBoundingClientRect().height-inset-8;
+    window.scrollTo({top:Math.max(0,target),behavior:'instant'});
    });
    return button;
   });

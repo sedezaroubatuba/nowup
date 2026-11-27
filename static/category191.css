@@ -77,3 +77,11 @@ html body.public-profile-area [data-native-menu] .nu-menu-sticky .nu465-subcateg
   flex-wrap:nowrap;margin:4px 0 0;padding:4px 0 8px;overflow-x:auto;overscroll-behavior-inline:contain;
 }
 .nu465-subcategories button{flex:none}
+
+/* Keep the existing search and subcategory controls pinned in category views. */
+html body.public-profile-area.nu191-category.nu233-store [data-native-menu] .nu-menu-sticky,
+html body.public-profile-area.nu191-category.nu233-store [data-native-menu] .nu-menu-sticky.nu-search-fixed{
+  position:sticky!important;inset:auto!important;top:0!important;align-self:start!important;
+  z-index:100!important;background:#fff!important;transform:none!important;
+}
+html body.public-profile-area.nu191-category [data-native-menu]{overflow-anchor:none}
