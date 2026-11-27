@@ -1,17 +1,36 @@
-<link rel="stylesheet" href="/static/vitrine473.css?v=493">
-<script defer src="/static/vitrine473.js?v=493"></script>
+<link rel="stylesheet" href="/static/vitrine473.css?v=494">
+<script defer src="/static/vitrine473.js?v=494"></script>
 <div class="vitrine-home container" data-vitrine data-primary-store="{{showcase_store.slug if showcase_store else ''}}" data-owner-store="{{showcase_store.slug if showcase_store and user and user.id==showcase_store.user_id else ''}}" data-customer="{{user.id if user and user.role=='customer' else ''}}">
   {% if showcase_store %}
   {% set menu = '/p/' ~ (showcase_store.slug|urlencode) ~ '/menu' %}
-  {% set chocolate_photo = chocolates|selectattr('image_filename')|first|default(none) %}
-  <nav class="vitrine-covers" aria-label="Categorias de produtos">
-    {% for key,label in [('promocoes','Promoções'),('cervejas','Cervejas'),('refrigerantes','Refrigerantes'),('mercearia','Mercearia'),('chocolates','Chocolates')] %}
-    <a href="{{menu}}?secao={{key}}">
-      <img src="{{ ('/uploads/' ~ (chocolate_photo.image_filename|urlencode) if chocolate_photo else '/static/product-placeholder.svg') if key=='chocolates' else '/static/vitrine473/' ~ key ~ '.webp?v=474' }}" alt="" width="212" height="162">
-      <span>{{label}}</span>
-    </a>
+  {% set offers = showcase_groups.get('promocoes', ('Promoções', []))[1] %}
+  {% set hero_items = (offers or showcase_groups.get('cervejas', ('Cervejas', []))[1])|selectattr('image_filename')|list %}
+  {% set ns_hero = namespace(beers=[], other=[]) %}
+  {% for item in hero_items %}{% if 'cerveja' in item.category|lower %}{% set ns_hero.beers = ns_hero.beers + [item] %}{% else %}{% set ns_hero.other = ns_hero.other + [item] %}{% endif %}{% endfor %}
+  {% set hero_items = ns_hero.beers + ns_hero.other %}
+  <div class="nu494-hero-track" data-nu494-scroll data-page-size="1">
+  {% for hero_page in hero_items[:12]|batch(4) %}
+  <a class="nu494-hero" href="{{menu}}?secao={{'promocoes' if offers else 'cervejas'}}">
+    <div><strong>{{'PROMOÇÕES' if offers else 'DESTAQUES'}}<br><em>DA SEMANA</em></strong><span>Confira na loja ›</span></div>
+    <div class="nu494-hero-photos">{% for item in hero_page %}{% if item.image_filename %}<img src="/uploads/{{item.image_filename|urlencode}}" alt="" loading="lazy">{% endif %}{% endfor %}</div>
+  </a>
+  {% endfor %}
+  </div>
+  <div class="nu494-dots" aria-label="Páginas de destaques"></div>
+  <nav class="nu494-shortcuts" aria-label="Categorias de produtos">
+    {% for key,label,icon in [('promocoes','Promoções','%'),('cervejas','Cervejas','🍺'),('refrigerantes','Refrigerantes','🥤'),('mercearia','Mercearia','🛒'),('chocolates','Chocolates','🍫')] %}
+    <a href="{{menu}}?secao={{key}}"><span aria-hidden="true">{{icon}}</span><b>{{label}}</b></a>
     {% endfor %}
   </nav>
+  <nav class="nu494-mini-categories" aria-label="Mais categorias">
+    {% for key,label,icon in [('energeticos','Energéticos','⚡'),('destilados','Destilados','🍸'),('lanches','Lanches','🍔')] %}
+    <a href="{{menu}}?secao={{key}}"><span aria-hidden="true">{{icon}}</span>{{label}}</a>
+    {% endfor %}
+  </nav>
+  <div class="nu494-promos">
+    <a href="{{menu}}?secao=combos"><strong>Combos<br><em>da semana</em></strong><span aria-hidden="true">🛒 ›</span></a>
+    <a href="{{menu}}?secao=geladas"><strong>Bebidas<br>geladas</strong><span aria-hidden="true">🧊 ›</span></a>
+  </div>
   <div class="vitrine-toolbar">
     {% if user and user.id==showcase_store.user_id %}
     <p class="vitrine-owner">Modo lojista · Entre como cliente para testar.</p>
@@ -22,14 +41,20 @@
       <span data-vitrine-count aria-hidden="true"></span>
     </a>
   </div>
-  {% if chocolates or showcase_products %}
-  <section class="vitrine-shelf vitrine-chocolates">
+  {% set all_shelves = [('chocolates', 'Chocolates', chocolates)] %}
+  {% set ns = namespace(shelves=all_shelves) %}
+  {% for key in ['cervejas','refrigerantes','mercearia','energeticos','destilados','lanches','combos','promocoes'] %}
+    {% if showcase_groups.get(key) %}{% set ns.shelves = ns.shelves + [(key, showcase_groups[key][0], showcase_groups[key][1])] %}{% endif %}
+  {% endfor %}
+  {% for key, title, items in ns.shelves %}
+  {% if items %}
+  <section class="vitrine-shelf vitrine-{{key}}">
     <header class="vitrine-shelf-heading">
-      <h2>{{'Chocolates' if chocolates else 'Produtos da Sede Zero'}}</h2>
-      <a href="{{menu}}{{'?secao=chocolates' if chocolates else ''}}">Ver todos <span aria-hidden="true">›</span></a>
+      <h2>{{title}}</h2>
+      <a href="{{menu}}?secao={{key}}">Ver todos <span aria-hidden="true">›</span></a>
     </header>
-    <div class="vitrine-products">
-      {% for item in (chocolates or showcase_products)[:4] %}
+    <div class="vitrine-products" data-nu494-scroll data-page-size="4">
+      {% for item in items[:16] %}
       <article>
         <div class="vitrine-product-card"><a class="vitrine-product-detail" href="{{menu}}?produto={{item.id}}#produto-{{item.id}}">
           <img src="{{ '/uploads/' ~ (item.image_filename|urlencode) if item.image_filename else '/static/product-placeholder.svg' }}" alt="" loading="lazy" width="144" height="110">
@@ -45,8 +70,10 @@
       </article>
       {% endfor %}
     </div>
+    <div class="nu494-dots" aria-label="Páginas de {{title}}"></div>
   </section>
   {% endif %}
+  {% endfor %}
   <section class="vitrine-store">
     {% if showcase_store.avatar_filename %}<img src="/uploads/{{showcase_store.avatar_filename|urlencode}}" alt="" width="62" height="62">{% endif %}
     <div><h1>{{showcase_store.display_name}}</h1><small>{{showcase_store.shop_status.label}}</small></div>

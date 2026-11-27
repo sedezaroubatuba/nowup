@@ -75,4 +75,23 @@
   window.addEventListener('pageshow', refresh);
   window.addEventListener('storage', refresh);
   refresh();
+  root.querySelectorAll('[data-nu494-scroll]').forEach(track=>{
+    const dots=track.nextElementSibling;
+    if(!dots?.classList.contains('nu494-dots'))return;
+    const size=Number(track.dataset.pageSize)||4;
+    const pages=Math.ceil(track.children.length/size);
+    if(pages<2){dots.hidden=true;return;}
+    const buttons=Array.from({length:pages},(_,i)=>{
+      const button=document.createElement('button');button.type='button';
+      button.setAttribute('aria-label','Página '+(i+1));
+      button.onclick=()=>track.scrollTo({left:track.children[Math.min(i*size,track.children.length-1)].offsetLeft-track.children[0].offsetLeft,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+      dots.append(button);return button;
+    });
+    const update=()=>{
+      const max=track.scrollWidth-track.clientWidth;
+      const index=max<=0?0:Math.round((track.scrollLeft/max)*(pages-1));
+      buttons.forEach((b,i)=>b.setAttribute('aria-current',String(i===index)));
+    };
+    track.addEventListener('scroll',update,{passive:true});update();
+  });
 })();

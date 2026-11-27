@@ -38,14 +38,23 @@ def shelves(conn, store):
         "refrigerantes": ("Refrigerantes", ("refrigerante", "bebidas nao alcoolicas", "bebidas nao alcolicas")),
         "promocoes": ("Promoções", ()),
         "mercearia": ("Mercearia", ("mercearia",)),
+        "energeticos": ("Energéticos", ("energetico",)),
+        "destilados": ("Destilados", ("destilado", "bebidas quentes", "bebidas alcoolicas gerais", "whisky", "vodka")),
+        "lanches": ("Lanches", ("lanche", "refeicao")),
+        "combos": ("Combos", ("combo",)),
     }
     groups = {}
     for key, (title, terms) in covers.items():
         items = [p for p in products if (p["promo"] > 0 if key == "promocoes" else
                  any(term in normalize(p["category"]) for term in terms))]
+        if key == "energeticos":
+            items = [p for p in products if "energetico" in normalize(p["category"]) or any(word in normalize(p["name"]) for word in ("energetico", "monster", "red bull", "redbull"))]
+        if key == "combos":
+            items = [p for p in products if p.get("is_combo256") or "combo" in normalize(p["category"])]
         if key == "refrigerantes":
             items = [p for p in items if not any(word in normalize(p["name"]).split() for word in ("agua","suco","energetico","isotonico"))]
         groups[key] = (title, items)
+    groups["geladas"] = ("Bebidas geladas", [p for p in products if p.get("sold_cold")])
     chocolates = [p for p in products if "chocolate" in normalize(p["category"])]
     recommendations = []
     seen = set()

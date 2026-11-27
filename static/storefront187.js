@@ -17,8 +17,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  const heading=root?.querySelector('.nu83-catalog-heading'),layout=root?.querySelector('.menu-layout');
  const search=heading?.querySelector('[data-product-search], [data-store-search]');
  if(!root||!template||!heading||!layout||!search){body.classList.remove('nu187-store-home');return;}
- if(!body.classList.contains('fashion-catalog385'))root.dataset.carouselLayout='four';
- const pageSize235=({large:1,pair:2,six:6,eight:8})[root.dataset.carouselLayout]||4;
+ const pageSize235=({large:1,pair:2,three:3,six:6,eight:8})[root.dataset.carouselLayout]||4;
  const desktop228=matchMedia('(min-width:901px)');
  if(desktop228.matches)root.id='nu312-catalog';
  const desktopSheet312=document.createElement('link');desktopSheet312.rel='stylesheet';desktopSheet312.href='/static/catalog-desktop312.css?v=466';document.head.append(desktopSheet312);
@@ -114,7 +113,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
     content.append(make('h3','',card.dataset.name||'Produto'),make('strong','', 'A partir de '+money(Number(card.dataset.price)||0)));
     if(!offer)highlightRegularPrice(content);
     content.append(make('small','nu260-variant-count',card.querySelectorAll('.nu-group260-row').length+' sabores ou opções'));
-    const choose=make('button','nu201-open','Escolher sabor');choose.type='button';
+    const choose=make('button','nu201-open','Escolher opções');choose.type='button';
     choose.setAttribute('aria-label','Escolher variação de '+(card.dataset.name||'Produto'));
     choose.addEventListener('click',()=>{
       showProducts(false);
@@ -197,12 +196,13 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  const special256=new Map();
  if(combos256.length)special256.set('__combos256',{name:'Combos',cards:combos256});
  if(offers256.length)special256.set('__offers256',{name:'Promoções',cards:offers256});
+ if(new URLSearchParams(location.search).get('secao')==='geladas'){const cold=originals.filter(card=>card.dataset.cold==='1'&&card.dataset.available256==='1');if(cold.length)special256.set('__cold494',{name:'Bebidas geladas',cards:cold});}
  const ordered256=new Map([...special256,...groups]);
  special256.forEach((value,key)=>groups.set(key,value));
  const categoryBar274=nav||make('nav','menu-category-nav');
  if(!nav)sticky.append(categoryBar274);
  const firstCategory274=categoryBar274.querySelector('[data-category-filter]:not([data-category-filter="all"])');
- special256.forEach((group,key)=>{const b=make('button','',key==='__offers256'?'Promoções':'Combos');b.type='button';b.dataset.categoryFilter=key;b.replaceChildren(window.NowUpCategory230.create(group.name),make('span','nu230-label',group.name));categoryBar274.insertBefore(b,firstCategory274);buttons.push(b);});
+ special256.forEach((group,key)=>{const b=make('button','',group.name);b.type='button';b.dataset.categoryFilter=key;b.replaceChildren(window.NowUpCategory230.create(group.name),make('span','nu230-label',group.name));categoryBar274.insertBefore(b,firstCategory274);buttons.push(b);});
  categoryBar274.classList.add('nu274-categories');
  const normalize274=text=>text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
  const palettes274=[['#6410c9','#8c16ef'],['#197638','#258b45'],['#b7111c','#df2430']];
@@ -241,7 +241,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   const pages=[],pageSources238=[];
   const special=key==='__combos256'||key==='__offers256';
   const pageSize275=special?1:pageSize235;
-  const columns=special?1:({large:1,six:3,eight:4})[root.dataset.carouselLayout]||2;
+  const columns=special?1:({large:1,three:3,six:3,eight:4})[root.dataset.carouselLayout]||2;
   for(let i=0;i<group.cards.length;i+=pageSize275){
    const page=make('div','nu190-page');
    const sources=group.cards.slice(i,i+pageSize275);
@@ -423,17 +423,21 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   cervejas:['cervejas','cerveja'],
   refrigerantes:['refrigerantes','bebidas nao alcoolicas','bebidas nao alcolicas'],
   mercearia:['mercearia'],
-  chocolates:['chocolates','chocolate']
+  chocolates:['chocolates','chocolate'],
+  energeticos:['energeticos','energeticos e isotônicos','bebidas nao alcoolicas','bebidas nao alcolicas'],
+  destilados:['destilados','bebidas quentes','bebidas alcoolicas gerais'],
+  lanches:['lanches e refeicoes','lanches'],
+  combos:['combos']
  };
  const shortcutNames483=Object.hasOwn(names483,shortcut483)?names483[shortcut483]:[];
- const category483=shortcut483==='promocoes'?'__offers256':shortcutNames483
+ const category483=shortcut483==='promocoes'?'__offers256':shortcut483==='combos'?'__combos256':shortcut483==='geladas'?'__cold494':shortcutNames483
   .map(name=>buttons.find(button=>normalize274(button.textContent.trim())===name)?.dataset.categoryFilter)
   .find(Boolean);
  if(params483.has('produto')||/^#produto-/.test(location.hash))showProducts();
  else if(category483&&ordered256.has(category483)){
   showCategory(category483,{filter:true});
-  if(shortcut483==='refrigerantes'){
-   const subcategory=[...subcategoryFilters.querySelectorAll('button')].find(button=>normalize274(button.textContent.trim())==='refrigerantes');
+  if(shortcut483==='refrigerantes'||shortcut483==='energeticos'){
+   const subcategory=[...subcategoryFilters.querySelectorAll('button')].find(button=>normalize274(button.textContent.trim())===shortcut483);
    subcategory?.click();
   }
  }else showHome();
