@@ -1,5 +1,5 @@
 <link rel="stylesheet" href="/static/vitrine473.css?v=494">
-<script defer src="/static/vitrine473.js?v=494"></script>
+<script defer src="/static/vitrine473.js?v=495"></script>
 <div class="vitrine-home container" data-vitrine data-primary-store="{{showcase_store.slug if showcase_store else ''}}" data-owner-store="{{showcase_store.slug if showcase_store and user and user.id==showcase_store.user_id else ''}}" data-customer="{{user.id if user and user.role=='customer' else ''}}">
   {% if showcase_store %}
   {% set menu = '/p/' ~ (showcase_store.slug|urlencode) ~ '/menu' %}
@@ -12,7 +12,7 @@
   {% for hero_page in hero_items[:12]|batch(4) %}
   <a class="nu494-hero" href="{{menu}}?secao={{'promocoes' if offers else 'cervejas'}}">
     <div><strong>{{'PROMOÇÕES' if offers else 'DESTAQUES'}}<br><em>DA SEMANA</em></strong><span>Confira na loja ›</span></div>
-    <div class="nu494-hero-photos">{% for item in hero_page %}{% if item.image_filename %}<img src="/uploads/{{item.image_filename|urlencode}}" alt="" loading="lazy">{% endif %}{% endfor %}</div>
+    <div class="nu494-hero-photos">{% for item in hero_page %}{% if item.image_filename %}<span class="nu495-hero-product"><img src="/uploads/{{item.image_filename|urlencode}}" alt="" loading="lazy"><span class="nu495-hero-plus" aria-hidden="true">+</span></span>{% endif %}{% endfor %}</div>
   </a>
   {% endfor %}
   </div>
@@ -31,15 +31,12 @@
     <a href="{{menu}}?secao=combos"><strong>Combos<br><em>da semana</em></strong><span aria-hidden="true">🛒 ›</span></a>
     <a href="{{menu}}?secao=geladas"><strong>Bebidas<br>geladas</strong><span aria-hidden="true">🧊 ›</span></a>
   </div>
-  <div class="vitrine-toolbar">
+  <div class="vitrine-toolbar nu495-toolbar">
     {% if user and user.id==showcase_store.user_id %}
     <p class="vitrine-owner">Modo lojista · Entre como cliente para testar.</p>
     {% endif %}
     <p class="vitrine-status" data-vitrine-status role="status"></p>
-    <a class="vitrine-cart" data-vitrine-cart data-slug="{{showcase_store.slug}}" href="/p/{{showcase_store.slug}}/menu?vitrine_carrinho=1" aria-label="Carrinho" hidden>
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 3h3l3 12h11l2-8H6"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>
-      <span data-vitrine-count aria-hidden="true"></span>
-    </a>
+
   </div>
   {% set all_shelves = [('chocolates', 'Chocolates', chocolates)] %}
   {% set ns = namespace(shelves=all_shelves) %}
