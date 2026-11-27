@@ -27,3 +27,13 @@ html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layou
  background:transparent!important;border-color:transparent!important;box-shadow:none!important
 }
 html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout]:is(#nu312-catalog,[data-native-menu]) :is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card:not(.nu275-combo-card)>:is(img,.nu190-no-image,.nu190-card-content){background:transparent!important;border-color:transparent!important;box-shadow:none!important}
+/* V499: offers retain the same two-tone outline as combos, including in-cart state. */
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout]:is(#nu312-catalog,[data-native-menu]) :is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card:is(.nu293-offer-card,.nu256-highlight:not(.nu275-combo-card)){
+ border:2px solid #762bc0!important;
+ border-radius:12px!important;
+ box-shadow:0 0 0 2px #fff,0 0 0 4px #ff7828!important;
+ outline:none!important;
+ background:transparent!important;
+}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu190-showcase .nu290-offers-section .nu190-track{padding:6px 5px 8px!important;box-sizing:border-box}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu191-grid.nu277-promotions-grid{padding:5px!important;gap:10px!important;box-sizing:border-box}
