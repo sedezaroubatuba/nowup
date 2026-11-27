@@ -72,6 +72,8 @@ jobs:
             npx playwright install --with-deps chromium
           fi
       - run: node --check static/storefront232.js
+      - name: V493 vertical catalogue and quantity controls
+        run: node --test tests/catalog-vertical493.browser.cjs tests/catalog-vertical493.test.cjs
       - run: npm test
       - name: Desktop scroll and mobile slideshow controls
         run: node --test tests/storefront248.browser.cjs tests/upload-preview250.browser.cjs tests/storeapp256.browser.cjs tests/storeapp257.browser.cjs tests/images258.browser.cjs tests/opening260.browser.cjs tests/panel-clean427.browser.cjs
