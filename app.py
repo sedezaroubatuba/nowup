@@ -1002,8 +1002,9 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
     showcase_store = next((row for row in rows if row["slug"] == "adega-sede-zero"), None)
     groups, chocolates, showcase_products = (nowup_vitrine473.shelves(conn, showcase_store)
                                               if showcase_store else ({}, [], []))
+    platform_banners498 = nowup_home210.active_banners(conn)
     conn.close()
-    response=templates.TemplateResponse("home.html", context(request, professionals=rows, showcase_store=showcase_store, showcase_groups=groups, chocolates=chocolates, showcase_products=showcase_products, rotating_stores=rotating_stores[:12], catalog_stores=catalog_stores[:12], recent_orders=recent_orders, status_labels=ORDER_STATUS_LABELS, open_now=open_now, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today, has_home_filter=bool(q or category or business_type)))
+    response=templates.TemplateResponse("home.html", context(request, platform_banners498=platform_banners498, professionals=rows, showcase_store=showcase_store, showcase_groups=groups, chocolates=chocolates, showcase_products=showcase_products, rotating_stores=rotating_stores[:12], catalog_stores=catalog_stores[:12], recent_orders=recent_orders, status_labels=ORDER_STATUS_LABELS, open_now=open_now, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today, has_home_filter=bool(q or category or business_type)))
     response = attach_food_assets(response)
     # A home deve buscar a identidade atual das lojas em cada acesso.
     response.headers["Cache-Control"] = "private, no-store"

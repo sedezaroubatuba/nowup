@@ -4,3 +4,14 @@ html body.vitrine-launch .vitrine-home .nu497-wide-track .nu496-mini-banner{flex
 html body.vitrine-launch .vitrine-home .nu497-wide-track .nu496-mini-banner>img{width:48%;object-fit:contain}
 html body.vitrine-launch .vitrine-home .nu497-wide-track .nu496-mini-banner small{color:#fff!important;line-height:1.2}
 @media(min-width:901px){html body.vitrine-launch .vitrine-home .nu497-wide-track .nu496-mini-banner{flex-basis:48%!important}}
+/* V498: clean white marketplace header, original store logo. */
+html body.v50-directory-home.vitrine-launch > .top,
+html body.v50-directory-home.vitrine-launch main.v50-home > .v50-head{background:#fff!important;border-color:#eee8f3!important}
+html body.vitrine-launch .vitrine-header-store-link img{border:0!important;box-shadow:none!important;background:transparent!important}
+html body.v50-directory-home.vitrine-launch > .top .nowup-official-logo{background:transparent!important;filter:none!important}
+html body.vitrine-launch .v50-head .v50-search{border:1px solid #dcd3eb!important;box-shadow:none!important}
+.nu498-banner-price{display:block;position:absolute;bottom:0;left:0;right:0;text-align:center;color:#151515!important;background:#fff;border-radius:5px;font-size:clamp(8px,2.2vw,13px)!important;line-height:1.2;font-weight:850;padding:2px 0}
+.nu494-hero-photos .nu495-hero-product>img{height:calc(100% - 18px)!important;align-self:flex-start}
+.nu498-combo-price{display:inline-block;background:#fff;color:#171717!important;padding:4px 6px;border-radius:6px;margin-top:5px;font-size:clamp(13px,3.5vw,21px);font-weight:900}
+html body.vitrine-launch .vitrine-home .nu498-admin-banner{padding:0!important;display:block!important}
+html body.vitrine-launch .vitrine-home .nu498-admin-banner>img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:contain!important;background:#f6f0fc!important;border-radius:12px!important}
