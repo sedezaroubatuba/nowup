@@ -22,3 +22,8 @@ html body.public-profile-area.nu233-store [data-native-menu] .nu465-subcategorie
 html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu190-category>header:has(.nu471-view-all){background:#7021ca!important;color:#fff!important;border-bottom:3px solid #bafa38!important;border-radius:12px!important;padding:7px!important}
 html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu190-category>header h2.nu286-category-label{color:#fff!important;background:transparent!important;border:0!important}
 html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu190-category>header button.nu471-view-all{background:#bafa38!important;color:#251044!important;border:0!important}
+/* V498: transparent product surfaces, preserve purple buttons and green prices. */
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout]:is(#nu312-catalog,[data-native-menu]) :is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card:not(.nu275-combo-card){
+ background:transparent!important;border-color:transparent!important;box-shadow:none!important
+}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout]:is(#nu312-catalog,[data-native-menu]) :is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card:not(.nu275-combo-card)>:is(img,.nu190-no-image,.nu190-card-content){background:transparent!important;border-color:transparent!important;box-shadow:none!important}
