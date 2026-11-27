@@ -1,0 +1,24 @@
+/* Only the store catalogue: restore the classic purple/green look. */
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout]:is(#nu312-catalog,[data-native-menu]) :is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card:not(.nu275-combo-card){
+ background:#f9f5ff!important;border:1px solid #ddccee!important;border-radius:12px!important;box-shadow:none!important;min-width:0!important;overflow:hidden!important;
+}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout]:is(#nu312-catalog,[data-native-menu]) :is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card:not(.nu275-combo-card)>:is(img,.nu190-no-image){background:transparent!important;object-fit:contain!important;border:0!important}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout]:is(#nu312-catalog,[data-native-menu]) :is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card :is(.nu451-regular-price,.nu289-combo-price){background:#bafa38!important;border:0!important;color:#181818!important;border-radius:8px!important}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout]:is(#nu312-catalog,[data-native-menu]) :is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card :is(.nu451-regular-price,.nu289-combo-price) strong{color:#181818!important;font-weight:850!important;white-space:normal!important;overflow-wrap:anywhere!important}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout]:is(#nu312-catalog,[data-native-menu]) :is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card :is(.nu201-open,.nu190-add):not(:disabled):not([hidden]){background:linear-gradient(180deg,#9223d0,#5806a6)!important;color:#fff!important;border:0!important;border-radius:9px!important;min-height:36px!important;height:auto!important;max-width:100%!important;width:100%!important;white-space:normal!important;font-size:clamp(11px,3vw,15px)!important;padding:5px 2px!important;overflow:hidden!important}
+html body.public-profile-area.nu233-store [data-native-menu] :is(.nu190-showcase,.nu191-grid) .nu201-card.nu190-card .nu201-open::after{content:none!important}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu260-showcase .nu190-card-content strong{font-size:clamp(10px,3vw,16px)!important;white-space:normal!important;overflow-wrap:anywhere!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu260-showcase .nu260-variant-count{white-space:normal!important;font-size:11px!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu465-subcategories{position:relative!important;z-index:3!important;pointer-events:auto!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu465-subcategories button{pointer-events:auto!important}
+@media(max-width:900px){
+ html body.public-profile-area [data-native-menu][data-carousel-layout="three"] .nu190-category:not(.nu275-combo-section,.nu290-offers-section) .nu190-page,html body.public-profile-area [data-native-menu][data-carousel-layout="three"] .nu191-grid:not(.nu275-combos-grid){grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-template-rows:auto!important}
+}
+/* Selected category and subcategory remain distinct, with the approved palette. */
+html body.public-profile-area.nu233-store [data-native-menu] .menu-category-nav [data-category-filter]{background:#f1e5ff!important;color:#532098!important;border-color:#c6a4ed!important}
+html body.public-profile-area.nu233-store [data-native-menu] .menu-category-nav [data-category-filter].active{background:#7021ca!important;color:#fff!important;border-color:#7021ca!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu465-subcategories button{background:#f1e5ff!important;color:#532098!important;border:1px solid #b99ce2!important}
+html body.public-profile-area.nu233-store [data-native-menu] .nu465-subcategories button[aria-pressed="true"]{background:#bafa38!important;color:#171717!important;border-color:#a6df27!important}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu190-category>header:has(.nu471-view-all){background:#7021ca!important;color:#fff!important;border-bottom:3px solid #bafa38!important;border-radius:12px!important;padding:7px!important}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu190-category>header h2.nu286-category-label{color:#fff!important;background:transparent!important;border:0!important}
+html body.public-profile-area.nu233-store [data-native-menu][data-carousel-layout] .nu190-category>header button.nu471-view-all{background:#bafa38!important;color:#251044!important;border:0!important}
