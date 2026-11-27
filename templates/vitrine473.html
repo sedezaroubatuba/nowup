@@ -1,5 +1,5 @@
 <link rel="stylesheet" href="/static/vitrine473.css?v=494">
-<script defer src="/static/vitrine473.js?v=495"></script>
+<script defer src="/static/vitrine473.js?v=496"></script>
 <div class="vitrine-home container" data-vitrine data-primary-store="{{showcase_store.slug if showcase_store else ''}}" data-owner-store="{{showcase_store.slug if showcase_store and user and user.id==showcase_store.user_id else ''}}" data-customer="{{user.id if user and user.role=='customer' else ''}}">
   {% if showcase_store %}
   {% set menu = '/p/' ~ (showcase_store.slug|urlencode) ~ '/menu' %}
@@ -18,19 +18,37 @@
   </div>
   <div class="nu494-dots" aria-label="Páginas de destaques"></div>
   <nav class="nu494-shortcuts" aria-label="Categorias de produtos">
-    {% for key,label,icon in [('promocoes','Promoções','%'),('cervejas','Cervejas','🍺'),('refrigerantes','Refrigerantes','🥤'),('mercearia','Mercearia','🛒'),('chocolates','Chocolates','🍫')] %}
-    <a href="{{menu}}?secao={{key}}"><span aria-hidden="true">{{icon}}</span><b>{{label}}</b></a>
+    {% for key,label,icon in [('promocoes','Promoções','tag'),('cervejas','Cervejas','beer'),('refrigerantes','Refrigerantes','soda'),('mercearia','Mercearia','basket'),('chocolates','Chocolates','chocolate')] %}
+    <a href="{{menu}}?secao={{key}}"><span aria-hidden="true">{{category_icon230(label,icon)}}</span><b>{{label}}</b></a>
     {% endfor %}
   </nav>
   <nav class="nu494-mini-categories" aria-label="Mais categorias">
-    {% for key,label,icon in [('energeticos','Energéticos','⚡'),('destilados','Destilados','🍸'),('lanches','Lanches','🍔')] %}
-    <a href="{{menu}}?secao={{key}}"><span aria-hidden="true">{{icon}}</span>{{label}}</a>
+    {% for key,label,icon in [('energeticos','Energéticos','energy'),('destilados','Destilados','cocktail'),('lanches','Lanches','burger')] %}
+    <a href="{{menu}}?secao={{key}}"><span aria-hidden="true">{{category_icon230(label,icon)}}</span>{{label}}</a>
     {% endfor %}
   </nav>
-  <div class="nu494-promos">
-    <a href="{{menu}}?secao=combos"><strong>Combos<br><em>da semana</em></strong><span aria-hidden="true">🛒 ›</span></a>
-    <a href="{{menu}}?secao=geladas"><strong>Bebidas<br>geladas</strong><span aria-hidden="true">🧊 ›</span></a>
-  </div>
+  <div class="nu496-mini-banner-wrap"><div><div class="nu496-mini-banner-track" data-nu494-scroll data-page-size="1" aria-label="Combos da semana">
+    {% set combo_photos=showcase_groups.get('combos',('Combos',[]))[1]|selectattr('image_filename')|list %}
+    {% set cold_photos=showcase_groups.get('geladas',('Bebidas geladas',[]))[1]|selectattr('image_filename')|list %}
+    {% for combo in combo_photos[:6] %}
+    <a class="nu496-mini-banner nu496-combo-banner" href="{{menu}}?secao=combos">
+      <div><strong>Combos<br><em>da semana</em></strong><small>{{combo.name}}</small></div>
+      <img src="/uploads/{{combo.image_filename|urlencode}}" alt="" loading="lazy">
+    </a>
+    {% endfor %}
+    {% if not combo_photos %}<a class="nu496-mini-banner nu496-combo-banner" href="{{menu}}?secao=combos"><strong>Combos<br><em>da semana</em></strong>{{category_icon230('Combos','pack')}}</a>{% endif %}
+  </div><div class="nu494-dots" aria-label="Páginas de combos"></div></div>
+  <div><div class="nu496-mini-banner-track" data-nu494-scroll data-page-size="1" aria-label="Bebidas geladas">
+    {% set cold_beers=namespace(items=[]) %}
+    {% for item in cold_photos %}{% if 'cerveja' in item.category|lower %}{% set cold_beers.items=cold_beers.items+[item] %}{% endif %}{% endfor %}
+    {% set cold_photos=cold_beers.items or cold_photos %}
+    {% for cold_page in cold_photos[:12]|batch(3) %}
+    <a class="nu496-mini-banner nu496-cold-banner" href="{{menu}}?secao=geladas">
+      <strong>Bebidas<br><em>geladas</em></strong><div class="nu496-cold-photos">{% for item in cold_page %}<img src="/uploads/{{item.image_filename|urlencode}}" alt="" loading="lazy">{% endfor %}</div>
+    </a>
+    {% endfor %}
+    {% if not cold_photos %}<a class="nu496-mini-banner nu496-cold-banner" href="{{menu}}?secao=geladas"><strong>Bebidas<br><em>geladas</em></strong>{{category_icon230('Geladas','ice')}}</a>{% endif %}
+  </div><div class="nu494-dots" aria-label="Páginas de bebidas geladas"></div></div></div>
   <div class="vitrine-toolbar nu495-toolbar">
     {% if user and user.id==showcase_store.user_id %}
     <p class="vitrine-owner">Modo lojista · Entre como cliente para testar.</p>
@@ -51,7 +69,7 @@
       <a href="{{menu}}?secao={{key}}">Ver todos <span aria-hidden="true">›</span></a>
     </header>
     <div class="vitrine-products" data-nu494-scroll data-page-size="4">
-      {% for item in items[:16] %}
+      {% for item in items[:9] %}
       <article>
         <div class="vitrine-product-card"><a class="vitrine-product-detail" href="{{menu}}?produto={{item.id}}#produto-{{item.id}}">
           <img src="{{ '/uploads/' ~ (item.image_filename|urlencode) if item.image_filename else '/static/product-placeholder.svg' }}" alt="" loading="lazy" width="144" height="110">
@@ -66,6 +84,7 @@
         </div>
       </article>
       {% endfor %}
+      <article class="nu496-store-cta"><a href="{{menu}}" aria-label="Ver loja completa de {{showcase_store.display_name}}">{% if showcase_store.avatar_filename %}<img src="/uploads/{{showcase_store.avatar_filename|urlencode}}" alt="" loading="lazy">{% endif %}<strong>Ver loja<br>completa ›</strong></a></article>
     </div>
     <div class="nu494-dots" aria-label="Páginas de {{title}}"></div>
   </section>
