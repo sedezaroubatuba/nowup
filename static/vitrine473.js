@@ -10,6 +10,25 @@
   const entries = slug => new Map(JSON.parse(storage.getItem(cartKey(slug)) || '[]'));
 
   function refresh() {
+    root.querySelectorAll('[data-vitrine-item]').forEach(button => {
+      const item=JSON.parse(button.dataset.vitrineItem);
+      const parent=button.parentElement;
+      let step=parent.querySelector('.vitrine-step493');
+      if(!step){
+        step=document.createElement('div');step.className='vitrine-step493';
+        const minus=document.createElement('button'), count=document.createElement('span'), plus=document.createElement('button');
+        minus.type=plus.type='button';minus.textContent='−';plus.textContent='+';
+        minus.setAttribute('aria-label','Diminuir '+item.name);plus.setAttribute('aria-label','Aumentar '+item.name);
+        count.setAttribute('aria-live','polite');minus.onclick=()=>add(item,-1);plus.onclick=()=>add(item);
+        step.append(minus,count,plus);parent.append(step);
+      }
+      let quantity=0;
+      try{quantity=Number(entries(item.slug).get(item.id+'::utensils0:notes')?.quantity||0);}catch(_){}
+      const active=!item.options&&quantity>0;
+      button.hidden=active;step.hidden=!active;
+      step.querySelector('span').textContent=String(quantity);
+      step.lastElementChild.disabled=button.disabled||quantity>=Math.max(1,Math.min(99,Number(item.max)||99));
+    });
     root.querySelectorAll('[data-vitrine-cart]').forEach(link => {
       let count = 0;
       try { count = [...entries(link.dataset.slug).values()].reduce((n, row) => n + Number(row.quantity || 0), 0); } catch (_) {}
@@ -19,7 +38,7 @@
     });
   }
 
-  function add(item) {
+  function add(item, delta=1) {
     if (!item || !slugPattern.test(item.slug) || !Number.isSafeInteger(item.id) || item.id < 1) return;
     if (item.options) {
       location.assign(menuUrl(item.slug) + '?produto=' + item.id + '&vitrine_opcoes=1');
@@ -30,16 +49,17 @@
       const id = item.id + '::utensils0:notes';
       const max = Math.max(1, Math.min(99, Number(item.max) || 99));
       const quantity = Number(cart.get(id)?.quantity || 0);
-      if (quantity >= max) {
+      if (delta>0 && quantity >= max) {
         status.textContent = 'Limite de unidades deste produto atingido.';
         return;
       }
-      cart.set(id, {productId:item.id, name:item.name, unitPrice:item.price, quantity:quantity+1,
+      if(quantity+delta<=0)cart.delete(id);
+      else cart.set(id, {productId:item.id, name:item.name, unitPrice:item.price, quantity:quantity+delta,
         notes:'', options:[], utensils:false, max});
       storage.setItem(cartKey(item.slug), JSON.stringify([...cart]));
       if (customer) localStorage.setItem('nowup-cart-info:u:' + customer + ':/p/' + item.slug,
         JSON.stringify({name:item.store, updated:Date.now()}));
-      status.textContent = item.name + ' adicionado ao carrinho.';
+      status.textContent = delta>0 ? item.name + ' adicionado ao carrinho.' : 'Quantidade atualizada.';
       refresh();
     } catch (_) {
       status.textContent = 'Não foi possível atualizar o carrinho. Tente novamente.';
