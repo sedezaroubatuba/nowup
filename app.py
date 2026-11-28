@@ -936,13 +936,19 @@ def select_home_stores90(conn, rows, visitor_key, visit_date):
     return ordered,rotating,catalogs
 
 @app.get("/", response_class=HTMLResponse)
-def home(request: Request, q: str="", city: str="", category: str="", business_type: str="", open_now: str="", store: str=""):
+def home(request: Request, q: str="", city: str="", category: str="", business_type: str="", open_now: str="", store: str="", store_category: str=""):
     user = current_user(request)
     conn = db()
     settings = get_settings(conn)
     cities = active_cities(settings)
     city = city.strip() or cities[0]
     params=[]; where=["p.blocked=0 AND p.admission_status='approved'", public_business_scope()]
+    category_filter_enabled = settings.get("marketplace_categories512", "0") == "1"
+    if not category_filter_enabled:
+        store_category = ""
+    if store_category:
+        where.append("EXISTS(SELECT 1 FROM professional_categories pc512 JOIN categories c512 ON c512.id=pc512.category_id WHERE pc512.professional_id=p.id AND c512.active=1 AND c512.slug=?)")
+        params.append(store_category)
     if q:
         where.append("(p.display_name LIKE ? OR p.services LIKE ? OR p.description LIKE ? OR EXISTS(SELECT 1 FROM professional_categories pcq JOIN categories cq ON cq.id=pcq.category_id WHERE pcq.professional_id=p.id AND cq.name LIKE ?) OR EXISTS(SELECT 1 FROM products pr WHERE pr.professional_id=p.id AND pr.available=1 AND (pr.name LIKE ? OR pr.description LIKE ? OR pr.category LIKE ?)))")
         like=f"%{q.strip()}%"; params += [like,like,like,like,like,like,like]
@@ -1008,13 +1014,41 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
     groups, chocolates, showcase_products = nowup_vitrine473.marketplace_shelves(conn, visible_menu_stores)
     platform_banners498 = nowup_home210.active_banners(conn)
     conn.close()
-    response=templates.TemplateResponse("home.html", context(request, platform_banners498=platform_banners498, professionals=rows, marketplace_stores=marketplace_stores, visible_stores=visible_stores, menu_stores=menu_stores, selected_store=selected_store, showcase_store=showcase_store, showcase_groups=groups, chocolates=chocolates, showcase_products=showcase_products, rotating_stores=rotating_stores[:12], catalog_stores=catalog_stores[:12], recent_orders=recent_orders, status_labels=ORDER_STATUS_LABELS, open_now=open_now, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today, has_home_filter=bool(q or category or business_type)))
+    response=templates.TemplateResponse("home.html", context(request, platform_banners498=platform_banners498, professionals=rows, marketplace_stores=marketplace_stores, marketplace_categories_enabled=category_filter_enabled, store_category=store_category, visible_stores=visible_stores, menu_stores=menu_stores, selected_store=selected_store, showcase_store=showcase_store, showcase_groups=groups, chocolates=chocolates, showcase_products=showcase_products, rotating_stores=rotating_stores[:12], catalog_stores=catalog_stores[:12], recent_orders=recent_orders, status_labels=ORDER_STATUS_LABELS, open_now=open_now, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today, has_home_filter=bool(q or category or business_type)))
     response = attach_food_assets(response)
     # A home deve buscar a identidade atual das lojas em cada acesso.
     response.headers["Cache-Control"] = "private, no-store"
     if not request.cookies.get("nowup_visitor"):
         response.set_cookie("nowup_visitor",visitor_key,max_age=31536000,httponly=True,samesite="lax",secure=request.url.scheme=="https")
     return response
+
+@app.get("/lojas", response_class=HTMLResponse)
+def marketplace_stores512(request: Request, city: str="", q: str="", category: str="", open_now: str="", sort: str=""):
+    conn=db()
+    try:
+        settings=get_settings(conn)
+        cities=active_cities(settings)
+        city=city.strip() or cities[0]
+        enabled=settings.get("marketplace_categories512","0")=="1"
+        if not enabled: category=""
+        where=["p.blocked=0 AND p.admission_status='approved'", public_business_scope(), "p.city LIKE ?"]
+        params=[f"%{city}%"]
+        if q.strip():
+            where.append("LOWER(p.display_name) LIKE LOWER(?)")
+            params.append(f"%{q.strip()[:120]}%")
+        if category:
+            where.append("EXISTS(SELECT 1 FROM professional_categories pc JOIN categories c ON c.id=pc.category_id WHERE pc.professional_id=p.id AND c.active=1 AND c.slug=?)")
+            params.append(category)
+        rows=[dict(row) for row in conn.execute(f"SELECT p.* FROM professionals p WHERE {' AND '.join(where)} ORDER BY p.display_name,p.id",params).fetchall()]
+        for row in rows:
+            row["shop_status"]=shop_status(row)
+            row["has_menu"]=row["plan_active"] in ("ambos","completo") and bool(row["is_premium"]) and row["offer_mode"] in ("menu","catalog")
+        if open_now=="1": rows=[r for r in rows if r["shop_status"]["open"]]
+        if sort=="recent": rows.sort(key=lambda r:r["id"],reverse=True)
+        elif sort!="name": rows.sort(key=lambda r:(not bool(r["shop_status"]["open"]),str(r["display_name"]).casefold()))
+    finally:
+        conn.close()
+    return templates.TemplateResponse("marketplace_stores512.html",context(request,shops512=rows,city=city,q=q,category=category,open_now=open_now,sort=sort,marketplace_categories_enabled=enabled,active_cities=cities))
 
 @app.get("/profissionais", response_class=HTMLResponse)
 def professionals(request: Request, category: str="", city: str="", neighborhood: str="", cep: str="", q: str="", business_type: str="", page: int=1):

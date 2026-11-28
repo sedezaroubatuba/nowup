@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Todas as lojas · NowUp{% endblock %}
+{% block body_class %}marketplace-directory512{% endblock %}
+{% block content %}
+<main class="nu512-directory">
+<header><a class="nu512-back" href="/?city={{city|urlencode}}">‹ Início</a><h1>Todas as lojas</h1><p>{{shops512|length}} {{'loja disponível' if shops512|length==1 else 'lojas disponíveis'}} · {{city}}</p></header>
+<form class="nu512-directory-filters" action="/lojas" method="get">
+<input type="hidden" name="city" value="{{city}}">
+<label class="nu512-directory-search"><span class="nu510-sr">Buscar loja pelo nome</span><input type="search" name="q" value="{{q}}" placeholder="Buscar loja pelo nome"><button type="submit">Buscar</button></label>
+<div class="nu512-directory-options">
+<label>Categoria {% if marketplace_categories_enabled %}<select name="category"><option value="">Todas</option>{% for cat in categories %}<option value="{{cat.slug}}" {% if category==cat.slug %}selected{% endif %}>{{cat.name}}</option>{% endfor %}</select>{% else %}<select disabled aria-label="Categorias ainda bloqueadas"><option>Em breve</option></select>{% endif %}</label>
+<label>Ordenar<select name="sort"><option value="">Abertas primeiro</option><option value="name" {% if sort=='name' %}selected{% endif %}>Nome</option><option value="recent" {% if sort=='recent' %}selected{% endif %}>Mais recentes</option></select></label>
+<label class="nu512-check"><input type="checkbox" name="open_now" value="1" {% if open_now=='1' %}checked{% endif %}> Abertas agora</label>
+<button class="nu512-apply" type="submit">Filtrar</button>
+</div></form>
+{% if marketplace_categories_enabled %}<nav class="nu512-store-categories" aria-label="Categorias de lojas"><a href="/lojas?city={{city|urlencode}}">Todas</a>{% for cat in categories %}<a href="/lojas?city={{city|urlencode}}&amp;category={{cat.slug|urlencode}}">{{category_icon230(cat.name,cat.icon)}} {{cat.name}}</a>{% endfor %}</nav>{% endif %}
+<div class="nu512-directory-grid">
+{% for shop in shops512 %}<article><a class="nu512-directory-logo" href="/p/{{shop.slug|urlencode}}{{'/menu' if shop.has_menu else ''}}">{% if shop.avatar_filename %}<img src="/uploads/{{shop.avatar_filename|urlencode}}" alt="{{shop.display_name}}">{% else %}<span>▦</span>{% endif %}</a><div><h2>{{shop.display_name}}</h2><small class="nu512-shop-status">{{shop.shop_status.label}}</small><a class="nu512-enter" href="/p/{{shop.slug|urlencode}}{{'/menu' if shop.has_menu else ''}}">Entrar na loja ›</a></div></article>{% else %}<p class="nu512-directory-empty">Nenhuma loja encontrada com esses filtros. <a href="/lojas?city={{city|urlencode}}">Limpar filtros</a></p>{% endfor %}
+</div></main>
+{% endblock %}

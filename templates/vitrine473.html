@@ -1,7 +1,7 @@
 <link rel="stylesheet" href="/static/vitrine473.css?v=510">
 <link rel="stylesheet" href="/static/cart-bag366.css?v=367">
 <script defer src="/static/cart-bag366.js?v=366"></script>
-<script defer src="/static/vitrine473.js?v=511"></script>
+<script defer src="/static/vitrine473.js?v=512"></script>
 <div class="vitrine-home container" data-vitrine data-primary-store="{{showcase_store.slug if showcase_store else ''}}" data-owner-store="{{showcase_store.slug if showcase_store and user and user.id==showcase_store.user_id else ''}}" data-customer="{{user.id if user and user.role=='customer' else ''}}">
 {% if showcase_store %}
 {% set multi=marketplace_stores|length > 1 %}
@@ -10,11 +10,17 @@
 {% set offers=showcase_groups.get('promocoes',('Promoções',[]))[1] %}
 {% set hero_items=offers|selectattr('image_filename')|list %}
 {% if hero_items or (platform and not selected_store) %}
-<div class="nu494-hero-track" data-nu494-scroll data-page-size="1">
+<header class="vitrine-shelf-heading nu512-promo-heading"><h2>Promoções da semana</h2><a href="#vitrine-promocoes">Ver mais ›</a></header>
+<div class="nu494-hero-track nu512-horizontal-track" data-nu494-scroll data-page-size="1" aria-label="Promoções da semana">
 {% for item in hero_items[:10] %}
-<a class="nu494-hero nu500-promo-single" href="/p/{{item.store_slug|urlencode}}/menu?produto={{item.id}}#produto-{{item.id}}" aria-label="{{item.name}} — {{item.store_name}} — R$ {{'%.2f'|format(item.price/100)|replace('.',',')}}">
-<div class="nu500-promo-copy"><strong>PROMOÇÕES<br><em>DA SEMANA</em></strong><small>{{item.name}}</small><b class="nu498-combo-price">R$ {{'%.2f'|format(item.price/100)|replace('.',',')}}</b>{% if multi %}<span class="nu510-banner-store">{{item.store_name}}</span>{% endif %}</div>
-<div class="nu494-hero-photos"><img src="/uploads/{{item.image_filename|urlencode}}" alt="" loading="lazy"></div></a>
+<article class="nu494-hero nu500-promo-single nu512-horizontal nu512-promo" aria-label="{{item.name}} — {{item.store_name}}">
+<a class="nu512-photo" href="/p/{{item.store_slug|urlencode}}/menu?produto={{item.id}}#produto-{{item.id}}"><img src="/uploads/{{item.image_filename|urlencode}}" alt="{{item.name}}" loading="lazy">{% if item.discount_pct %}<b class="nu512-discount">−{{item.discount_pct}}%</b>{% endif %}</a>
+<div class="nu512-promo-info">
+<small class="nu512-merchant">{{item.store_name}}</small><a class="nu512-product-name" href="/p/{{item.store_slug|urlencode}}/menu?produto={{item.id}}#produto-{{item.id}}">{{item.name}}</a>
+<div class="nu512-price"><small>Preço promocional</small><strong>R$ {{'%.2f'|format(item.price/100)|replace('.',',')}}</strong></div>
+<del>R$ {{'%.2f'|format(item.price_cents/100)|replace('.',',')}}</del>
+<button type="button" class="vitrine-view-product" aria-label="Adicionar {{item.name}} de {{item.store_name}}" data-vitrine-item="{{{'id':item.id,'name':item.name,'price':item.price,'max':item.max_quantity,'slug':item.store_slug,'store':item.store_name,'options':item.requires_options}|tojson|forceescape}}" {% if not item.open or (user and user.id==item.store_user_id) %}disabled{% endif %}>{{'Adicionar' if item.open else 'Loja fechada'}}</button>
+</div></article>
 {% endfor %}
 {% for banner in platform if banner.kind498 in ['general','promocoes'] and not selected_store %}
 {% if banner.store498 and banner.store498 in (marketplace_stores|map(attribute='slug')|list) %}
@@ -33,7 +39,21 @@
 <a data-category="{{key}}" href="#vitrine-{{key}}"><b>{{group[0]}}</b></a>
 {% endfor %}</nav>
 <section class="nu510-stores" id="nu510-stores">
-<header class="vitrine-shelf-heading"><h2>Lojas perto de você</h2><form action="/" method="get" class="nu510-filter"><input type="hidden" name="city" value="{{city}}">{% if q %}<input type="hidden" name="q" value="{{q}}">{% endif %}{% if category %}<input type="hidden" name="category" value="{{category}}">{% endif %}{% if open_now %}<input type="hidden" name="open_now" value="{{open_now}}">{% endif %}<label class="nu510-sr" for="nu510-store-select">Filtrar lojas</label><select id="nu510-store-select" name="store" aria-label="Filtrar lojas"><option value="">Todas as lojas</option>{% for shop in marketplace_stores %}<option value="{{shop.slug}}" {% if selected_store and selected_store.slug==shop.slug %}selected{% endif %}>{{shop.display_name}}</option>{% endfor %}</select><button type="submit">Filtrar</button></form></header>
+{% if marketplace_categories_enabled %}
+<nav class="nu512-store-categories" aria-label="Categorias de lojas"><a href="/lojas?city={{city|urlencode}}">Todas</a>{% for cat in categories %}<a href="/lojas?city={{city|urlencode}}&amp;category={{cat.slug|urlencode}}">{{category_icon230(cat.name,cat.icon)}} {{cat.name}}</a>{% endfor %}</nav>
+{% endif %}
+<header class="vitrine-shelf-heading"><h2>Lojas perto de você</h2><button type="button" class="nu512-filter-open" data-nu512-filter>Filtrar lojas ⌄</button></header>
+<dialog id="nu512-store-filter" class="nu512-filter-dialog" aria-labelledby="nu512-filter-title"><form action="/" method="get">
+<header><div><h2 id="nu512-filter-title">Filtrar lojas</h2><p>Escolha onde quer comprar</p></div><button type="button" data-nu512-close aria-label="Fechar filtro">×</button></header>
+<input type="hidden" name="city" value="{{city}}">{% if q %}<input type="hidden" name="q" value="{{q}}">{% endif %}{% if category %}<input type="hidden" name="category" value="{{category}}">{% endif %}{% if open_now %}<input type="hidden" name="open_now" value="{{open_now}}">{% endif %}
+<label class="nu512-filter-search"><span class="nu510-sr">Buscar loja pelo nome</span><input type="search" placeholder="Buscar pelo nome da loja" data-nu512-shop-search></label>
+<h3>Estabelecimentos</h3><div class="nu512-filter-list">
+<label class="nu512-filter-option"><span class="nu512-store-symbol">▦</span><span>Todas as lojas</span><input type="radio" name="store" value="" {% if not selected_store %}checked{% endif %}></label>
+{% for shop in marketplace_stores %}<label class="nu512-filter-option" data-shop-name="{{shop.display_name|lower}}">{% if shop.avatar_filename %}<img src="/uploads/{{shop.avatar_filename|urlencode}}" alt="">{% else %}<span class="nu512-store-symbol">▦</span>{% endif %}<span>{{shop.display_name}}<small>{{shop.shop_status.label}}</small></span><input type="radio" name="store" value="{{shop.slug}}" {% if selected_store and selected_store.slug==shop.slug %}checked{% endif %}></label>{% endfor %}
+</div><h3>Categoria das lojas</h3>
+{% if marketplace_categories_enabled %}<select name="store_category" aria-label="Categoria das lojas"><option value="">Todas as categorias</option>{% for cat in categories %}<option value="{{cat.slug}}" {% if store_category==cat.slug %}selected{% endif %}>{{cat.name}}</option>{% endfor %}</select>{% else %}<div class="nu512-category-locked" aria-disabled="true"><span aria-hidden="true">🔒</span><div><strong>Todas as categorias</strong><small>Disponível em breve</small></div></div>{% endif %}
+<button class="nu512-apply" type="submit">Aplicar filtros</button><a class="nu512-clear" href="/?city={{city|urlencode}}">Limpar filtros</a>
+</form></dialog>
 {% if multi %}<div class="nu510-store-track" aria-label="Lojas disponíveis" tabindex="0">{% endif %}
 {% for shop in marketplace_stores %}
 {% set has_menu=shop.slug in (menu_stores|map(attribute='slug')|list) %}
@@ -42,6 +62,7 @@
 <div><h3>{{shop.display_name}}</h3><small>{{shop.shop_status.label}}</small></div><a href="/p/{{shop.slug|urlencode}}{{'/menu' if has_menu else ''}}">Ver loja <span aria-hidden="true">›</span></a>
 </article>{% endfor %}
 {% if multi %}</div>{% endif %}
+<a class="nu512-more-stores" href="/lojas?city={{city|urlencode}}">Ver mais lojas ›</a>
 {% if selected_store %}<p class="nu510-filter-note">Exibindo produtos de {{selected_store.display_name}}. <a href="/?city={{city|urlencode}}">Ver todas as lojas</a></p>{% endif %}
 </section>
 {% set combo_photos=showcase_groups.get('combos',('Combos',[]))[1]|selectattr('image_filename')|list %}
@@ -50,7 +71,13 @@
 <div class="nu496-mini-banner-wrap"><header class="vitrine-shelf-heading"><h2>Combos da semana</h2><a href="#vitrine-combos">Ver todos ›</a></header>
 <div class="nu496-mini-banner-track nu497-wide-track" data-nu494-scroll data-page-size="1" aria-label="Combos da semana, arraste para os lados">
 {% for combo in combo_photos[:10] %}
-<a class="nu496-mini-banner nu496-combo-banner" href="/p/{{combo.store_slug|urlencode}}/menu?produto={{combo.id}}#produto-{{combo.id}}"><div><strong>Combos<br><em>da semana</em></strong><small>{{combo.name}}</small><b class="nu498-combo-price">R$ {{'%.2f'|format(combo.price/100)|replace('.',',')}}</b>{% if multi %}<span class="nu510-banner-store">{{combo.store_name}}</span>{% endif %}</div><img src="/uploads/{{combo.image_filename|urlencode}}" alt="" loading="lazy"></a>
+<a class="nu496-mini-banner nu496-combo-banner nu512-horizontal nu512-combo" href="/p/{{combo.store_slug|urlencode}}/menu?produto={{combo.id}}#produto-{{combo.id}}">
+<div class="nu512-photo"><img src="/uploads/{{combo.image_filename|urlencode}}" alt="{{combo.name}}" loading="lazy"><b class="nu512-combo-badge">COMBO</b></div>
+<div class="nu512-combo-info"><small class="nu512-merchant">{{combo.store_name}}</small><strong class="nu512-product-name">{{combo.name}}</strong>
+<div class="nu512-price"><small>Preço do combo</small><strong>R$ {{'%.2f'|format(combo.price/100)|replace('.',',')}}</strong></div>
+{% if combo.combo_separate is defined and combo.combo_saving>0 %}<small class="nu512-separate">Avulsos{{' a partir de' if combo.combo_variable else ''}}: R$ {{'%.2f'|format(combo.combo_separate/100)|replace('.',',')}}</small>{% endif %}
+<div class="nu512-combo-actions">{% if combo.combo_separate is defined and combo.combo_saving>0 %}<small class="nu512-saving">Economize{{' a partir de' if combo.combo_variable else ''}} R$ {{'%.2f'|format(combo.combo_saving/100)|replace('.',',')}}</small>{% endif %}<span class="nu512-open-combo">Conferir combo ›</span></div>
+</div></a>
 {% endfor %}
 {% for banner in platform if banner.kind498=='combos' and not selected_store and banner.store498 and banner.store498 in (menu_stores|map(attribute='slug')|list) %}
 <a class="nu496-mini-banner nu498-admin-banner" href="/p/{{banner.store498|urlencode}}/menu?secao=combos"><img src="{{banner.image}}" alt="{{banner.title}}" loading="lazy"></a>{% endfor %}

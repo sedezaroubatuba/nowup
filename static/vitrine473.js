@@ -19,7 +19,7 @@
         const minus=document.createElement('button'), count=document.createElement('span'), plus=document.createElement('button');
         minus.type=plus.type='button';minus.textContent='−';plus.textContent='+';
         minus.setAttribute('aria-label','Diminuir '+item.name);plus.setAttribute('aria-label','Aumentar '+item.name);
-        count.setAttribute('aria-live','polite');minus.onclick=()=>add(item,-1,parent);plus.onclick=()=>add(item,1,parent);
+        count.setAttribute('aria-live','polite');minus.onclick=()=>add(item,-1,parent.closest(".nu512-horizontal,.vitrine-product-card")||parent);plus.onclick=()=>add(item,1,parent.closest(".nu512-horizontal,.vitrine-product-card")||parent);
         step.append(minus,count,plus);parent.append(step);
       }
       let quantity=0;
@@ -74,9 +74,25 @@
   window.NowUpVitrine473 = {add};
   root.addEventListener('click', event => {
     const button = event.target.closest('[data-vitrine-item]');
-    if (button) add(JSON.parse(button.dataset.vitrineItem),1,button.parentElement);
+    if (button) add(JSON.parse(button.dataset.vitrineItem),1,button.closest(".nu512-horizontal,.vitrine-product-card")||button.parentElement);
   });
 
+  const filter=root.querySelector('#nu512-store-filter');
+  const openFilter=root.querySelector('[data-nu512-filter]');
+  if(filter&&openFilter){
+    openFilter.addEventListener('click',()=>{
+      if(typeof filter.showModal==='function')filter.showModal();
+      else location.assign('/lojas?city='+encodeURIComponent(filter.querySelector('[name=city]')?.value||''));
+    });
+    filter.querySelector('[data-nu512-close]')?.addEventListener('click',()=>filter.close());
+    filter.addEventListener('click',event=>{if(event.target===filter)filter.close();});
+    const query=filter.querySelector('[data-nu512-shop-search]');
+    query?.addEventListener('input',()=>{
+      const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+      const term=normalize(query.value.trim());
+      filter.querySelectorAll('[data-shop-name]').forEach(row=>{row.hidden=!!term&&!normalize(row.dataset.shopName).includes(term);});
+    });
+  }
   window.addEventListener('pageshow', refresh);
   window.addEventListener('storage', refresh);
   refresh();
