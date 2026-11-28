@@ -2,18 +2,21 @@
 from fastapi import Request, Form, HTTPException
 from fastapi.responses import RedirectResponse
 
-PRESETS = {'original':'Original','impacto':'Branco — Impacto','neon':'Neon escuro','natal':'Natal','2027':'Feliz 2027','black':'Black — Preto e amarelo'}
+PRESETS = {'original':'Original','sede':'Sede Zero — Branco, preto e amarelo','natal':'Natal claro','2027':'Réveillon claro — Feliz 2027'}
 STORE_PRESETS = {'inherit':'Seguir tema geral', **PRESETS}
+
+def normalize(value, default='original'):
+    if value == 'black':
+        return 'sede'
+    return value if value in PRESETS or (value == 'inherit' and default == 'inherit') else default
 
 def selected(settings, path, slug=''):
     settings = settings or {}
     if path != '/' and not path.startswith('/p/'):
         return 'original'
-    theme = settings.get('appearance505','original')
-    if theme not in PRESETS:
-        theme = 'original'
+    theme = normalize(settings.get('appearance505','original'))
     if slug == 'adega-sede-zero' and path.startswith('/p/'):
-        override = settings.get('sede_appearance505','inherit')
+        override = normalize(settings.get('sede_appearance505','inherit'),'inherit')
         if override in PRESETS:
             return override
     if theme in ('natal','2027') and path != '/' and slug != 'adega-sede-zero':
@@ -36,7 +39,7 @@ def install(g):
                 actor=admin.auth(request,c)
                 if not actor['super']:raise HTTPException(403,'Somente Super ADM.')
             settings=g['get_settings'](c)
-        return g['templates'].TemplateResponse('appearance505.html',g['context'](request,presets505=PRESETS,store_presets505=STORE_PRESETS,current505=settings.get('appearance505','original'),store505=settings.get('sede_appearance505','inherit'),merchant505=merchant))
+        return g['templates'].TemplateResponse('appearance505.html',g['context'](request,presets505=PRESETS,store_presets505=STORE_PRESETS,current505=normalize(settings.get('appearance505','original')),store505=normalize(settings.get('sede_appearance505','inherit'),'inherit'),merchant505=merchant))
     @app.get('/admin/super/aparencia')
     def admin_view(request: Request):return view(request)
     @app.post('/admin/super/aparencia')
