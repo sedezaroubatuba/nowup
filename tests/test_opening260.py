@@ -9,6 +9,7 @@ def test_home_opening_is_message_free_and_only_home(panel,monkeypatch):
  assert 'id="nowup-opening490"' in home.text and 'opening490-nowup.mp4' in home.text
  assert 'Seu bairro.' not in home.text
  assert 'data-opening-scope="nowup"' in home.text
+ assert 'data-poster=' not in home.text
  assert 'id="nowup-opening490"' in client.get('/entrar').text
  with m.db() as c:
   slug=c.execute('SELECT slug FROM professionals ORDER BY id LIMIT 1').fetchone()[0]
@@ -56,7 +57,7 @@ def test_sede_zero_uses_its_own_approved_video_only_on_store_entry(panel):
   internal=page(path,None)
   assert 'data-opening-scope="sede-zero"' in internal
   assert 'opening490-sede-zero.mp4' in internal
-  assert '/app-icon/192.png?v=402' in internal
+  assert 'data-poster=' not in internal
   assert 'opening490-nowup.mp4' not in internal
  assert 'id="nowup-opening490"' not in page('/p/adega-sede-zero/pedidos',None)
  assert 'id="nowup-opening490"' not in page('/p/outra-loja/menu',None)
