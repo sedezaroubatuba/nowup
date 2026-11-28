@@ -3,7 +3,17 @@ from fastapi import Request, Form, HTTPException
 from fastapi.responses import RedirectResponse
 
 PRESETS = {'original':'Original','sede':'Sede Zero — Branco, preto e amarelo','natal':'Natal claro','2027':'Réveillon claro — Feliz 2027'}
-STORE_PRESETS = {'inherit':'Seguir tema geral', **PRESETS}
+STORE_PRESETS = {
+    'original':'Roxo Essencial — principal',
+    'lime':'Roxo + Verde Limão',
+    'natal_store':'Natal — Roxo Essencial',
+    'reveillon_store':'Réveillon — Roxo Essencial',
+}
+
+def store_selected(value):
+    # Old inherited or seasonal settings do not change the new default;
+    # new store-specific selections are persisted independently.
+    return value if value in STORE_PRESETS else 'original'
 
 def normalize(value, default='original'):
     if value == 'black':
@@ -16,9 +26,7 @@ def selected(settings, path, slug=''):
         return 'original'
     theme = normalize(settings.get('appearance505','original'))
     if slug == 'adega-sede-zero' and path.startswith('/p/'):
-        override = normalize(settings.get('sede_appearance505','inherit'),'inherit')
-        if override in PRESETS:
-            return override
+        return store_selected(settings.get('sede_appearance505','original'))
     if theme in ('natal','2027') and path != '/' and slug != 'adega-sede-zero':
         return 'original'
     return theme
@@ -39,7 +47,7 @@ def install(g):
                 actor=admin.auth(request,c)
                 if not actor['super']:raise HTTPException(403,'Somente Super ADM.')
             settings=g['get_settings'](c)
-        return g['templates'].TemplateResponse('appearance505.html',g['context'](request,presets505=PRESETS,store_presets505=STORE_PRESETS,current505=normalize(settings.get('appearance505','original')),store505=normalize(settings.get('sede_appearance505','inherit'),'inherit'),merchant505=merchant,marketplace_categories512=settings.get('marketplace_categories512','0')=='1',marketplace_test513=settings.get('marketplace_show_test_513','0')=='1'))
+        return g['templates'].TemplateResponse('appearance505.html',g['context'](request,presets505=PRESETS,store_presets505=STORE_PRESETS,current505=normalize(settings.get('appearance505','original')),store505=store_selected(settings.get('sede_appearance505','original')),merchant505=merchant,marketplace_categories512=settings.get('marketplace_categories512','0')=='1',marketplace_test513=settings.get('marketplace_show_test_513','0')=='1'))
     @app.get('/admin/super/aparencia')
     def admin_view(request: Request):return view(request)
     @app.post('/admin/super/aparencia')
