@@ -44,13 +44,14 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   const hasSubcategories261=key=>subcats261.some(sc=>sc.parent===key);
  const categoryView=make('section','nu191-category-view');categoryView.hidden=true;layout.before(categoryView);
  const categoryTitle=make('h2'),categoryCount=make('p','nu191-count'),categoryEmpty=make('p','nu191-empty','Nenhum produto encontrado nesta categoria.');categoryEmpty.hidden=true;
- const categoryHeader=make('header','nu219-category-header'),less=make('button','nu219-less','Ver menos ⌃');
+ const categoryHeader=make('header','nu219-category-header nu518-section-header'),less=make('button','nu219-less','Ver menos ⌃');
+ const categoryIcon=make('span','nu518-section-icon'),categoryText=make('div','nu518-section-text');categoryIcon.setAttribute('aria-hidden','true');
  less.type='button';less.setAttribute('aria-label','Recolher produtos e voltar aos carrosséis');
  categoryHeader.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap';
  categoryTitle.style.margin='0';less.style.cssText='border:1px solid #e6dcf2;background:#f5effc;color:#7132bf;border-radius:10px;padding:10px 14px;min-height:44px;font:inherit;font-size:14px;font-weight:700;cursor:pointer';
  function collapseCategory(){const key=selectedCategory;showHome();const section=sections.get(key);if(section){section.scrollIntoView({block:'start',behavior:'auto'});section.querySelector('header button')?.focus({preventScroll:true});}}
  less.addEventListener('click',collapseCategory);
- categoryHeader.append(less,categoryTitle);
+ categoryText.append(categoryTitle,categoryCount);categoryHeader.append(categoryIcon,categoryText,less);
  const categoryFooter=make('div','nu462-collapse-footer');
  const lessBottom=less.cloneNode(true);
  lessBottom.addEventListener('click',collapseCategory);
@@ -58,7 +59,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  const subcategoryFilters=make('div','nu261-pills nu465-subcategories');
  subcategoryFilters.setAttribute('role','group');
  subcategoryFilters.setAttribute('aria-label','Subcategorias');
- categoryView.append(categoryHeader,categoryCount,categoryEmpty,categoryFooter);
+ categoryView.append(categoryHeader,categoryEmpty,categoryFooter);
  const categoryCache=new Map();
  function prepareSubcategories(key){
   selectedSubcategory261='';
@@ -366,7 +367,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   categoryCache.forEach((entry,k)=>entry.grid.hidden=k!==key);
   categoryView.classList.toggle('nu276-combo-view',key==='__combos256'||key==='__offers256');
   const viewName276=key==='__combos256'?'Combos':key==='__offers256'?'Promoções':group.name;
-  categoryTitle.replaceChildren(window.NowUpCategory230.create(viewName276),document.createTextNode(viewName276));activeCategory.textContent=viewName276+' ×';activeCategory.setAttribute('aria-label','Limpar filtro de '+viewName276);if(!filter)search.value='';search.placeholder=key==='__combos256'?'Buscar combos':key==='__offers256'?'Buscar promoções':'Buscar em '+group.name;search.setAttribute('aria-label',search.placeholder);filterCategory();
+  categoryIcon.replaceChildren(window.NowUpCategory230.create(viewName276));categoryTitle.textContent=viewName276;activeCategory.textContent=viewName276+' ×';activeCategory.setAttribute('aria-label','Limpar filtro de '+viewName276);if(!filter)search.value='';search.placeholder=key==='__combos256'?'Buscar combos':key==='__offers256'?'Buscar promoções':'Buscar em '+group.name;search.setAttribute('aria-label',search.placeholder);filterCategory();
   markCategory362(key);
   if(!switching)resize();
   if(window.scrollY>0)window.scrollTo({top:0,behavior:'instant'});
