@@ -31,8 +31,13 @@ def selected(settings, path, slug=''):
         return 'original'
     return theme
 
+def home_season524(settings):
+    value = (settings or {}).get('home_season524', 'natal')
+    return value if value in ('original', 'natal', '2027') else 'original'
+
 def install(g):
     app, admin = g['app'], g['nowup_admin227']
+    g['templates'].env.globals['home_season524'] = home_season524
     def store_owner(request,c):
         u = g['require_user'](request,'professional')
         if not c.execute("SELECT 1 FROM professionals WHERE user_id=? AND slug='adega-sede-zero' AND is_demo=0",(u['id'],)).fetchone():
@@ -47,17 +52,19 @@ def install(g):
                 actor=admin.auth(request,c)
                 if not actor['super']:raise HTTPException(403,'Somente Super ADM.')
             settings=g['get_settings'](c)
-        return g['templates'].TemplateResponse('appearance505.html',g['context'](request,presets505=PRESETS,store_presets505=STORE_PRESETS,current505=normalize(settings.get('appearance505','original')),store505=store_selected(settings.get('sede_appearance505','original')),merchant505=merchant,marketplace_categories512=settings.get('marketplace_categories512','0')=='1',marketplace_test513=settings.get('marketplace_show_test_513','0')=='1'))
+        return g['templates'].TemplateResponse('appearance505.html',g['context'](request,presets505=PRESETS,store_presets505=STORE_PRESETS,current505=normalize(settings.get('appearance505','original')),store505=store_selected(settings.get('sede_appearance505','original')),merchant505=merchant,home_season524_current=home_season524(settings),marketplace_categories512=settings.get('marketplace_categories512','0')=='1',marketplace_test513=settings.get('marketplace_show_test_513','0')=='1'))
     @app.get('/admin/super/aparencia')
     def admin_view(request: Request):return view(request)
     @app.post('/admin/super/aparencia')
-    def admin_save(request: Request, theme: str=Form(...), store_theme: str=Form(...), marketplace_categories: str=Form(''), marketplace_test: str=Form('')):
+    def admin_save(request: Request, theme: str=Form(...), store_theme: str=Form(...), marketplace_categories: str=Form(''), marketplace_test: str=Form(''), home_season: str=Form('')):
         if theme not in PRESETS or store_theme not in STORE_PRESETS:raise HTTPException(400,'Tema inválido.')
         with admin.connection() as c:
             actor=admin.auth(request,c)
             if not actor['super']:raise HTTPException(403,'Somente Super ADM.')
             write(c,'appearance505',theme)
             write(c,'sede_appearance505',store_theme)
+            if home_season in ('original','natal','2027'):
+                write(c,'home_season524',home_season)
             if marketplace_categories in ('0','1'):
                 write(c,'marketplace_categories512',marketplace_categories)
             if marketplace_test in ('0','1'):
