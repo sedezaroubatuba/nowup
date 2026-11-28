@@ -37,6 +37,19 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  const catalogItems=layout.querySelector('.menu-products')||layout;const originals=Array.from(catalogItems.children).filter(el=>el.matches('[data-product]')),sections=new Map(),refreshers=[],cartRefreshers=[];
  originals.forEach(card=>{if(card.dataset.comboLocal303!=='1'&&(card.dataset.combo256==='1'||card.dataset.category==='combos')){card.dataset.category='combos';const label=card.querySelector('.menu-product-info small');if(label)label.textContent='Combos';}});
  const back=make('button','nu187-back','←');back.type='button';heading.prepend(back);
+ if(document.documentElement.dataset.appearance505!=='sede'){
+  const brand=make('div','nu520-brand');
+  const home=make('a','nu520-home');home.href='/';home.setAttribute('aria-label','Início do NowUp');
+  const logo=make('img');logo.src='/static/nowup-logo185.png?v=196';logo.alt='NowUp Brasil';home.append(logo);
+  const identity=make('div','nu520-identity'),avatar=intro.querySelector('.nu187-avatar img');
+  if(avatar)identity.append(avatar.cloneNode(true));
+  const labels=make('div','nu520-store-text');
+  labels.append(make('strong','',intro.querySelector('h1')?.textContent.trim()||'Loja'));
+  const description=intro.querySelector('.nu187-description')?.textContent.trim();
+  if(description)labels.append(make('small','',description));
+  identity.append(labels);brand.append(home,identity);heading.prepend(brand);
+ }
+
  let homeScroll=0,selectedCategory=null,selectedSubcategory261='';
   const subcats261=[...root.querySelectorAll('[data-scid261]')].map(element=>({
     id:element.dataset.scid261,parent:element.dataset.parent261,name:element.dataset.name261
@@ -224,7 +237,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   if(!group.cards.length)return;
   const section=make('section','nu190-category');section.dataset.category190=key;section.classList.toggle('nu275-combo-section',key==='__combos256');section.classList.toggle('nu290-offers-section',key==='__offers256');sections.set(key,section);
   const header=make('header'),all=make('button','nu471-view-all','Ver todos ›');all.type='button';all.addEventListener('click',()=>showCategory(key));const title=make('h2','nu286-category-label'),icon=make('span','nu284-category-icon');icon.setAttribute('aria-hidden','true');icon.replaceChildren(window.NowUpCategory230.create(group.name));title.append(icon,document.createTextNode(group.name));header.append(title,all);section.append(header);
-  if(desktop228.matches){
+  if(desktop228.matches&&!(document.documentElement.dataset.appearance505!=='sede'&&['__combos256','__offers256'].includes(key))){
    all.remove();
    const grid=make('div','nu312-grid');grid.id='nu312-category-'+sections.size;
    let loaded=0;
