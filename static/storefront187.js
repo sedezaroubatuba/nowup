@@ -118,7 +118,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
     else panel.append(make('div','nu190-no-image','▦'));
     const content=make('div','nu190-card-content');
     content.append(make('h3','',card.dataset.name||'Produto'),make('strong','', 'A partir de '+money(Number(card.dataset.price)||0)));
-    if(!offer)highlightRegularPrice(content);
+    if(!offer){const spacer=make('span','nu284-old-price nu487-old-slot');spacer.setAttribute('aria-hidden','true');content.insertBefore(spacer,content.querySelector('strong'));highlightRegularPrice(content);}
     content.append(make('small','nu260-variant-count',card.querySelectorAll('.nu-group260-row').length+' sabores ou opções'));
     const choose=make('button','nu201-open','Escolher sabor');choose.type='button';
     choose.setAttribute('aria-label','Escolher variação de '+(card.dataset.name||'Produto'));
