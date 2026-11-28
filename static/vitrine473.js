@@ -29,13 +29,17 @@
       step.querySelector('span').textContent=String(quantity);
       step.lastElementChild.disabled=button.disabled||quantity>=Math.max(1,Math.min(99,Number(item.max)||99));
     });
+    let total=0;
     document.querySelectorAll('[data-vitrine-cart]').forEach(link => {
       let count = 0;
       try { count = [...entries(link.dataset.slug).values()].reduce((n, row) => n + Number(row.quantity || 0), 0); } catch (_) {}
+      total += count;
       link.hidden = count < 1;
       link.querySelector('[data-vitrine-count]').textContent = String(count);
-      link.setAttribute('aria-label', 'Carrinho, ' + count + (count === 1 ? ' item' : ' itens'));
+      link.setAttribute('aria-label', 'Carrinho '+(link.querySelector('.nu510-cart-name')?.textContent||'')+', ' + count + (count === 1 ? ' item' : ' itens'));
     });
+    const summary=document.querySelector('[data-nu510-total]'); if(summary) summary.textContent=String(total);
+    const empty=document.querySelector('.nu510-cart-empty'); if(empty) empty.hidden=total>0;
   }
 
   function add(item, delta=1) {
@@ -75,6 +79,14 @@
   window.addEventListener('pageshow', refresh);
   window.addEventListener('storage', refresh);
   refresh();
+  root.querySelectorAll('.nu510-expand').forEach(button=>{
+    button.addEventListener('click',()=>{
+      const shelf=button.closest('.vitrine-shelf'), open=button.getAttribute('aria-expanded')!=='true';
+      button.setAttribute('aria-expanded',String(open));button.textContent=open?'Ver menos ‹':'Ver todos ›';
+      shelf.classList.toggle('nu510-expanded',open);
+      if(!open){shelf.querySelector('.vitrine-products')?.scrollTo({left:0});shelf.scrollIntoView({block:'start',behavior:'smooth'});}
+    });
+  });
   root.querySelectorAll('[data-nu494-scroll]').forEach(track=>{
     const dots=track.nextElementSibling;
     if(!dots?.classList.contains('nu494-dots'))return;
@@ -93,7 +105,7 @@
       buttons.forEach((b,i)=>b.setAttribute('aria-current',String(i===index)));
     };
     track.addEventListener('scroll',update,{passive:true});update();
-    if(size===1&&track.matches('.nu494-hero-track,.nu497-wide-track')){
+    if(size===1&&track.matches('.nu494-hero-track')){
       window.NowUpAutoSlide501?.attach({track,controls:track,advance:()=>{
         const children=[...track.children],max=Math.max(0,track.scrollWidth-track.clientWidth);
         const left=i=>Math.min(max,Math.max(0,children[i].offsetLeft-children[0].offsetLeft));

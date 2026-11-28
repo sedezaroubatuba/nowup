@@ -1,112 +1,83 @@
-<link rel="stylesheet" href="/static/vitrine473.css?v=494">
-<script defer src="/static/vitrine473.js?v=501"></script>
+<link rel="stylesheet" href="/static/vitrine473.css?v=510">
+<script defer src="/static/vitrine473.js?v=510"></script>
 <div class="vitrine-home container" data-vitrine data-primary-store="{{showcase_store.slug if showcase_store else ''}}" data-owner-store="{{showcase_store.slug if showcase_store and user and user.id==showcase_store.user_id else ''}}" data-customer="{{user.id if user and user.role=='customer' else ''}}">
-  {% set platform=platform_banners498|default([]) %}
-  {% if showcase_store %}
-  {% set menu = '/p/' ~ (showcase_store.slug|urlencode) ~ '/menu' %}
-  {% set offers = showcase_groups.get('promocoes', ('Promoções', []))[1] %}
-  {% set hero_items = (offers or showcase_groups.get('cervejas', ('Cervejas', []))[1])|selectattr('image_filename')|list %}
-  {% set ns_hero = namespace(beers=[], other=[]) %}
-  {% for item in hero_items %}{% if 'cerveja' in item.category|lower %}{% set ns_hero.beers = ns_hero.beers + [item] %}{% else %}{% set ns_hero.other = ns_hero.other + [item] %}{% endif %}{% endfor %}
-  {% set hero_items = ns_hero.beers + ns_hero.other %}
-  <div class="nu494-hero-track" data-nu494-scroll data-page-size="1">
-  {% for item in hero_items[:12] %}
-  <a class="nu494-hero nu500-promo-single" href="{{menu}}?secao={{'promocoes' if offers else 'cervejas'}}" aria-label="{{item.name}} — R$ {{'%.2f'|format(item.price/100)|replace('.',',')}}. Conferir na loja">
-    <div class="nu500-promo-copy"><strong>{{'PROMOÇÕES' if offers else 'DESTAQUES'}}<br><em>DA SEMANA</em></strong><small>{{item.name}}</small><b class="nu498-combo-price">R$ {{'%.2f'|format(item.price/100)|replace('.',',')}}</b></div>
-    <div class="nu494-hero-photos"><img src="/uploads/{{item.image_filename|urlencode}}" alt="" loading="lazy"></div>
-  </a>
-  {% endfor %}
-  {% for banner in platform if banner.kind498 in ['general','promocoes'] %}
-  <a class="nu494-hero nu498-admin-banner" href="{{('/p/' ~ banner.store498 ~ '/menu' ~ ('?secao=promocoes' if banner.kind498=='promocoes' else '')) if banner.store498 else menu ~ '?secao=promocoes'}}"><img src="{{banner.image}}" alt="{{banner.title}}" loading="lazy"></a>
-  {% endfor %}
-  </div>
-  <div class="nu494-dots" aria-label="Páginas de destaques"></div>
-  <nav class="nu494-shortcuts" aria-label="Categorias de produtos">
-    {% for key,label,icon in [('promocoes','Promoções','tag'),('cervejas','Cervejas','beer'),('refrigerantes','Refrigerantes','soda'),('mercearia','Mercearia','basket'),('chocolates','Chocolates','chocolate')] %}
-    <a href="{{menu}}?secao={{key}}"><span aria-hidden="true">{{category_icon230(label,icon)}}</span><b>{{label}}</b></a>
-    {% endfor %}
-  </nav>
-  <nav class="nu494-mini-categories" aria-label="Mais categorias">
-    {% for key,label,icon in [('energeticos','Energéticos','energy'),('destilados','Destilados','cocktail'),('lanches','Lanches','burger')] %}
-    <a href="{{menu}}?secao={{key}}"><span aria-hidden="true">{{category_icon230(label,icon)}}</span>{{label}}</a>
-    {% endfor %}
-  </nav>
-  <div class="nu496-mini-banner-wrap"><div class="nu496-mini-banner-track nu497-wide-track" data-nu494-scroll data-page-size="1" aria-label="Combos e bebidas geladas">
-    {% set combo_photos=showcase_groups.get('combos',('Combos',[]))[1]|selectattr('image_filename')|list %}
-    {% set cold_photos=showcase_groups.get('geladas',('Bebidas geladas',[]))[1]|selectattr('image_filename')|list %}
-    {% for banner in platform if banner.kind498=='combos' %}
-    <a class="nu496-mini-banner nu498-admin-banner" href="{{('/p/' ~ banner.store498 ~ '/menu') if banner.store498 else menu}}?secao=combos"><img src="{{banner.image}}" alt="{{banner.title}}" loading="lazy"></a>
-    {% endfor %}
-    {% for combo in combo_photos[:1] %}
-    <a class="nu496-mini-banner nu496-combo-banner" href="{{menu}}?secao=combos">
-      <div><strong>Combos<br><em>da semana</em></strong><small>{{combo.name}}</small><b class="nu498-combo-price">R$ {{'%.2f'|format(combo.price/100)|replace('.',',')}}</b></div>
-      <img src="/uploads/{{combo.image_filename|urlencode}}" alt="" loading="lazy">
-    </a>
-    {% endfor %}
-    {% if not combo_photos %}<a class="nu496-mini-banner nu496-combo-banner" href="{{menu}}?secao=combos"><strong>Combos<br><em>da semana</em></strong>{{category_icon230('Combos','pack')}}</a>{% endif %}
-
-    {% set cold_beers=namespace(items=[]) %}
-    {% for item in cold_photos %}{% if 'cerveja' in item.category|lower %}{% set cold_beers.items=cold_beers.items+[item] %}{% endif %}{% endfor %}
-    {% set cold_photos=cold_beers.items or cold_photos %}
-    {% for banner in platform if banner.kind498 in ['geladas','chocolates'] %}
-    <a class="nu496-mini-banner nu498-admin-banner" href="{{('/p/' ~ banner.store498 ~ '/menu') if banner.store498 else menu}}?secao={{banner.kind498}}"><img src="{{banner.image}}" alt="{{banner.title}}" loading="lazy"></a>
-    {% endfor %}
-    {% for cold_page in cold_photos[:12]|batch(3) %}
-    <a class="nu496-mini-banner nu496-cold-banner" href="{{menu}}?secao=geladas">
-      <strong>Bebidas<br><em>geladas</em></strong><div class="nu496-cold-photos">{% for item in cold_page %}<img src="/uploads/{{item.image_filename|urlencode}}" alt="" loading="lazy">{% endfor %}</div>
-    </a>
-    {% endfor %}
-    {% if not cold_photos %}<a class="nu496-mini-banner nu496-cold-banner" href="{{menu}}?secao=geladas"><strong>Bebidas<br><em>geladas</em></strong>{{category_icon230('Geladas','ice')}}</a>{% endif %}
-    {% for combo in combo_photos[1:6] %}
-    <a class="nu496-mini-banner nu496-combo-banner" href="{{menu}}?secao=combos"><div><strong>Combos<br><em>da semana</em></strong><small>{{combo.name}}</small><b class="nu498-combo-price">R$ {{'%.2f'|format(combo.price/100)|replace('.',',')}}</b></div><img src="/uploads/{{combo.image_filename|urlencode}}" alt="" loading="lazy"></a>
-    {% endfor %}
-  </div><div class="nu494-dots" aria-label="Páginas de combos e bebidas geladas"></div></div>
-  <div class="vitrine-toolbar nu495-toolbar">
-    {% if user and user.id==showcase_store.user_id %}
-    <p class="vitrine-owner">Modo lojista · Entre como cliente para testar.</p>
-    {% endif %}
-    <p class="vitrine-status" data-vitrine-status role="status"></p>
-
-  </div>
-  {% set all_shelves = [('chocolates', 'Chocolates', chocolates)] %}
-  {% set ns = namespace(shelves=all_shelves) %}
-  {% for key in ['cervejas','refrigerantes','mercearia','energeticos','destilados','lanches','combos','promocoes'] %}
-    {% if showcase_groups.get(key) %}{% set ns.shelves = ns.shelves + [(key, showcase_groups[key][0], showcase_groups[key][1])] %}{% endif %}
-  {% endfor %}
-  {% for key, title, items in ns.shelves %}
-  {% if items %}
-  <section class="vitrine-shelf vitrine-{{key}}">
-    <header class="vitrine-shelf-heading">
-      <h2>{{title}}</h2>
-      <a href="{{menu}}?secao={{key}}">Ver todos <span aria-hidden="true">›</span></a>
-    </header>
-    <div class="vitrine-products" data-nu494-scroll data-page-size="4">
-      {% for item in items[:9] %}
-      <article>
-        <div class="vitrine-product-card"><a class="vitrine-product-detail" href="{{menu}}?produto={{item.id}}#produto-{{item.id}}">
-          <img src="{{ '/uploads/' ~ (item.image_filename|urlencode) if item.image_filename else '/static/product-placeholder.svg' }}" alt="" loading="lazy" width="144" height="110">
-          <h3>{{item.name}}</h3>
-          {% if item.promo %}<del>R$ {{'%.2f'|format(item.price_cents/100)|replace('.',',')}}</del>{% endif %}
-          <strong>R$ {{'%.2f'|format(item.price/100)|replace('.',',')}}{% if item.sold_by_weight370 %}/kg{% endif %}</strong>
-        </a>
-        <button type="button" class="vitrine-view-product" aria-label="Adicionar {{item.name}}" data-vitrine-item="{{ {
-          'id':item.id,'name':item.name,'price':item.price,'max':item.max_quantity,
-          'slug':showcase_store.slug,'store':showcase_store.display_name,'options':item.requires_options
-        }|tojson|forceescape }}" {% if not item.open or (user and user.id==showcase_store.user_id) %}disabled{% endif %}>{{ '+' if item.open else 'Loja fechada' }}</button>
-        </div>
-      </article>
-      {% endfor %}
-      <article class="nu496-store-cta"><a href="{{menu}}" aria-label="Ver loja completa de {{showcase_store.display_name}}">{% if showcase_store.avatar_filename %}<img src="/uploads/{{showcase_store.avatar_filename|urlencode}}" alt="" loading="lazy">{% endif %}<strong>Ver loja<br>completa ›</strong></a></article>
-    </div>
-    <div class="nu494-dots" aria-label="Páginas de {{title}}"></div>
-  </section>
-  {% endif %}
-  {% endfor %}
-  <section class="vitrine-store">
-    {% if showcase_store.avatar_filename %}<img src="/uploads/{{showcase_store.avatar_filename|urlencode}}" alt="" width="62" height="62">{% endif %}
-    <div><h1>{{showcase_store.display_name}}</h1><small>{{showcase_store.shop_status.label}}</small></div>
-    <a href="/p/{{showcase_store.slug}}/menu">Ver loja completa <span aria-hidden="true">›</span></a>
-  </section>
-  <p class="vitrine-soon">Em breve, novas lojas em Ubatuba.</p>
-  {% endif %}
+{% if showcase_store %}
+{% set multi=marketplace_stores|length > 1 %}
+{% set menu='/p/' ~ (showcase_store.slug|urlencode) ~ '/menu' %}
+{% set platform=platform_banners498|default([]) %}
+{% set offers=showcase_groups.get('promocoes',('Promoções',[]))[1] %}
+{% set hero_items=offers|selectattr('image_filename')|list %}
+{% if hero_items or (platform and not selected_store) %}
+<div class="nu494-hero-track" data-nu494-scroll data-page-size="1">
+{% for item in hero_items[:12] %}
+<a class="nu494-hero nu500-promo-single" href="/p/{{item.store_slug|urlencode}}/menu?produto={{item.id}}#produto-{{item.id}}" aria-label="{{item.name}} — {{item.store_name}} — R$ {{'%.2f'|format(item.price/100)|replace('.',',')}}">
+<div class="nu500-promo-copy"><strong>PROMOÇÕES<br><em>DA SEMANA</em></strong><small>{{item.name}}</small><b class="nu498-combo-price">R$ {{'%.2f'|format(item.price/100)|replace('.',',')}}</b>{% if multi %}<span class="nu510-banner-store">{{item.store_name}}</span>{% endif %}</div>
+<div class="nu494-hero-photos"><img src="/uploads/{{item.image_filename|urlencode}}" alt="" loading="lazy"></div></a>
+{% endfor %}
+{% for banner in platform if banner.kind498 in ['general','promocoes'] and not selected_store %}
+{% if banner.store498 and banner.store498 in (marketplace_stores|map(attribute='slug')|list) %}
+<a class="nu494-hero nu498-admin-banner" href="/p/{{banner.store498|urlencode}}/menu?secao=promocoes"><img src="{{banner.image}}" alt="{{banner.title}}" loading="lazy"></a>
+{% elif not banner.store498 %}<a class="nu494-hero nu498-admin-banner" href="#nu510-stores"><img src="{{banner.image}}" alt="{{banner.title}}" loading="lazy"></a>{% endif %}
+{% endfor %}
+</div><div class="nu494-dots" aria-label="Páginas de promoções"></div>
+{% endif %}
+{% set shortcuts = [('promocoes','Promoções','tag'),('cervejas','Cervejas','beer'),('refrigerantes','Refrigerantes','soda'),('mercearia','Mercearia','basket'),('chocolates','Chocolates','chocolate'),('energeticos','Energéticos','energy'),('destilados','Destilados','cocktail'),('lanches','Lanches','burger'),('combos','Combos','pack')] %}
+<nav class="nu494-shortcuts nu510-shortcuts" aria-label="Categorias de produtos">
+{% for key,label,icon in shortcuts %}
+{% if (key=='chocolates' and chocolates) or showcase_groups.get(key,('',[]))[1] %}
+<a data-category="{{key}}" href="#vitrine-{{key}}"><span aria-hidden="true">{{category_icon230(label,icon)}}</span><b>{{label}}</b></a>
+{% endif %}{% endfor %}
+{% for key,group in showcase_groups.items() if key.startswith('extra-') and group[1] %}
+<a data-category="{{key}}" href="#vitrine-{{key}}"><b>{{group[0]}}</b></a>
+{% endfor %}</nav>
+<section class="nu510-stores" id="nu510-stores">
+<header class="vitrine-shelf-heading"><h2>Lojas perto de você</h2><form action="/" method="get" class="nu510-filter"><input type="hidden" name="city" value="{{city}}">{% if q %}<input type="hidden" name="q" value="{{q}}">{% endif %}{% if category %}<input type="hidden" name="category" value="{{category}}">{% endif %}{% if open_now %}<input type="hidden" name="open_now" value="{{open_now}}">{% endif %}<label class="nu510-sr" for="nu510-store-select">Filtrar lojas</label><select id="nu510-store-select" name="store" aria-label="Filtrar lojas"><option value="">Todas as lojas</option>{% for shop in marketplace_stores %}<option value="{{shop.slug}}" {% if selected_store and selected_store.slug==shop.slug %}selected{% endif %}>{{shop.display_name}}</option>{% endfor %}</select><button type="submit">Filtrar</button></form></header>
+{% if multi %}<div class="nu510-store-track" aria-label="Lojas disponíveis" tabindex="0">{% endif %}
+{% for shop in marketplace_stores %}
+{% set has_menu=shop.slug in (menu_stores|map(attribute='slug')|list) %}
+<article class="vitrine-store nu510-store-card">
+{% if shop.avatar_filename %}<img src="/uploads/{{shop.avatar_filename|urlencode}}" alt="" width="62" height="62">{% else %}<span class="nu510-store-placeholder" aria-hidden="true">▦</span>{% endif %}
+<div><h3>{{shop.display_name}}</h3><small>{{shop.shop_status.label}}</small></div><a href="/p/{{shop.slug|urlencode}}{{'/menu' if has_menu else ''}}">Ver loja <span aria-hidden="true">›</span></a>
+</article>{% endfor %}
+{% if multi %}</div>{% endif %}
+{% if selected_store %}<p class="nu510-filter-note">Exibindo produtos de {{selected_store.display_name}}. <a href="/?city={{city|urlencode}}">Ver todas as lojas</a></p>{% endif %}
+</section>
+{% set combo_photos=showcase_groups.get('combos',('Combos',[]))[1]|selectattr('image_filename')|list %}
+{% set cold_photos=showcase_groups.get('geladas',('Bebidas geladas',[]))[1]|selectattr('image_filename')|list %}
+{% if combo_photos %}
+<div class="nu496-mini-banner-wrap"><header class="vitrine-shelf-heading"><h2>Combos da semana</h2><a href="#vitrine-combos">Ver todos ›</a></header>
+<div class="nu496-mini-banner-track nu497-wide-track" data-nu494-scroll data-page-size="1" aria-label="Combos da semana, arraste para os lados">
+{% for combo in combo_photos[:18] %}
+<a class="nu496-mini-banner nu496-combo-banner" href="/p/{{combo.store_slug|urlencode}}/menu?produto={{combo.id}}#produto-{{combo.id}}"><div><strong>Combos<br><em>da semana</em></strong><small>{{combo.name}}</small><b class="nu498-combo-price">R$ {{'%.2f'|format(combo.price/100)|replace('.',',')}}</b>{% if multi %}<span class="nu510-banner-store">{{combo.store_name}}</span>{% endif %}</div><img src="/uploads/{{combo.image_filename|urlencode}}" alt="" loading="lazy"></a>
+{% endfor %}
+{% for banner in platform if banner.kind498=='combos' and not selected_store and banner.store498 and banner.store498 in (menu_stores|map(attribute='slug')|list) %}
+<a class="nu496-mini-banner nu498-admin-banner" href="/p/{{banner.store498|urlencode}}/menu?secao=combos"><img src="{{banner.image}}" alt="{{banner.title}}" loading="lazy"></a>{% endfor %}
+</div><div class="nu494-dots" aria-label="Páginas de combos"></div><small class="nu510-swipe">‹ Arraste para ver mais combos ›</small></div>
+{% endif %}
+<div class="vitrine-toolbar nu495-toolbar">{% if user and user.id==showcase_store.user_id %}<p class="vitrine-owner">Modo lojista · Entre como cliente para testar.</p>{% endif %}<p class="vitrine-status" data-vitrine-status role="status"></p></div>
+{% set ns=namespace(shelves=[('chocolates','Chocolates',chocolates)]) %}
+{% for key in ['mercearia','cervejas','refrigerantes','energeticos','destilados','lanches','combos','promocoes','geladas'] %}
+{% if showcase_groups.get(key) %}{% set ns.shelves=ns.shelves+[(key,showcase_groups[key][0],showcase_groups[key][1])] %}{% endif %}{% endfor %}
+{% for key,group in showcase_groups.items() if key.startswith('extra-') %}{% set ns.shelves=ns.shelves+[(key,group[0],group[1])] %}{% endfor %}
+{% for key,title,items in ns.shelves if items %}
+<section class="vitrine-shelf vitrine-{{key}}" id="vitrine-{{key}}">
+<header class="vitrine-shelf-heading"><h2>{{title}}</h2>{% if not multi and not selected_store and not key.startswith('extra-') %}<a href="{{menu}}?secao={{key}}">Ver todos ›</a>{% else %}<button type="button" class="nu510-expand" aria-expanded="false">Ver todos ›</button>{% endif %}</header>
+<div class="vitrine-products" data-nu494-scroll data-page-size="4">
+{% for item in (items[:48] if multi or selected_store or key.startswith('extra-') else items[:9]) %}
+<article>
+<div class="vitrine-product-card">
+<a class="vitrine-product-detail" href="/p/{{item.store_slug|urlencode}}/menu?produto={{item.id}}#produto-{{item.id}}">
+{% if multi %}<small class="nu510-item-store">{{item.store_name}}</small>{% endif %}
+<img src="{{'/uploads/' ~ (item.image_filename|urlencode) if item.image_filename else '/static/product-placeholder.svg'}}" alt="" loading="lazy" width="144" height="110">
+<h3>{{item.name}}</h3>
+{% if item.promo %}<del>R$ {{'%.2f'|format(item.price_cents/100)|replace('.',',')}}</del>{% endif %}
+<strong>R$ {{'%.2f'|format(item.price/100)|replace('.',',')}}{% if item.sold_by_weight370 %}/kg{% endif %}</strong>
+</a>
+<button type="button" class="vitrine-view-product" aria-label="Adicionar {{item.name}} de {{item.store_name}}" data-vitrine-item="{{{'id':item.id,'name':item.name,'price':item.price,'max':item.max_quantity,'slug':item.store_slug,'store':item.store_name,'options':item.requires_options}|tojson|forceescape}}" {% if not item.open or (user and user.id==item.store_user_id) %}disabled{% endif %}>{{'Adicionar' if item.open else 'Loja fechada'}}</button></div>
+</article>
+{% endfor %}
+{% if not multi and not selected_store %}<article class="nu496-store-cta"><a href="{{menu}}" aria-label="Ver loja completa de {{showcase_store.display_name}}">{% if showcase_store.avatar_filename %}<img src="/uploads/{{showcase_store.avatar_filename|urlencode}}" alt="" loading="lazy">{% endif %}<strong>Ver loja<br>completa ›</strong></a></article>{% endif %}
+</div><div class="nu494-dots" aria-label="Páginas de {{title}}"></div></section>
+{% endfor %}
+{% endif %}
 </div>

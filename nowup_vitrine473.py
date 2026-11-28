@@ -1,5 +1,8 @@
 """Vitrine shelves backed by the public store catalog."""
 from itertools import zip_longest
+from collections import defaultdict
+from random import SystemRandom
+import re
 
 from nowup_groups260 import effective_promo_cents
 from nowup_search177 import normalize
@@ -56,6 +59,20 @@ def shelves(conn, store):
         groups[key] = (title, items)
     groups["geladas"] = ("Bebidas geladas", [p for p in products if p.get("sold_cold")])
     chocolates = [p for p in products if "chocolate" in normalize(p["category"])]
+    # Dynamically expose new catalogue categories without duplicating standard shelves.
+    standard = {p["id"] for key, (_, items) in groups.items() if key not in ("promocoes", "geladas") for p in items}
+    for p in products:
+        label = (p.get("category") or "").strip()
+        normalized = normalize(label)
+        if not label or any(term in normalized for term in ("chocolate", "cigarro", "tabaco", "tabacaria", "narguile")) or p["id"] in standard:
+            continue
+        key = re.sub(r"[^a-z0-9]+", "-", normalized).strip("-")
+        if not key:
+            continue
+        key = "extra-" + key
+        if key not in groups:
+            groups[key] = (label, [])
+        groups[key][1].append(p)
     recommendations = []
     seen = set()
     for group in zip_longest(*(items[:12] for _, items in groups.values())):
@@ -65,3 +82,44 @@ def shelves(conn, store):
             recommendations.append(item)
             seen.add(item["id"])
     return groups, chocolates, recommendations[:12]
+
+
+def marketplace_shelves(conn, stores):
+    """Round-robin, with randomized store order and bounded per-store shelf lists."""
+    rng = SystemRandom()
+    pools = defaultdict(list)
+    titles = {}
+    chocolate_pools = []
+    recommendation_pools = []
+    for store in stores:
+        groups, chocolates, recommendations = shelves(conn, store)
+        def annotated(items):
+            return [dict(p, store_slug=store["slug"], store_name=store["display_name"],
+                         store_user_id=store["user_id"]) for p in items]
+        for key, (title, items) in groups.items():
+            titles[key] = title
+            if items:
+                pools[key].append(annotated(items))
+        if chocolates:
+            chocolate_pools.append(annotated(chocolates))
+        if recommendations:
+            recommendation_pools.append(annotated(recommendations))
+
+    def interleave(queues, limit=96):
+        queues = [list(q) for q in queues if q]
+        if len(queues) > 1:
+            rng.shuffle(queues)
+            for queue in queues:
+                # Rotate the leading selection without wiping merchandising order.
+                featured = queue[:min(12, len(queue))]
+                rng.shuffle(featured)
+                queue[:len(featured)] = featured
+        result = []
+        for lane in zip_longest(*queues):
+            result.extend(p for p in lane if p is not None)
+            if len(result) >= limit:
+                break
+        return result[:limit]
+
+    groups = {key: (title, interleave(pools[key])) for key, title in titles.items()}
+    return groups, interleave(chocolate_pools), interleave(recommendation_pools, 12)

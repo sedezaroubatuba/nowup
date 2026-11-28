@@ -310,7 +310,7 @@ def require_user(request: Request, role: Optional[str]=None):
 PUBLIC_CATEGORY_SLUGS = ("restaurantes-e-lanchonetes", "lanches-e-pizzarias", "padarias-e-cafeterias", "doces-e-sorveterias", "mercados-e-mercearias", "conveniencias-e-adegas", "pet-shops-e-veterinarios")
 
 def public_business_scope():
-    return "p.is_demo=0 AND p.slug='adega-sede-zero' AND p.plan_active IN ('vitrine','ambos','completo') AND EXISTS(SELECT 1 FROM professional_categories scope_pc JOIN categories scope_c ON scope_c.id=scope_pc.category_id WHERE scope_pc.professional_id=p.id AND scope_c.active=1)"
+    return "p.is_demo=0 AND p.plan_active IN ('vitrine','ambos','completo') AND EXISTS(SELECT 1 FROM professional_categories scope_pc JOIN categories scope_c ON scope_c.id=scope_pc.category_id WHERE scope_pc.professional_id=p.id AND scope_c.active=1)"
 
 def context(request: Request, **kwargs):
     conn = db()
@@ -936,7 +936,7 @@ def select_home_stores90(conn, rows, visitor_key, visit_date):
     return ordered,rotating,catalogs
 
 @app.get("/", response_class=HTMLResponse)
-def home(request: Request, q: str="", city: str="", category: str="", business_type: str="", open_now: str=""):
+def home(request: Request, q: str="", city: str="", category: str="", business_type: str="", open_now: str="", store: str=""):
     user = current_user(request)
     conn = db()
     settings = get_settings(conn)
@@ -999,12 +999,16 @@ def home(request: Request, q: str="", city: str="", category: str="", business_t
     restaurants=[r for r in rows if r["business_type"]=="restaurant"]
     offers=[r for r in rows if r["featured"]]
     recommended=[r for r in rows if r["business_type"]!="restaurant"]
-    showcase_store = next((row for row in rows if row["slug"] == "adega-sede-zero"), None)
-    groups, chocolates, showcase_products = (nowup_vitrine473.shelves(conn, showcase_store)
-                                              if showcase_store else ({}, [], []))
+    marketplace_stores = list(rows)
+    menu_stores = [row for row in marketplace_stores if row["plan_active"] in ("ambos", "completo") and row["is_premium"] and row["offer_mode"] in ("menu", "catalog")]
+    selected_store = next((row for row in marketplace_stores if row["slug"] == store), None)
+    visible_stores = [selected_store] if selected_store else marketplace_stores
+    visible_menu_stores = [row for row in menu_stores if not selected_store or row["id"] == selected_store["id"]]
+    showcase_store = next(iter(visible_menu_stores or visible_stores), None)
+    groups, chocolates, showcase_products = nowup_vitrine473.marketplace_shelves(conn, visible_menu_stores)
     platform_banners498 = nowup_home210.active_banners(conn)
     conn.close()
-    response=templates.TemplateResponse("home.html", context(request, platform_banners498=platform_banners498, professionals=rows, showcase_store=showcase_store, showcase_groups=groups, chocolates=chocolates, showcase_products=showcase_products, rotating_stores=rotating_stores[:12], catalog_stores=catalog_stores[:12], recent_orders=recent_orders, status_labels=ORDER_STATUS_LABELS, open_now=open_now, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today, has_home_filter=bool(q or category or business_type)))
+    response=templates.TemplateResponse("home.html", context(request, platform_banners498=platform_banners498, professionals=rows, marketplace_stores=marketplace_stores, visible_stores=visible_stores, menu_stores=menu_stores, selected_store=selected_store, showcase_store=showcase_store, showcase_groups=groups, chocolates=chocolates, showcase_products=showcase_products, rotating_stores=rotating_stores[:12], catalog_stores=catalog_stores[:12], recent_orders=recent_orders, status_labels=ORDER_STATUS_LABELS, open_now=open_now, restaurants=restaurants, offers=offers, recommended=recommended, favorite_ids=favorite_ids, posts=posts, q=q, city=city, category=category, business_type=business_type, active_cities=cities, people_today=people_today, has_home_filter=bool(q or category or business_type)))
     response = attach_food_assets(response)
     # A home deve buscar a identidade atual das lojas em cada acesso.
     response.headers["Cache-Control"] = "private, no-store"
