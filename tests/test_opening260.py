@@ -10,7 +10,7 @@ def test_home_opening_is_message_free_and_only_home(panel,monkeypatch):
  assert 'Seu bairro.' not in home.text
  assert 'data-opening-scope="nowup"' in home.text
  assert 'data-poster=' not in home.text
- assert 'id="nowup-opening490"' in client.get('/entrar').text
+ assert 'id="nowup-opening490"' not in client.get('/entrar').text
  with m.db() as c:
   slug=c.execute('SELECT slug FROM professionals ORDER BY id LIMIT 1').fetchone()[0]
   c.execute("UPDATE professionals SET plan_active='completo' WHERE slug=?",(slug,))
