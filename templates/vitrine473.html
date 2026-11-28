@@ -1,7 +1,7 @@
 <link rel="stylesheet" href="/static/vitrine473.css?v=510">
 <link rel="stylesheet" href="/static/cart-bag366.css?v=367">
 <script defer src="/static/cart-bag366.js?v=366"></script>
-<script defer src="/static/vitrine473.js?v=512"></script>
+<script defer src="/static/vitrine473.js?v=514"></script>
 <div class="vitrine-home container" data-vitrine data-primary-store="{{showcase_store.slug if showcase_store else ''}}" data-owner-store="{{showcase_store.slug if showcase_store and user and user.id==showcase_store.user_id else ''}}" data-customer="{{user.id if user and user.role=='customer' else ''}}">
 {% if showcase_store %}
 {% set multi=marketplace_stores|length > 1 %}
@@ -108,7 +108,7 @@
 <button type="button" class="vitrine-view-product" aria-label="Adicionar {{item.name}} de {{item.store_name}}" data-vitrine-item="{{{'id':item.id,'name':item.name,'price':item.price,'max':item.max_quantity,'slug':item.store_slug,'store':item.store_name,'options':item.requires_options}|tojson|forceescape}}" {% if not item.open or (user and user.id==item.store_user_id) %}disabled{% endif %}>{{'Adicionar' if item.open else 'Loja fechada'}}</button></div>
 </article>
 {% endfor %}
-<article class="nu496-store-cta"><a href="{{section_href}}" aria-label="{{'Acessar loja para ver mais produtos' if section_store else 'Escolher uma loja para ver mais produtos'}}">{% if section_store %}{% for shop in menu_stores if shop.slug==section_store %}{% if shop.avatar_filename %}<img src="/uploads/{{shop.avatar_filename|urlencode}}" alt="" loading="lazy">{% endif %}{% endfor %}{% else %}<span class="nu511-store-icon" aria-hidden="true">▦</span>{% endif %}<strong>{{'Acessar loja' if section_store else 'Escolher loja'}}<br>Ver mais ›</strong></a></article>
+<article class="nu496-store-cta nu514-store-cta"><a href="{{section_href}}" aria-label="{{'Acessar loja para ver mais produtos' if section_store else 'Escolher uma loja para ver mais produtos'}}"><div class="nu514-store-logo">{% if section_store %}{% for shop in menu_stores if shop.slug==section_store %}{% if shop.avatar_filename %}<img src="/uploads/{{shop.avatar_filename|urlencode}}" alt="{{shop.display_name}}" loading="lazy">{% else %}<span class="nu511-store-icon" aria-hidden="true">▦</span>{% endif %}{% endfor %}{% else %}<span class="nu511-store-icon" aria-hidden="true">▦</span>{% endif %}</div><strong>{{'Acessar loja' if section_store else 'Escolher loja'}}</strong></a></article>
 </div><div class="nu494-dots" aria-label="Páginas de {{title}}"></div></section>
 {% endfor %}
 {% endif %}

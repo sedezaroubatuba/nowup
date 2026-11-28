@@ -65,6 +65,7 @@
         JSON.stringify({name:item.store, updated:Date.now()}));
       delete status.dataset.error;status.textContent = delta>0 ? item.name + ' adicionado ao carrinho.' : 'Quantidade atualizada.';
       refresh();
+      window.dispatchEvent(new Event('nowup-cart-changed'));
       if(delta>0) window.NOWUP_CART_BAG366?.added(source);
     } catch (_) {
       status.dataset.error='1';status.textContent = 'Não foi possível atualizar o carrinho. Tente novamente.';
