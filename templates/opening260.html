@@ -2,7 +2,7 @@
 {% set opening490_parts = opening490_path.split('/') %}
 {% set opening490_slug = opening490_parts[2] if opening490_parts|length >= 3 and opening490_parts[1] == 'p' else '' %}
 {% set opening490_store_entry = opening490_slug and (opening490_parts|length == 3 or (opening490_parts|length == 4 and opening490_parts[3] in ('menu','cardapio'))) %}
-{% set opening490_scope = 'sede-zero' if opening490_store_entry and opening490_slug in ('adega-sede-zero','samuel-dos-santos-silva') else ('nowup' if not store_app256 and not opening490_slug else '') %}
+{% set opening490_scope = 'sede-zero' if opening490_store_entry and opening490_slug in ('adega-sede-zero','samuel-dos-santos-silva') else ('nowup' if opening490_path == '' and not store_app256 and not opening490_slug else '') %}
 {% if opening490_scope and not request.url.path.startswith(('/admin','/super','/painel')) and not order_link377 %}
 {% set opening490_cfg=opening_config260(settings) %}
 {% if opening490_cfg.enabled or request.query_params.get('abertura') == '1' %}
@@ -11,6 +11,6 @@
   <video data-opening-video data-src="/static/opening490-{{opening490_scope}}.mp4" muted playsinline preload="none" aria-hidden="true" tabindex="-1"></video>
   <button class="opening490-skip" type="button" data-opening-skip aria-label="Pular abertura">Pular ›</button>
 </section>
-<script src="/static/opening490.js?v=526"></script>
+<script src="/static/opening490.js?v=527"></script>
 {% endif %}
 {% endif %}
