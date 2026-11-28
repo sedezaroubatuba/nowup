@@ -404,7 +404,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  const scrollCategories=make('button','nu462-scroll-categories','›');
  scrollCategories.type='button';scrollCategories.hidden=true;
  scrollCategories.setAttribute('aria-label','Rolar categorias para o lado');
- heading.append(scrollCategories);
+ categoryBar274.append(scrollCategories);
  scrollCategories.addEventListener('click',()=>{
   const end=categoryBar274.scrollWidth-categoryBar274.clientWidth;
   categoryBar274.scrollTo({left:categoryBar274.scrollLeft>=end-2?0:categoryBar274.scrollLeft+categoryBar274.clientWidth*.8});
