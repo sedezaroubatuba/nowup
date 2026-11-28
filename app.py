@@ -3346,6 +3346,9 @@ nowup_storeapp257.install(globals())
 import nowup_opening260
 templates.env.globals["opening_config260"]=nowup_opening260.config
 nowup_opening260.install(globals())
+import nowup_themes505
+templates.env.globals["appearance505"]=nowup_themes505.selected
+nowup_themes505.install(globals())
 
 import nowup_verification257
 nowup_verification257.register(globals())
