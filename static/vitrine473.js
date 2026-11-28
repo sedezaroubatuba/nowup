@@ -19,7 +19,7 @@
         const minus=document.createElement('button'), count=document.createElement('span'), plus=document.createElement('button');
         minus.type=plus.type='button';minus.textContent='−';plus.textContent='+';
         minus.setAttribute('aria-label','Diminuir '+item.name);plus.setAttribute('aria-label','Aumentar '+item.name);
-        count.setAttribute('aria-live','polite');minus.onclick=()=>add(item,-1);plus.onclick=()=>add(item);
+        count.setAttribute('aria-live','polite');minus.onclick=()=>add(item,-1,parent);plus.onclick=()=>add(item,1,parent);
         step.append(minus,count,plus);parent.append(step);
       }
       let quantity=0;
@@ -42,7 +42,7 @@
     const empty=document.querySelector('.nu510-cart-empty'); if(empty) empty.hidden=total>0;
   }
 
-  function add(item, delta=1) {
+  function add(item, delta=1, source=null) {
     if (!item || !slugPattern.test(item.slug) || !Number.isSafeInteger(item.id) || item.id < 1) return;
     if (item.options) {
       location.assign(menuUrl(item.slug) + '?produto=' + item.id + '&vitrine_opcoes=1');
@@ -65,6 +65,7 @@
         JSON.stringify({name:item.store, updated:Date.now()}));
       delete status.dataset.error;status.textContent = delta>0 ? item.name + ' adicionado ao carrinho.' : 'Quantidade atualizada.';
       refresh();
+      if(delta>0) window.NOWUP_CART_BAG366?.added(source);
     } catch (_) {
       status.dataset.error='1';status.textContent = 'Não foi possível atualizar o carrinho. Tente novamente.';
     }
@@ -73,7 +74,7 @@
   window.NowUpVitrine473 = {add};
   root.addEventListener('click', event => {
     const button = event.target.closest('[data-vitrine-item]');
-    if (button) add(JSON.parse(button.dataset.vitrineItem));
+    if (button) add(JSON.parse(button.dataset.vitrineItem),1,button.parentElement);
   });
 
   window.addEventListener('pageshow', refresh);
