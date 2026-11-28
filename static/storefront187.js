@@ -64,6 +64,9 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
   selectedSubcategory261='';
   const choices=subcats261.filter(sc=>sc.parent===key);
   subcategoryFilters.hidden=!choices.length;
+  const label=String(key||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const tone=/promoc|oferta/.test(label)?'orange':/cerveja|refriger|bebida.*nao alcool/.test(label)?'blue':/mercearia|mercado/.test(label)?'green':/lanche|refeic|padaria/.test(label)?'gold':'purple';
+  subcategoryFilters.dataset.nu513Tone=tone;
   const controls=[{id:'',name:'Todos da categoria'},...choices].map(({id,name})=>{
    const button=make('button','',name);
    button.type='button';

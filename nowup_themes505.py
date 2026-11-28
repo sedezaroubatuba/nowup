@@ -39,11 +39,11 @@ def install(g):
                 actor=admin.auth(request,c)
                 if not actor['super']:raise HTTPException(403,'Somente Super ADM.')
             settings=g['get_settings'](c)
-        return g['templates'].TemplateResponse('appearance505.html',g['context'](request,presets505=PRESETS,store_presets505=STORE_PRESETS,current505=normalize(settings.get('appearance505','original')),store505=normalize(settings.get('sede_appearance505','inherit'),'inherit'),merchant505=merchant,marketplace_categories512=settings.get('marketplace_categories512','0')=='1'))
+        return g['templates'].TemplateResponse('appearance505.html',g['context'](request,presets505=PRESETS,store_presets505=STORE_PRESETS,current505=normalize(settings.get('appearance505','original')),store505=normalize(settings.get('sede_appearance505','inherit'),'inherit'),merchant505=merchant,marketplace_categories512=settings.get('marketplace_categories512','0')=='1',marketplace_test513=settings.get('marketplace_show_test_513','0')=='1'))
     @app.get('/admin/super/aparencia')
     def admin_view(request: Request):return view(request)
     @app.post('/admin/super/aparencia')
-    def admin_save(request: Request, theme: str=Form(...), store_theme: str=Form(...), marketplace_categories: str=Form('')):
+    def admin_save(request: Request, theme: str=Form(...), store_theme: str=Form(...), marketplace_categories: str=Form(''), marketplace_test: str=Form('')):
         if theme not in PRESETS or store_theme not in STORE_PRESETS:raise HTTPException(400,'Tema inválido.')
         with admin.connection() as c:
             actor=admin.auth(request,c)
@@ -52,6 +52,8 @@ def install(g):
             write(c,'sede_appearance505',store_theme)
             if marketplace_categories in ('0','1'):
                 write(c,'marketplace_categories512',marketplace_categories)
+            if marketplace_test in ('0','1'):
+                write(c,'marketplace_show_test_513',marketplace_test)
             admin.audit(c,actor,'Tema visual alterado',theme+' / '+store_theme)
             c.commit()
         return RedirectResponse('/admin/super/aparencia?salvo=1',303)

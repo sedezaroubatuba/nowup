@@ -38,7 +38,7 @@
 {% for key,group in showcase_groups.items() if key.startswith('extra-') and group[1] %}
 <a data-category="{{key}}" href="#vitrine-{{key}}"><b>{{group[0]}}</b></a>
 {% endfor %}</nav>
-<section class="nu510-stores" id="nu510-stores">
+<section class="nu510-stores{% if not multi %} nu513-single-store{% endif %}" id="nu510-stores">
 {% if marketplace_categories_enabled %}
 <nav class="nu512-store-categories" aria-label="Categorias de lojas"><a href="/lojas?city={{city|urlencode}}">Todas</a>{% for cat in categories %}<a href="/lojas?city={{city|urlencode}}&amp;category={{cat.slug|urlencode}}">{{category_icon230(cat.name,cat.icon)}} {{cat.name}}</a>{% endfor %}</nav>
 {% endif %}
@@ -57,7 +57,7 @@
 {% if multi %}<div class="nu510-store-track" aria-label="Lojas disponíveis" tabindex="0">{% endif %}
 {% for shop in marketplace_stores %}
 {% set has_menu=shop.slug in (menu_stores|map(attribute='slug')|list) %}
-<article class="vitrine-store nu510-store-card">
+<article class="vitrine-store nu510-store-card{% if shop.slug=='adega-sede-zero' %} nu513-sede-card{% endif %}">
 {% if shop.avatar_filename %}<img src="/uploads/{{shop.avatar_filename|urlencode}}" alt="" width="62" height="62">{% else %}<span class="nu510-store-placeholder" aria-hidden="true">▦</span>{% endif %}
 <div><h3>{{shop.display_name}}</h3><small>{{shop.shop_status.label}}</small></div><a href="/p/{{shop.slug|urlencode}}{{'/menu' if has_menu else ''}}">Ver loja <span aria-hidden="true">›</span></a>
 </article>{% endfor %}
