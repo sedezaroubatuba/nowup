@@ -12,11 +12,11 @@
  const escape=e=>{if(e.key==='Escape')stop();};
  const visibility=()=>{if(document.hidden)stop();};
  skip.addEventListener('click',stop,{once:true});video.addEventListener('ended',stop,{once:true});video.addEventListener('error',stop,{once:true});
- video.addEventListener('playing',()=>clearTimeout(startupTimer),{once:true});
+ video.addEventListener('playing',()=>{if(finished)return;clearTimeout(startupTimer);el.classList.remove('opening490-loading');},{once:true});
  document.addEventListener('keydown',escape);document.addEventListener('visibilitychange',visibility);window.addEventListener('pagehide',stop,{once:true});
  video.muted=true;video.defaultMuted=true;video.playsInline=true;video.preload='auto';
- video.poster=video.dataset.poster;video.src=video.dataset.src;
- el.hidden=false;
+ el.classList.add('opening490-loading');el.hidden=false;
+ video.removeAttribute('poster');video.src=video.dataset.src;
  // A slow connection or unsupported autoplay must never delay shopping.
  startupTimer=setTimeout(stop,1800);hardTimer=setTimeout(stop,5000);
  try{const p=video.play();if(p&&typeof p.catch==='function')p.catch(stop);}catch(_){stop();}
